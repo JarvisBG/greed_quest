@@ -22,8 +22,9 @@
 - [x] 2.2 Journal RG-3.1 (`src/core/journal.ts`) et `Runner` (`src/core/runner.ts`) : toute action d'état passe par `runner.run(partieId, acteur, fn)` = verrou par partie + transaction + heure de jeu + `log()` + `emit()` diffusé seulement après commit (bus `src/core/bus.ts`). Motif obligatoire pour corrections et sanctions PNJ/GM.
 - [x] 2.3 Auth : jetons signés HMAC (`src/auth/tokens.ts`, rôle + id + partie), `requireRole` (GM ⊇ PNJ). Création de partie : `POST /admin/parties` avec l'en-tête `x-code-admin` (`GQ_ADMIN_CODE`), crée le premier GM. Équipe : connexion par code (`/parties/:id/staff/connexion`), ajout par un GM, journal lisible par l'équipe. Jeton joueur délivré à l'inscription (2.4). Erreurs : `{ ok: false, code, message }` (`src/errors.ts`), requêtes validées par Zod (`@gq/shared/api.ts`).
 - [x] 2.4 Inscription RG-5 : moteur `registration.ts` (Examen, test de Nen, kit, rattrapage) ; routes `src/routes/joueurs.ts` : `POST /inscription` (pseudo, appareilId, position obligatoire), `/reconnexion`, `GET /questionnaires`, `POST /examen`, `POST /nen`, `GET /moi`. Nouveaux paramètres RG-14 : `kitJenny`, `bonusExamenJ`, `specialisationPct`, `rattrapageJParMin`. Paramètres lus via le service unique `src/core/params.ts`.
+- [x] 2.5 Licence RG-5.2 (`src/core/licence.ts`) : `GQL1.<joueurId>.<fenêtre 30 s>.<HMAC du secret joueur>`, ±1 fenêtre tolérée ; `GET /licence` (joueur), `POST /licence/verifier` (équipe). Le secret est donné par `/moi` pour que l'app calcule la licence hors ligne.
 
-**Prochaine étape** : 2.5 (licence QR tournante). Le calibrage n'est pas bloquant : tout passe par des paramètres.
+**Prochaine étape** : 2.6 (endpoints d'intentions : scan, position, sorts, boutique, échanges, enchères). Le calibrage n'est pas bloquant : tout passe par des paramètres.
 
 ## Reprise de session (lire en premier)
 - Phase 1 terminée et poussée (`main`, dernier commit « Simulateur v2 »). Engine pur dans `packages/engine/src/` : un module par domaine (`params`, `draw`, `book`, `scan`, `beacons`, `geo`, `spells`, `counterfeits`, `trades`, `shop`, `ranking`, `lifecycle`, `events`) + `sim/`. Chaque module a son `*.test.ts`.
@@ -100,6 +101,7 @@
 - RG-5 : kit = 50 J (comme le simulateur) + 1 sort uniforme ; Examen = 10 J par bonne réponse, une seule tentative ; Spécialisation 5 % tirée avant le questionnaire, sinon type le plus choisi (égalité au hasard) ; test de Nen une seule fois, non obligatoire pour jouer (sans Nen, aucun passif). Questions de l'Examen et du test de Nen **provisoires** (`engine/registration.ts`).
 - RG-5.6 rattrapage : 2 J par minute de jeu écoulée (paramètre `rattrapageJParMin`, 0 = désactivé).
 - RG-5.1 : `appareilId` = identifiant aléatoire créé par l'app et gardé sur le téléphone ; il sert aussi à se reconnecter. 2e inscription du même appareil refusée + alerte RG-15 à l'équipe. La position est exigée à l'inscription (« géoloc obligatoire »).
+- RG-5.2 : licence acceptée sur la fenêtre de 30 s courante ± 1 (décalage d'horloge du téléphone, temps de scan), soit 60 à 90 s de validité réelle.
 - RG-14.5 : contenu des préréglages non défini → proposé : Petit groupe = portée 20 m, marge GPS 10 m, limites d'exemplaires × 2 ; Standard = défauts du document ; Grande foule = portée 20 m, marge GPS 15 m (foule dense). Les formules auto suivent déjà J.
 
 ## Feuille de route

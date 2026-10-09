@@ -28,7 +28,7 @@ Chaque tâche = un commit (ou quelques-uns), tests verts avant de cocher.
 - [x] 2.2 Journal RG-3.1 (transactionnel, motif obligatoire PNJ/GM)
 - [x] 2.3 Auth : joueur (appareil), PNJ, GM ; rôles RG-3
 - [x] 2.4 Inscription RG-5 : pseudo, appareil unique, Examen Hunter, test de Nen, kit, retardataire
-- [ ] 2.5 Licence QR tournante 30 s (jeton signé) RG-5.2
+- [x] 2.5 Licence QR tournante 30 s (jeton signé) RG-5.2
 - [ ] 2.6 Endpoints d'intentions : scan, position, sort, achat, revente, session d'échange (cartes engagées verrouillées, 1 session active par joueur), enchère
 - [ ] 2.7 Socket.IO : rooms joueur / staff / tracker, matrice de diffusion (REGLES.md « Diffusion »)
 - [ ] 2.8 Tâches planifiées : J (2 min), rotation (20 min), recharge, vagues boutique, fin d'événements (fantôme, carte maudite, raid), inactivité et retour des SS RG-8.12, agenda d'événements RG-12.3

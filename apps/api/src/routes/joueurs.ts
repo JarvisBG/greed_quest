@@ -9,10 +9,11 @@ import {
   scoreExamen,
   validQuizAnswers,
 } from '@gq/engine';
-import { Inscription, Reconnexion, ReponsesQuiz } from '@gq/shared';
+import { Inscription, LicenceScan, Reconnexion, ReponsesQuiz } from '@gq/shared';
 import { and, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
-import { requireRole } from '../auth/guard.js';
+import { STAFF, requireRole } from '../auth/guard.js';
+import { licenceCode, verifyLicence } from '../core/licence.js';
 import { paramsOf } from '../core/params.js';
 import { lifecycleOf } from '../core/partie.js';
 import { joueurs, livres, sorts } from '../db/schema.js';
@@ -155,6 +156,27 @@ export async function joueursRoutes(app: FastifyInstance) {
     return {
       ok: true,
       joueur: { id: j.id, pseudo: j.pseudo, jenny: j.jenny, nen: j.nen, statut: j.statut, examenFait: j.examenScore !== null },
+      // RG-5.2 : de quoi calculer la licence hors ligne (voir core/licence.ts).
+      licenceSecret: j.licenceSecret,
     };
+  });
+
+  // RG-5.2 : licence QR courante, à rafraîchir avant `expireA`.
+  app.get<P>('/parties/:partieId/licence', async (req) => {
+    const { partieId } = req.params;
+    const s = requireRole(req, partieId, 'joueur');
+    const [j] = await app.gq.db.select({ secret: joueurs.licenceSecret }).from(joueurs).where(eq(joueurs.id, s.sub));
+    if (!j) throw introuvable('Joueur');
+    return { ok: true, ...licenceCode(s.sub, j.secret, app.gq.now()) };
+  });
+
+  // RG-5.2 : un PNJ ou le GM scanne une licence (checkpoint, enchère, Clear).
+  app.post<P>('/parties/:partieId/licence/verifier', async (req, reply) => {
+    const { partieId } = req.params;
+    requireRole(req, partieId, ...STAFF);
+    const { qr } = parse(LicenceScan, req.body);
+    const r = await verifyLicence(app.gq.db, partieId, qr, app.gq.now());
+    if (!r.ok) return send(reply, r);
+    return { ok: true, joueur: { id: r.joueur.id, pseudo: r.joueur.pseudo, statut: r.joueur.statut, nen: r.joueur.nen } };
   });
 }

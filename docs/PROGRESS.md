@@ -41,10 +41,15 @@
 - [x] `GET /livre` (`src/routes/livre.ts`) : pages de 10, provenance en clair (RG-8.14), emplacements perdus « Volée par X à 14h05 » (RG-8.13), contrefaçons selon ce que sait le joueur, cartes engagées dans un échange signalées.
 - [x] 2.11 `src/e2e.test.ts` : partie complète par HTTP (12 joueurs, 150 min, tâches planifiées, scans, sorts, boutique, Krach) ; invariants vérifiés : fin à l'heure et classement figé, limites RG-8.2, stocks et jenny ≥ 0, motif en clair pour tout refus, aucune position exacte vers joueurs / écran (RG-10.12). ≈ 1 min.
 
-**Prochaine étape** : Phase 3 — app joueur (`apps/player`, PWA), tâche 3.1 (squelette Vite + React + PWA, client Socket.IO). Le calibrage n'est pas bloquant : tout passe par des paramètres.
+**Phase 3 — App joueur** (`apps/player`) :
+- [x] 3.1 Squelette : Vite 8 + React 19 + `vite-plugin-pwa` 2 (manifeste, service worker `autoUpdate`, l'API et `/socket.io` jamais mis en cache). `src/lib/` : `api.ts` (client HTTP, jeton Bearer, `ApiError` avec `code` / message en clair, `horsLigne` si réseau coupé → servira à la file RG-7.5), `session.ts` (identifiant d'appareil stable RG-5.1, session `{ partieId, joueurId, token }` en localStorage, partie lue dans `?partie=`), `realtime.ts` (Socket.IO, `auth: { token }`, liste des 25 évènements joueur), `useJeu.ts` (partie publique, reconnexion automatique par appareil, `/moi`, fil des notifications, jeton refusé → session effacée), `format.ts` (libellés français). Écrans provisoires : choix de partie, « non inscrit », accueil en jeu (pseudo, jenny, état, temps restant, pastille de connexion, notifications). En dev, le serveur Vite relaie l'API (`API_PROXY`, défaut `localhost:3000`) ; en prod `VITE_API_URL`. 9 tests. Vérifié de bout en bout via le relais : création de partie, inscription, reconnexion, socket, évènement `partie` reçu.
+- [x] Correctif API : le dossier `PGLITE_DIR` est créé s'il manque (ENOENT au premier `seed`).
+
+**Prochaine étape** : 3.2 (inscription : pseudo + position, Examen, test de Nen). À prévoir pour 3.3 : la caméra et le GPS exigent HTTPS sur téléphone (certificat de dev, ex. `@vitejs/plugin-basic-ssl`, ou tunnel).
 
 ## Reprise de session (lire en premier)
-- Phases 1 (moteur) et 2 (API) terminées et poussées (`main`). Prochaine : Phase 3, app joueur.
+- Phases 1 (moteur) et 2 (API) terminées et poussées (`main`). Phase 3 (app joueur `apps/player`) en cours : 3.1 fait, prochaine 3.2.
+- App joueur : `pnpm --filter @gq/player dev` (avec l'API lancée à côté) ; ouvrir `http://localhost:5173/?partie=<id>`. Pas de bibliothèque d'état ni de routeur : `useJeu` (hook unique) + écrans selon `phase`.
 - Engine pur `packages/engine/src/` : un module par domaine (`params`, `presets`, `draw`, `book`, `scan`, `beacons`, `geo`, `spells`, `counterfeits`, `trades`, `shop`, `ranking`, `lifecycle`, `events`, `registration`, `raid`, `anticheat`) + `sim/`.
 - API `apps/api/src/` : `core/` (runner = verrou + transaction + journal + émissions ; `state.ts` = base ⇄ moteur ; params, licence, position, alertes, cycle, classement, évènements, tâches planifiées), `routes/` (un fichier par domaine), `realtime.ts` (Socket.IO), `db/` (schéma Drizzle, migrations `drizzle/`, seed). Schémas Zod des requêtes dans `packages/shared/src/api.ts`.
 - Lancer l'API en dev : `pnpm --filter @gq/api seed` puis `pnpm --filter @gq/api dev` (variables : `apps/api/.env.example`, à exporter dans le shell ; PGlite en mémoire si `PGLITE_DIR` vide).

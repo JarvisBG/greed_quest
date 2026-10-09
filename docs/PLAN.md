@@ -37,7 +37,7 @@ Chaque tâche = un commit (ou quelques-uns), tests verts avant de cocher.
 - [x] 2.11 Tests d'intégration bout en bout (partie simulée)
 
 ## Phase 3 — App joueur (`apps/player`, PWA)
-- [ ] 3.1 Squelette Vite + React + PWA, client Socket.IO
+- [x] 3.1 Squelette Vite + React + PWA, client Socket.IO
 - [ ] 3.2 Inscription, Examen, test de Nen
 - [ ] 3.3 Scan QR caméra + envoi position ; file hors ligne RG-7.5
 - [ ] 3.4 Livre (pages, provenance, pertes), licence QR

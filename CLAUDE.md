@@ -20,7 +20,7 @@ Monorepo TypeScript (pnpm workspaces). Poste de dev : Windows 10, Node 24.
 
 Ordre de construction : engine (**fait**) → api (**fait**) → player → staff → tracker.
 
-Commandes (racine) : `pnpm test` · `pnpm typecheck` · `pnpm --filter @gq/engine test` · `pnpm --filter @gq/api dev` (API, PGlite) · `pnpm --filter @gq/api seed`.
+Commandes (racine) : `pnpm test` · `pnpm typecheck` · `pnpm --filter @gq/engine test` · `pnpm --filter @gq/api dev` (API, PGlite) · `pnpm --filter @gq/api seed` · `pnpm --filter @gq/player dev` (app joueur, port 5173, relaie `/parties`, `/admin`, `/socket.io` vers l'API locale).
 Packages internes : `@gq/engine`, `@gq/shared` (exportent `src/index.ts` directement, pas de build).
 
 ## Règles d'architecture (non négociables)

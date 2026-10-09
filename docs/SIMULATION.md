@@ -33,7 +33,19 @@ Au-delà de × 2, multiplier les limites ne change plus rien : plus aucun tirage
 4. **Les balises seules ne donnent presque pas de hauts rangs** (A 4 % des tirages, S seulement en balise rare, SS seulement en Apparition). Sans sources PNJ chiffrées, le meilleur joueur bute sur S et A.
 5. **Les SS sont le verrou final** : même dans le meilleur scénario, il manque presque toujours les 2 SS au meilleur joueur. Une SS ne se revend pas, n'existe qu'en 1 ou 2 exemplaires, et sort d'une Apparition au hasard de qui passe : le gagnant doit l'obtenir de son détenteur (vol, échange), ce que le simulateur modélise mal.
 
-## Recommandations (à valider)
+## Stock des checkpoints (2026-10-09, 10 graines, 0,75 balise/joueur, limites × 2)
+`probaCheckpoint` = chance par action ; ≈ 26-31 actions par joueur.
+
+| probaCheckpoint | Cartes de checkpoint / joueur | Meilleur /30 (10 / 30 / 80 joueurs) |
+|---|---|---|
+| 0 | 0 | 17 / 21 / 23 |
+| 0,02 | ≈ 0,6 | 19 / 22 / 24 |
+| 0,04 | ≈ 1,2 | 20 / 23 / 25 |
+| 0,1 | ≈ 2,6 | 23 / 24 / 24 |
+
+Conseil retenu : ≈ 1,5 carte de checkpoint par joueur attendu. Il manque toujours ≈ 2 SS au meilleur joueur : d'où l'arène de Soufrabi et les enchères de SS (non modélisées).
+
+## Recommandations (validées le 2026-10-09, voir PROGRESS.md « Calibrage »)
 - Limites en mode Multiplicateur × 2 par défaut (ou formules RG-14 revues pour ~20 exemplaires par joueur).
 - Nombre de balises posées recommandé ≈ 0,75 × joueurs attendus (min 10).
 - Chiffrer les sources de hauts rangs : checkpoints PNJ (combien, quels rangs, quelle fréquence), énigmes, enchères, arène de Soufrabi.

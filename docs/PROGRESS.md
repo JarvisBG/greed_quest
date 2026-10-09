@@ -63,6 +63,9 @@
   - Notifications : pas de notification pour chaque surenchère ni chaque PV de raid ; les évènements affichent leur texte.
   - 49 tests app, 126 API, 219 moteur. Vérifié dans Chrome avec un 2ᵉ joueur piloté par script et le GM : échange complet (invitation → acceptation → parts → double validation → conclu, jenny à jour), achat de paquet et revente (85 − 50 + 5 = 40 J), inscription à une enchère et offre de 12 J, raid (bonne réponse → 19/20 PV).
 
+**Compléments backend (2026-10-09, après la Phase 3)** : calibrage appliqué (limites × 2, conseils d'organisation, arène de Soufrabi, enchères de SS) ; `GET /joueurs` (équipe, sans position) et `id` à la connexion ; `GET /ecran` (état de l'écran à l'ouverture : classement, balises par zone, évènements, heatmap décalée, 30 dernières entrées du fil gardées en table `fil`, Clear) ; `GET /positions` (GM, carte) ; `GET /staff` (GM). 138 tests API, 227 moteur.
+- À reporter côté fronts : app joueur → évènement `arene` (entrée, issue, remboursement) à ajouter à `EVENEMENTS_JOUEUR` ; console → écran Arène (entrée par licence, issue, annulation, défis en cours) et conseils `conseilOrganisation` ; écran géant → `GET /ecran` puis room tracker, entrée de fil `{ type: 'arene' }`.
+
 **Phase 3 terminée.** **Prochaine étape** : Phase 4 — console PNJ / GM (`apps/staff`), tâche 4.1 (console PNJ : scan licence, checkpoint, photo-preuve, enchère, avertir / geler).
 
 ## Reprise de session (lire en premier)
@@ -78,20 +81,20 @@
 - Toute nouvelle action d'état : `app.gq.runner.run(partieId, acteur, async (c) => { … c.log(…); c.emit(…) })`, refus = `refus(code, message)` + `send(reply, r)` (409), ligne de journal même pour un refus.
 - Conventions de code : fonctions pures côté moteur, Rng injecté, horloge de jeu (`gameClock`), refus `{ ok: false, code, message }` en français, ids RG en commentaire, test nommé avec l'id.
 - Commits : auteur git local « Sivraj » ; messages en français ; push sur `origin main` après chaque étape. Pour les modifications de docs multi-lignes, passer par un script Python (heredoc `<<'PYEOF'`) ou l'outil Edit.
-- Décisions de calibrage **en attente** (ne pas appliquer sans accord) : voir la section suivante.
-- Choix d'interprétation de la Phase 2 (préréglages, montants du kit / Examen / rattrapage, QR de lieu, licence ±1 fenêtre, seuils RG-15, sanctions, Clear…) **présentés à Sivraj le 2026-10-09, validation en attente** : voir « Ambiguïtés ». Questions Examen / Nen / raid et noms des cartes : provisoires.
+- Calibrage tranché et appliqué le 2026-10-09 : voir « Calibrage ».
+- Choix d'interprétation de la Phase 2 validés (voir « Ambiguïtés »). Questions Examen / Nen / raid et noms des cartes : provisoires.
 
 ## Géolocalisation (décision de Sivraj le 2026-10-09)
 - Amendement RG-10.10 appliqué (voir REGLES.md) : ciblable 10 min à sa dernière position (`ciblableMin`, moteur `isTargetable`, utilisé par la liste « à portée » et la vérification de cible des sorts) ; alerte `sans_position` à l'équipe dans `tickPartie` (une par disparition, mémorisée dans `parties.taches.sansPosition`). Les échanges exigent toujours une position fraîche des deux joueurs (consentement).
 - Limites connues : une PWA ne suit pas la position en arrière-plan (écran verrouillé) ; précision GPS ≈ 5-15 m en extérieur, plus en ville dense ; positions > 100 m de précision refusées ; fausse position possible sur Android, seulement détectée (RG-15). Calibrage de la portée lors de la partie test (6.2).
 - Validé et fait : option « garder l'écran allumé » (Wake Lock) et temps restant dans la barre du haut.
 
-## Calibrage — propositions en attente de validation (simulation v2)
-- Limites d'exemplaires × 2 par défaut (mode Multiplicateur RG-14.2).
-- Conseil d'organisation : ≈ 0,75 balise posée par joueur attendu (min 10).
-- Chiffrer dans le document les sources de hauts rangs : checkpoints PNJ (nombre, rangs, rythme), énigmes, enchères, arène de Soufrabi.
-- Accès aux SS : limiteSS ≥ 2 et une source régulière (Apparitions plus fréquentes en fin de partie, ou Soufrabi / enchères).
-- Accepter qu'un Clear reste rare : la plupart des parties finissent au classement (RG-13.4).
+## Calibrage (validé par Sivraj le 2026-10-09)
+- Limites d'exemplaires en Multiplicateur × 2 par défaut (`DEFAULT_SETTINGS`, amendement RG-14) ; limite SS ≥ 2 de ce fait. Petit groupe ne double plus (c'est le défaut).
+- Conseils d'organisation (moteur `conseils.ts`, à afficher dans la console GM, non bloquants) : ≈ 0,75 balise posée par joueur attendu (min 10) ; 1 checkpoint pour 10 joueurs, ≈ 1,5 carte de checkpoint par joueur (≈ 15 par checkpoint), B / A / S en 50 / 35 / 15 %.
+- Sources de SS : enchères de SS libres pour le PNJ d'Antokiba ; **arène de Soufrabi** (amendement, REGLES.md RG-11) : PNJ, licence, mise `areneMiseJ` 30 J, victoire = tirage A / S / SS 50 / 40 / 10, défaite = mise perdue, une tentative / `areneDelaiMin` 15 min, annulation motivée remboursée, Livre plein = débordement. API `routes/arene.ts`, table `arene`.
+- Un Clear reste rare : la plupart des parties finissent au classement (RG-13.4).
+- Non modélisé dans le simulateur : arène et enchères de SS (à ajouter si on veut chiffrer leurs taux).
 
 ## Ambiguïtés du document (choix validés par Sivraj le 2026-10-09, réglables)
 - RG-6 vs tableau RG-8 : balise standard « rangs D à A » mais le tableau donne 1 % de S en standard → S exclu en standard (`draw.ts`).

@@ -51,3 +51,37 @@ export const ScanIntent = z.object({
   scanneA: z.number().int().positive().optional(),
 });
 export type ScanIntent = z.infer<typeof ScanIntent>;
+
+/** RG-10 : lancement d'un sort. `itemId` = la carte de sort du Livre ; la position accompagne chaque sort (RG-10.9). */
+const SourceSort = z.union([
+  z.object({ type: z.literal('carte'), itemId: z.string() }),
+  /** Manipulation : 1 échange forcé gratuit par partie (RG-5.4). */
+  z.object({ type: z.literal('pouvoir') }),
+]);
+export const SortIntent = z.discriminatedUnion('sort', [
+  z.object({
+    sort: z.enum(['vol', 'gel']),
+    source: SourceSort,
+    cibleId: z.string(),
+    /** Émission : viser une fois hors de portée (RG-10.1). */
+    emission: z.boolean().optional(),
+    position: PositionInput,
+  }),
+  z.object({
+    sort: z.literal('echange_force'),
+    source: SourceSort,
+    cibleId: z.string(),
+    emission: z.boolean().optional(),
+    carteDonneeId: z.string(),
+    position: PositionInput,
+  }),
+  z.object({ sort: z.literal('radar'), itemId: z.string(), cibleId: z.string(), position: PositionInput }),
+  z.object({ sort: z.literal('revelation'), itemId: z.string(), position: PositionInput }),
+  z.object({ sort: z.literal('duplication'), itemId: z.string(), carteItemId: z.string(), position: PositionInput }),
+  z.object({ sort: z.literal('analyse'), itemId: z.string(), page: z.number().int().min(1), position: PositionInput }),
+  z.object({ sort: z.literal('barriere'), itemId: z.string(), position: PositionInput }),
+]);
+export type SortIntent = z.infer<typeof SortIntent>;
+
+/** RG-5.4 Transformation : Texture Surprise. */
+export const TransformationIntent = z.object({ itemId: z.string(), cibleCarteId: z.string() });

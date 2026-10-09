@@ -10,6 +10,7 @@ import { Refus } from './errors.js';
 import { adminRoutes } from './routes/admin.js';
 import { joueursRoutes } from './routes/joueurs.js';
 import { scanRoutes } from './routes/scan.js';
+import { sortsRoutes } from './routes/sorts.js';
 import { staffRoutes } from './routes/staff.js';
 
 export interface AppDeps {
@@ -77,5 +78,6 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(staffRoutes);
   await app.register(joueursRoutes);
   await app.register(scanRoutes);
+  await app.register(sortsRoutes);
   return app;
 }

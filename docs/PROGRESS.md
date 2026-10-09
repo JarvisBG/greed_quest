@@ -26,9 +26,10 @@
 - [ ] 2.6 Intentions (en cours) :
   - [x] Couche base ⇄ moteur `src/core/state.ts` (`loadBooks` / `saveBooks` : différences de Livres, transferts, sorts utilisés, pertes ; balises, catalogue, circulation, événements).
   - [x] `POST /position` (journalisée, alerte vitesse RG-15, envoyée au GM seulement) et `POST /scan` (RG-7 complet, tirage RG-8.3, Double gain, épuisement + remplacement RG-6.3, scan hors ligne RG-7.5, alerte photo partagée RG-15, diffusion joueur / équipe / écran).
-  - [ ] Sorts, boutique, échanges, enchères.
+  - [x] Sorts `src/routes/sorts.ts` : `GET /a-portee` (pseudos seulement), `POST /sort` (8 sorts + pouvoirs Émission / Manipulation), `POST /transformation` (RG-5.4) ; alerte à la cible, fil de l'écran, Analyse privée.
+  - [ ] Boutique, échanges, enchères.
 
-**Prochaine étape** : 2.6 suite (sorts). Le calibrage n'est pas bloquant : tout passe par des paramètres.
+**Prochaine étape** : 2.6 suite (boutique). Le calibrage n'est pas bloquant : tout passe par des paramètres.
 
 ## Reprise de session (lire en premier)
 - Phase 1 terminée et poussée (`main`, dernier commit « Simulateur v2 »). Engine pur dans `packages/engine/src/` : un module par domaine (`params`, `draw`, `book`, `scan`, `beacons`, `geo`, `spells`, `counterfeits`, `trades`, `shop`, `ranking`, `lifecycle`, `events`) + `sim/`. Chaque module a son `*.test.ts`.
@@ -109,6 +110,7 @@
 - Positions : chaque envoi est journalisé (historique pour la heatmap décalée de l'écran, RG-10.12). Un scan porte sa propre position ; la validité GPS (RG-7.6) est jugée sur la position du scan (un scan hors ligne garde la sienne).
 - RG-7.5 : l'âge d'un scan hors ligne est mesuré en heure réelle (horloge du téléphone vs serveur).
 - RG-15 photo partagée : comparée aux scans (réussis ou refusés) de la même balise des 10 dernières secondes.
+- Sans test de Nen passé, un joueur n'a aucun passif (ni Renforcement, ni Émission…).
 - RG-14.5 : contenu des préréglages non défini → proposé : Petit groupe = portée 20 m, marge GPS 10 m, limites d'exemplaires × 2 ; Standard = défauts du document ; Grande foule = portée 20 m, marge GPS 15 m (foule dense). Les formules auto suivent déjà J.
 
 ## Feuille de route

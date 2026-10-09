@@ -28,7 +28,7 @@ Packages internes : `@gq/engine`, `@gq/shared` (exportent `src/index.ts` directe
 - Toute action d'état passe par une transaction et écrit une ligne de **Journal** (acteur, action, résultat, motif si PNJ/GM).
 - Les paramètres dynamiques (RG-14) sont lus via un service unique qui résout Auto / Verrouillé / Multiplicateur ; pas de constante en dur dans le code métier.
 - Positions exactes jamais envoyées aux joueurs ni au tracker (RG-10.12).
-- Horloge injectée (pause RG-4.4 suspend les compteurs) : ne pas utiliser `Date.now()` directement dans l'engine.
+- Horloge injectée : toutes les heures de l'engine sont en **horloge de jeu** (`gameClock`, lifecycle.ts : 0 au démarrage, arrêtée en pause, RG-4.4). Jamais de `Date.now()` dans l'engine.
 
 ## Conventions
 - Messages de refus au joueur en clair et en français (RG-7.4).

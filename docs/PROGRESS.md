@@ -12,9 +12,9 @@
 - [x] Premier commit, poussé sur https://github.com/JarvisBG/greed_quest (branche `main`, auteur git local « Sivraj »)
 - [x] Plan détaillé des tâches : `docs/PLAN.md`
 
-**Phase 1 — Moteur** (en cours) : tâches 1.1 → 1.14 faites (types, RNG, paramètres RG-14, lissage J, tirage RG-8.3, Livre RG-8.5/8.13/8.14, scan RG-7, balises RG-6, géoloc RG-10.9→10.11 + RG-15, sorts RG-10, contrefaçons RG-8.6→8.9, échanges et enchères RG-11, boutique RG-9, classement et Clear RG-13). 166 tests verts.
+**Phase 1 — Moteur** (en cours) : tâches 1.1 → 1.15 faites (types, RNG, paramètres RG-14, lissage J, tirage RG-8.3, Livre RG-8.5/8.13/8.14, scan RG-7, balises RG-6, géoloc RG-10.9→10.11 + RG-15, sorts RG-10, contrefaçons RG-8.6→8.9, échanges et enchères RG-11, boutique RG-9, classement et Clear RG-13, cycle de vie RG-4). 180 tests verts.
 
-**Prochaine étape** : 1.15 cycle de vie de partie RG-4.
+**Prochaine étape** : 1.16 événements GM RG-12.
 
 ## Ambiguïtés du document (choix validés par Sivraj le 2026-10-09, réglables)
 - RG-6 vs tableau RG-8 : balise standard « rangs D à A » mais le tableau donne 1 % de S en standard → S exclu en standard (`draw.ts`).
@@ -62,6 +62,9 @@
 - Ex æquo parfaits : même place (1, 1, 3). Disqualifiés absents du classement ; abandons classés.
 - RG-13.1 Clear : vérifié sur les emplacements désignés ; refusé avec la page de la première contrefaçon trouvée.
 - RG-13.3 : les 3 cartes de récompense sont 3 cartes désignées distinctes, vraies, du Livre du gagnant.
+- Cycle de vie : la pause est possible en cours et en phase finale, et ramène à l'état d'avant. Le GM peut terminer depuis la pause. Les inscriptions restent possibles pendant une pause si elles sont ouvertes. Le GM ne peut que fermer les inscriptions (pas les rouvrir).
+- Clear confirmé : refusé pendant la pause (RG-4 cite En cours et Phase finale).
+- Horloge de jeu : 0 au démarrage, arrêtée pendant la pause ; toutes les heures du moteur sont en horloge de jeu.
 - RG-14.5 : contenu des préréglages Petit groupe / Grande foule non défini.
 
 ## Feuille de route

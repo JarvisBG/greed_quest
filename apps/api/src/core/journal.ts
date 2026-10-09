@@ -36,12 +36,14 @@ export class MotifManquant extends Error {
   }
 }
 
-export async function writeLog(db: DbOrTx, partieId: string, heureJeu: number, acteur: Acteur, e: LogEntry): Promise<void> {
+export type JournalRow = typeof journal.$inferSelect;
+
+export async function writeLog(db: DbOrTx, partieId: string, heureJeu: number, acteur: Acteur, e: LogEntry): Promise<JournalRow> {
   // RG-3.1
   if ((acteur.type === 'pnj' || acteur.type === 'gm') && ACTIONS_AVEC_MOTIF.has(e.action) && !e.motif?.trim()) {
     throw new MotifManquant(e.action);
   }
-  await db.insert(journal).values({
+  const [row] = await db.insert(journal).values({
     partieId,
     heureJeu,
     acteurType: acteur.type,
@@ -50,5 +52,6 @@ export async function writeLog(db: DbOrTx, partieId: string, heureJeu: number, a
     resultat: e.resultat,
     motif: e.motif?.trim() || null,
     details: e.details ?? null,
-  });
+  }).returning();
+  return row!;
 }

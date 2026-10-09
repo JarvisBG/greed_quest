@@ -1,5 +1,6 @@
 // Construction du serveur Fastify. Les dépendances (base, horloge, aléa) sont injectées pour les tests.
 import type { Rng } from '@gq/engine';
+import cors from '@fastify/cors';
 import Fastify, { type FastifyInstance } from 'fastify';
 import type { Session } from './auth/tokens.js';
 import { Tokens } from './auth/tokens.js';
@@ -7,6 +8,7 @@ import { Bus } from './core/bus.js';
 import { Runner, cryptoRng } from './core/runner.js';
 import type { Db } from './db/client.js';
 import { Refus } from './errors.js';
+import { attachRealtime } from './realtime.js';
 import { adminRoutes } from './routes/admin.js';
 import { boutiqueRoutes } from './routes/boutique.js';
 import { echangesRoutes } from './routes/echanges.js';
@@ -25,6 +27,10 @@ export interface AppDeps {
   now?: () => number;
   rng?: Rng;
   logger?: boolean;
+  /** Origines autorisées (fronts) ; true = toutes (dev). */
+  corsOrigin?: string | boolean | string[];
+  /** Socket.IO sur le serveur HTTP (désactivable pour les tests sans réseau). */
+  realtime?: boolean;
 }
 
 export interface Services {
@@ -61,6 +67,10 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     now,
     rng,
   });
+
+  const corsOrigin = deps.corsOrigin ?? true;
+  await app.register(cors, { origin: corsOrigin });
+  if (deps.realtime ?? true) attachRealtime(app, corsOrigin);
 
   app.decorateRequest('session', null);
   app.addHook('onRequest', async (req) => {

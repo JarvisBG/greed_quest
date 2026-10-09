@@ -7,6 +7,7 @@ import { eq } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { parties } from '../db/schema.js';
 import type { Audience, Bus, Emission } from './bus.js';
+import { Refus } from '../errors.js';
 import { writeLog, type Acteur, type LogEntry } from './journal.js';
 import { lifecycleOf, type PartieRow } from './partie.js';
 
@@ -27,11 +28,14 @@ export interface ActionCtx {
   emit(a: Audience, evenement: string, data: unknown): void;
 }
 
-export class PartieIntrouvable extends Error {
+export class PartieIntrouvable extends Refus {
   constructor() {
-    super('Partie introuvable');
+    super('introuvable', 'Partie introuvable', 404);
   }
 }
+
+/** Actions trop fréquentes pour le fil du journal de la console (elles restent en base). */
+const HORS_FIL: ReadonlySet<string> = new Set(['position']);
 
 export class Runner {
   private queues = new Map<string, Promise<unknown>>();
@@ -74,7 +78,11 @@ export class Runner {
           now,
           rng: this.rng,
           acteur,
-          log: (e) => writeLog(tx, partieId, now, acteur, e),
+          log: async (e) => {
+            const row = await writeLog(tx, partieId, now, acteur, e);
+            // Diffusion « PNJ/GM : journal » de la matrice (REGLES.md).
+            if (!HORS_FIL.has(e.action)) emissions.push({ partieId, a: { type: 'staff' }, evenement: 'journal', data: row });
+          },
           emit: (a, evenement, data) => emissions.push({ partieId, a, evenement, data }),
         };
         return fn(ctx);

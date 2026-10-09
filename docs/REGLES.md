@@ -136,7 +136,7 @@ Prix défaut (réglables) : paquet 50 J · revente D/C/B 5/10/20 J · A/S 40/80 
 - 11.4 Enchères Antokiba : PNJ met une carte en vente 3 min ; scan QR enchère sur place puis surenchère dans l'app ; seul le gagnant est débité.
 - 11.5 Sans offre → retour au stock du PNJ.
 > **Amendement 2026-10-09 (Sivraj, calibrage)** : le PNJ d'Antokiba peut mettre **librement** une SS aux enchères, dans la limite d'exemplaires (RG-8.2).
-> **Amendement 2026-10-09 (Sivraj) — Arène de Soufrabi** : un PNJ tient l'arène. Il scanne la licence du joueur, qui paie une **mise** (`areneMiseJ`, 30 J). Le PNJ arbitre un défi physique ou d'adresse. **Victoire** : tirage d'une carte A / S / SS (50 / 40 / 10 %, rang épuisé → rang inférieur, limites RG-8.2). **Défaite** : mise perdue. Une tentative par joueur toutes les `areneDelaiMin` (15 min, depuis l'entrée), une à la fois, Livre non plein. Entrée par erreur : le PNJ annule (motif), mise remboursée. Victoire en S ou SS annoncée sur l'écran.
+> **Amendement 2026-10-09 (Sivraj) — Arène de Soufrabi** : un PNJ tient l'arène. Il scanne la licence du joueur, qui paie une **mise** (`areneMiseJ`, 30 J). Le PNJ arbitre un défi physique ou d'adresse. **Victoire** : tirage d'une carte A / S / SS (50 / 40 / 10 %, rang épuisé → rang inférieur, limites RG-8.2). **Défaite** : mise perdue. Une tentative par joueur toutes les `areneDelaiMin` (15 min, depuis l'entrée), une à la fois ; Livre plein : la carte gagnée déborde, comme pour un checkpoint. Entrée par erreur : le PNJ annule (motif), mise remboursée. Victoire en S ou SS annoncée sur l'écran.
 - 11.6 Carte reçue apparaît toujours vraie ; pas de vérification avant acceptation.
 
 ## RG-12 Événements GM

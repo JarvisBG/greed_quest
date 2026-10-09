@@ -1,6 +1,7 @@
 // Arène de Soufrabi (amendement 2026-10-09, Sivraj) : le PNJ scanne la licence du joueur, qui paie la mise ;
 // il arbitre le défi puis donne l'issue. Victoire = tirage A / S / SS (limites RG-8.2), défaite = mise perdue.
-import { addItem, arenaReward, enterArena, isBookFull, layoutBook } from '@gq/engine';
+// Livre plein : la carte gagnée déborde, comme pour un checkpoint (décision validée, PROGRESS.md).
+import { addItem, arenaReward, enterArena, layoutBook } from '@gq/engine';
 import { AreneAnnulation, AreneEntree, AreneIssue, RANK_POINTS } from '@gq/shared';
 import { and, desc, eq } from 'drizzle-orm';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
@@ -56,8 +57,6 @@ export async function areneRoutes(app: FastifyInstance) {
         await c.log({ action: 'arene_entree', resultat: 'refus', details: { joueurId: j.id, code: entree.code } });
         return refus(entree.code, entree.message);
       }
-      const cat = await loadCatalogue(c.tx, c.partie.id);
-      if (isBookFull(await loadBook(c.tx, j.id), cat.designees)) return refus('livre_plein', 'Livre plein : le joueur doit libérer une place avant d’entrer');
       const id = newId();
       await c.tx.insert(arene).values({ id, partieId: c.partie.id, joueurId: j.id, pnjId: staffId, mise: entree.mise, entreeA: c.now });
       await updateJoueur(c.tx, j.id, { jenny: j.jenny - entree.mise, derniereActionA: c.now, ...(j.statut === 'inactif' ? { statut: 'actif' as const } : {}) });

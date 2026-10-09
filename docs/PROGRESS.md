@@ -52,6 +52,7 @@
 - Conventions de code : fonctions pures côté moteur, Rng injecté, horloge de jeu (`gameClock`), refus `{ ok: false, code, message }` en français, ids RG en commentaire, test nommé avec l'id.
 - Commits : auteur git local « Sivraj » ; messages en français ; push sur `origin main` après chaque étape. Pour les modifications de docs multi-lignes, passer par un script Python (heredoc `<<'PYEOF'`) ou l'outil Edit.
 - Décisions de calibrage **en attente** (ne pas appliquer sans accord) : voir la section suivante.
+- Choix d'interprétation de la Phase 2 (préréglages, montants du kit / Examen / rattrapage, QR de lieu, licence ±1 fenêtre, seuils RG-15, sanctions, Clear…) **présentés à Sivraj le 2026-10-09, validation en attente** : voir « Ambiguïtés ». Questions Examen / Nen / raid et noms des cartes : provisoires.
 
 ## Calibrage — propositions en attente de validation (simulation v2)
 - Limites d'exemplaires × 2 par défaut (mode Multiplicateur RG-14.2).

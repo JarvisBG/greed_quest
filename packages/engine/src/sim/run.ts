@@ -1,6 +1,6 @@
 // Lance les simulations de calibrage et affiche un tableau Markdown.
 // Usage : pnpm --filter @gq/engine sim [graines] [option=valeur …]
-// ex. : pnpm --filter @gq/engine sim 20 probaEchange=0 apparitionToutesLesMin=10
+// ex. : pnpm --filter @gq/engine sim 20 multLimites=2 balisesParJoueur=1.5 sorts=false
 import { DEFAULT_SIM, simulate, type SimConfig, type SimResult } from './simulate.js';
 
 const args = process.argv.slice(2);
@@ -8,7 +8,7 @@ const graines = Number(args.find((a) => !a.includes('=')) ?? 20);
 const overrides = Object.fromEntries(
   args.filter((a) => a.includes('=')).map((a) => {
     const [k, v] = a.split('=');
-    return [k, v === 'null' ? null : Number(v)];
+    return [k, v === 'null' ? null : v === 'true' ? true : v === 'false' ? false : Number(v)];
   }),
 ) as Partial<SimConfig>;
 
@@ -21,7 +21,7 @@ const median = (xs: number[]) => {
 const fmt = (x: number | null, d = 0) => (x === null ? '—' : x.toFixed(d));
 
 console.log(`Graines : ${graines} · Réglages : ${JSON.stringify({ ...DEFAULT_SIM, ...overrides })}\n`);
-console.log('| Joueurs | Clear | Clear médian (min) | Meilleur (médiane /30) | Moyenne /30 | Tirages / joueur | Repli jenny | Échanges | Manques du meilleur | Scans refusés |');
+console.log('| Joueurs | Clear | Clear médian (min) | Meilleur (médiane /30) | Moyenne /30 | Tirages / joueur | Repli jenny | Échanges / achats / vols | Manques du meilleur | Scans refusés |');
 console.log('|---|---|---|---|---|---|---|---|---|---|');
 
 for (const joueurs of [10, 30, 80]) {
@@ -43,6 +43,6 @@ for (const joueurs of [10, 30, 80]) {
     .map(([code, n]) => `${code} ${Math.round((n / totalScans) * 100)} %`)
     .join(', ');
   console.log(
-    `| ${joueurs} | ${clears.length}/${runs.length} | ${fmt(median(clears))} | ${fmt(median(runs.map((r) => r.meilleur)))} | ${fmt(moy((r) => r.moyenne), 1)} | ${fmt(moy((r) => r.tiragesParJoueur), 1)} | ${fmt(moy((r) => r.partRepliJenny) * 100)} % | ${fmt(moy((r) => r.echanges))} | ${manquesTxt || '—'} | ${refusTxt} |`,
+    `| ${joueurs} | ${clears.length}/${runs.length} | ${fmt(median(clears))} | ${fmt(median(runs.map((r) => r.meilleur)))} | ${fmt(moy((r) => r.moyenne), 1)} | ${fmt(moy((r) => r.tiragesParJoueur), 1)} | ${fmt(moy((r) => r.partRepliJenny) * 100)} % | ${fmt(moy((r) => r.echanges))} / ${fmt(moy((r) => r.achatsCartes))} / ${fmt(moy((r) => r.volsReussis))} | ${manquesTxt || '—'} | ${refusTxt} |`,
   );
 }

@@ -16,7 +16,20 @@
 
 **Simulation v2** (`docs/SIMULATION.md`, avec sorts, boutique, achats entre joueurs, checkpoints PNJ optionnels) : aucun Clear en 150 min dans aucun scénario. Leviers mesurés : limites × 2, ≈ 0,75 balise posée par joueur, sources de hauts rangs à chiffrer ; les SS restent le verrou final. Décision de calibrage en attente.
 
-**Prochaine étape** : décider du calibrage (limites, N, balises posées), puis Phase 2 — API.
+**Prochaine étape** : Phase 2 — API (`docs/PLAN.md`, tâche 2.0 puis 2.1 : Fastify + PGlite/Drizzle, schéma des 11 entités, seed). Le calibrage n'est pas bloquant : tout passe par des paramètres.
+
+## Reprise de session (lire en premier)
+- Phase 1 terminée et poussée (`main`, dernier commit « Simulateur v2 »). Engine pur dans `packages/engine/src/` : un module par domaine (`params`, `draw`, `book`, `scan`, `beacons`, `geo`, `spells`, `counterfeits`, `trades`, `shop`, `ranking`, `lifecycle`, `events`) + `sim/`. Chaque module a son `*.test.ts`.
+- Conventions de code : fonctions pures, Rng injecté, horloge de jeu (`gameClock`), refus `{ ok: false, code, message }` en français, ids RG en commentaire.
+- Commits : auteur git local « Sivraj » ; messages en français ; push sur `origin main` après chaque tâche. Pour les modifications de docs multi-lignes, passer par un script Python dans le scratchpad (les heredocs avec apostrophes cassent le shell).
+- Décisions de calibrage **en attente** (ne pas appliquer sans accord) : voir la section suivante.
+
+## Calibrage — propositions en attente de validation (simulation v2)
+- Limites d'exemplaires × 2 par défaut (mode Multiplicateur RG-14.2).
+- Conseil d'organisation : ≈ 0,75 balise posée par joueur attendu (min 10).
+- Chiffrer dans le document les sources de hauts rangs : checkpoints PNJ (nombre, rangs, rythme), énigmes, enchères, arène de Soufrabi.
+- Accès aux SS : limiteSS ≥ 2 et une source régulière (Apparitions plus fréquentes en fin de partie, ou Soufrabi / enchères).
+- Accepter qu'un Clear reste rare : la plupart des parties finissent au classement (RG-13.4).
 
 ## Ambiguïtés du document (choix validés par Sivraj le 2026-10-09, réglables)
 - RG-6 vs tableau RG-8 : balise standard « rangs D à A » mais le tableau donne 1 % de S en standard → S exclu en standard (`draw.ts`).

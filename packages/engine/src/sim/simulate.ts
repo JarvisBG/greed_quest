@@ -6,7 +6,8 @@
 // - la Barrière est gardée comme protection ; les autres sorts sont utilisés aussitôt, sans effet modélisé ;
 // - à Masadora : revente des doublons (hors SS) et achat de paquets de sorts ;
 // - le GM lance une Apparition à intervalle régulier ;
-// - options (calibrage du 2026-10-09) : arène de Soufrabi (mise, défi, tirage A / S / SS) et enchères de SS à Antokiba.
+// - options (calibrage du 2026-10-09) : arène de Soufrabi (mise, défi, tirage A / S / SS), enchères de SS à Antokiba,
+//   cession de cartes du Livre (SS, S) d'un joueur distancé au joueur qui en a besoin.
 import { NEN_TYPES, RANKS, type NenType, type Rank } from '@gq/shared';
 import { consumeDraw, fillToTarget, rechargeBeacons, replaceExhausted, rotate, ROTATION_INTERVAL_MS, type Beacon } from '../beacons.js';
 import { arenaReward, enterArena } from '../arena.js';
@@ -67,6 +68,17 @@ export interface SimConfig {
   prixDepartEnchereSS: number;
   /** Probabilité qu'un joueur à qui manque la SS mise en vente vienne enchérir (il y passe les 3 min). */
   probaVenirEnchere: number;
+  /**
+   * Cession : à chaque action, probabilité qu'un joueur à qui manque une carte d'un rang cessible cherche
+   * un détenteur prêt à la lui céder (l'action y passe). 0 = pas de cession.
+   */
+  probaCession: number;
+  /** Rangs cessibles et prix demandé (jenny ; le joueur peut payer en partie avec des doublons utiles au vendeur). */
+  prixCession: Partial<Record<Rank, number>>;
+  /** Le détenteur ne cède que s'il a au moins cet écart de cartes désignées de retard sur l'acheteur. */
+  ecartCession: number;
+  /** Multiplicateur propre aux limites de SS (null = celui de multLimites). */
+  multLimiteSS: number | null;
   /** Répartition du catalogue par rang (RG-8 : SS 2, S 3, A 5, B 6, C 7, D 7). */
   catalogue: Record<Rank, number>;
 }
@@ -93,6 +105,10 @@ export const DEFAULT_SIM: Omit<SimConfig, 'joueurs' | 'seed'> = {
   encheresSSToutesLesMin: null,
   prixDepartEnchereSS: 50,
   probaVenirEnchere: 0.3,
+  probaCession: 0,
+  prixCession: { SS: 100 },
+  ecartCession: 3,
+  multLimiteSS: null,
   catalogue: { SS: 2, S: 3, A: 5, B: 6, C: 7, D: 7 },
 };
 
@@ -125,6 +141,8 @@ export interface SimResult {
   ssDuMeilleur: number;
   /** Exemplaires de SS en jeu à la fin, tous joueurs confondus. */
   ssEnJeu: number;
+  /** Cartes du Livre cédées entre joueurs, par rang. */
+  cessions: Partial<Record<Rank, number>>;
   refus: Partial<Record<ScanRefusalCode, number>>;
   /** Cartes manquantes au meilleur joueur, par rang. */
   manquesDuMeilleur: Partial<Record<Rank, number>>;
@@ -159,7 +177,8 @@ const marche = (rng: Rng, [a, b]: [number, number]) => (a + rng.next() * (b - a)
 function settingsFor(cfg: SimConfig): ParamSettings {
   // multLimites = 1 : formules du document telles quelles (le défaut du jeu est × 2).
   const m = cfg.multLimites === 1 ? ({ mode: 'auto' } as const) : ({ mode: 'multiplicateur', coef: cfg.multLimites } as const);
-  return { ...DEFAULT_SETTINGS, limiteSS: m, limiteS: m, limiteA: m, limiteB: m, limiteCD: m };
+  const ss = cfg.multLimiteSS === null ? m : ({ mode: 'multiplicateur', coef: cfg.multLimiteSS } as const);
+  return { ...DEFAULT_SETTINGS, limiteSS: ss, limiteS: m, limiteA: m, limiteB: m, limiteCD: m };
 }
 
 export function simulate(cfg: SimConfig): SimResult {
@@ -216,6 +235,7 @@ export function simulate(cfg: SimConfig): SimResult {
   let prochainRecalcul = 2 * MIN;
   let prochaineEnchereSS = cfg.encheresSSToutesLesMin === null ? Infinity : cfg.encheresSSToutesLesMin * MIN;
   let clearA: number | null = null;
+  const cessions: Partial<Record<Rank, number>> = {};
   const stats = { arene: 0, areneVictoires: 0, areneSS: 0, encheresSS: 0, encheresSSVendues: 0, prixSS: 0, checkpoints: 0, tirages: 0, tiragesCarte: 0, replis: 0, echanges: 0, achatsCartes: 0, vols: 0, paquets: 0 };
   const refus: SimResult['refus'] = {};
 
@@ -398,6 +418,61 @@ export function simulate(cfg: SimConfig): SimResult {
     checkClearOf(g, a.fin);
   }
 
+  const score = (p: SimPlayer) => layoutBook(p.book, designees).designes.filter((d) => d.slot.etat === 'plein').length;
+
+  /**
+   * Cession (RG-11, échange) : p cherche une carte d'un rang cessible qui lui manque chez un joueur distancé
+   * (au moins `ecartCession` cartes désignées de retard), qui la lui cède contre le prix demandé :
+   * d'abord des doublons qui manquent au vendeur (valeur = revente × prixAchatCarte), le reste en jenny.
+   */
+  function cession(p: SimPlayer, now: number): boolean {
+    const voulues = [...missing(p)].filter((id) => cfg.prixCession[rangDe(id)] !== undefined);
+    if (voulues.length === 0) return false;
+    const monScore = score(p);
+    const offres = players.flatMap((v) => {
+      if (v === p || score(v) > monScore - cfg.ecartCession) return [];
+      const item = v.book.items.find((i): i is CardItem => i.kind === 'carte' && !i.faux && voulues.includes(i.cardId));
+      return item ? [{ v, item }] : [];
+    });
+    if (offres.length === 0) return false;
+    const { v, item } = offres[randomInt(rng, offres.length)]!;
+    const prix = cfg.prixCession[rangDe(item.cardId)]!;
+    const manquesVendeur = missing(v);
+    const cartes: string[] = [];
+    let valeur = 0;
+    for (const d of duplicates(p)) {
+      if (valeur >= prix) break;
+      if (!manquesVendeur.has(d.cardId)) continue;
+      cartes.push(d.id);
+      valeur += Math.round((DEFAULT_SHOP_CONFIG.revente[rangDe(d.cardId)] ?? 100) * cfg.prixAchatCarte);
+    }
+    const jenny = Math.max(0, prix - valeur);
+    if (p.jenny < jenny) return false;
+    const r = trade(
+      {
+        now,
+        gameState: 'en_cours',
+        a: { id: p.id, status: 'actif', book: p.book, jenny: p.jenny, livreGele: false },
+        b: { id: v.id, status: 'actif', book: v.book, jenny: v.jenny, livreGele: false },
+        donneA: { itemIds: cartes, jenny },
+        donneB: { itemIds: [item.id], jenny: 0 },
+        dernierEchangePaireA: p.derniersEchanges.get(v.id) ?? null,
+      },
+      rangDe,
+    );
+    if (!r.ok) return false;
+    p.book = r.a.book;
+    p.jenny = r.a.jenny;
+    v.book = r.b.book;
+    v.jenny = r.b.jenny;
+    p.derniersEchanges.set(v.id, now);
+    v.derniersEchanges.set(p.id, now);
+    const rg = rangDe(item.cardId);
+    cessions[rg] = (cessions[rg] ?? 0) + 1;
+    checkClearOf(p, now);
+    return true;
+  }
+
   function masadora(p: SimPlayer, now: number) {
     for (const d of duplicates(p)) {
       const prix = DEFAULT_SHOP_CONFIG.revente[rangDe(d.cardId)];
@@ -467,6 +542,13 @@ export function simulate(cfg: SimConfig): SimResult {
 
     if (p.versMasadora) {
       masadora(p, now);
+      p.prochaineAction = now + marche(rng, cfg.marcheMin);
+      continue;
+    }
+
+    // Cession : la recherche du vendeur remplace le scan de cette action.
+    if (cfg.probaCession > 0 && rng.next() < cfg.probaCession && cession(p, now)) {
+      if (clearA !== null) break;
       p.prochaineAction = now + marche(rng, cfg.marcheMin);
       continue;
     }
@@ -587,6 +669,7 @@ export function simulate(cfg: SimConfig): SimResult {
     encheresSSVendues: stats.encheresSSVendues,
     prixMoyenSS: stats.encheresSSVendues === 0 ? null : stats.prixSS / stats.encheresSSVendues,
     ssDuMeilleur,
+    cessions,
     ssEnJeu: [...countInCirculation(players.map((x) => x.book))].filter(([id]) => rangDe(id) === 'SS').reduce((a, [, n]) => a + n, 0),
     refus,
     manquesDuMeilleur: manques,

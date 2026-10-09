@@ -64,6 +64,33 @@ Constats :
 3. **Le verrou n'est donc plus l'offre de SS, c'est leur circulation entre joueurs.** Le simulateur ne fait échanger ou vendre que des doublons ; il ne modélise pas un joueur qui cède une carte de son Livre (une SS) contre des jenny ou d'autres cartes, ni les vols ciblés. C'est pourtant ce qui se passera sur le terrain (négociation).
 4. Pour 10 joueurs, beaucoup d'enchères restent invendues : peu de joueurs ont 50 J à ce moment (les jenny partent en paquets de sorts).
 
+## Cession entre joueurs et taille du catalogue (2026-10-09, 10 graines)
+Modèle de cession (`probaCession`, `prixCession`, `ecartCession`) : à chaque action, un joueur à qui manque une carte d'un rang cessible cherche un détenteur **distancé** (au moins `ecartCession` = 3 cartes désignées de retard sur lui) qui la lui cède contre le prix demandé, payé d'abord en doublons utiles au vendeur (revente × 2), le reste en jenny ; l'action y passe. Passe par `trade` du moteur (RG-11, délai entre deux échanges d'une même paire). Prix : SS 100, S 60, A 40, B 25, C 15, D 10 J. Catalogue réglable : `cat=SS1,S2,A3,B4,C5,D5` (N = somme). `multLimiteSS` : multiplicateur propre aux SS.
+
+Réglages communs : 0,75 balise / joueur, limites × 2, checkpoints 5 %, arène 5 %, enchère de SS / 30 min.
+
+| Scénario | Clear (10 / 30 / 80 j.) | Clear médian (min) | Meilleur /N |
+|---|---|---|---|
+| N = 30 (2 SS), cession SS seulement 5 % | 0 / 0 / 0 | — | 22 / 24 / 25 |
+| N = 30 (2 SS), cession SS + S 5 % | 0 / 0 / 0 | — | 23 / 24 / 25 |
+| N = 30, limite SS × 4 | 0 / 0 / 0 | — | 23 / 24 / 25 |
+| N = 30 avec **4 SS** | 0 / 0 / 0 | — | 21 / 22 / 23 (plus dur) |
+| N = 30 (2 SS), cession de tous les rangs 15 % | 0 / 0 / 0 | — | 24 / 24 / 26 |
+| N = 30 avec **1 SS**, cession tous rangs 15 % | 0 / 0 / 0 | — | 24 / 26 / 26 |
+| N = 24 (2 SS), cession tous rangs 15 % | 0 / 0 / 0 | — | 21 / 21 / 22 |
+| N = 24 (1 SS), cession tous rangs 15 % | 0 / 0 / 1 | 147 | 21 / 22 / 23 |
+| N = 20 (2 SS), cession SS + S 5 % | 0 / 0 / 0 | — | 18 / 16 / 18 |
+| **N = 20 (1 SS), cession tous rangs 15 %** | **3 / 1 / 6** | **136 / 136 / 140** | 19 / 18 / 20 |
+| N = 20 (1 SS), cession tous rangs 5 % | 1 / 1 / 0 | 148 / 121 / — | 18 / 18 / 19 |
+| N = 20 (1 SS), sans cession | 0 / 0 / 0 | — | 18 / 17 / 17 |
+
+Constats :
+1. **Plus d'exemplaires de SS (limite × 4) ne change rien** : elles sont déjà en jeu, mais dispersées.
+2. **Plus de cartes SS au catalogue rend le Clear plus dur** (il faut chacune) : 4 SS = −2 cartes pour le meilleur.
+3. **La cession fait circuler les cartes** (jusqu'à plusieurs centaines par partie à 80 joueurs) mais ne suffit pas seule : à N = 30, il manque toujours ≈ 2 cartes au meilleur, surtout des SS, que les joueurs distancés n'ont pas.
+4. **Des Clear apparaissent seulement avec N ≈ 20, une seule SS et des joueurs qui se cèdent des cartes** : 10 à 60 % des parties, vers 136-148 min, donc en fin de partie (pas de Clear prématuré). Sans cession, aucun.
+5. **Le levier le plus fort est donc la composition du catalogue (N et nombre de SS)**, puis la négociation entre joueurs (que le jeu doit encourager). Le simulateur ne modélise ni la négociation volontaire entre deux joueurs proches du Clear, ni les vols ciblés : il sous-estime sans doute les Clear.
+
 ## Recommandations (validées le 2026-10-09, voir PROGRESS.md « Calibrage »)
 - Limites en mode Multiplicateur × 2 par défaut (ou formules RG-14 revues pour ~20 exemplaires par joueur).
 - Nombre de balises posées recommandé ≈ 0,75 × joueurs attendus (min 10).

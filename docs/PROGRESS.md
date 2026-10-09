@@ -94,6 +94,7 @@
 - Conseils d'organisation (moteur `conseils.ts`, à afficher dans la console GM, non bloquants) : ≈ 0,75 balise posée par joueur attendu (min 10) ; 1 checkpoint pour 10 joueurs, ≈ 1,5 carte de checkpoint par joueur (≈ 15 par checkpoint), B / A / S en 50 / 35 / 15 %.
 - Sources de SS : enchères de SS libres pour le PNJ d'Antokiba ; **arène de Soufrabi** (amendement, REGLES.md RG-11) : PNJ, licence, mise `areneMiseJ` 30 J, victoire = tirage A / S / SS 50 / 40 / 10, défaite = mise perdue, une tentative / `areneDelaiMin` 15 min, annulation motivée remboursée, Livre plein = débordement. API `routes/arene.ts`, table `arene`.
 - Un Clear reste rare : la plupart des parties finissent au classement (RG-13.4).
+- **En attente de décision (Sivraj)** : taille du catalogue N (RG-8.1, paramètre `cartesDesignees`, verrouillé à 30) et nombre de SS. Simulation : Clear possible seulement vers N = 20 avec 1 SS et des cessions entre joueurs (10 à 60 % des parties, vers 136-148 min). Le paramètre `cartesDesignees` n'est lu nulle part : le Clear porte sur les cartes marquées « désignées » du catalogue (à rendre cohérent si N devient réglable).
 - Simulateur : arène et enchères de SS ajoutées (options `probaArene`, `encheresSSToutesLesMin`…, voir SIMULATION.md). Résultat : les SS sont en jeu mais dispersées ; le meilleur joueur n'en a que 0,2 à 0,6. Le verrou est la circulation des SS entre joueurs (cession d'une carte du Livre, non modélisée), plus l'offre.
 
 ## Ambiguïtés du document (choix validés par Sivraj le 2026-10-09, réglables)

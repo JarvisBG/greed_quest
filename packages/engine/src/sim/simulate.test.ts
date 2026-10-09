@@ -28,4 +28,17 @@ describe('simulateur', () => {
     expect(a.areneTentatives).toBe(0);
     expect(a.encheresSS).toBe(0);
   });
+
+  it('cession entre joueurs : seulement les rangs cessibles, reproductible', () => {
+    const cfg = { ...DEFAULT_SIM, joueurs: 30, seed: 3, multLimites: 2, probaCession: 0.15, prixCession: { SS: 100, S: 60 } };
+    const a = simulate(cfg);
+    expect(simulate(cfg)).toEqual(a);
+    expect(Object.keys(a.cessions).every((r) => r === 'SS' || r === 'S')).toBe(true);
+    expect((a.cessions.S ?? 0) + (a.cessions.SS ?? 0)).toBeGreaterThan(0);
+  });
+
+  it('catalogue réglable : N = somme des rangs, score borné par N', () => {
+    const a = simulate({ ...DEFAULT_SIM, joueurs: 10, seed: 1, dureeMin: 60, catalogue: { SS: 1, S: 2, A: 3, B: 4, C: 5, D: 5 } });
+    expect(a.meilleur).toBeLessThanOrEqual(20);
+  });
 });

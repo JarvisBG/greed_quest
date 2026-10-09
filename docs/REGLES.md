@@ -118,6 +118,7 @@ Prix défaut (réglables) : paquet 50 J · revente D/C/B 5/10/20 J · A/S 40/80 
 | Révélation | Zone d'une balise rare active | aucun |
 | Duplication | Copie une carte : vraie si sous limite, sinon contrefaçon | carte de son Livre |
 | Analyse | Révèle les contrefaçons d'une page | page de son Livre |
+| Regard *(amendement)* | Montre les cartes d'un joueur déjà croisé, telles qu'elles paraissent | joueur déjà rencontré |
 - 10.1 Vol/Échange forcé/Gel : cible dans la liste « à portée » calculée serveur. Émission : 1× hors portée.
 - 10.2 Cible touchée → immunisée aux offensifs 5 min.
 - 10.3 2 min min entre deux offensifs d'un lanceur.
@@ -126,6 +127,7 @@ Prix défaut (réglables) : paquet 50 J · revente D/C/B 5/10/20 J · A/S 40/80 
 - 10.6 Tout sort affiché sur l'écran géant (lanceur, cible, résultat).
 - 10.7 Duplication : sous limite → vrai exemplaire compté ; à la limite → contrefaçon.
 - 10.8 Analyse : sa propre page, jamais un échange en cours ; résultat privé.
+> **Amendement 2026-10-09 (Sivraj) — sort Regard** (« Peek » de Greed Island) : montre les cartes d'un joueur **déjà rencontré** (à portée l'un de l'autre au moins une fois, ou visé par un sort de l'un ou l'autre). Les cartes apparaissent telles qu'elles paraissent : une contrefaçon non démasquée paraît vraie, une copie déjà démasquée par son détenteur apparaît comme contrefaçon ; les sorts ne sont pas montrés. **Anonyme** : la cible est prévenue (« Quelqu'un a consulté ton Livre ») sans savoir qui ; l'écran géant affiche le sort sans lanceur ni cible. Refusé sur un Livre gelé (RG-13.1). Deux fois plus rare que les autres sorts au tirage et en boutique, jamais dans le kit.
 **Géoloc** : 10.9 envoi toutes les 15 s si déplacement > 10 m, + à chaque scan/achat/sort. 10.10 Position > 2 min → hors radar (ni viser ni être visé). 10.11 Portée 30 m (réglable) + marge GPS plafonnée 20 m. 10.12 Positions exactes : serveur + GM seulement ; écran = points anonymes/heatmap, décalage 2 min ; joueur ne reçoit jamais la position d'autrui (sauf zone via Radar).
 > **Amendement 2026-10-09 (Sivraj)** — RG-10.10 : un joueur sans nouvelle position (GPS coupé, téléphone en veille, app quittée) reste **ciblable à sa dernière position connue pendant 10 min** (paramètre `ciblableMin`, réglable), au lieu de sortir du radar après 2 min. Au-delà, il est hors radar et l'équipe reçoit une alerte (`sans_position`, une par disparition). Pour agir lui-même (scan, achat, sort, échange), une position de moins de 2 min reste exigée (RG-7.6). But : qu'on ne puisse pas se cacher en coupant le GPS pour protéger son Livre.
 
@@ -172,13 +174,13 @@ Prix défaut (réglables) : paquet 50 J · revente D/C/B 5/10/20 J · A/S 40/80 
 - 14.5 Préréglages (Petit groupe, Standard, Grande foule) + enregistrement de nouveaux.
 - 14.6 Console : J, valeur auto, mode, valeur appliquée.
 
-> **Amendement 2026-10-09 (Sivraj, calibrage)** : les limites d'exemplaires (S, A, B, C/D) sont en mode **Multiplicateur × 2** par défaut, la SS (unique) en **× 4** (≥ 4 exemplaires). Les formules du tableau restent la valeur « auto ». **Durée par défaut : 120 min** (150 dans le document).
+> **Amendement 2026-10-09 (Sivraj, calibrage)** : les limites d'exemplaires (S, A, B, C/D) sont en mode **Multiplicateur × 2** par défaut ; la SS (unique) a sa propre formule, **1 exemplaire pour 10 joueurs, au moins 4**, en Auto. Les formules du tableau restent la valeur « auto ». **Durée par défaut : 120 min** (150 dans le document).
 
 | Paramètre | Formule auto | Mode défaut |
 |---|---|---|
 | Balises actives | ceil(J/3), borné [5, nb posées] | Auto |
 | Stock balise | ceil(J/2), borné [5, 30] | Auto |
-| Limite SS | max(1, floor(J/20)) | Multiplicateur × 4 |
+| Limite SS | max(1, floor(J/20)) (amendement : max(4, ceil(J/10))) | Auto |
 | Limite S | max(2, ceil(J/10)) | Multiplicateur × 2 |
 | Limite A | max(3, ceil(J/5)) | Multiplicateur × 2 |
 | Limite B | max(4, ceil(J/3)) | Multiplicateur × 2 |

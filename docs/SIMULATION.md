@@ -91,6 +91,21 @@ Constats :
 4. **Des Clear apparaissent seulement avec N ≈ 20, une seule SS et des joueurs qui se cèdent des cartes** : 10 à 60 % des parties, vers 136-148 min, donc en fin de partie (pas de Clear prématuré). Sans cession, aucun.
 5. **Le levier le plus fort est donc la composition du catalogue (N et nombre de SS)**, puis la négociation entre joueurs (que le jeu doit encourager). Le simulateur ne modélise ni la négociation volontaire entre deux joueurs proches du Clear, ni les vols ciblés : il sous-estime sans doute les Clear.
 
+## Limites d'exemplaires (2026-10-09, 20 graines, 120 min, 1 SS, animation active)
+Options du simulateur : `limiteSSUnPour` / `limiteSSMin` (SS en « 1 pour X joueurs, au moins Y »), `multLimiteCD` (C et D). N = 14 (16 au-delà de 50 joueurs). « Repli » = part des tirages de carte changés en jenny faute d'exemplaire disponible. **Variance** : d'une série de 20 graines à l'autre, le taux de Clear varie de ±20 points ; lire les tendances.
+
+| Limites | Clear N = 14 (10 / 30 / 80 j.) | Clear N = 16 (80 j.) | Repli | SS en jeu à 80 j. |
+|---|---|---|---|---|
+| SS × 4, C/D × 2 (avant) | 40-60 % / 45 % / 85 % | 55 % | ≈ 48 % | ≈ 12 |
+| **SS 1 pour 10, au moins 4**, C/D × 2 (retenu) | 40-65 % / 35-40 % / 65-80 % | 55 % | ≈ 48 % | ≈ 8 |
+| SS 1 pour 10, C/D × 3 | 35 % / 15 % / 50 % | 30 % | ≈ 33 % | ≈ 8 |
+| SS 1 pour 10, C/D × 4 | 10 % / 5 % / 45 % | 5 % | ≈ 20 % | ≈ 8 |
+
+Constats :
+1. Plafonner la SS à 1 exemplaire pour 10 joueurs (au moins 4) ne change rien jusqu'à 40 joueurs et divise par deux les SS en jeu dans les grands groupes, sans perte nette de Clear au N conseillé (16 au-delà de 50 joueurs).
+2. **Relever les limites des cartes communes fait chuter les Clear** : moins de tirages changés en jenny, donc moins d'argent pour racheter des cartes, miser à l'arène, enchérir et acheter des sorts, et des Livres encombrés de doublons. Les jenny sont le carburant du jeu ; le « repli » d'environ une carte sur deux en jenny n'est pas une perte sèche (10 J par repli).
+3. Regard n'est pas modélisé : la cession du simulateur suppose déjà que l'acheteur sait qui détient la carte ; Regard rend cette hypothèse réaliste.
+
 ## Recommandations (validées le 2026-10-09, voir PROGRESS.md « Calibrage »)
 - Limites en mode Multiplicateur × 2 par défaut (ou formules RG-14 revues pour ~20 exemplaires par joueur).
 - Nombre de balises posées recommandé ≈ 0,75 × joueurs attendus (min 10).

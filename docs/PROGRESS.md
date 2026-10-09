@@ -12,9 +12,11 @@
 - [x] Premier commit, poussé sur https://github.com/JarvisBG/greed_quest (branche `main`, auteur git local « Sivraj »)
 - [x] Plan détaillé des tâches : `docs/PLAN.md`
 
-**Phase 1 — Moteur** (en cours) : tâches 1.1 → 1.16 faites (types, RNG, paramètres RG-14, lissage J, tirage RG-8.3, Livre RG-8.5/8.13/8.14, scan RG-7, balises RG-6, géoloc RG-10.9→10.11 + RG-15, sorts RG-10, contrefaçons RG-8.6→8.9, échanges et enchères RG-11, boutique RG-9, classement et Clear RG-13, cycle de vie RG-4, événements RG-12). 202 tests verts.
+**Phase 1 — Moteur** (terminée) : tâches 1.1 → 1.17 faites (types, RNG, paramètres RG-14, lissage J, tirage RG-8.3, Livre RG-8.5/8.13/8.14, scan RG-7, balises RG-6, géoloc RG-10.9→10.11 + RG-15, sorts RG-10, contrefaçons RG-8.6→8.9, échanges et enchères RG-11, boutique RG-9, classement et Clear RG-13, cycle de vie RG-4, événements RG-12, simulateur). 203 tests verts.
 
-**Prochaine étape** : 1.17 simulateur de partie (10 / 30 / 80 joueurs) pour le calibrage — dernière tâche du moteur.
+**Simulation** (`docs/SIMULATION.md`) : aucun Clear en 150 min à 10 / 30 / 80 joueurs ; les limites RG-14 n'autorisent que ~10-12 exemplaires par joueur. Décision de calibrage en attente.
+
+**Prochaine étape** : décider du calibrage (limites, N, balises posées), puis Phase 2 — API.
 
 ## Ambiguïtés du document (choix validés par Sivraj le 2026-10-09, réglables)
 - RG-6 vs tableau RG-8 : balise standard « rangs D à A » mais le tableau donne 1 % de S en standard → S exclu en standard (`draw.ts`).

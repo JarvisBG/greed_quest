@@ -20,7 +20,7 @@ Chaque tâche = un commit (ou quelques-uns), tests verts avant de cocher.
 - [x] 1.14 Classement RG-13.5 / 13.7 (live vs final) et détection du Clear RG-13.1
 - [x] 1.15 Cycle de vie de partie RG-4 (transitions autorisées, horloge suspendue en pause)
 - [x] 1.16 Événements GM RG-12 (effets sur scan/tirage/boutique, un seul par zone) + retour en jeu des SS RG-8.12
-- [ ] 1.17 Simulateur de partie (10 / 30 / 80 joueurs) pour le calibrage
+- [x] 1.17 Simulateur de partie (10 / 30 / 80 joueurs) pour le calibrage
 
 ## Phase 2 — API (`apps/api`)
 - [ ] 2.0 Préréglages RG-14.5 (stockés en base ; contenu Petit groupe / Grande foule à définir)

@@ -20,8 +20,9 @@
 - [x] 2.0 Préréglages RG-14.5 dans le moteur (`presets.ts`) : Petit groupe, Standard, Grande foule + enregistrement d'un préréglage GM (seules les différences sont gardées).
 - [x] 2.1 `apps/api` : Fastify 5, Drizzle 0.45 + PGlite 0.5 (dev/tests, en mémoire ou `PGLITE_DIR`) / `pg` (prod, `DATABASE_URL`). Schéma `src/db/schema.ts` : les 11 entités + `prereglages`, `staff`, `pertes` ; migrations `drizzle/` (`pnpm --filter @gq/api db:generate`) appliquées à l'ouverture. Seed : `pnpm --filter @gq/api seed` (partie de démo : 30 cartes, 6 zones, 20 balises). Helper de test `src/test/helpers.ts`.
 - [x] 2.2 Journal RG-3.1 (`src/core/journal.ts`) et `Runner` (`src/core/runner.ts`) : toute action d'état passe par `runner.run(partieId, acteur, fn)` = verrou par partie + transaction + heure de jeu + `log()` + `emit()` diffusé seulement après commit (bus `src/core/bus.ts`). Motif obligatoire pour corrections et sanctions PNJ/GM.
+- [x] 2.3 Auth : jetons signés HMAC (`src/auth/tokens.ts`, rôle + id + partie), `requireRole` (GM ⊇ PNJ). Création de partie : `POST /admin/parties` avec l'en-tête `x-code-admin` (`GQ_ADMIN_CODE`), crée le premier GM. Équipe : connexion par code (`/parties/:id/staff/connexion`), ajout par un GM, journal lisible par l'équipe. Jeton joueur délivré à l'inscription (2.4). Erreurs : `{ ok: false, code, message }` (`src/errors.ts`), requêtes validées par Zod (`@gq/shared/api.ts`).
 
-**Prochaine étape** : 2.3 (auth joueur / PNJ / GM). Le calibrage n'est pas bloquant : tout passe par des paramètres.
+**Prochaine étape** : 2.4 (inscription, Examen, test de Nen, kit). Le calibrage n'est pas bloquant : tout passe par des paramètres.
 
 ## Reprise de session (lire en premier)
 - Phase 1 terminée et poussée (`main`, dernier commit « Simulateur v2 »). Engine pur dans `packages/engine/src/` : un module par domaine (`params`, `draw`, `book`, `scan`, `beacons`, `geo`, `spells`, `counterfeits`, `trades`, `shop`, `ranking`, `lifecycle`, `events`) + `sim/`. Chaque module a son `*.test.ts`.

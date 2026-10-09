@@ -8,6 +8,8 @@ export interface Config {
   pgliteDir: string | undefined;
   /** Secret de signature des jetons (sessions, licences). */
   secret: string;
+  /** Code de l'organisateur pour créer une partie. */
+  adminCode: string;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -17,5 +19,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     databaseUrl: env.DATABASE_URL || undefined,
     pgliteDir: env.PGLITE_DIR || undefined,
     secret: env.GQ_SECRET ?? 'dev-secret-a-changer',
+    adminCode: env.GQ_ADMIN_CODE ?? 'admin-dev',
   };
 }

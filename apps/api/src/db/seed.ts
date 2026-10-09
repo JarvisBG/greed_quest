@@ -2,6 +2,8 @@
 // (catalogue de 30 cartes RG-8.1, zones, balises), en brouillon (RG-4.1).
 import type { Rank } from '@gq/shared';
 import { SYSTEM_PRESETS, presetSettings, type LatLng, type Polygon } from '@gq/engine';
+import { eq } from 'drizzle-orm';
+import { Refus } from '../errors.js';
 import { newBeaconId, newId } from '../ids.js';
 import type { DbOrTx } from './client.js';
 import { balises, cartes, parties, prereglages, zones, type ZoneType } from './schema.js';
@@ -90,18 +92,25 @@ export interface DemoIds {
   baliseIds: string[];
 }
 
-/** Partie de démonstration en brouillon : zones, catalogue de 30 cartes, balises réparties dans les zones. */
-export async function seedDemoGame(db: DbOrTx, o: DemoOptions = {}): Promise<DemoIds> {
-  const centre = o.centre ?? { lat: 48.8566, lng: 2.3522 };
-  const preset = SYSTEM_PRESETS.find((p) => p.id === (o.prereglage ?? 'standard')) ?? SYSTEM_PRESETS[1]!;
+/** RG-4.1 : nouvelle partie en brouillon, paramètres pris dans un préréglage (RG-14.5). */
+export async function createPartie(db: DbOrTx, o: { nom: string; prereglage?: string; graine?: number }): Promise<string> {
+  const id = o.prereglage ?? 'standard';
+  const [enBase] = await db.select().from(prereglages).where(eq(prereglages.id, id));
+  const preset = enBase ?? SYSTEM_PRESETS.find((p) => p.id === id);
+  if (!preset) throw new Refus('prereglage_inconnu', 'Préréglage inconnu', 400);
   const partieId = newId();
-  await db.insert(parties).values({
-    id: partieId,
-    nom: o.nom ?? 'Partie de démonstration',
-    parametres: presetSettings(preset),
-    graine: o.graine ?? 0,
-    perimetre: square(centre, 400),
-  });
+  await db.insert(parties).values({ id: partieId, nom: o.nom, parametres: presetSettings(preset), graine: o.graine ?? 0 });
+  return partieId;
+}
+
+/** Contenu de démonstration : zones, catalogue de 30 cartes, balises réparties dans les zones. */
+export async function seedDemoContent(
+  db: DbOrTx,
+  partieId: string,
+  o: Pick<DemoOptions, 'centre' | 'nbBalises'> = {},
+): Promise<Omit<DemoIds, 'partieId'>> {
+  const centre = o.centre ?? { lat: 48.8566, lng: 2.3522 };
+  await db.update(parties).set({ perimetre: square(centre, 400) }).where(eq(parties.id, partieId));
 
   const zoneRows = DEMO_ZONES.map((z, i) => ({
     id: newId(),
@@ -124,10 +133,15 @@ export async function seedDemoGame(db: DbOrTx, o: DemoOptions = {}): Promise<Dem
   }));
   if (baliseRows.length > 0) await db.insert(balises).values(baliseRows);
 
-  return {
-    partieId,
-    zoneIds: zoneRows.map((z) => z.id),
-    carteIds: carteRows.map((c) => c.id),
-    baliseIds: baliseRows.map((b) => b.id),
-  };
+  return { zoneIds: zoneRows.map((z) => z.id), carteIds: carteRows.map((c) => c.id), baliseIds: baliseRows.map((b) => b.id) };
+}
+
+/** Partie de démonstration complète, en brouillon. */
+export async function seedDemoGame(db: DbOrTx, o: DemoOptions = {}): Promise<DemoIds> {
+  const partieId = await createPartie(db, {
+    nom: o.nom ?? 'Partie de démonstration',
+    ...(o.prereglage ? { prereglage: o.prereglage } : {}),
+    ...(o.graine !== undefined ? { graine: o.graine } : {}),
+  });
+  return { partieId, ...(await seedDemoContent(db, partieId, o)) };
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { formatDuree, libelleEtat } from './format';
+import { NEN_TYPES, SPELL_TYPES } from '@gq/shared';
+import { formatDuree, libelleEtat, NENS, SORTS } from './format';
 
 describe('format', () => {
   it('durées', () => {
@@ -11,5 +12,9 @@ describe('format', () => {
   it('RG-4 : libellé des états', () => {
     expect(libelleEtat('phase_finale')).toBe('Phase finale');
     expect(libelleEtat('inconnu')).toBe('inconnu');
+  });
+  it('RG-5.4 / RG-10 : chaque Nen et chaque sort a un libellé', () => {
+    for (const n of NEN_TYPES) expect(NENS[n].passif).not.toBe('');
+    for (const s of SPELL_TYPES) expect(SORTS[s].nom).not.toBe('');
   });
 });

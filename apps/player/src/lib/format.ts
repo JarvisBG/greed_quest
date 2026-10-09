@@ -1,5 +1,5 @@
 // Libellés et formats affichés au joueur (français).
-import type { GameState } from '@gq/shared';
+import type { GameState, NenType, SpellType } from '@gq/shared';
 import type { EvenementJoueur } from './realtime';
 
 const ETATS: Record<GameState, string> = {
@@ -56,3 +56,25 @@ const EVENEMENTS: Record<EvenementJoueur, string> = {
 export function libelleEvenement(nom: EvenementJoueur): string {
   return EVENEMENTS[nom];
 }
+
+/** RG-10 */
+export const SORTS: Record<SpellType, { nom: string; effet: string }> = {
+  vol: { nom: 'Vol', effet: 'Prend 1 carte au hasard à un joueur proche' },
+  echange_force: { nom: 'Échange forcé', effet: 'Donne 1 carte choisie à un joueur proche et lui en prend 1 au hasard' },
+  gel: { nom: 'Gel', effet: 'Un joueur proche ne peut plus scanner pendant 3 min' },
+  barriere: { nom: 'Barrière', effet: 'Annule le prochain sort offensif reçu' },
+  radar: { nom: 'Radar', effet: 'Montre la zone de la dernière position d’un joueur' },
+  revelation: { nom: 'Révélation', effet: 'Montre la zone d’une balise rare active' },
+  duplication: { nom: 'Duplication', effet: 'Copie une carte de ton Livre (contrefaçon si la limite est atteinte)' },
+  analyse: { nom: 'Analyse', effet: 'Révèle les contrefaçons d’une page de ton Livre' },
+};
+
+/** RG-5.4 : type de Nen et son passif. */
+export const NENS: Record<NenType, { nom: string; passif: string }> = {
+  renforcement: { nom: 'Renforcement', passif: 'Annule le premier sort offensif reçu (une fois par partie)' },
+  emission: { nom: 'Émission', passif: 'Lance un sort offensif hors de portée (une fois par partie)' },
+  transformation: { nom: 'Transformation', passif: 'Texture Surprise : déguise un doublon en une autre carte de même rang (toutes les 20 min)' },
+  materialisation: { nom: 'Matérialisation', passif: 'Un tirage bonus (rang C au plus) à chaque checkpoint réussi' },
+  manipulation: { nom: 'Manipulation', passif: 'Un échange forcé gratuit (une fois par partie)' },
+  specialisation: { nom: 'Spécialisation', passif: 'Type rare : un pouvoir unique et secret, révélé par l’organisation' },
+};

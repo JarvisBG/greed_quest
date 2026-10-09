@@ -26,6 +26,14 @@ describe('session', () => {
     expect(s.get()).toBeNull();
   });
 
+  it('RG-5.3 : Examen remis à plus tard, mémorisé par joueur', () => {
+    const s = createSessionStore(memoire());
+    expect(s.examenReporte('j1')).toBe(false);
+    s.reporterExamen('j1');
+    expect(s.examenReporte('j1')).toBe(true);
+    expect(s.examenReporte('j2')).toBe(false);
+  });
+
   it('lit la partie dans l’URL', () => {
     expect(partieFromUrl('?partie=abc')).toBe('abc');
     expect(partieFromUrl('?partie=')).toBeNull();

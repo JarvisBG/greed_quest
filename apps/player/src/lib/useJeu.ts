@@ -1,4 +1,5 @@
 // État de l'app joueur : partie visée, session, profil, connexion temps réel, fil des évènements.
+import type { NenType } from '@gq/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError } from './api';
 import { api, API_URL, session } from './client';
@@ -18,7 +19,7 @@ export interface Moi {
   id: string;
   pseudo: string;
   jenny: number;
-  nen: string | null;
+  nen: NenType | null;
   statut: string;
   examenFait: boolean;
 }
@@ -101,5 +102,11 @@ export function useJeu() {
     history.replaceState(null, '', `?partie=${encodeURIComponent(id)}`);
   }, []);
 
-  return { partieId, partie, moi, connexion, notifs, phase, erreur, rafraichir, choisirPartie };
+  /** Après l'inscription : garde le jeton ; le rafraîchissement charge le profil. */
+  const ouvrirSession = useCallback((s: Session) => {
+    session.set(s);
+    setSess(s);
+  }, []);
+
+  return { partieId, partie, moi, connexion, notifs, phase, erreur, rafraichir, choisirPartie, ouvrirSession };
 }

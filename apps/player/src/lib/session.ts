@@ -35,6 +35,13 @@ export function createSessionStore(storage: Pick<Storage, 'getItem' | 'setItem' 
     clear(): void {
       storage.removeItem(CLE_SESSION);
     },
+    /** RG-5.3 : l'Examen est non bloquant, le joueur peut le remettre à plus tard. */
+    examenReporte(joueurId: string): boolean {
+      return storage.getItem(`gq.examenReporte.${joueurId}`) === '1';
+    },
+    reporterExamen(joueurId: string): void {
+      storage.setItem(`gq.examenReporte.${joueurId}`, '1');
+    },
   };
 }
 

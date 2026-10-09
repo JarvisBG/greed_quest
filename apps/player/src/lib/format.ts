@@ -93,3 +93,13 @@ export function resumeIssue(i: IssueScan): string {
   if (i.type === 'en_file') return 'pas de réseau, scan gardé et envoyé au retour de la connexion';
   return 'cette balise attend déjà dans la file';
 }
+
+/** RG-8.1 : cartes numérotées 001..N. */
+export const numeroCarte = (n: number | null) => (n === null ? '???' : String(n).padStart(3, '0'));
+
+/** RG-8.5 : pages de 10, d'abord les cartes désignées (« 001 – 010 »), puis les emplacements libres. */
+export function titrePage(i: number, total: number): string {
+  const pagesDesignees = Math.ceil(total / 10);
+  if (i < pagesDesignees) return `${numeroCarte(i * 10 + 1)} – ${numeroCarte(Math.min(total, (i + 1) * 10))}`;
+  return `Libres ${i - pagesDesignees + 1}`;
+}

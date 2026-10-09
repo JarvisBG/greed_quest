@@ -63,3 +63,23 @@ main { padding-bottom: 80px; }
 .saisie { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
 .saisie button { text-align: center; }
 .gains li { font-size: 1.1rem; }
+.onglets { grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.onglets button { padding: 12px 4px; font-size: 0.9rem; }
+.livre { display: grid; gap: 12px; }
+.pages { display: grid; grid-template-columns: 48px 1fr 48px; align-items: center; text-align: center; gap: 8px; }
+.pages button { text-align: center; font-size: 1.4rem; padding: 0; }
+.emplacements { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.emplacement { background: var(--surface); border: 1px solid var(--bord); border-radius: 8px; padding: 10px 12px; min-height: 48px; }
+.emplacement.vide, .emplacement.perdu { background: transparent; border-style: dashed; }
+.numero { font-variant-numeric: tabular-nums; color: var(--doux); font-size: 0.85rem; }
+.manquante { color: var(--doux); }
+.detail { font-size: 0.85rem; margin-top: 2px; }
+.rang { display: inline-block; min-width: 1.8em; text-align: center; border-radius: 4px; font-size: 0.75rem; font-weight: 700; padding: 1px 4px; background: var(--bord); color: var(--texte); }
+.rang.rSS, .rang.rS { background: var(--or); color: #1a1408; }
+.rang.rA { background: #8a6bd1; color: #fff; }
+.badge { display: inline-block; margin-left: 6px; font-size: 0.75rem; border: 1px solid var(--or); color: var(--or); border-radius: 4px; padding: 0 4px; }
+.badge.ko { border-color: var(--ko); color: var(--ko); }
+.licence { justify-items: center; text-align: center; }
+.qr { width: min(80vw, 320px); height: auto; border-radius: 8px; }
+.jauge { width: min(80vw, 320px); height: 6px; background: var(--bord); border-radius: 3px; overflow: hidden; }
+.jauge span { display: block; height: 100%; background: var(--or); transition: width 1s linear; }

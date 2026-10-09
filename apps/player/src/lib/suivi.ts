@@ -68,6 +68,24 @@ export function creerSuivi({ geo, envoyer, now = Date.now, onErreur }: SuiviOpti
       watchId = null;
       timer = null;
     },
+    /** Au retour au premier plan : position redemandée tout de suite puis envoyée si besoin. */
+    relancer(): Promise<void> {
+      if (!geo) return Promise.resolve();
+      return new Promise((fin) =>
+        geo.getCurrentPosition(
+          (pos) => {
+            courante = { ...versPosition(pos.coords), a: now() };
+            onErreur?.(null);
+            void tick().then(fin);
+          },
+          (e) => {
+            onErreur?.(messageGeo(e.code).message);
+            fin();
+          },
+          { enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 },
+        ),
+      );
+    },
     /** Dernière position GPS si elle a moins de 30 s. */
     fraiche(): PositionInput | null {
       if (!courante || now() - courante.a > FRAICHEUR_MS) return null;

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Examen } from './ecrans/Examen';
 import { Inscription, type Kit as KitRecu } from './ecrans/Inscription';
 import { Kit } from './ecrans/Kit';
+import { Licence } from './ecrans/Licence';
+import { Livre } from './ecrans/Livre';
 import { Nen } from './ecrans/Nen';
 import { Scan } from './ecrans/Scan';
 import { api, session } from './lib/client';
@@ -15,13 +17,21 @@ interface Questionnaires {
   nen: Question[];
 }
 
+type Onglet = 'accueil' | 'scan' | 'livre' | 'licence';
+const ONGLETS: { id: Onglet; nom: string }[] = [
+  { id: 'accueil', nom: 'Accueil' },
+  { id: 'scan', nom: 'Scanner' },
+  { id: 'livre', nom: 'Livre' },
+  { id: 'licence', nom: 'Licence' },
+];
+
 export function App() {
   const jeu = useJeu();
   const [kit, setKit] = useState<KitRecu | null>(null);
   const [quiz, setQuiz] = useState<Questionnaires | null>(null);
   const [examenOuvert, setExamenOuvert] = useState(false);
   const [, majReport] = useState(0);
-  const [onglet, setOnglet] = useState<'accueil' | 'scan'>('accueil');
+  const [onglet, setOnglet] = useState<Onglet>('accueil');
   // Balise scannée avec l'appareil photo du téléphone : l'app s'ouvre sur `?balise=<id>`.
   const [baliseLien, setBaliseLien] = useState<string | null>(() => baliseDepuisUrl(location.search));
 
@@ -103,6 +113,10 @@ export function App() {
                 key={baliseLien ?? 'camera'}
               />
             )}
+            {ecran === 'accueil' && onglet === 'livre' && <Livre partieId={partie.id} version={jeu.version} />}
+            {ecran === 'accueil' && onglet === 'licence' && jeu.licenceSecret && (
+              <Licence partieId={partie.id} joueurId={moi.id} pseudo={moi.pseudo} secret={jeu.licenceSecret} />
+            )}
             {ecran === 'accueil' && onglet === 'accueil' && (
               <>
                 <div className="carte">
@@ -136,18 +150,18 @@ export function App() {
       </main>
       {jeu.phase === 'en_jeu' && ecran === 'accueil' && (
         <nav className="onglets">
-          <button className={onglet === 'accueil' ? 'actif' : ''} onClick={() => setOnglet('accueil')}>
-            Accueil
-          </button>
-          <button
-            className={onglet === 'scan' ? 'actif' : ''}
-            onClick={() => {
-              setBaliseLien(null);
-              setOnglet('scan');
-            }}
-          >
-            Scanner
-          </button>
+          {ONGLETS.map((o) => (
+            <button
+              key={o.id}
+              className={onglet === o.id ? 'actif' : ''}
+              onClick={() => {
+                if (o.id === 'scan') setBaliseLien(null);
+                setOnglet(o.id);
+              }}
+            >
+              {o.nom}
+            </button>
+          ))}
         </nav>
       )}
     </div>

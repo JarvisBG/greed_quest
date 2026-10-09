@@ -45,6 +45,9 @@ export function useJeu() {
   });
   const [partie, setPartie] = useState<Partie | null>(null);
   const [moi, setMoi] = useState<Moi | null>(null);
+  const [licenceSecret, setLicenceSecret] = useState<string | null>(null);
+  /** Incrémenté à chaque évènement reçu : les écrans (Livre…) se rechargent. */
+  const [version, setVersion] = useState(0);
   const [connexion, setConnexion] = useState<EtatConnexion>('hors_ligne');
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [phase, setPhase] = useState<Phase>(partieId ? 'chargement' : 'sans_partie');
@@ -78,8 +81,9 @@ export function useJeu() {
           throw e;
         }
       }
-      const m = await api.get<{ joueur: Moi }>(`/parties/${partieId}/moi`);
+      const m = await api.get<{ joueur: Moi; licenceSecret: string }>(`/parties/${partieId}/moi`);
       setMoi(m.joueur);
+      setLicenceSecret(m.licenceSecret);
       setPhase('en_jeu');
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
@@ -123,6 +127,7 @@ export function useJeu() {
       },
       evenement: (nom, data) => {
         notifier(libelleEvenement(nom));
+        setVersion((v) => v + 1);
         if (nom === 'partie') void rafraichir();
         const j = (data as { jenny?: unknown } | null)?.jenny;
         if (nom === 'tirage' && typeof j === 'number') majJenny(j);
@@ -168,12 +173,29 @@ export function useJeu() {
       if (issue.type === 'ok') {
         suivi.current?.marquerEnvoyee(position);
         majJenny(issue.jenny);
+        setVersion((v) => v + 1);
       }
       if (issue.type === 'en_file') setEnFile((n) => n + 1);
       return issue;
     },
     [sess, majJenny],
   );
+
+  // Retour sur l'app (écran rallumé, onglet revenu au premier plan) : le navigateur a pu suspendre
+  // le GPS, les minuteries et la connexion. On redemande la position, on resynchronise le profil
+  // et on rejoue les scans en attente.
+  useEffect(() => {
+    if (!sess) return;
+    const auRetour = () => {
+      if (document.visibilityState !== 'visible') return;
+      void suivi.current?.relancer();
+      void rafraichir();
+      void rejouer();
+      setVersion((v) => v + 1);
+    };
+    document.addEventListener('visibilitychange', auRetour);
+    return () => document.removeEventListener('visibilitychange', auRetour);
+  }, [sess, rafraichir, rejouer]);
 
   const choisirPartie = useCallback((id: string) => {
     setPartieId(id);
@@ -192,6 +214,8 @@ export function useJeu() {
     partieId,
     partie,
     moi,
+    licenceSecret,
+    version,
     connexion,
     notifs,
     phase,

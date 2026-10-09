@@ -8,6 +8,7 @@ import { Runner, cryptoRng } from './core/runner.js';
 import type { Db } from './db/client.js';
 import { Refus } from './errors.js';
 import { adminRoutes } from './routes/admin.js';
+import { joueursRoutes } from './routes/joueurs.js';
 import { staffRoutes } from './routes/staff.js';
 
 export interface AppDeps {
@@ -73,5 +74,6 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   app.get('/sante', async () => ({ ok: true }));
   await app.register(adminRoutes);
   await app.register(staffRoutes);
+  await app.register(joueursRoutes);
   return app;
 }

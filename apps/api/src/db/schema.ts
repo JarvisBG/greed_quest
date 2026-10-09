@@ -75,6 +75,8 @@ export const joueurs = pgTable(
     /** Secret de la licence QR tournante (RG-5.2). */
     licenceSecret: text('licence_secret').notNull(),
     nen: text('nen').$type<NenType>(),
+    /** RG-5.3 : bonnes réponses à l'Examen, null tant qu'il n'est pas passé. */
+    examenScore: integer('examen_score'),
     jenny: integer('jenny').notNull().default(0),
     statut: text('statut').$type<PlayerStatus>().notNull().default('actif'),
     position: jsonb('position').$type<Position>(),

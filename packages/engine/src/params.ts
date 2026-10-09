@@ -16,6 +16,10 @@ export const PARAM_KEYS = [
   'margeGpsMaxM',
   'dureePartieMin',
   'cartesDesignees',
+  'kitJenny',
+  'bonusExamenJ',
+  'specialisationPct',
+  'rattrapageJParMin',
 ] as const;
 export type ParamKey = (typeof PARAM_KEYS)[number];
 
@@ -58,6 +62,12 @@ export const AUTO_FORMULAS: Record<ParamKey, (c: ParamContext) => number> = {
   margeGpsMaxM: () => 20,
   dureePartieMin: () => 150,
   cartesDesignees: () => 30,
+  // RG-5.3 / 5.5 / 5.6 / 5.4 : montants non chiffrés dans le document, valeurs proposées (PROGRESS.md).
+  kitJenny: () => 50,
+  bonusExamenJ: () => 10,
+  specialisationPct: () => 5,
+  /** RG-5.6 : 0 = rattrapage désactivé. */
+  rattrapageJParMin: () => 2,
 };
 
 /** Modes par défaut (RG-14) : tout en auto sauf durée et N, verrouillés. */

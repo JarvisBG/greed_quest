@@ -13,3 +13,4 @@ export * from './ranking.js';
 export * from './lifecycle.js';
 export * from './events.js';
 export * from './presets.js';
+export * from './registration.js';

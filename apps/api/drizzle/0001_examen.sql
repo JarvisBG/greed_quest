@@ -1,0 +1,1 @@
+ALTER TABLE "joueurs" ADD COLUMN "examen_score" integer;

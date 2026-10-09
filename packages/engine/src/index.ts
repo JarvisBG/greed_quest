@@ -8,3 +8,4 @@ export * from './geo.js';
 export * from './spells.js';
 export * from './counterfeits.js';
 export * from './trades.js';
+export * from './shop.js';

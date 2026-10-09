@@ -12,9 +12,9 @@
 - [x] Premier commit, poussé sur https://github.com/JarvisBG/greed_quest (branche `main`, auteur git local « Sivraj »)
 - [x] Plan détaillé des tâches : `docs/PLAN.md`
 
-**Phase 1 — Moteur** (en cours) : tâches 1.1 → 1.12 faites (types, RNG, paramètres RG-14, lissage J, tirage RG-8.3, Livre RG-8.5/8.13/8.14, scan RG-7, balises RG-6, géoloc RG-10.9→10.11 + RG-15, sorts RG-10, contrefaçons RG-8.6→8.9, échanges et enchères RG-11). 134 tests verts.
+**Phase 1 — Moteur** (en cours) : tâches 1.1 → 1.13 faites (types, RNG, paramètres RG-14, lissage J, tirage RG-8.3, Livre RG-8.5/8.13/8.14, scan RG-7, balises RG-6, géoloc RG-10.9→10.11 + RG-15, sorts RG-10, contrefaçons RG-8.6→8.9, échanges et enchères RG-11, boutique RG-9). 151 tests verts.
 
-**Prochaine étape** : 1.13 boutique de Masadora RG-9.
+**Prochaine étape** : 1.14 classement RG-13.5 / 13.7 et détection du Clear RG-13.1.
 
 ## Ambiguïtés du document (choix validés par Sivraj le 2026-10-09, réglables)
 - RG-6 vs tableau RG-8 : balise standard « rangs D à A » mais le tableau donne 1 % de S en standard → S exclu en standard (`draw.ts`).
@@ -48,10 +48,15 @@
 - RG-10.8 « jamais les cartes d'un échange en cours » : à appliquer en Phase 2 (verrouillage des cartes engagées dans une offre).
 - Transformation : seul un vrai exemplaire dont le joueur a au moins un autre exemplaire (vrai ou non) peut être déguisé ; recharge 20 min depuis la dernière utilisation, disponible dès le début.
 - Expertise PNJ (RG-8.8) : payée même si rien n'est trouvé ; le Livre entier inclut les emplacements libres.
-- Masadora révèle la contrefaçon vendue (RG-8.9) : prix selon ce qu'elle est vraiment (copie → 1 J ; déguisé → prix de sa vraie carte). À coder en 1.13.
+- Masadora révèle la contrefaçon vendue (RG-8.9) : prix selon ce qu'elle est vraiment (copie → 1 J ; déguisé → prix de sa vraie carte). Une SS apparente non démasquée est refusée comme une vraie SS (rien n'est révélé).
 - Échanges : seules les cartes et les jenny s'échangent (pas les sorts) ; refusés pour un joueur gelé (sanction PNJ), disqualifié, ayant abandonné, ou au Livre gelé (Clear provisoire).
 - Échanges : la portée est vérifiée à la proposition seulement ; une fois la session ouverte, s'éloigner ne l'annule pas. Tout le reste (cartes encore présentes, jenny, fréquence) est revérifié à l'exécution.
 - Enchères : prix de départ fixé par le PNJ (1 J par défaut), surenchère d'au moins 1 J, offre limitée aux jenny possédés ; à la clôture, si le meilleur enchérisseur ne peut plus payer, l'offre précédente d'un autre joueur l'emporte.
+- Boutique : achat et revente exigent le scan du QR de la boutique et un GPS valide ; refusés aux joueurs gelés (sanction), disqualifiés, ayant abandonné.
+- Achat : refusé s'il reste moins de 3 emplacements libres (l'achat ne fait jamais déborder le Livre). Revente : cartes uniquement, pas les sorts.
+- Vagues : numérotées depuis le début de la partie (horloge de jeu, donc suspendue en pause) ; stock calculé à l'ouverture de la vague.
+- Krach de Masadora : prix multiplié par 0,5, arrondi au jenny supérieur.
+- RG-9.5 roulette : non codée, lots et coût à définir.
 - RG-14.5 : contenu des préréglages Petit groupe / Grande foule non défini.
 
 ## Feuille de route

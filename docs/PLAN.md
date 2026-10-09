@@ -16,7 +16,7 @@ Chaque tâche = un commit (ou quelques-uns), tests verts avant de cocher.
 - [x] 1.10 Sorts RG-10 : ciblage, immunité, délai lanceur, protections (Barrière → Renforcement), Vol, Échange forcé, Gel, Radar, Révélation, Duplication, Analyse
 - [x] 1.11 Contrefaçons RG-8.6 → 8.9 : création, visibilité par joueur, révélation
 - [x] 1.12 Échanges RG-11.1 → 11.3 : validation, contrepartie, fréquence par paire, application atomique ; enchères RG-11.4 / 11.5
-- [ ] 1.13 Boutique RG-9 : paquets, stock par vague, revente
+- [x] 1.13 Boutique RG-9 : paquets, stock par vague, revente (roulette RG-9.5 reportée : lots non définis)
 - [ ] 1.14 Classement RG-13.5 / 13.7 (live vs final) et détection du Clear RG-13.1
 - [ ] 1.15 Cycle de vie de partie RG-4 (transitions autorisées, horloge suspendue en pause)
 - [ ] 1.16 Événements GM RG-12 (effets sur scan/tirage/boutique, un seul par zone)

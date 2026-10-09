@@ -1,7 +1,9 @@
 // Intentions de terrain : envoi de position (RG-10.9) et scan de balise (RG-7, tirage RG-8.3).
 import {
   ROTATION_INTERVAL_MS,
+  SCAN_RATE_WINDOW_MS,
   SHARED_PHOTO_WINDOW_MS,
+  isAbnormalScanRate,
   addItem,
   checkScan,
   closedZones,
@@ -206,6 +208,7 @@ export async function scanRoutes(app: FastifyInstance) {
       );
       await c.log({ action: 'scan', resultat: 'ok', details: { baliseId: beacon.id, zoneId: beacon.zoneId, type: beacon.type, position, gains: vue } });
       await emitBeaconChanges(c, changes);
+      await checkScanRate(c, j.id, j.pseudo);
 
       // Diffusion (REGLES.md) : détail au joueur ; fil de l'écran si rang ≥ A ; progression.
       c.emit({ type: 'joueur', id: j.id }, 'tirage', { gains: vue, jenny });
@@ -246,4 +249,17 @@ async function checkSharedPhoto(c: ActionCtx, joueurId: string, pseudo: string, 
       return;
     }
   }
+}
+
+/** RG-15 : rythme de scan anormal (au plus une alerte par joueur et par fenêtre de 10 min). */
+async function checkScanRate(c: ActionCtx, joueurId: string, pseudo: string): Promise<void> {
+  const depuis = c.now - SCAN_RATE_WINDOW_MS;
+  const recents = await c.tx
+    .select({ a: journal.heureJeu, action: journal.action, resultat: journal.resultat, details: journal.details })
+    .from(journal)
+    .where(and(eq(journal.partieId, c.partie.id), gte(journal.heureJeu, depuis), sql`(${journal.acteurId} = ${joueurId} or ${journal.details}->>'joueurId' = ${joueurId})`));
+  const tirages = recents.filter((r) => r.action === 'scan' && r.resultat === 'ok').map((r) => r.a);
+  if (!isAbnormalScanRate(tirages, c.now)) return;
+  if (recents.some((r) => r.action === 'alerte' && r.resultat === 'rythme_scan')) return;
+  await alerte(c, 'rythme_scan', { joueurId, pseudo, tirages: tirages.length, fenetreMin: SCAN_RATE_WINDOW_MS / 60_000 });
 }

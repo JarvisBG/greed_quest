@@ -15,3 +15,4 @@ export * from './events.js';
 export * from './presets.js';
 export * from './registration.js';
 export * from './raid.js';
+export * from './anticheat.js';

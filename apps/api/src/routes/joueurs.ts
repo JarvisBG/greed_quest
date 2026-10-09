@@ -13,6 +13,7 @@ import { Inscription, LicenceScan, Reconnexion, ReponsesQuiz } from '@gq/shared'
 import { and, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { STAFF, requireRole } from '../auth/guard.js';
+import { alerte } from '../core/alertes.js';
 import { licenceCode, verifyLicence } from '../core/licence.js';
 import { paramsOf } from '../core/params.js';
 import { lifecycleOf } from '../core/partie.js';
@@ -49,9 +50,7 @@ export async function joueursRoutes(app: FastifyInstance) {
         .from(joueurs)
         .where(and(eq(joueurs.partieId, partieId), eq(joueurs.appareilId, body.appareilId)));
       if (memeAppareil) {
-        const alerte = { type: 'double_inscription', joueurId: memeAppareil.id, pseudo: memeAppareil.pseudo, pseudoTente: body.pseudo };
-        await c.log({ action: 'alerte', resultat: 'double_inscription', details: alerte });
-        c.emit({ type: 'staff' }, 'alerte', alerte);
+        await alerte(c, 'double_inscription', { joueurId: memeAppareil.id, pseudo: memeAppareil.pseudo, pseudoTente: body.pseudo });
         return deny('appareil_deja_inscrit', 'Ce téléphone est déjà inscrit : reconnecte-toi');
       }
       const [memePseudo] = await c.tx

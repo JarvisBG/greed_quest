@@ -33,6 +33,19 @@ export async function staffRoutes(app: FastifyInstance) {
     });
   });
 
+  // RG-15 : alertes anti-triche pour la console (le moteur alerte, l'équipe décide).
+  app.get<P>('/parties/:partieId/alertes', async (req) => {
+    const { partieId } = req.params;
+    requireRole(req, partieId, ...STAFF);
+    const rows = await app.gq.db
+      .select()
+      .from(journal)
+      .where(and(eq(journal.partieId, partieId), eq(journal.action, 'alerte')))
+      .orderBy(desc(journal.id))
+      .limit(200);
+    return { ok: true, alertes: rows.map((r) => ({ id: r.id, type: r.resultat, heureJeu: r.heureJeu, creeLe: r.creeLe, ...r.details })) };
+  });
+
   // Journal pour la console PNJ / GM (diffusion « PNJ/GM : journal »).
   app.get<P & { Querystring: { apres?: string; limite?: string } }>('/parties/:partieId/journal', async (req) => {
     const { partieId } = req.params;

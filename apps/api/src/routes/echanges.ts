@@ -6,22 +6,27 @@ import {
   confirmTrade,
   proposeTrade,
   setTradeOffer,
+  isRepeatedUnbalanced,
   trade,
+  tradeSideValue,
+  unbalancedDirection,
+  UNBALANCED_WINDOW_MS,
   type Book,
   type TradeParty,
   type TradeSession,
   type TradeSide,
 } from '@gq/engine';
 import { EchangeOffre, EchangeProposition, EchangeReponse } from '@gq/shared';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, gte, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { requireRole } from '../auth/guard.js';
+import { alerte } from '../core/alertes.js';
 import { activeSession, lastPairTrade, saveSession, sessionOf } from '../core/echanges.js';
 import { paramsOf } from '../core/params.js';
 import { recordPosition } from '../core/position.js';
 import type { ActionCtx } from '../core/runner.js';
 import { actionPatch, isLivreGele, loadBooks, loadCatalogue, loadJoueur, saveBooks, updateJoueur, type Catalogue, type JoueurRow } from '../core/state.js';
-import { echanges } from '../db/schema.js';
+import { echanges, journal } from '../db/schema.js';
 import { introuvable } from '../errors.js';
 import { refus, send } from '../http.js';
 import { newId } from '../ids.js';
@@ -211,11 +216,35 @@ export async function echangesRoutes(app: FastifyInstance) {
     await updateJoueur(c.tx, b.id, { ...actionPatch(b, c.now), jenny: res.b.jenny });
     const conclu = concludeTrade(v.session);
     const resume = (items: typeof res.recuParA) => items.map((i) => (i.kind === 'carte' ? ctx.cat.nomDe(i.cardId) : i.spell));
+    // RG-15 : valeur de chaque part, pour repérer les échanges répétés déséquilibrés.
+    const rangs = (items: typeof res.recuParA) => items.flatMap((i) => (i.kind === 'carte' ? [ctx.cat.rangDe(i.cardId)] : []));
+    const valeurA = tradeSideValue({ rangs: rangs(res.recuParB), jenny: s.donneA.jenny });
+    const valeurB = tradeSideValue({ rangs: rangs(res.recuParA), jenny: s.donneB.jenny });
+    const sens = unbalancedDirection(valeurA, valeurB);
+    const donneurDesequilibre = sens === 'a' ? a.id : sens === 'b' ? b.id : null;
     await c.log({
       action: 'echange',
       resultat: 'ok',
-      details: { sessionId: s.id, a: a.id, b: b.id, donneA: s.donneA, donneB: s.donneB, recuParA: resume(res.recuParA), recuParB: resume(res.recuParB) },
+      details: { sessionId: s.id, a: a.id, b: b.id, donneA: s.donneA, donneB: s.donneB, recuParA: resume(res.recuParA), recuParB: resume(res.recuParB), valeurA, valeurB, donneurDesequilibre },
     });
+    if (donneurDesequilibre) {
+      const paire = await c.tx
+        .select({ a: journal.heureJeu, details: journal.details })
+        .from(journal)
+        .where(
+          and(
+            eq(journal.partieId, c.partie.id),
+            eq(journal.action, 'echange'),
+            eq(journal.resultat, 'ok'),
+            gte(journal.heureJeu, c.now - UNBALANCED_WINDOW_MS),
+            sql`((${journal.details}->>'a' = ${a.id} and ${journal.details}->>'b' = ${b.id}) or (${journal.details}->>'a' = ${b.id} and ${journal.details}->>'b' = ${a.id}))`,
+          ),
+        );
+      const historique = paire.map((r) => ({ a: r.a, donneurDesequilibre: (r.details?.donneurDesequilibre as string | null) ?? null }));
+      if (isRepeatedUnbalanced(historique, c.now)) {
+        await alerte(c, 'echanges_desequilibres', { joueurs: [a.id, b.id], pseudos: [a.pseudo, b.pseudo], donneur: donneurDesequilibre, echanges: historique.length });
+      }
+    }
     // Diffusion : les deux joueurs (via la session) ; écran géant si une carte S ou SS a changé de main.
     if (res.publicSurEcran) c.emit({ type: 'tracker' }, 'fil', { type: 'echange', joueurs: [a.pseudo, b.pseudo], heureJeu: c.now });
     return { ok: true, session: conclu, concluA: c.now, extra: { conclu: true } };

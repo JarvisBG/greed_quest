@@ -37,8 +37,9 @@
   - [x] `src/routes/evenements.ts` : `POST /evenements` (7 types, annonces écran / push du tableau RG-12), `/evenements/:id/annuler` (RG-12.2), `/evenements/:id/valider` (mission, PNJ), `GET /evenements` (bannières ; mission visible du seul joueur visé et de l'équipe), raid (`GET /raid`, `POST /raid/reponse`, barre de vie sur l'écran). Questions du raid provisoires (`engine/raid.ts`).
   - [x] `src/routes/pnj.ts` : sanctions (avertissement, gel 5 min, annulation des gains d'une balise + gel, disqualification GM), corrections GM (Livre, jenny), checkpoints (création GM, réussite PNJ par licence : carte du stock + jenny, bonus Matérialisation ≤ C), expertise d'Antokiba (RG-8.8). `POST /abandon` (joueur). Dégel automatique dans la tâche planifiée.
   - [x] `src/routes/clear.ts` : `POST /clear` (provisoire, Livre gelé, demande à l'équipe), `/clear/confirmer` (GM, licence, partie terminée, `parties.gagnant_id`), `/clear/annuler` (GM, motivé), `/clear/recompenses` (3 cartes → lots réels, `parties.recompenses`).
+- [x] 2.10 Alertes RG-15 (`core/alertes.ts`, moteur `anticheat.ts`) : double inscription, vitesse, photo partagée, rythme de scan anormal, échanges répétés déséquilibrés ; journalisées (`action = alerte`), poussées à l'équipe, listées par `GET /alertes`.
 
-**Prochaine étape** : 2.10 (alertes anti-triche RG-15). Le calibrage n'est pas bloquant : tout passe par des paramètres.
+**Prochaine étape** : 2.11 (tests d'intégration bout en bout). Le calibrage n'est pas bloquant : tout passe par des paramètres.
 
 ## Reprise de session (lire en premier)
 - Phase 1 terminée et poussée (`main`, dernier commit « Simulateur v2 »). Engine pur dans `packages/engine/src/` : un module par domaine (`params`, `draw`, `book`, `scan`, `beacons`, `geo`, `spells`, `counterfeits`, `trades`, `shop`, `ranking`, `lifecycle`, `events`) + `sim/`. Chaque module a son `*.test.ts`.
@@ -130,6 +131,7 @@
 - Sanctions : le gel PNJ met le statut « gelé » 5 min (scans, sorts, échanges, boutique refusés), levé par la tâche planifiée. « Photo de balise » : seules les cartes tirées sur la balise désignée sont retirées (les sorts n'ont pas d'origine en base). Disqualification : cartes retirées (traces de perte « sanction »), sorts marqués utilisés.
 - Checkpoint : la carte donnée doit être dans le stock du checkpoint (un id par exemplaire) et sous sa limite (RG-8.2) ; le Livre plein n'empêche pas de recevoir (comme un vol). Bonus Matérialisation = tirage complet (nature carte / sort / jenny) avec rangs C et D seulement.
 - Clear : le Livre gelé ne peut plus être revendu ; le Clear est revérifié à la confirmation du GM. Le GM peut refuser un Clear provisoire (Livre dégelé, motif obligatoire).
+- RG-15 seuils proposés : rythme anormal = 10 tirages réussis en 10 min (une alerte par fenêtre) ; échange déséquilibré = une part vaut ≥ 3 fois l'autre et ≥ 5 points (points de rang + 1 par 10 J) ; alerte si 2 échanges d'une même paire sont déséquilibrés dans le même sens en 1 h.
 - RG-14.5 : contenu des préréglages non défini → proposé : Petit groupe = portée 20 m, marge GPS 10 m, limites d'exemplaires × 2 ; Standard = défauts du document ; Grande foule = portée 20 m, marge GPS 15 m (foule dense). Les formules auto suivent déjà J.
 
 ## Feuille de route

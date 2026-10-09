@@ -33,7 +33,7 @@ Chaque tâche = un commit (ou quelques-uns), tests verts avant de cocher.
 - [x] 2.7 Socket.IO : rooms joueur / staff / tracker, matrice de diffusion (REGLES.md « Diffusion »)
 - [x] 2.8 Tâches planifiées : J (2 min), rotation (20 min), recharge, vagues boutique, fin d'événements (fantôme, carte maudite, raid), inactivité et retour des SS RG-8.12, agenda d'événements RG-12.3
 - [x] 2.9 Endpoints GM/PNJ : cycle de vie, paramètres, balises, événements, corrections, sanctions, checkpoints, enchères, Clear
-- [ ] 2.10 Alertes anti-triche RG-15
+- [x] 2.10 Alertes anti-triche RG-15
 - [ ] 2.11 Tests d'intégration bout en bout (partie simulée)
 
 ## Phase 3 — App joueur (`apps/player`, PWA)

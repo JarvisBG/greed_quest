@@ -24,7 +24,7 @@ Chaque tâche = un commit (ou quelques-uns), tests verts avant de cocher.
 
 ## Phase 2 — API (`apps/api`)
 - [x] 2.0 Préréglages RG-14.5 (`engine/presets.ts` ; contenu Petit groupe / Grande foule proposé ; table en 2.1)
-- [ ] 2.1 Fastify + config + PGlite/Drizzle, schéma des 11 entités, migrations, seed (catalogue 30 cartes, zones, balises)
+- [x] 2.1 Fastify + config + PGlite/Drizzle, schéma des 11 entités, migrations, seed (catalogue 30 cartes, zones, balises)
 - [ ] 2.2 Journal RG-3.1 (transactionnel, motif obligatoire PNJ/GM)
 - [ ] 2.3 Auth : joueur (appareil), PNJ, GM ; rôles RG-3
 - [ ] 2.4 Inscription RG-5 : pseudo, appareil unique, Examen Hunter, test de Nen, kit, retardataire

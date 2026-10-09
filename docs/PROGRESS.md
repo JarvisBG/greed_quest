@@ -18,8 +18,9 @@
 
 **Phase 2 — API** (en cours) :
 - [x] 2.0 Préréglages RG-14.5 dans le moteur (`presets.ts`) : Petit groupe, Standard, Grande foule + enregistrement d'un préréglage GM (seules les différences sont gardées).
+- [x] 2.1 `apps/api` : Fastify 5, Drizzle 0.45 + PGlite 0.5 (dev/tests, en mémoire ou `PGLITE_DIR`) / `pg` (prod, `DATABASE_URL`). Schéma `src/db/schema.ts` : les 11 entités + `prereglages`, `staff`, `pertes` ; migrations `drizzle/` (`pnpm --filter @gq/api db:generate`) appliquées à l'ouverture. Seed : `pnpm --filter @gq/api seed` (partie de démo : 30 cartes, 6 zones, 20 balises). Helper de test `src/test/helpers.ts`.
 
-**Prochaine étape** : 2.1 (Fastify + PGlite/Drizzle, schéma des 11 entités, seed). Le calibrage n'est pas bloquant : tout passe par des paramètres.
+**Prochaine étape** : 2.2 (journal transactionnel). Le calibrage n'est pas bloquant : tout passe par des paramètres.
 
 ## Reprise de session (lire en premier)
 - Phase 1 terminée et poussée (`main`, dernier commit « Simulateur v2 »). Engine pur dans `packages/engine/src/` : un module par domaine (`params`, `draw`, `book`, `scan`, `beacons`, `geo`, `spells`, `counterfeits`, `trades`, `shop`, `ranking`, `lifecycle`, `events`) + `sim/`. Chaque module a son `*.test.ts`.
@@ -91,6 +92,8 @@
 - Mission secrète : durée par défaut 20 min, récompense en jenny fixée par le GM, aucune annonce.
 - RG-8.12 : SS rendues = vraies SS seulement ; inactif depuis 20 min, abandon ou disqualification.
 - RG-12.3 agenda automatique : reporté en Phase 2 (planification).
+- Catalogue de démo : 30 noms neutres proposés (habillage à trancher), n° 001-002 SS, 003-005 S, 006-010 A, 011-016 B, 017-023 C, 024-030 D. Zones de démo : Masadora, Antokiba, Soufrabi + 3 zones sauvages.
+- Livre : pas de colonne « emplacements » ; la mise en page est recalculée par le moteur (`layoutBook`) à partir des exemplaires, sorts non utilisés et pertes. Table `livres` = état du Livre (gelé par un Clear provisoire).
 - RG-14.5 : contenu des préréglages non défini → proposé : Petit groupe = portée 20 m, marge GPS 10 m, limites d'exemplaires × 2 ; Standard = défauts du document ; Grande foule = portée 20 m, marge GPS 15 m (foule dense). Les formules auto suivent déjà J.
 
 ## Feuille de route

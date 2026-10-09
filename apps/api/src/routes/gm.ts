@@ -15,6 +15,7 @@ import {
   BaliseCreation,
   BaliseEtatIntent,
   CarteModification,
+  CatalogueComposition,
   CycleIntent,
   ParamIntent,
   PrereglageApplication,
@@ -30,7 +31,7 @@ import { lifecycleOf } from '../core/partie.js';
 import type { ActionCtx } from '../core/runner.js';
 import { loadBeacons, saveBeacons } from '../core/state.js';
 import { tickPartie } from '../core/taches.js';
-import { balises, cartes, joueurs, parties, prereglages, zones } from '../db/schema.js';
+import { balises, cartes, checkpoints, exemplaires, joueurs, parties, prereglages, zones } from '../db/schema.js';
 import { introuvable } from '../errors.js';
 import { refus, send } from '../http.js';
 import { newBeaconId, newId, newSecret } from '../ids.js';
@@ -76,6 +77,15 @@ export async function gmRoutes(app: FastifyInstance) {
   app.post<P>('/parties/:partieId/cycle', async (req, reply) => {
     const input = parse(CycleIntent, req.body);
     const r = await gm(req, async (c) => {
+      if (input.action === 'demarrer') {
+        // RG-8.1 : le catalogue doit compter exactement N cartes désignées.
+        const n = (await paramsOf(c.tx, c.partie)).cartesDesignees;
+        const designees = (await c.tx.select({ id: cartes.id }).from(cartes).where(and(eq(cartes.partieId, c.partie.id), eq(cartes.designee, true)))).length;
+        if (designees !== n) {
+          await c.log({ action: 'cycle_de_vie', resultat: 'refus', details: { action: input.action, designees, n } });
+          return refus('catalogue_incomplet', `Le catalogue compte ${designees} cartes désignées, le paramètre N en attend ${n}`);
+        }
+      }
       const res = applyGmAction(lifecycleOf(c.partie), input.action, c.realNow);
       if (!res.ok) {
         await c.log({ action: 'cycle_de_vie', resultat: 'refus', details: { action: input.action, message: res.message } });
@@ -105,6 +115,8 @@ export async function gmRoutes(app: FastifyInstance) {
     const input = parse(ParamIntent, req.body);
     const r = await gm(req, async (c) => {
       if (!PARAM_KEYS.includes(input.cle as ParamKey)) return refus('parametre_inconnu', 'Paramètre inconnu');
+      // RG-8.1 / RG-14.3 : N se fixe avant le démarrage (cartes imprimées, Livres construits dessus).
+      if (input.cle === 'cartesDesignees' && c.partie.demarreeA !== null) return refus('parametre_fige', 'N se fixe avant le démarrage de la partie');
       const settings = { ...settingsOf(c.partie), [input.cle]: input.reglage };
       await c.tx.update(parties).set({ parametres: settings }).where(eq(parties.id, c.partie.id));
       c.partie.parametres = settings;
@@ -237,6 +249,35 @@ export async function gmRoutes(app: FastifyInstance) {
     const staff = req.session?.partieId === req.params.partieId && req.session.role !== 'joueur';
     const rows = await app.gq.db.select().from(cartes).where(eq(cartes.partieId, req.params.partieId)).orderBy(cartes.numero);
     return { ok: true, cartes: rows.map((x) => ({ id: x.id, numero: x.numero, nom: x.nom, rang: x.rang, designee: x.designee, ...(staff ? { lotReel: x.lotReel } : {}) })) };
+  });
+
+  // RG-8.1 (N réglable) : le GM compose le catalogue avant le démarrage ; N = nombre de cartes (paramètre verrouillé).
+  // Conseil de taille et de répartition : moteur conseils.ts (conseilCartesDesignees, repartitionCatalogue).
+  app.put<P>('/parties/:partieId/catalogue', async (req, reply) => {
+    const input = parse(CatalogueComposition, req.body);
+    const r = await gm(req, async (c) => {
+      if (c.partie.demarreeA !== null) return refus('partie_demarree', 'Le catalogue se compose avant le démarrage de la partie');
+      if ((await c.tx.select({ id: exemplaires.id }).from(exemplaires).where(eq(exemplaires.partieId, c.partie.id)).limit(1)).length > 0) {
+        return refus('cartes_en_jeu', 'Des cartes sont déjà dans des Livres : le catalogue ne peut plus changer');
+      }
+      // Les stocks des checkpoints désignaient les anciennes cartes : ils sont vidés.
+      const cps = await c.tx.select().from(checkpoints).where(eq(checkpoints.partieId, c.partie.id));
+      const vides = cps.filter((x) => x.cartes.length > 0);
+      for (const x of vides) await c.tx.update(checkpoints).set({ cartes: [] }).where(eq(checkpoints.id, x.id));
+      await c.tx.delete(cartes).where(eq(cartes.partieId, c.partie.id));
+      await c.tx.insert(cartes).values(
+        input.cartes.map((x, i) => ({ id: newId(), partieId: c.partie.id, numero: i + 1, nom: x.nom, rang: x.rang, lotReel: x.lotReel ?? null })),
+      );
+      const n = input.cartes.length;
+      const settings = { ...settingsOf(c.partie), cartesDesignees: { mode: 'verrouille' as const, value: n } };
+      await c.tx.update(parties).set({ parametres: settings }).where(eq(parties.id, c.partie.id));
+      c.partie.parametres = settings;
+      const parRang: Record<string, number> = {};
+      for (const x of input.cartes) parRang[x.rang] = (parRang[x.rang] ?? 0) + 1;
+      await c.log({ action: 'catalogue', resultat: 'ok', details: { n, parRang, checkpointsVides: vides.length } });
+      return { ok: true as const, n, parRang, checkpointsVides: vides.length };
+    });
+    return send(reply, r);
   });
 
   app.patch<PI>('/parties/:partieId/cartes/:id', async (req, reply) => {

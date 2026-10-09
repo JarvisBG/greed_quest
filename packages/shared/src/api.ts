@@ -133,6 +133,16 @@ export const ZoneCreation = z.object({
 });
 export const BaliseCreation = z.object({ zoneId: z.string(), libelle: z.string().trim().min(1).max(20), position: LatLngInput.optional() });
 /** RG-8.1 : carte du catalogue (nom, lot réel). */
+/**
+ * RG-8.1 (N réglable, décision 2026-10-09) : le GM compose le catalogue avant le démarrage.
+ * Toutes les cartes sont désignées, numérotées 001..N dans l'ordre donné.
+ */
+export const CatalogueComposition = z.object({
+  cartes: z
+    .array(z.object({ nom: z.string().trim().min(1).max(60), rang: z.enum(['SS', 'S', 'A', 'B', 'C', 'D']), lotReel: z.string().max(120).nullable().optional() }))
+    .min(7, 'Au moins 7 cartes')
+    .max(60, 'Au plus 60 cartes'),
+});
 export const CarteModification = z.object({ nom: z.string().trim().min(1).max(60).optional(), lotReel: z.string().max(120).nullable().optional() });
 
 /** RG-12 : lancement d'un événement par le GM. */

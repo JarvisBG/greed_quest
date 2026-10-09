@@ -11,7 +11,7 @@ Chaque tâche = un commit (ou quelques-uns), tests verts avant de cocher.
 - [x] 1.5 Tirage RG-8.3 : nature, rang (type de balise, rendement décroissant RG-7.2), carte dispo sous limite RG-8.2, repli rang inférieur / jenny
 - [x] 1.6 Livre RG-8.5 : emplacements désignés + 15 libres, pages de 10, Livre plein
 - [x] 1.7 Vérifications de scan RG-7 dans l'ordre (partie, joueur, balise, boucle RG-7.1, délai RG-7.3, Livre, stock) + motifs en clair RG-7.4
-- [ ] 1.8 Balises : cycle d'états RG-6.3, choix des balises à activer, rotation RG-6.4
+- [x] 1.8 Balises : cycle d'états RG-6.3, choix des balises à activer, rotation RG-6.4
 - [ ] 1.9 Géoloc : distance haversine, portée RG-10.11, hors radar RG-10.10, vitesse anti-triche RG-15
 - [ ] 1.10 Sorts RG-10 : ciblage, immunité, délai lanceur, protections (Barrière → Renforcement), Vol, Échange forcé, Gel, Radar, Révélation, Duplication, Analyse
 - [ ] 1.11 Contrefaçons RG-8.6 → 8.9 : création, visibilité par joueur, révélation

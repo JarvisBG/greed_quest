@@ -3,3 +3,4 @@ export * from './params.js';
 export * from './draw.js';
 export * from './book.js';
 export * from './scan.js';
+export * from './beacons.js';

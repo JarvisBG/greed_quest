@@ -12,9 +12,9 @@
 - [x] Premier commit, poussé sur https://github.com/JarvisBG/greed_quest (branche `main`, auteur git local « Sivraj »)
 - [x] Plan détaillé des tâches : `docs/PLAN.md`
 
-**Phase 1 — Moteur** (en cours) : tâches 1.1 → 1.7 faites (types, RNG, paramètres RG-14, lissage J, tirage RG-8.3, Livre RG-8.5/8.13/8.14, vérifications de scan RG-7). 48 tests verts.
+**Phase 1 — Moteur** (en cours) : tâches 1.1 → 1.8 faites (types, RNG, paramètres RG-14, lissage J, tirage RG-8.3, Livre RG-8.5/8.13/8.14, scan RG-7, balises RG-6). 60 tests verts.
 
-**Prochaine étape** : 1.8 balises (cycle d'états RG-6.3, activation, rotation RG-6.4).
+**Prochaine étape** : 1.9 géoloc (distance, portée RG-10.11, hors radar RG-10.10, vitesse RG-15).
 
 ## Ambiguïtés du document (choix validés par Sivraj le 2026-10-09, réglables)
 - RG-6 vs tableau RG-8 : balise standard « rangs D à A » mais le tableau donne 1 % de S en standard → S exclu en standard (`draw.ts`).
@@ -28,8 +28,12 @@
 - RG-8.5 « Livre plein » vérifié avant le tirage (étape 6 de RG-7, le gain n'est pas encore connu) : plein = 15 emplacements libres occupés, même si un emplacement désigné est vide.
 - RG-8.5 : l'emplacement désigné revient au premier exemplaire obtenu ; s'il part, le doublon suivant le reprend.
 - Livre plein et réception par vol / échange / échange forcé : débordement autorisé ; scan interdit tant que les emplacements libres occupés sont ≥ 15 (validé le 2026-10-09).
-- RG-7.3 « 30 s entre deux scans » : compté depuis le dernier tirage réussi (un refus ne coûte rien, RG-7.4).
-- RG-7 étape 2 : un joueur « inactif » (RG-5.7) peut scanner, l'action le rend actif ; seuls disqualifié, abandon et gelé sont refusés.
+- RG-7.3 « 30 s entre deux scans » : compté depuis le dernier tirage réussi (un refus ne coûte rien, RG-7.4). (validé)
+- RG-7 étape 2 : un joueur « inactif » (RG-5.7) peut scanner, l'action le rend actif ; seuls disqualifié, abandon et gelé sont refusés. (validé)
+- RG-6 balises rares « peu nombreuses » : pas de quota, rares et standard partagent la cible ; leur rareté vient du nombre imprimé.
+- RG-6.4 rotation : 30 % des actives arrondi, au moins 1 ; balises retirées au hasard (→ dormantes, non réactivables dans la même rotation) ; remplaçantes par zone la moins visitée (visites + activations du tour), tirage au hasard en cas d'égalité.
+- RG-6.3 remplacement : si aucune dormante hors de la zone épuisée, la zone épuisée redevient éligible.
+- RG-14.3 : une baisse de la cible de balises actives ne coupe aucune balise ; on ne réactive simplement pas.
 - RG-14.5 : contenu des préréglages Petit groupe / Grande foule non défini.
 
 ## Feuille de route

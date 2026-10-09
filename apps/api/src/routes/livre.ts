@@ -50,16 +50,18 @@ export async function livreRoutes(app: FastifyInstance) {
             return o.par === 'evenement' ? 'Événement' : 'Game Master';
         }
       };
-      const slot = (x: Slot) => {
-        if (x.etat === 'vide') return { etat: 'vide' as const };
+      // `designe` : emplacement réservé à une carte du catalogue (RG-8.5) ; vide, il montre quelle carte manque.
+      const slot = (x: Slot, designe: string | null) => {
+        if (x.etat === 'vide') return designe ? { etat: 'vide' as const, designe: true, carte: carte(designe) } : { etat: 'vide' as const, designe: false };
         if (x.etat === 'perdu') {
-          return { etat: 'perdu' as const, carte: carte(x.perte.cardId), message: describeLoss(x.perte, nom, (a) => heureAffichee(a, c.now, c.realNow)) };
+          return { etat: 'perdu' as const, designe: true, carte: carte(x.perte.cardId), message: describeLoss(x.perte, nom, (a) => heureAffichee(a, c.now, c.realNow)) };
         }
         const i = x.item;
-        if (i.kind === 'sort') return { etat: 'plein' as const, kind: 'sort' as const, itemId: i.id, sort: i.spell };
+        if (i.kind === 'sort') return { etat: 'plein' as const, designe: false, kind: 'sort' as const, itemId: i.id, sort: i.spell };
         const v = viewCard(i, true);
         return {
           etat: 'plein' as const,
+          designe: designe !== null,
           kind: 'carte' as const,
           itemId: i.id,
           carteId: v.cardId,
@@ -72,13 +74,16 @@ export async function livreRoutes(app: FastifyInstance) {
         };
       };
       const layout = layoutBook(book, cat.designees);
+      // Les pages commencent par les emplacements désignés, dans l'ordre du catalogue (layoutBook).
+      let k = 0;
+      const page = (p: Slot[]) => p.map((x) => slot(x, layout.designes[k++]?.cardId ?? null));
       return {
         ok: true as const,
         gele: await isLivreGele(c.tx, s.sub),
         cartesDesignees: layout.designes.filter((d) => d.slot.etat === 'plein').length,
         total: cat.designees.length,
         libresUtilises: layout.libresUtilises,
-        pages: layout.pages.map((p) => p.map(slot)),
+        pages: layout.pages.map(page),
       };
     });
   });

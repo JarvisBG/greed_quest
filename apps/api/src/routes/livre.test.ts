@@ -32,4 +32,12 @@ describe('RG-8.5 Livre du joueur', () => {
     expect(l.pages[2][9]).toMatchObject({ etat: 'perdu', message: expect.stringMatching(/^Volée par Kirua à \d\dh\d\d$/) });
     expect(l.libresUtilises).toBe(2);
   });
+
+  it('RG-8.5 : un emplacement désigné vide montre la carte qui manque ; un emplacement libre non', async () => {
+    const l = (await t.app.inject({ url: `/parties/${t.partieId}/livre`, headers: t.bearer(gon.token) })).json();
+    expect(l.pages[0][1]).toMatchObject({ etat: 'vide', designe: true, carte: { numero: 2 } });
+    expect(l.pages[0][0]).toMatchObject({ designe: true });
+    expect(l.pages[3][0]).toMatchObject({ etat: 'plein', designe: false });
+    expect(l.pages[4][4]).toEqual({ etat: 'vide', designe: false });
+  });
 });

@@ -12,11 +12,11 @@
 - [x] Premier commit, poussé sur https://github.com/JarvisBG/greed_quest (branche `main`, auteur git local « Sivraj »)
 - [x] Plan détaillé des tâches : `docs/PLAN.md`
 
-**Phase 1 — Moteur** (en cours) : tâches 1.1 → 1.5 faites (types, RNG, paramètres RG-14, lissage J, tirage RG-8.3). 25 tests verts.
+**Phase 1 — Moteur** (en cours) : tâches 1.1 → 1.6 faites (types, RNG, paramètres RG-14, lissage J, tirage RG-8.3, Livre RG-8.5/8.13/8.14). 33 tests verts.
 
-**Prochaine étape** : 1.6 Livre RG-8.5, puis 1.7 vérifications de scan RG-7.
+**Prochaine étape** : 1.7 vérifications de scan RG-7.
 
-## Ambiguïtés du document (valeurs provisoires dans le code, à valider)
+## Ambiguïtés du document (choix validés par Sivraj le 2026-10-09, réglables)
 - RG-6 vs tableau RG-8 : balise standard « rangs D à A » mais le tableau donne 1 % de S en standard → S exclu en standard (`draw.ts`).
 - Poids des rangs en balise rare (« poids relevés ») non chiffrés → S 15, A 25, B 30, C 30.
 - Balise fantôme : SS 50 / S 50, et toujours une carte (ni sort ni jenny).
@@ -25,6 +25,8 @@
 - RG-8.3 : si le rang tiré et tous les rangs inférieurs sont épuisés → jenny, même si un rang supérieur reste dispo.
 - RG-14.1 « baisse limitée à un palier toutes les 10 min » : interprété comme une baisse appliquée au plus une fois par fenêtre de 10 min.
 - RG-14.2 multiplicateur : arrondi à l'entier le plus proche.
+- RG-8.5 « Livre plein » vérifié avant le tirage (étape 6 de RG-7, le gain n'est pas encore connu) : plein = 15 emplacements libres occupés, même si un emplacement désigné est vide.
+- RG-8.5 : l'emplacement désigné revient au premier exemplaire obtenu ; s'il part, le doublon suivant le reprend.
 - RG-14.5 : contenu des préréglages Petit groupe / Grande foule non défini.
 
 ## Feuille de route
@@ -41,6 +43,9 @@ _(date — décision — raison)_
 - 2026-10-09 — Stack TypeScript monorepo validée (voir CLAUDE.md) — moteur testable isolément, un seul langage pour api et fronts.
 - 2026-10-09 — Ordre : engine avant api — l'engine porte la logique métier, l'api l'orchestre.
 - 2026-10-09 — Pas de Docker. Dev et tests : PGlite (PostgreSQL embarqué, zéro installation) via Drizzle ; prod : PostgreSQL hébergé. Raison : rien à installer sur le poste Windows, même dialecte SQL qu'en prod.
+
+## Questions ouvertes (nouvelles)
+- Vol / échange forcé / échange vers un Livre plein : refuser l'action, ou laisser déborder les emplacements libres ? (`layoutBook` tolère le débordement pour l'instant.)
 
 ## Points ouverts (repris du document de règles)
 - Nom / habillage · Clear = fin de partie ou phase finale ? · Compte joueur persistant ? · Pouvoirs de Spécialisation, contenu Examen et test de Nen · Portée 30 m · Calibrage.

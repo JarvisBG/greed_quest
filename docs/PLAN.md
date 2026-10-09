@@ -9,7 +9,7 @@ Chaque tâche = un commit (ou quelques-uns), tests verts avant de cocher.
 - [x] 1.3 Paramètres dynamiques : formules auto RG-14, résolution Auto / Verrouillé / Multiplicateur RG-14.2, vue console RG-14.6
 - [x] 1.4 Lissage de J RG-14.1 (hausse immédiate, baisse limitée)
 - [x] 1.5 Tirage RG-8.3 : nature, rang (type de balise, rendement décroissant RG-7.2), carte dispo sous limite RG-8.2, repli rang inférieur / jenny
-- [ ] 1.6 Livre RG-8.5 : emplacements désignés + 15 libres, pages de 10, Livre plein
+- [x] 1.6 Livre RG-8.5 : emplacements désignés + 15 libres, pages de 10, Livre plein
 - [ ] 1.7 Vérifications de scan RG-7 dans l'ordre (partie, joueur, balise, boucle RG-7.1, délai RG-7.3, Livre, stock) + motifs en clair RG-7.4
 - [ ] 1.8 Balises : cycle d'états RG-6.3, choix des balises à activer, rotation RG-6.4
 - [ ] 1.9 Géoloc : distance haversine, portée RG-10.11, hors radar RG-10.10, vitesse anti-triche RG-15

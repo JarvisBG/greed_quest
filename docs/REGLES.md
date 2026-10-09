@@ -74,6 +74,7 @@ Types : **Standard** rangs D–A, stock normal, rotation auto · **Rare** C–S 
 
 ## RG-8 Cartes
 - 8.1 N cartes désignées (30), numérotées 001..N, liables à un lot réel.
+> **Amendement 2026-10-09 (Sivraj) — N réglable, 1 SS, Clear possible** : le GM compose le catalogue avant le démarrage (`PUT /catalogue`, 7 à 60 cartes, toutes désignées) ; N le suit et se fige au démarrage (démarrage refusé si le catalogue ne compte pas N cartes). **Une seule SS** au catalogue ; les autres rangs au prorata du tableau ci-dessous (`repartitionCatalogue`). **Conseil de N pour qu'un Clear soit possible en fin de partie** (`conseilCartesDesignees`) : 12 cartes à 90 min, +2 par demi-heure (14 à 120 min, 16 à 150 min, 18 à 180 min), +2 au-delà de 50 joueurs. Simulation : à 120 min avec N = 14, Clear dans ≈ 50 % (10 joueurs), 45 % (30), 80-85 % (80) des parties, vers 91-104 min, avec une animation active (≈ 2,5 cartes de checkpoint par joueur, cessions entre joueurs).
 - 8.2 Limite d'exemplaires en circulation par carte (rang + J). À la limite → hors table de tirage. Limite absolue.
 - 8.3 Tirage : nature (carte 82 %, sort 13 %, jenny 5 %) → rang selon poids (ajusté type balise + rendement décroissant) → carte au hasard dispo de ce rang. Rang épuisé → rang inférieur ; tout épuisé → jenny.
 - 8.4 Doublons autorisés.
@@ -81,7 +82,7 @@ Types : **Standard** rangs D–A, stock normal, rotation auto · **Rare** C–S 
 
 | Rang | Nb cartes | Poids standard | Sources |
 |---|---|---|---|
-| SS | 2 | 0 % | fantômes, arène Soufrabi, enchères |
+| SS | 2 (amendement : 1) | 0 % | fantômes, arène Soufrabi, enchères |
 | S | 3 | 1 % | rares, PNJ |
 | A | 5 | 4 % | rares, PNJ, enchères |
 | B | 6 | 12 % | énigmes terrain, PNJ |
@@ -171,13 +172,13 @@ Prix défaut (réglables) : paquet 50 J · revente D/C/B 5/10/20 J · A/S 40/80 
 - 14.5 Préréglages (Petit groupe, Standard, Grande foule) + enregistrement de nouveaux.
 - 14.6 Console : J, valeur auto, mode, valeur appliquée.
 
-> **Amendement 2026-10-09 (Sivraj, calibrage)** : les limites d'exemplaires (SS, S, A, B, C/D) sont en mode **Multiplicateur × 2** par défaut (donc limite SS ≥ 2). Les formules du tableau restent la valeur « auto ». Simulation : au-delà de × 2, plus d'effet.
+> **Amendement 2026-10-09 (Sivraj, calibrage)** : les limites d'exemplaires (S, A, B, C/D) sont en mode **Multiplicateur × 2** par défaut, la SS (unique) en **× 4** (≥ 4 exemplaires). Les formules du tableau restent la valeur « auto ». **Durée par défaut : 120 min** (150 dans le document).
 
 | Paramètre | Formule auto | Mode défaut |
 |---|---|---|
 | Balises actives | ceil(J/3), borné [5, nb posées] | Auto |
 | Stock balise | ceil(J/2), borné [5, 30] | Auto |
-| Limite SS | max(1, floor(J/20)) | Multiplicateur × 2 |
+| Limite SS | max(1, floor(J/20)) | Multiplicateur × 4 |
 | Limite S | max(2, ceil(J/10)) | Multiplicateur × 2 |
 | Limite A | max(3, ceil(J/5)) | Multiplicateur × 2 |
 | Limite B | max(4, ceil(J/3)) | Multiplicateur × 2 |
@@ -185,7 +186,7 @@ Prix défaut (réglables) : paquet 50 J · revente D/C/B 5/10/20 J · A/S 40/80 
 | Paquets par vague | ceil(J/2) | Auto |
 | PV boss | J × 10 | Auto |
 | K boucle | 3, ou 2 si < 8 balises actives | Auto |
-| Durée partie | 150 min | Verrouillé |
+| Durée partie | 150 min (amendement : 120) | Verrouillé |
 | Mise de l'arène (amendement) | 30 J | Auto |
 | Délai entre deux tentatives à l'arène (amendement) | 15 min | Auto |
 | N cartes désignées | 30 | Verrouillé |

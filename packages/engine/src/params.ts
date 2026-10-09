@@ -66,7 +66,8 @@ export const AUTO_FORMULAS: Record<ParamKey, (c: ParamContext) => number> = {
   margeGpsMaxM: () => 20,
   /** Amendement RG-10.10 : minutes pendant lesquelles un joueur sans nouvelle position reste ciblable ; au-delà, alerte à l'équipe. */
   ciblableMin: () => 10,
-  dureePartieMin: () => 150,
+  // Amendement 2026-10-09 (Sivraj) : 120 min par défaut (150 dans le document).
+  dureePartieMin: () => 120,
   cartesDesignees: () => 30,
   // RG-5.3 / 5.5 / 5.6 / 5.4 : montants non chiffrés dans le document, valeurs proposées (PROGRESS.md).
   kitJenny: () => 50,
@@ -83,19 +84,21 @@ export const AUTO_FORMULAS: Record<ParamKey, (c: ParamContext) => number> = {
 
 /** Calibrage validé le 2026-10-09 (docs/SIMULATION.md) : limites d'exemplaires × 2 par défaut. */
 export const LIMITES_PAR_DEFAUT: ParamSetting = { mode: 'multiplicateur', coef: 2 };
+/** Une seule SS au catalogue (décision 2026-10-09) : sa limite est × 4 (aide surtout les groupes moyens). */
+export const LIMITE_SS_PAR_DEFAUT: ParamSetting = { mode: 'multiplicateur', coef: 4 };
 
 /**
  * Modes par défaut (RG-14) : tout en auto sauf durée et N, verrouillés.
- * Amendement RG-14 (calibrage) : limites d'exemplaires en Multiplicateur × 2 (limite SS ≥ 2).
+ * Amendements RG-14 (calibrage) : limites d'exemplaires en Multiplicateur × 2, × 4 pour la SS ; durée 120 min.
  */
 export const DEFAULT_SETTINGS: ParamSettings = {
   ...(Object.fromEntries(PARAM_KEYS.map((k) => [k, { mode: 'auto' }])) as ParamSettings),
-  limiteSS: LIMITES_PAR_DEFAUT,
+  limiteSS: LIMITE_SS_PAR_DEFAUT,
   limiteS: LIMITES_PAR_DEFAUT,
   limiteA: LIMITES_PAR_DEFAUT,
   limiteB: LIMITES_PAR_DEFAUT,
   limiteCD: LIMITES_PAR_DEFAUT,
-  dureePartieMin: { mode: 'verrouille', value: 150 },
+  dureePartieMin: { mode: 'verrouille', value: 120 },
   porteeSortsM: { mode: 'verrouille', value: 30 },
   margeGpsMaxM: { mode: 'verrouille', value: 20 },
   cartesDesignees: { mode: 'verrouille', value: 30 },

@@ -27,7 +27,7 @@ describe('RG-14 formules auto', () => {
       kBoucle: 3,
       porteeSortsM: 30,
       margeGpsMaxM: 20,
-      dureePartieMin: 150,
+      dureePartieMin: 120,
       cartesDesignees: 30,
     });
   });
@@ -44,10 +44,10 @@ describe('RG-14 formules auto', () => {
     expect(p.limiteSS).toBe(10);
   });
 
-  it('Amendement RG-14 (calibrage) : limites en Multiplicateur × 2 par défaut, limite SS ≥ 2', () => {
-    expect(resolveParams(DEFAULT_SETTINGS, ctx(30))).toMatchObject({ limiteSS: 2, limiteS: 6, limiteA: 12, limiteB: 20, limiteCD: 30 });
-    expect(resolveParams(DEFAULT_SETTINGS, ctx(1))).toMatchObject({ limiteSS: 2, limiteS: 4, limiteA: 6, limiteB: 8, limiteCD: 10 });
-    expect(resolveParam('limiteSS', DEFAULT_SETTINGS.limiteSS, ctx(30))).toMatchObject({ auto: 1, applied: 2 });
+  it('Amendement RG-14 (calibrage) : limites en Multiplicateur × 2 par défaut, × 4 pour la SS ; durée 120 min', () => {
+    expect(resolveParams(DEFAULT_SETTINGS, ctx(30))).toMatchObject({ limiteSS: 4, limiteS: 6, limiteA: 12, limiteB: 20, limiteCD: 30, dureePartieMin: 120 });
+    expect(resolveParams(DEFAULT_SETTINGS, ctx(1))).toMatchObject({ limiteSS: 4, limiteS: 4, limiteA: 6, limiteB: 8, limiteCD: 10 });
+    expect(resolveParam('limiteSS', DEFAULT_SETTINGS.limiteSS, ctx(30))).toMatchObject({ auto: 1, applied: 4 });
   });
 
   it('kBoucle vaut 2 sous 8 balises actives', () => {

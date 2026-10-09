@@ -125,9 +125,9 @@ describe('tâches planifiées', () => {
   });
 
   it('RG-4.5 : phase finale 30 min avant la fin, puis fin du temps et classement figé (RG-13.4)', async () => {
-    await tickA(155 + 120); // heure de jeu 120 min
+    await tickA(155 + 90); // heure de jeu 90 min (durée par défaut 120 min)
     expect((await partie()).etat).toBe('phase_finale');
-    await tickA(155 + 150);
+    await tickA(155 + 120);
     const p = await partie();
     expect(p.etat).toBe('terminee');
     expect(p.classementFinal?.map((l) => l.pseudo).sort()).toEqual(['Gon', 'Kirua', 'Leorio']);

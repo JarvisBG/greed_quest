@@ -23,7 +23,7 @@ beforeAll(async () => {
 afterAll(() => t.close());
 
 describe('2.11 partie simulée de bout en bout', () => {
-  it('150 min de jeu à 12 joueurs, invariants respectés', { timeout: 600_000 }, async () => {
+  it('partie complète (120 min par défaut) à 12 joueurs, invariants respectés', { timeout: 600_000 }, async () => {
     const rng = seededRng(99);
     const gm = t.app.gq.tokens.issue({ role: 'gm', sub: 'gm1', partieId: t.partieId });
     const call = async (method: 'GET' | 'POST', url: string, token: string, payload?: Record<string, unknown>) => {
@@ -81,9 +81,9 @@ describe('2.11 partie simulée de bout en bout', () => {
     expect(fin!.classementFinal).toHaveLength(NB_JOUEURS);
 
     // RG-8.2 : jamais plus d'exemplaires vrais en circulation que la limite maximale atteinte
-    // (formules RG-14 × 2, multiplicateur par défaut depuis le calibrage).
+    // (formules RG-14 × 2, × 4 pour la SS : multiplicateurs par défaut depuis le calibrage).
     const lim = (J: number): Record<Rank, number> => ({
-      SS: 2 * Math.max(1, Math.floor(J / 20)),
+      SS: 4 * Math.max(1, Math.floor(J / 20)),
       S: 2 * Math.max(2, Math.ceil(J / 10)),
       A: 2 * Math.max(3, Math.ceil(J / 5)),
       B: 2 * Math.max(4, Math.ceil(J / 3)),

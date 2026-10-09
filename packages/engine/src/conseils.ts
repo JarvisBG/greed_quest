@@ -7,8 +7,11 @@ export const BALISES_PAR_JOUEUR = 0.75;
 export const BALISES_MIN = 10;
 /** Un checkpoint PNJ pour 10 joueurs attendus. */
 export const JOUEURS_PAR_CHECKPOINT = 10;
-/** Cartes de checkpoint par joueur attendu (≈ 1,5 : meilleur joueur 20-25/30 en simulation). */
-export const CARTES_CHECKPOINT_PAR_JOUEUR = 1.5;
+/**
+ * Cartes de checkpoint par joueur attendu. Objectif « Clear possible » (décision 2026-10-09) : ≈ 2,5
+ * (scénario « animation active » de SIMULATION.md ; 1,5 suffisait pour un jeu au classement).
+ */
+export const CARTES_CHECKPOINT_PAR_JOUEUR = 2.5;
 /** Proportions des rangs dans le stock des checkpoints. */
 export const RANGS_CHECKPOINT: Readonly<Partial<Record<Rank, number>>> = { B: 50, A: 35, S: 15 };
 
@@ -32,6 +35,38 @@ function repartir(total: number, poids: Readonly<Partial<Record<Rank, number>>>)
     res[r] = (res[r] ?? 0) + 1;
   }
   return res;
+}
+
+/** Décision 2026-10-09 (Sivraj) : 1 seule SS au catalogue, quelle que soit sa taille (2 dans le document). */
+export const SS_AU_CATALOGUE = 1;
+/** Proportions des autres rangs, d'après le tableau RG-8 (S 3, A 5, B 6, C 7, D 7 pour N = 30). */
+export const PROPORTIONS_CATALOGUE: Readonly<Partial<Record<Rank, number>>> = { S: 3, A: 5, B: 6, C: 7, D: 7 };
+export const N_MIN = 7;
+export const N_MAX = 60;
+
+/**
+ * RG-8.1 (N réglable, décision 2026-10-09) : répartition par rang d'un catalogue de N cartes désignées :
+ * 1 SS, le reste au prorata du tableau RG-8, au moins une carte de chaque rang.
+ */
+export function repartitionCatalogue(n: number): Record<Rank, number> {
+  const N = Math.min(N_MAX, Math.max(N_MIN, Math.round(n)));
+  const autres = Object.keys(PROPORTIONS_CATALOGUE).length;
+  // Une carte de chaque rang d'abord, puis le reste au prorata.
+  const reste = repartir(N - SS_AU_CATALOGUE - autres, PROPORTIONS_CATALOGUE);
+  const r = { SS: SS_AU_CATALOGUE } as Record<Rank, number>;
+  for (const k of Object.keys(PROPORTIONS_CATALOGUE) as Rank[]) r[k] = 1 + (reste[k] ?? 0);
+  return r;
+}
+
+/**
+ * RG-8.1 : taille conseillée du catalogue pour qu'un Clear soit possible en fin de partie
+ * (simulation du 2026-10-09, 1 SS, animation active : ≈ 25 à 85 % des parties selon la taille du groupe).
+ * 12 cartes à 90 min, +2 par demi-heure ; +2 au-delà de 50 joueurs (ils finissent plus vite).
+ */
+export function conseilCartesDesignees(joueursAttendus: number, dureeMin: number): number {
+  const paliers = Math.max(0, Math.round((dureeMin - 90) / 30));
+  const grandGroupe = joueursAttendus > 50 && dureeMin > 90 ? 2 : 0;
+  return Math.min(N_MAX, Math.max(N_MIN, 12 + 2 * paliers + grandGroupe));
 }
 
 /** Conseils pour un nombre de joueurs attendus. */

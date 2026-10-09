@@ -21,7 +21,7 @@ describe('schéma et seed', () => {
   it('RG-4.1 : la partie démarre en brouillon avec les paramètres du préréglage', async () => {
     const [p] = await t.db.select().from(parties).where(eq(parties.id, t.partieId));
     expect(p?.etat).toBe('brouillon');
-    expect(p?.parametres.dureePartieMin).toEqual({ mode: 'verrouille', value: 150 });
+    expect(p?.parametres.dureePartieMin).toEqual({ mode: 'verrouille', value: 120 });
   });
 
   it('RG-14.5 : les trois préréglages système sont en base', async () => {

@@ -45,7 +45,7 @@ describe('RG-4 cycle de vie piloté par le GM', () => {
 
   it('état public de la partie : temps restant, zones', async () => {
     const res = await t.app.inject({ url: `/parties/${t.partieId}` });
-    expect(res.json().partie).toMatchObject({ etat: 'en_cours', restantMs: 150 * 60_000 });
+    expect(res.json().partie).toMatchObject({ etat: 'en_cours', restantMs: 120 * 60_000 });
     expect(res.json().partie.zones).toHaveLength(6);
   });
 });

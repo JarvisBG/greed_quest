@@ -26,6 +26,7 @@ import { and, eq, gte, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { requireRole } from '../auth/guard.js';
 import { alerte } from '../core/alertes.js';
+import { balisesParZone } from '../core/ecran.js';
 import { paramsOf } from '../core/params.js';
 import { recordPosition } from '../core/position.js';
 import type { ActionCtx } from '../core/runner.js';
@@ -75,10 +76,7 @@ export async function emitBeaconChanges(c: ActionCtx, changes: readonly BeaconCh
   if (changes.length === 0) return;
   for (const ch of changes) await c.log({ action: 'balise', resultat: ch.to, details: { ...ch } });
   c.emit({ type: 'staff' }, 'balises', changes);
-  const beacons = await loadBeacons(c.tx, c.partie.id);
-  const parZone: Record<string, number> = {};
-  for (const b of beacons) if (b.state === 'active') parZone[b.zoneId] = (parZone[b.zoneId] ?? 0) + 1;
-  c.emit({ type: 'tracker' }, 'balises_par_zone', parZone);
+  c.emit({ type: 'tracker' }, 'balises_par_zone', await balisesParZone(c));
 }
 
 export async function scanRoutes(app: FastifyInstance) {

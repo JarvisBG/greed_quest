@@ -287,6 +287,18 @@ export const arene = pgTable(
   (t) => [index('arene_partie').on(t.partieId, t.etat), index('arene_joueur').on(t.joueurId, t.entreeA)],
 );
 
+/** Fil d'actualité de l'écran géant, gardé pour le rejouer à l'ouverture de l'écran (tirages ≥ A, sorts, échanges…). */
+export const fil = pgTable(
+  'fil',
+  {
+    id: serial('id').primaryKey(),
+    partieId: text('partie_id').notNull().references(() => parties.id, { onDelete: 'cascade' }),
+    heureJeu: heureJeu('heure_jeu').notNull(),
+    data: jsonb('data').$type<Record<string, unknown>>().notNull(),
+  },
+  (t) => [index('fil_partie').on(t.partieId, t.id)],
+);
+
 export type ActeurType = 'joueur' | 'pnj' | 'gm' | 'systeme';
 
 /** Journal (RG-3.1, P5) : chaque action d'état y écrit une ligne, dans la même transaction. */

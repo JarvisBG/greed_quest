@@ -5,7 +5,7 @@ import { randomInt } from 'node:crypto';
 import { gameClock, type Rng } from '@gq/engine';
 import { eq } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
-import { parties } from '../db/schema.js';
+import { fil, parties } from '../db/schema.js';
 import type { Audience, Bus, Emission } from './bus.js';
 import { Refus } from '../errors.js';
 import { writeLog, type Acteur, type LogEntry } from './journal.js';
@@ -85,7 +85,11 @@ export class Runner {
           },
           emit: (a, evenement, data) => emissions.push({ partieId, a, evenement, data }),
         };
-        return fn(ctx);
+        const r = await fn(ctx);
+        // Fil de l'écran gardé en base (rejoué à l'ouverture de l'écran, GET /ecran), dans la même transaction.
+        const pourFil = emissions.filter((e) => e.a.type === 'tracker' && e.evenement === 'fil');
+        if (pourFil.length > 0) await tx.insert(fil).values(pourFil.map((e) => ({ partieId, heureJeu: now, data: e.data as Record<string, unknown> })));
+        return r;
       });
       for (const e of emissions) this.bus.publish(e);
       return result;

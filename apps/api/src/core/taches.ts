@@ -22,6 +22,7 @@ import { journal, parties, zones, type Taches } from '../db/schema.js';
 import { closeDueAuctions } from '../routes/encheres.js';
 import { emitBeaconChanges, visitesParZone } from '../routes/scan.js';
 import { computeRanking, publicRanking } from './classement.js';
+import { heatmapPoints } from './ecran.js';
 import { alerte } from './alertes.js';
 import { applyLifecycle } from './cycle.js';
 import { expireSessions } from './echanges.js';
@@ -34,7 +35,6 @@ import { loadActiveEvents, loadBeacons, loadBooks, loadCatalogue, loadJoueurs, s
 
 export const INACTIVITY_MS = 15 * 60_000; // RG-5.7
 export const SCREEN_REFRESH_MS = 30_000;
-export const HEATMAP_DELAY_MS = 2 * 60_000; // RG-10.12
 
 /** Un passage de toutes les tâches dues pour une partie. */
 export async function tickPartie(c: ActionCtx): Promise<void> {
@@ -172,26 +172,7 @@ async function shopWave(c: ActionCtx) {
 /** Écran géant : classement live (RG-13.7) et heatmap anonyme décalée de 2 min (RG-10.12). */
 async function screen(c: ActionCtx) {
   c.emit({ type: 'tracker' }, 'classement', publicRanking(await computeRanking(c.tx, c.partie, 'live')));
-  const rows = await c.tx
-    .select({ acteurId: journal.acteurId, details: journal.details })
-    .from(journal)
-    .where(
-      and(
-        eq(journal.partieId, c.partie.id),
-        eq(journal.action, 'position'),
-        gte(journal.heureJeu, c.now - 2 * HEATMAP_DELAY_MS),
-        lte(journal.heureJeu, c.now - HEATMAP_DELAY_MS),
-      ),
-    )
-    .orderBy(journal.id);
-  const derniere = new Map<string, { lat: number; lng: number }>();
-  for (const r of rows) {
-    const d = r.details as { lat: number; lng: number } | null;
-    if (r.acteurId && d) derniere.set(r.acteurId, d);
-  }
-  // Points anonymes, arrondis à ~10 m.
-  const points = [...derniere.values()].map((d) => ({ lat: Number(d.lat.toFixed(4)), lng: Number(d.lng.toFixed(4)) }));
-  c.emit({ type: 'tracker' }, 'heatmap', points);
+  c.emit({ type: 'tracker' }, 'heatmap', await heatmapPoints(c));
 }
 
 /** RG-12.3 : agenda automatique (désactivé par défaut) : propose un événement, le GM confirme. */

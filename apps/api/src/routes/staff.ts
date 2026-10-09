@@ -33,6 +33,14 @@ export async function staffRoutes(app: FastifyInstance) {
     });
   });
 
+  // RG-3.2 : l'équipe de la partie, pour le GM (jamais les codes).
+  app.get<P>('/parties/:partieId/staff', async (req) => {
+    const { partieId } = req.params;
+    requireRole(req, partieId, 'gm');
+    const rows = await app.gq.db.select({ id: staff.id, nom: staff.nom, role: staff.role }).from(staff).where(eq(staff.partieId, partieId)).orderBy(staff.nom);
+    return { ok: true, equipe: rows };
+  });
+
   // Joueurs de la partie pour la console (sanction après une alerte, mission) : jamais de position (RG-10.12).
   app.get<P>('/parties/:partieId/joueurs', async (req) => {
     const { partieId } = req.params;

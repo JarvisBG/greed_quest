@@ -30,7 +30,7 @@ import { lifecycleOf } from '../core/partie.js';
 import type { ActionCtx } from '../core/runner.js';
 import { loadBeacons, saveBeacons } from '../core/state.js';
 import { tickPartie } from '../core/taches.js';
-import { balises, cartes, parties, prereglages, zones } from '../db/schema.js';
+import { balises, cartes, joueurs, parties, prereglages, zones } from '../db/schema.js';
 import { introuvable } from '../errors.js';
 import { refus, send } from '../http.js';
 import { newBeaconId, newId, newSecret } from '../ids.js';
@@ -143,6 +143,16 @@ export async function gmRoutes(app: FastifyInstance) {
       return { ok: true as const };
     });
     return send(reply, r);
+  });
+
+  // RG-10.12 : positions exactes, GM seulement (carte des positions) ; le temps réel envoie ensuite `position`.
+  app.get<P>('/parties/:partieId/positions', async (req) => {
+    requireRole(req, req.params.partieId, 'gm');
+    const rows = await app.gq.db
+      .select({ joueurId: joueurs.id, pseudo: joueurs.pseudo, statut: joueurs.statut, position: joueurs.position })
+      .from(joueurs)
+      .where(eq(joueurs.partieId, req.params.partieId));
+    return { ok: true, positions: rows.flatMap((r) => (r.position ? [{ joueurId: r.joueurId, pseudo: r.pseudo, statut: r.statut, ...r.position }] : [])) };
   });
 
   // --- Balises (RG-6) : carte des balises pour l'équipe ; le GM active, coupe, force la rotation ---

@@ -134,3 +134,15 @@ export const ZoneCreation = z.object({
 export const BaliseCreation = z.object({ zoneId: z.string(), libelle: z.string().trim().min(1).max(20), position: LatLngInput.optional() });
 /** RG-8.1 : carte du catalogue (nom, lot réel). */
 export const CarteModification = z.object({ nom: z.string().trim().min(1).max(60).optional(), lotReel: z.string().max(120).nullable().optional() });
+
+/** RG-12 : lancement d'un événement par le GM. */
+export const EvenementIntent = z.object({
+  type: z.enum(['apparition', 'double_gain', 'zone_maudite', 'raid', 'krach', 'carte_maudite', 'mission_secrete']),
+  zoneId: z.string().optional(),
+  /** Durée en minutes (sinon celle du tableau RG-12). */
+  dureeMin: z.number().min(1).max(120).optional(),
+  joueurId: z.string().optional(),
+  objectif: z.string().max(200).optional(),
+  recompenseJenny: z.number().int().min(0).optional(),
+});
+export const RaidReponse = z.object({ questionId: z.string(), choix: z.number().int().min(0) });

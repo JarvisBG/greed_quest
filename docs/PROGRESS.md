@@ -34,9 +34,10 @@
 - [x] 2.8 Tâches planifiées `src/core/taches.ts` : `tickPartie` (toutes les 5 s via `Scheduler`, démarré dans `main.ts`) = transitions auto RG-4.5 / fin du temps (classement final figé `parties.classement_final`, `core/cycle.ts`), inactivité RG-5.7, J toutes les 2 min, recharge / cible / rotation des balises, fin des événements (`core/evenements.ts` : fantôme, carte maudite, récompense du raid), retour des SS RG-8.12, clôture des enchères, expiration des échanges, vagues de boutique, écran (classement live + heatmap anonyme décalée de 2 min, toutes les 30 s), agenda RG-12.3 (paramètre `agendaIntervalleMin`, 0 = désactivé).
 - [ ] 2.9 Console GM / PNJ (en cours) :
   - [x] `src/routes/gm.ts` : `GET /parties/:id` (état public), `POST /cycle` (RG-4, démarrage = balises activées + J tout de suite), `GET|PUT /parametres` (RG-14.6 / 14.2), préréglages (liste, enregistrer, appliquer), balises (carte pour l'équipe, création, activer / couper / endormir, rotation forcée), zones (création avec QR de lieu), catalogue (`GET /cartes` public sans lot réel, `PATCH /cartes/:id`).
-  - [ ] Événements, raid, mission ; sanctions et corrections ; checkpoints PNJ et expertise ; Clear.
+  - [x] `src/routes/evenements.ts` : `POST /evenements` (7 types, annonces écran / push du tableau RG-12), `/evenements/:id/annuler` (RG-12.2), `/evenements/:id/valider` (mission, PNJ), `GET /evenements` (bannières ; mission visible du seul joueur visé et de l'équipe), raid (`GET /raid`, `POST /raid/reponse`, barre de vie sur l'écran). Questions du raid provisoires (`engine/raid.ts`).
+  - [ ] Sanctions et corrections ; checkpoints PNJ et expertise ; Clear.
 
-**Prochaine étape** : 2.9 suite (événements). Le calibrage n'est pas bloquant : tout passe par des paramètres.
+**Prochaine étape** : 2.9 suite (sanctions, corrections, checkpoints). Le calibrage n'est pas bloquant : tout passe par des paramètres.
 
 ## Reprise de session (lire en premier)
 - Phase 1 terminée et poussée (`main`, dernier commit « Simulateur v2 »). Engine pur dans `packages/engine/src/` : un module par domaine (`params`, `draw`, `book`, `scan`, `beacons`, `geo`, `spells`, `counterfeits`, `trades`, `shop`, `ranking`, `lifecycle`, `events`) + `sim/`. Chaque module a son `*.test.ts`.

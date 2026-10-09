@@ -12,9 +12,9 @@
 - [x] Premier commit, poussé sur https://github.com/JarvisBG/greed_quest (branche `main`, auteur git local « Sivraj »)
 - [x] Plan détaillé des tâches : `docs/PLAN.md`
 
-**Phase 1 — Moteur** (en cours) : tâches 1.1 → 1.8 faites (types, RNG, paramètres RG-14, lissage J, tirage RG-8.3, Livre RG-8.5/8.13/8.14, scan RG-7, balises RG-6). 62 tests verts.
+**Phase 1 — Moteur** (en cours) : tâches 1.1 → 1.9 faites (types, RNG, paramètres RG-14, lissage J, tirage RG-8.3, Livre RG-8.5/8.13/8.14, scan RG-7, balises RG-6, géoloc RG-10.9→10.11 + RG-15). 76 tests verts.
 
-**Prochaine étape** : 1.9 géoloc (distance, portée RG-10.11, hors radar RG-10.10, vitesse RG-15).
+**Prochaine étape** : 1.10 sorts RG-10.
 
 ## Ambiguïtés du document (choix validés par Sivraj le 2026-10-09, réglables)
 - RG-6 vs tableau RG-8 : balise standard « rangs D à A » mais le tableau donne 1 % de S en standard → S exclu en standard (`draw.ts`).
@@ -33,6 +33,9 @@
 - RG-6.4 rotation : 30 % des actives arrondi, au moins 1 ; balises retirées au hasard (→ dormantes, non réactivables dans la même rotation) ; remplaçantes par zone la moins visitée (visites + activations du tour), tirage au hasard en cas d'égalité.
 - RG-6.3 remplacement : si aucune dormante hors de la zone épuisée, la zone épuisée redevient éligible.
 - RG-14.3 : une baisse de la cible de balises actives ne coupe aucune balise ; on ne réactive simplement pas.
+- RG-10.11 marge GPS = somme des précisions du lanceur et de la cible, plafonnée à 20 m.
+- RG-7.6 position valide : < 2 min, coordonnées correctes, précision ≤ 100 m (seuil proposé).
+- RG-15 vitesse : distance moins les deux précisions, sur un intervalle ≥ 5 s (évite les fausses alertes dues au bruit GPS).
 - RG-14.5 : contenu des préréglages Petit groupe / Grande foule non défini.
 
 ## Feuille de route

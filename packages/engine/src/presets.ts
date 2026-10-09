@@ -30,7 +30,7 @@ export const SYSTEM_PRESETS: readonly Preset[] = [
   {
     id: 'standard',
     nom: 'Standard',
-    description: 'Réglages par défaut : formules du document, limites d’exemplaires × 2 (× 4 pour la SS), durée 120 min, portée 30 m.',
+    description: 'Réglages par défaut : formules du document, limites d’exemplaires × 2 (SS : 1 pour 10 joueurs, au moins 4), durée 120 min, portée 30 m.',
     systeme: true,
     reglages: {},
   },

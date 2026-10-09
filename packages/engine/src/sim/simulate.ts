@@ -79,6 +79,11 @@ export interface SimConfig {
   ecartCession: number;
   /** Multiplicateur propre aux limites de SS (null = celui de multLimites). */
   multLimiteSS: number | null;
+  /** Limite de SS en « 1 exemplaire pour X joueurs » (prioritaire sur multLimiteSS), au moins limiteSSMin. */
+  limiteSSUnPour: number | null;
+  limiteSSMin: number;
+  /** Multiplicateur propre aux limites des rangs C et D (null = celui de multLimites). */
+  multLimiteCD: number | null;
   /** Répartition du catalogue par rang (RG-8 : SS 2, S 3, A 5, B 6, C 7, D 7). */
   catalogue: Record<Rank, number>;
 }
@@ -109,6 +114,9 @@ export const DEFAULT_SIM: Omit<SimConfig, 'joueurs' | 'seed'> = {
   prixCession: { SS: 100 },
   ecartCession: 3,
   multLimiteSS: null,
+  limiteSSUnPour: null,
+  limiteSSMin: 3,
+  multLimiteCD: null,
   catalogue: { SS: 2, S: 3, A: 5, B: 6, C: 7, D: 7 },
 };
 
@@ -177,8 +185,13 @@ const marche = (rng: Rng, [a, b]: [number, number]) => (a + rng.next() * (b - a)
 function settingsFor(cfg: SimConfig): ParamSettings {
   // multLimites = 1 : formules du document telles quelles (le défaut du jeu est × 2).
   const m = cfg.multLimites === 1 ? ({ mode: 'auto' } as const) : ({ mode: 'multiplicateur', coef: cfg.multLimites } as const);
-  const ss = cfg.multLimiteSS === null ? m : ({ mode: 'multiplicateur', coef: cfg.multLimiteSS } as const);
-  return { ...DEFAULT_SETTINGS, limiteSS: ss, limiteS: m, limiteA: m, limiteB: m, limiteCD: m };
+  // J est constant dans le simulateur : une formule « 1 pour X joueurs » se pose en valeur verrouillée.
+  const ss =
+    cfg.limiteSSUnPour !== null
+      ? ({ mode: 'verrouille', value: Math.max(cfg.limiteSSMin, Math.ceil(cfg.joueurs / cfg.limiteSSUnPour)) } as const)
+      : cfg.multLimiteSS === null ? m : ({ mode: 'multiplicateur', coef: cfg.multLimiteSS } as const);
+  const cd = cfg.multLimiteCD === null ? m : ({ mode: 'multiplicateur', coef: cfg.multLimiteCD } as const);
+  return { ...DEFAULT_SETTINGS, limiteSS: ss, limiteS: m, limiteA: m, limiteB: m, limiteCD: cd };
 }
 
 export function simulate(cfg: SimConfig): SimResult {

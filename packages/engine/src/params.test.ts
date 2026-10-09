@@ -17,7 +17,7 @@ describe('RG-14 formules auto', () => {
     expect(p).toMatchObject({
       balisesActives: 10,
       stockBalise: 15,
-      limiteSS: 1,
+      limiteSS: 4,
       limiteS: 3,
       limiteA: 6,
       limiteB: 10,
@@ -34,20 +34,20 @@ describe('RG-14 formules auto', () => {
 
   it('planchers à J = 1', () => {
     const p = resolveParams(AUTO, ctx(1));
-    expect(p).toMatchObject({ balisesActives: 5, stockBalise: 5, limiteSS: 1, limiteS: 2, limiteA: 3, limiteB: 4, limiteCD: 5 });
+    expect(p).toMatchObject({ balisesActives: 5, stockBalise: 5, limiteSS: 4, limiteS: 2, limiteA: 3, limiteB: 4, limiteCD: 5 });
   });
 
   it('plafonds à J = 200 : stock 30, balises actives ≤ balises posées', () => {
     const p = resolveParams(AUTO, ctx(200, 40));
     expect(p.stockBalise).toBe(30);
     expect(p.balisesActives).toBe(40);
-    expect(p.limiteSS).toBe(10);
+    expect(p.limiteSS).toBe(20);
   });
 
-  it('Amendement RG-14 (calibrage) : limites en Multiplicateur × 2 par défaut, × 4 pour la SS ; durée 120 min', () => {
+  it('Amendements RG-14 (calibrage) : limites × 2 par défaut ; SS en Auto, 1 pour 10 joueurs, au moins 4 ; durée 120 min', () => {
     expect(resolveParams(DEFAULT_SETTINGS, ctx(30))).toMatchObject({ limiteSS: 4, limiteS: 6, limiteA: 12, limiteB: 20, limiteCD: 30, dureePartieMin: 120 });
     expect(resolveParams(DEFAULT_SETTINGS, ctx(1))).toMatchObject({ limiteSS: 4, limiteS: 4, limiteA: 6, limiteB: 8, limiteCD: 10 });
-    expect(resolveParam('limiteSS', DEFAULT_SETTINGS.limiteSS, ctx(30))).toMatchObject({ auto: 1, applied: 4 });
+    expect(resolveParam('limiteSS', DEFAULT_SETTINGS.limiteSS, ctx(80))).toMatchObject({ auto: 8, applied: 8, setting: { mode: 'auto' } });
   });
 
   it('kBoucle vaut 2 sous 8 balises actives', () => {

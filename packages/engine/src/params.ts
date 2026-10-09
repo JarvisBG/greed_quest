@@ -53,7 +53,8 @@ export const AUTO_FORMULAS: Record<ParamKey, (c: ParamContext) => number> = {
   stockBalise: (c) => clamp(Math.ceil(c.J / 2), 5, 30),
   // Décision 2026-10-09 : type de balise tiré à l'activation (hors document, valeur proposée).
   partRaresPct: () => 15,
-  limiteSS: (c) => Math.max(1, Math.floor(c.J / 20)),
+  // Amendement 2026-10-09 : une seule SS, 1 exemplaire pour 10 joueurs, au moins 4 (document : max(1, floor(J/20))).
+  limiteSS: (c) => Math.max(4, Math.ceil(c.J / 10)),
   limiteS: (c) => Math.max(2, Math.ceil(c.J / 10)),
   limiteA: (c) => Math.max(3, Math.ceil(c.J / 5)),
   limiteB: (c) => Math.max(4, Math.ceil(c.J / 3)),
@@ -84,16 +85,13 @@ export const AUTO_FORMULAS: Record<ParamKey, (c: ParamContext) => number> = {
 
 /** Calibrage validé le 2026-10-09 (docs/SIMULATION.md) : limites d'exemplaires × 2 par défaut. */
 export const LIMITES_PAR_DEFAUT: ParamSetting = { mode: 'multiplicateur', coef: 2 };
-/** Une seule SS au catalogue (décision 2026-10-09) : sa limite est × 4 (aide surtout les groupes moyens). */
-export const LIMITE_SS_PAR_DEFAUT: ParamSetting = { mode: 'multiplicateur', coef: 4 };
 
 /**
  * Modes par défaut (RG-14) : tout en auto sauf durée et N, verrouillés.
- * Amendements RG-14 (calibrage) : limites d'exemplaires en Multiplicateur × 2, × 4 pour la SS ; durée 120 min.
+ * Amendements RG-14 (calibrage) : limites d'exemplaires en Multiplicateur × 2 (SS : formule propre, en Auto) ; durée 120 min.
  */
 export const DEFAULT_SETTINGS: ParamSettings = {
   ...(Object.fromEntries(PARAM_KEYS.map((k) => [k, { mode: 'auto' }])) as ParamSettings),
-  limiteSS: LIMITE_SS_PAR_DEFAUT,
   limiteS: LIMITES_PAR_DEFAUT,
   limiteA: LIMITES_PAR_DEFAUT,
   limiteB: LIMITES_PAR_DEFAUT,

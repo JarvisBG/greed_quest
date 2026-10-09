@@ -19,7 +19,7 @@ describe('simulateur', () => {
     expect(a.areneTentatives).toBeGreaterThan(0);
     expect(a.areneVictoires).toBeLessThanOrEqual(a.areneTentatives);
     expect(a.encheresSSVendues).toBeLessThanOrEqual(a.encheresSS);
-    expect(a.ssEnJeu).toBeLessThanOrEqual(4); // RG-8.2 : 2 SS × limite 2 (2 × max(1, ⌊30/20⌋))
+    expect(a.ssEnJeu).toBeLessThanOrEqual(16); // RG-8.2 : 2 SS × limite 8 (× 2 sur max(4, ⌈30/10⌉))
     expect(a.ssDuMeilleur).toBeLessThanOrEqual(2);
   });
 

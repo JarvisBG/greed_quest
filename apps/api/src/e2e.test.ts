@@ -81,9 +81,9 @@ describe('2.11 partie simulée de bout en bout', () => {
     expect(fin!.classementFinal).toHaveLength(NB_JOUEURS);
 
     // RG-8.2 : jamais plus d'exemplaires vrais en circulation que la limite maximale atteinte
-    // (formules RG-14 × 2, × 4 pour la SS : multiplicateurs par défaut depuis le calibrage).
+    // (formules RG-14 × 2 ; SS : 1 pour 10 joueurs, au moins 4, amendement du calibrage).
     const lim = (J: number): Record<Rank, number> => ({
-      SS: 4 * Math.max(1, Math.floor(J / 20)),
+      SS: Math.max(4, Math.ceil(J / 10)),
       S: 2 * Math.max(2, Math.ceil(J / 10)),
       A: 2 * Math.max(3, Math.ceil(J / 5)),
       B: 2 * Math.max(4, Math.ceil(J / 3)),

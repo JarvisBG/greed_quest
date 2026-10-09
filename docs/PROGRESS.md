@@ -16,7 +16,7 @@
 
 **Simulation v2** (`docs/SIMULATION.md`, avec sorts, boutique, achats entre joueurs, checkpoints PNJ optionnels) : aucun Clear en 150 min dans aucun scénario. Leviers mesurés : limites × 2, ≈ 0,75 balise posée par joueur, sources de hauts rangs à chiffrer ; les SS restent le verrou final. Décision de calibrage en attente.
 
-**Phase 2 — API** (en cours) :
+**Phase 2 — API** (terminée, 123 tests API + 218 moteur) :
 - [x] 2.0 Préréglages RG-14.5 dans le moteur (`presets.ts`) : Petit groupe, Standard, Grande foule + enregistrement d'un préréglage GM (seules les différences sont gardées).
 - [x] 2.1 `apps/api` : Fastify 5, Drizzle 0.45 + PGlite 0.5 (dev/tests, en mémoire ou `PGLITE_DIR`) / `pg` (prod, `DATABASE_URL`). Schéma `src/db/schema.ts` : les 11 entités + `prereglages`, `staff`, `pertes` ; migrations `drizzle/` (`pnpm --filter @gq/api db:generate`) appliquées à l'ouverture. Seed : `pnpm --filter @gq/api seed` (partie de démo : 30 cartes, 6 zones, 20 balises). Helper de test `src/test/helpers.ts`.
 - [x] 2.2 Journal RG-3.1 (`src/core/journal.ts`) et `Runner` (`src/core/runner.ts`) : toute action d'état passe par `runner.run(partieId, acteur, fn)` = verrou par partie + transaction + heure de jeu + `log()` + `emit()` diffusé seulement après commit (bus `src/core/bus.ts`). Motif obligatoire pour corrections et sanctions PNJ/GM.
@@ -39,13 +39,18 @@
   - [x] `src/routes/clear.ts` : `POST /clear` (provisoire, Livre gelé, demande à l'équipe), `/clear/confirmer` (GM, licence, partie terminée, `parties.gagnant_id`), `/clear/annuler` (GM, motivé), `/clear/recompenses` (3 cartes → lots réels, `parties.recompenses`).
 - [x] 2.10 Alertes RG-15 (`core/alertes.ts`, moteur `anticheat.ts`) : double inscription, vitesse, photo partagée, rythme de scan anormal, échanges répétés déséquilibrés ; journalisées (`action = alerte`), poussées à l'équipe, listées par `GET /alertes`.
 - [x] `GET /livre` (`src/routes/livre.ts`) : pages de 10, provenance en clair (RG-8.14), emplacements perdus « Volée par X à 14h05 » (RG-8.13), contrefaçons selon ce que sait le joueur, cartes engagées dans un échange signalées.
+- [x] 2.11 `src/e2e.test.ts` : partie complète par HTTP (12 joueurs, 150 min, tâches planifiées, scans, sorts, boutique, Krach) ; invariants vérifiés : fin à l'heure et classement figé, limites RG-8.2, stocks et jenny ≥ 0, motif en clair pour tout refus, aucune position exacte vers joueurs / écran (RG-10.12). ≈ 1 min.
 
-**Prochaine étape** : 2.11 (tests d'intégration bout en bout). Le calibrage n'est pas bloquant : tout passe par des paramètres.
+**Prochaine étape** : Phase 3 — app joueur (`apps/player`, PWA), tâche 3.1 (squelette Vite + React + PWA, client Socket.IO). Le calibrage n'est pas bloquant : tout passe par des paramètres.
 
 ## Reprise de session (lire en premier)
-- Phase 1 terminée et poussée (`main`, dernier commit « Simulateur v2 »). Engine pur dans `packages/engine/src/` : un module par domaine (`params`, `draw`, `book`, `scan`, `beacons`, `geo`, `spells`, `counterfeits`, `trades`, `shop`, `ranking`, `lifecycle`, `events`) + `sim/`. Chaque module a son `*.test.ts`.
-- Conventions de code : fonctions pures, Rng injecté, horloge de jeu (`gameClock`), refus `{ ok: false, code, message }` en français, ids RG en commentaire.
-- Commits : auteur git local « Sivraj » ; messages en français ; push sur `origin main` après chaque tâche. Pour les modifications de docs multi-lignes, passer par un script Python dans le scratchpad (les heredocs avec apostrophes cassent le shell).
+- Phases 1 (moteur) et 2 (API) terminées et poussées (`main`). Prochaine : Phase 3, app joueur.
+- Engine pur `packages/engine/src/` : un module par domaine (`params`, `presets`, `draw`, `book`, `scan`, `beacons`, `geo`, `spells`, `counterfeits`, `trades`, `shop`, `ranking`, `lifecycle`, `events`, `registration`, `raid`, `anticheat`) + `sim/`.
+- API `apps/api/src/` : `core/` (runner = verrou + transaction + journal + émissions ; `state.ts` = base ⇄ moteur ; params, licence, position, alertes, cycle, classement, évènements, tâches planifiées), `routes/` (un fichier par domaine), `realtime.ts` (Socket.IO), `db/` (schéma Drizzle, migrations `drizzle/`, seed). Schémas Zod des requêtes dans `packages/shared/src/api.ts`.
+- Lancer l'API en dev : `pnpm --filter @gq/api seed` puis `pnpm --filter @gq/api dev` (variables : `apps/api/.env.example`, à exporter dans le shell ; PGlite en mémoire si `PGLITE_DIR` vide).
+- Toute nouvelle action d'état : `app.gq.runner.run(partieId, acteur, async (c) => { … c.log(…); c.emit(…) })`, refus = `refus(code, message)` + `send(reply, r)` (409), ligne de journal même pour un refus.
+- Conventions de code : fonctions pures côté moteur, Rng injecté, horloge de jeu (`gameClock`), refus `{ ok: false, code, message }` en français, ids RG en commentaire, test nommé avec l'id.
+- Commits : auteur git local « Sivraj » ; messages en français ; push sur `origin main` après chaque étape. Pour les modifications de docs multi-lignes, passer par un script Python (heredoc `<<'PYEOF'`) ou l'outil Edit.
 - Décisions de calibrage **en attente** (ne pas appliquer sans accord) : voir la section suivante.
 
 ## Calibrage — propositions en attente de validation (simulation v2)

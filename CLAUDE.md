@@ -18,9 +18,9 @@ Monorepo TypeScript (pnpm workspaces). Poste de dev : Windows 10, Node 24.
 - `apps/staff` — console PNJ / GM (React + Vite).
 - `apps/tracker` — écran géant, lecture seule (React + Vite).
 
-Ordre de construction : engine (**fait**) → api → player → staff → tracker.
+Ordre de construction : engine (**fait**) → api (**fait**) → player → staff → tracker.
 
-Commandes (racine) : `pnpm test` · `pnpm typecheck` · `pnpm --filter @gq/engine test`.
+Commandes (racine) : `pnpm test` · `pnpm typecheck` · `pnpm --filter @gq/engine test` · `pnpm --filter @gq/api dev` (API, PGlite) · `pnpm --filter @gq/api seed`.
 Packages internes : `@gq/engine`, `@gq/shared` (exportent `src/index.ts` directement, pas de build).
 
 ## Règles d'architecture (non négociables)

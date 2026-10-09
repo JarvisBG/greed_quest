@@ -23,7 +23,7 @@ Chaque tâche = un commit (ou quelques-uns), tests verts avant de cocher.
 - [x] 1.17 Simulateur de partie (10 / 30 / 80 joueurs) pour le calibrage
 
 ## Phase 2 — API (`apps/api`)
-- [ ] 2.0 Préréglages RG-14.5 (stockés en base ; contenu Petit groupe / Grande foule à définir)
+- [x] 2.0 Préréglages RG-14.5 (`engine/presets.ts` ; contenu Petit groupe / Grande foule proposé ; table en 2.1)
 - [ ] 2.1 Fastify + config + PGlite/Drizzle, schéma des 11 entités, migrations, seed (catalogue 30 cartes, zones, balises)
 - [ ] 2.2 Journal RG-3.1 (transactionnel, motif obligatoire PNJ/GM)
 - [ ] 2.3 Auth : joueur (appareil), PNJ, GM ; rôles RG-3

@@ -16,7 +16,10 @@
 
 **Simulation v2** (`docs/SIMULATION.md`, avec sorts, boutique, achats entre joueurs, checkpoints PNJ optionnels) : aucun Clear en 150 min dans aucun scénario. Leviers mesurés : limites × 2, ≈ 0,75 balise posée par joueur, sources de hauts rangs à chiffrer ; les SS restent le verrou final. Décision de calibrage en attente.
 
-**Prochaine étape** : Phase 2 — API (`docs/PLAN.md`, tâche 2.0 puis 2.1 : Fastify + PGlite/Drizzle, schéma des 11 entités, seed). Le calibrage n'est pas bloquant : tout passe par des paramètres.
+**Phase 2 — API** (en cours) :
+- [x] 2.0 Préréglages RG-14.5 dans le moteur (`presets.ts`) : Petit groupe, Standard, Grande foule + enregistrement d'un préréglage GM (seules les différences sont gardées).
+
+**Prochaine étape** : 2.1 (Fastify + PGlite/Drizzle, schéma des 11 entités, seed). Le calibrage n'est pas bloquant : tout passe par des paramètres.
 
 ## Reprise de session (lire en premier)
 - Phase 1 terminée et poussée (`main`, dernier commit « Simulateur v2 »). Engine pur dans `packages/engine/src/` : un module par domaine (`params`, `draw`, `book`, `scan`, `beacons`, `geo`, `spells`, `counterfeits`, `trades`, `shop`, `ranking`, `lifecycle`, `events`) + `sim/`. Chaque module a son `*.test.ts`.
@@ -88,7 +91,7 @@
 - Mission secrète : durée par défaut 20 min, récompense en jenny fixée par le GM, aucune annonce.
 - RG-8.12 : SS rendues = vraies SS seulement ; inactif depuis 20 min, abandon ou disqualification.
 - RG-12.3 agenda automatique : reporté en Phase 2 (planification).
-- RG-14.5 : contenu des préréglages Petit groupe / Grande foule non défini.
+- RG-14.5 : contenu des préréglages non défini → proposé : Petit groupe = portée 20 m, marge GPS 10 m, limites d'exemplaires × 2 ; Standard = défauts du document ; Grande foule = portée 20 m, marge GPS 15 m (foule dense). Les formules auto suivent déjà J.
 
 ## Feuille de route
 1. **Phase 0 — Cadrage** : stack, environnement, `git init`.

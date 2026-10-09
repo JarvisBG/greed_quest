@@ -41,7 +41,7 @@ Chaque tâche = un commit (ou quelques-uns), tests verts avant de cocher.
 - [x] 3.2 Inscription, Examen, test de Nen
 - [x] 3.3 Scan QR caméra + envoi position ; file hors ligne RG-7.5
 - [x] 3.4 Livre (pages, provenance, pertes), licence QR
-- [ ] 3.5 Sorts (liste à portée), alertes reçues
+- [x] 3.5 Sorts (liste à portée), alertes reçues
 - [ ] 3.6 Échanges (liste à portée, proposition, double validation), boutique, enchères, raid
 
 ## Phase 4 — Console PNJ / GM (`apps/staff`)

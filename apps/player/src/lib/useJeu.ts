@@ -1,6 +1,6 @@
 // État de l'app joueur : partie visée, session, profil, connexion temps réel, fil des évènements,
 // suivi de position (RG-10.9) et scans, y compris la file hors ligne (RG-7.5).
-import type { NenType } from '@gq/shared';
+import type { NenType, PositionInput } from '@gq/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError } from './api';
 import { api, API_URL, file, session } from './client';
@@ -8,6 +8,7 @@ import { libelleEvenement, resumeIssue } from './format';
 import { positionActuelle } from './geo';
 import { connectRealtime, type EtatConnexion } from './realtime';
 import { rejouerFile, scanner, type IssueScan } from './scan';
+import { texteSortRecu } from './sorts';
 import { partieFromUrl, type Session } from './session';
 import { creerSuivi, type Suivi } from './suivi';
 
@@ -27,6 +28,11 @@ export interface Moi {
   nen: NenType | null;
   statut: string;
   examenFait: boolean;
+  /** RG-5.4 : pouvoirs de Nen déjà utilisés. */
+  pouvoirsUtilises: ('renforcement' | 'emission' | 'manipulation')[];
+  /** Délais restants à la réception (`recuA`), en ms : sort offensif (RG-10.3), Transformation, gel. */
+  delais: { offensif: number; transformation: number; gel: number };
+  recuA: number;
 }
 
 export interface Notif {
@@ -44,6 +50,10 @@ export function useJeu() {
     return s && s.partieId === partieId ? s : null;
   });
   const [partie, setPartie] = useState<Partie | null>(null);
+  /** Heure locale de réception de `partie` : le temps restant est décompté à partir d'elle. */
+  const [partieRecueA, setPartieRecueA] = useState(0);
+  /** Alerte urgente affichée en bandeau (sort reçu, RG-10.5). */
+  const [alerte, setAlerte] = useState<{ n: number; texte: string } | null>(null);
   const [moi, setMoi] = useState<Moi | null>(null);
   const [licenceSecret, setLicenceSecret] = useState<string | null>(null);
   /** Incrémenté à chaque évènement reçu : les écrans (Livre…) se rechargent. */
@@ -68,6 +78,7 @@ export function useJeu() {
     try {
       const p = await api.get<{ partie: Partie }>(`/parties/${partieId}`);
       setPartie(p.partie);
+      setPartieRecueA(Date.now());
       let s = sess;
       if (!s) {
         // Le téléphone est peut-être déjà inscrit (app réinstallée, autre navigateur…).
@@ -81,8 +92,10 @@ export function useJeu() {
           throw e;
         }
       }
-      const m = await api.get<{ joueur: Moi; licenceSecret: string }>(`/parties/${partieId}/moi`);
-      setMoi(m.joueur);
+      const m = await api.get<{ joueur: Omit<Moi, 'pouvoirsUtilises' | 'delais' | 'recuA'>; licenceSecret: string } & Pick<Moi, 'pouvoirsUtilises' | 'delais'>>(
+        `/parties/${partieId}/moi`,
+      );
+      setMoi({ ...m.joueur, pouvoirsUtilises: m.pouvoirsUtilises, delais: m.delais, recuA: Date.now() });
       setLicenceSecret(m.licenceSecret);
       setPhase('en_jeu');
     } catch (e) {
@@ -126,8 +139,17 @@ export function useJeu() {
         if (e === 'en_ligne') void rejouer();
       },
       evenement: (nom, data) => {
-        notifier(libelleEvenement(nom));
         setVersion((v) => v + 1);
+        if (nom === 'sort_recu') {
+          // RG-10.5 : alerte immédiate à la cible.
+          const texte = texteSortRecu(data as Parameters<typeof texteSortRecu>[0]);
+          notifier(texte);
+          setAlerte({ n: Date.now(), texte });
+          navigator.vibrate?.([200, 100, 200]);
+          void rafraichir();
+          return;
+        }
+        notifier(libelleEvenement(nom));
         if (nom === 'partie') void rafraichir();
         const j = (data as { jenny?: unknown } | null)?.jenny;
         if (nom === 'tirage' && typeof j === 'number') majJenny(j);
@@ -156,6 +178,25 @@ export function useJeu() {
       suivi.current = null;
     };
   }, [sess]);
+
+  /**
+   * Position jointe à une intention (sort, achat…), RG-10.9 / RG-7.6 : la dernière position GPS
+   * si elle a moins de 30 s, sinon une nouvelle. `envoyer` la transmet aussi au serveur (liste à portée).
+   */
+  const positionAction = useCallback(async (envoyer = false): Promise<PositionInput> => {
+    const p = suivi.current?.fraiche() ?? (await positionActuelle());
+    if (envoyer && sess) {
+      await api.post(`/parties/${sess.partieId}/position`, p);
+      suivi.current?.marquerEnvoyee(p);
+    }
+    return p;
+  }, [sess]);
+
+  /** Après une action réussie : Livre et profil (jenny, délais) rechargés. */
+  const apresAction = useCallback(() => {
+    setVersion((v) => v + 1);
+    void rafraichir();
+  }, [rafraichir]);
 
   /** RG-7 : scan d'une balise, position jointe (RG-7.6 : sans position, pas de scan). */
   const scannerBalise = useCallback(
@@ -213,6 +254,11 @@ export function useJeu() {
   return {
     partieId,
     partie,
+    partieRecueA,
+    alerte,
+    fermerAlerte: () => setAlerte(null),
+    positionAction,
+    apresAction,
     moi,
     licenceSecret,
     version,

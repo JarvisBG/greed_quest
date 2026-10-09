@@ -103,3 +103,18 @@ export function titrePage(i: number, total: number): string {
   if (i < pagesDesignees) return `${numeroCarte(i * 10 + 1)} – ${numeroCarte(Math.min(total, (i + 1) * 10))}`;
   return `Libres ${i - pagesDesignees + 1}`;
 }
+
+/** RG-4 : temps restant affiché, décompté localement tant que la partie tourne (figé en pause). */
+export function restantAffiche(restantMs: number, recueA: number, etat: string, maintenant: number): number {
+  const enCours = etat === 'en_cours' || etat === 'phase_finale';
+  return Math.max(0, enCours ? restantMs - (maintenant - recueA) : restantMs);
+}
+
+/** Chrono de la barre : « 1:05:09 » ou « 12:04 ». */
+export function formatChrono(ms: number): string {
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const mm = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+  const ss = String(s % 60).padStart(2, '0');
+  return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+}

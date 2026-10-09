@@ -1,59 +1,17 @@
 // RG-8.5 : Livre en pages de 10 (cartes désignées 001 → N, puis emplacements libres).
 // RG-8.14 : provenance en clair ; RG-8.13 : emplacement perdu (« Volée par X à 14h05 ») ;
 // RG-8.9 : contrefaçons telles que le joueur les connaît. Le serveur décide de tout ce qui est montré.
-import type { Rank, SpellType } from '@gq/shared';
-import { useEffect, useState } from 'react';
-import { api } from '../lib/client';
+import type { Rank } from '@gq/shared';
+import { useState } from 'react';
 import { numeroCarte as num, SORTS, titrePage } from '../lib/format';
-
-interface Carte {
-  numero: number | null;
-  nom: string;
-  rang: Rank | null;
-}
-
-type Emplacement =
-  | { etat: 'vide'; designe: false }
-  | { etat: 'vide'; designe: true; carte: Carte }
-  | { etat: 'perdu'; designe: true; carte: Carte; message: string }
-  | { etat: 'plein'; designe: boolean; kind: 'sort'; itemId: string; sort: SpellType }
-  | ({
-      etat: 'plein';
-      designe: boolean;
-      kind: 'carte';
-      itemId: string;
-      carteId: string;
-      apparence: 'normale' | 'grisee';
-      badge: 'contrefacon' | 'maudite' | null;
-      provenance: string;
-      obtenue: string;
-      engagee: boolean;
-    } & Carte);
-
-interface LivreRecu {
-  gele: boolean;
-  cartesDesignees: number;
-  total: number;
-  libresUtilises: number;
-  pages: Emplacement[][];
-}
+import type { Emplacement } from '../lib/livre';
+import { useLivre } from '../lib/useLivre';
 
 const LIBRES = 15; // RG-8.5
 
 export function Livre({ partieId, version }: { partieId: string; version: number }) {
-  const [livre, setLivre] = useState<LivreRecu | null>(null);
-  const [erreur, setErreur] = useState<string | null>(null);
+  const { livre, erreur } = useLivre(partieId, version);
   const [page, setPage] = useState(0);
-
-  useEffect(() => {
-    api.get<LivreRecu>(`/parties/${partieId}/livre`).then(
-      (l) => {
-        setLivre(l);
-        setErreur(null);
-      },
-      (e: unknown) => setErreur(e instanceof Error ? e.message : String(e)),
-    );
-  }, [partieId, version]);
 
   if (!livre) return <p className="info">{erreur ?? 'Chargement du Livre…'}</p>;
   const p = Math.min(page, livre.pages.length - 1);

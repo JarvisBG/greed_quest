@@ -1,13 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Examen } from './ecrans/Examen';
 import { Inscription, type Kit as KitRecu } from './ecrans/Inscription';
 import { Kit } from './ecrans/Kit';
 import { Licence } from './ecrans/Licence';
 import { Livre } from './ecrans/Livre';
 import { Nen } from './ecrans/Nen';
+import { Chrono } from './ecrans/Chrono';
 import { Scan } from './ecrans/Scan';
+import { Sorts } from './ecrans/Sorts';
 import { api, session } from './lib/client';
-import { formatDuree, libelleEtat, NENS } from './lib/format';
+import { creerEveil, eveilDisponible, preferenceEveil } from './lib/eveil';
+import { libelleEtat, NENS } from './lib/format';
 import { baliseDepuisUrl } from './lib/qr';
 import type { Question } from './lib/quiz';
 import { useJeu } from './lib/useJeu';
@@ -17,11 +20,12 @@ interface Questionnaires {
   nen: Question[];
 }
 
-type Onglet = 'accueil' | 'scan' | 'livre' | 'licence';
+type Onglet = 'accueil' | 'scan' | 'livre' | 'sorts' | 'licence';
 const ONGLETS: { id: Onglet; nom: string }[] = [
   { id: 'accueil', nom: 'Accueil' },
   { id: 'scan', nom: 'Scanner' },
   { id: 'livre', nom: 'Livre' },
+  { id: 'sorts', nom: 'Sorts' },
   { id: 'licence', nom: 'Licence' },
 ];
 
@@ -34,6 +38,16 @@ export function App() {
   const [onglet, setOnglet] = useState<Onglet>('accueil');
   // Balise scannée avec l'appareil photo du téléphone : l'app s'ouvre sur `?balise=<id>`.
   const [baliseLien, setBaliseLien] = useState<string | null>(() => baliseDepuisUrl(location.search));
+  // Option « garder l'écran allumé » (facultative, consomme de la batterie).
+  const eveil = useRef<ReturnType<typeof creerEveil> | null>(null);
+  const [ecranAllume, setEcranAllume] = useState(preferenceEveil);
+  useEffect(() => {
+    if (jeu.phase !== 'en_jeu' || !eveilDisponible()) return;
+    const e = creerEveil();
+    e.demarrer();
+    eveil.current = e;
+    return () => e.arreter();
+  }, [jeu.phase]);
 
   useEffect(() => {
     if (!jeu.partieId || quiz) return;
@@ -66,9 +80,18 @@ export function App() {
     <div className="app">
       <header className="barre">
         <span className="titre">Greed Quest</span>
+        {partie && jeu.phase === 'en_jeu' && <Chrono partie={partie} recueA={jeu.partieRecueA} />}
         {moi && <span className="jenny">{moi.jenny} J</span>}
         {jeu.phase === 'en_jeu' && <span className={`pastille ${jeu.connexion}`} title={jeu.connexion === 'en_ligne' ? 'Connecté' : 'Hors ligne'} />}
       </header>
+      {jeu.alerte && (
+        <div className="alerte" role="alert" key={jeu.alerte.n}>
+          <span>{jeu.alerte.texte}</span>
+          <button className="lien" onClick={jeu.fermerAlerte} aria-label="Fermer l’alerte">
+            ✕
+          </button>
+        </div>
+      )}
       <main>
         {jeu.phase === 'sans_partie' && <ChoixPartie onChoix={jeu.choisirPartie} />}
         {jeu.phase === 'chargement' && <p className="info">Chargement…</p>}
@@ -114,6 +137,9 @@ export function App() {
               />
             )}
             {ecran === 'accueil' && onglet === 'livre' && <Livre partieId={partie.id} version={jeu.version} />}
+            {ecran === 'accueil' && onglet === 'sorts' && (
+              <Sorts partieId={partie.id} moi={moi} version={jeu.version} positionAction={jeu.positionAction} apresAction={jeu.apresAction} />
+            )}
             {ecran === 'accueil' && onglet === 'licence' && jeu.licenceSecret && (
               <Licence partieId={partie.id} joueurId={moi.id} pseudo={moi.pseudo} secret={jeu.licenceSecret} />
             )}
@@ -122,7 +148,7 @@ export function App() {
                 <div className="carte">
                   <h1>{moi.pseudo}</h1>
                   <p>
-                    {partie.nom} · {libelleEtat(partie.etat)} · reste {formatDuree(partie.restantMs)}
+                    {partie.nom} · {libelleEtat(partie.etat)}
                   </p>
                   {moi.nen && <p className="info">Nen : {NENS[moi.nen].nom}</p>}
                 </div>
@@ -133,6 +159,22 @@ export function App() {
                       Passer l’Examen
                     </button>
                   </div>
+                )}
+                {eveilDisponible() && (
+                  <label className="carte case">
+                    <input
+                      type="checkbox"
+                      checked={ecranAllume}
+                      onChange={(e) => {
+                        setEcranAllume(e.target.checked);
+                        void eveil.current?.regler(e.target.checked);
+                      }}
+                    />
+                    <span>
+                      Garder l’écran allumé
+                      <span className="detail info"> Ta position reste à jour, mais la batterie se vide plus vite.</span>
+                    </span>
+                  </label>
                 )}
                 <section>
                   <h2>Notifications</h2>

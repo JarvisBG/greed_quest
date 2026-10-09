@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { NEN_TYPES, SPELL_TYPES } from '@gq/shared';
-import { formatDuree, libelleEtat, NENS, SORTS, titrePage } from './format';
+import { formatChrono, formatDuree, libelleEtat, NENS, restantAffiche, SORTS, titrePage } from './format';
 
 describe('format', () => {
   it('durées', () => {
@@ -23,5 +23,13 @@ describe('format', () => {
     expect(titrePage(3, 30)).toBe('Libres 1');
     expect(titrePage(2, 25)).toBe('021 – 025');
     expect(titrePage(3, 25)).toBe('Libres 1');
+  });
+  it('RG-4 : chrono décompté en cours, figé en pause', () => {
+    expect(restantAffiche(60_000, 1000, 'en_cours', 11_000)).toBe(50_000);
+    expect(restantAffiche(60_000, 1000, 'phase_finale', 11_000)).toBe(50_000);
+    expect(restantAffiche(60_000, 1000, 'pause', 11_000)).toBe(60_000);
+    expect(restantAffiche(5_000, 0, 'en_cours', 10_000)).toBe(0);
+    expect(formatChrono(3_909_000)).toBe('1:05:09');
+    expect(formatChrono(724_000)).toBe('12:04');
   });
 });

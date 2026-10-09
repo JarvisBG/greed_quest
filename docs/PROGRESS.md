@@ -28,9 +28,10 @@
   - [x] `POST /position` (journalisée, alerte vitesse RG-15, envoyée au GM seulement) et `POST /scan` (RG-7 complet, tirage RG-8.3, Double gain, épuisement + remplacement RG-6.3, scan hors ligne RG-7.5, alerte photo partagée RG-15, diffusion joueur / équipe / écran).
   - [x] Sorts `src/routes/sorts.ts` : `GET /a-portee` (pseudos seulement), `POST /sort` (8 sorts + pouvoirs Émission / Manipulation), `POST /transformation` (RG-5.4) ; alerte à la cible, fil de l'écran, Analyse privée.
   - [x] Boutique `src/routes/boutique.ts` : `GET /boutique`, `POST /boutique/achat`, `POST /boutique/revente` (QR du lieu exigé, vague en base `parties.vague_boutique`, Krach, révélation Masadora). Zones de lieu (Masadora, Antokiba, Soufrabi) : colonne `qr`.
-  - [ ] Échanges, enchères.
+  - [x] Échanges `src/routes/echanges.ts` (table `echanges`) : `POST /echanges` (proposition), `/echanges/:id/reponse|offre|valider|annuler`, `GET /echanges/courant` ; une session active par joueur ; cartes engagées verrouillées (revente, échange forcé, Transformation) ; pas d'Analyse pendant un échange (RG-10.8).
+  - [ ] Enchères.
 
-**Prochaine étape** : 2.6 suite (échanges). Le calibrage n'est pas bloquant : tout passe par des paramètres.
+**Prochaine étape** : 2.6 suite (enchères). Le calibrage n'est pas bloquant : tout passe par des paramètres.
 
 ## Reprise de session (lire en premier)
 - Phase 1 terminée et poussée (`main`, dernier commit « Simulateur v2 »). Engine pur dans `packages/engine/src/` : un module par domaine (`params`, `draw`, `book`, `scan`, `beacons`, `geo`, `spells`, `counterfeits`, `trades`, `shop`, `ranking`, `lifecycle`, `events`) + `sim/`. Chaque module a son `*.test.ts`.
@@ -74,7 +75,8 @@
 - Émission ne contourne pas « hors radar », seulement « hors portée » ; non consommée si la cible était à portée.
 - Radar : la cible est prévenue (diffusion « Sort lancé : lanceur et cible notifiés »).
 - Duplication d'une contrefaçon : toujours une contrefaçon.
-- RG-10.8 « jamais les cartes d'un échange en cours » : à appliquer en Phase 2 (verrouillage des cartes engagées dans une offre).
+- RG-10.8 « jamais les cartes d'un échange en cours » : Analyse refusée tant que le joueur a une session d'échange ouverte ; ses cartes engagées ne peuvent être ni revendues, ni données par échange forcé, ni transformées. Un Vol peut quand même les prendre (au hasard) : l'échange échoue alors à la validation et les parts sont à recomposer.
+- Échange qui échoue à la double validation (carte partie, jenny manquants) : les deux validations tombent, la session reste ouverte.
 - Transformation : seul un vrai exemplaire dont le joueur a au moins un autre exemplaire (vrai ou non) peut être déguisé ; recharge 20 min depuis la dernière utilisation, disponible dès le début.
 - Expertise PNJ (RG-8.8) : payée même si rien n'est trouvé ; le Livre entier inclut les emplacements libres.
 - Masadora révèle la contrefaçon vendue (RG-8.9) : prix selon ce qu'elle est vraiment (copie → 1 J ; déguisé → prix de sa vraie carte). Une SS apparente non démasquée est refusée comme une vraie SS (rien n'est révélé).

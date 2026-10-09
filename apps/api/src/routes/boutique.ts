@@ -12,6 +12,7 @@ import { AchatIntent, ReventeIntent } from '@gq/shared';
 import { and, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { requireRole } from '../auth/guard.js';
+import { ENGAGEE, engagedItems } from '../core/echanges.js';
 import { paramsOf } from '../core/params.js';
 import type { PartieRow } from '../core/partie.js';
 import { recordPosition } from '../core/position.js';
@@ -109,6 +110,7 @@ export async function boutiqueRoutes(app: FastifyInstance) {
       if (!j) throw introuvable('Joueur');
       await recordPosition(c, j, input.position);
       const [book, cat] = await Promise.all([loadBook(c.tx, j.id), loadCatalogue(c.tx, partieId)]);
+      if ((await engagedItems(c.tx, partieId, j.id, c.now)).has(input.itemId)) return refus(ENGAGEE.code, ENGAGEE.message);
       const res = sellCard(
         {
           now: c.now,

@@ -22,6 +22,13 @@
       "when": 1791564261029,
       "tag": "0002_boutique",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791564360366,
+      "tag": "0003_echanges_encheres",
+      "breakpoints": true
     }
   ]
 }

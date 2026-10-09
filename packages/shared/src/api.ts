@@ -90,3 +90,15 @@ export const TransformationIntent = z.object({ itemId: z.string(), cibleCarteId:
 export const AchatIntent = z.object({ qr: z.string().min(1).max(100), position: PositionInput });
 /** RG-9.4 : revente d'une carte à Masadora. */
 export const ReventeIntent = z.object({ qr: z.string().min(1).max(100), itemId: z.string(), position: PositionInput });
+
+/** RG-11.1 amendé : proposer un échange à un joueur à portée. */
+export const EchangeProposition = z.object({ cibleId: z.string(), position: PositionInput });
+export const EchangeReponse = z.object({ accepte: z.boolean() });
+/** Sa part de l'échange : cartes de son Livre et/ou jenny. */
+export const EchangeOffre = z.object({ itemIds: z.array(z.string()).max(30), jenny: z.number().int().min(0) });
+
+/** RG-11.4 : un PNJ met une carte aux enchères. */
+export const EnchereOuverture = z.object({ carteId: z.string(), prixDepart: z.number().int().min(1).default(1) });
+/** RG-11.4 : participer exige le QR de l'enchère, scanné sur place. */
+export const EnchereInscription = z.object({ qr: z.string().min(1).max(100), position: PositionInput });
+export const EnchereOffre = z.object({ montant: z.number().int().min(1) });

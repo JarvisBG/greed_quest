@@ -1,7 +1,7 @@
 // Schéma de la base (entités de docs/REGLES.md « Entités »).
 // Heures « de jeu » : ms d'horloge de jeu (gameClock, integer). Heures réelles : ms epoch (bigint) ou timestamptz.
 import type { GameState, NenType, PlayerStatus, Rank, SpellType, BeaconState, BeaconType } from '@gq/shared';
-import type { EventData, GameEvent, JState, ShopConfig, ShopWave, Origine, Faux, ParamKey, ParamSetting, ParamSettings, Perte, Position, Polygon } from '@gq/engine';
+import type { Bid, EventData, GameEvent, JState, ShopConfig, ShopWave, TradeSessionState, TradeSide, Origine, Faux, ParamKey, ParamSetting, ParamSettings, Perte, Position, Polygon } from '@gq/engine';
 import { bigint, boolean, index, integer, jsonb, pgTable, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 
 const heureJeu = (nom: string) => integer(nom);
@@ -215,6 +215,41 @@ export const evenements = pgTable(
   },
   (t) => [index('evenements_partie').on(t.partieId)],
 );
+
+/** Session d'échange (RG-11.1 amendé) : proposition, composition, double validation. */
+export const echanges = pgTable(
+  'echanges',
+  {
+    id: text('id').primaryKey(),
+    partieId: text('partie_id').notNull().references(() => parties.id, { onDelete: 'cascade' }),
+    a: text('a').notNull().references(() => joueurs.id, { onDelete: 'cascade' }),
+    b: text('b').notNull().references(() => joueurs.id, { onDelete: 'cascade' }),
+    etat: text('etat').$type<TradeSessionState>().notNull(),
+    derniereActionA: heureJeu('derniere_action_a').notNull(),
+    donneA: jsonb('donne_a').$type<TradeSide>().notNull(),
+    donneB: jsonb('donne_b').$type<TradeSide>().notNull(),
+    valideA: boolean('valide_a').notNull().default(false),
+    valideB: boolean('valide_b').notNull().default(false),
+    concluA: heureJeu('conclu_a'),
+  },
+  (t) => [index('echanges_partie').on(t.partieId, t.etat)],
+);
+
+/** Enchère d'Antokiba (RG-11.4, 11.5), menée par un PNJ. */
+export const encheres = pgTable('encheres', {
+  id: text('id').primaryKey(),
+  partieId: text('partie_id').notNull().references(() => parties.id, { onDelete: 'cascade' }),
+  carteId: text('carte_id').notNull().references(() => cartes.id),
+  pnjId: text('pnj_id'),
+  prixDepart: integer('prix_depart').notNull(),
+  debut: heureJeu('debut').notNull(),
+  fin: heureJeu('fin').notNull(),
+  participants: jsonb('participants').$type<string[]>().notNull().default([]),
+  offres: jsonb('offres').$type<Bid[]>().notNull().default([]),
+  etat: text('etat').$type<'ouverte' | 'vendue' | 'invendue'>().notNull().default('ouverte'),
+  gagnantId: text('gagnant_id'),
+  prix: integer('prix'),
+});
 
 export type ActeurType = 'joueur' | 'pnj' | 'gm' | 'systeme';
 

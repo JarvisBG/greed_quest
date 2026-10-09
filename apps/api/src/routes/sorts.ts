@@ -19,6 +19,7 @@ import { SortIntent, TransformationIntent } from '@gq/shared';
 import { and, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { requireRole } from '../auth/guard.js';
+import { ENGAGEE, activeSession, engagedItems } from '../core/echanges.js';
 import { paramsOf } from '../core/params.js';
 import { recordPosition } from '../core/position.js';
 import type { ActionCtx } from '../core/runner.js';
@@ -100,6 +101,12 @@ export async function sortsRoutes(app: FastifyInstance) {
         await c.log({ action: 'sort', resultat: 'refus', details: { sort: input.sort, code: e.code } });
         return refus(e.code, e.message);
       };
+
+      // Cartes engagées dans un échange en cours : verrouillées. RG-10.8 : pas d'Analyse pendant un échange.
+      if (input.sort === 'echange_force' && (await engagedItems(c.tx, partieId, j.id, c.now)).has(input.carteDonneeId)) return deny(ENGAGEE);
+      if (input.sort === 'analyse' && (await activeSession(c.tx, partieId, j.id, c.now))) {
+        return deny({ ok: false, code: 'echange_en_cours', message: 'Pas d’Analyse pendant un échange' });
+      }
 
       const cibleId = 'cibleId' in input ? input.cibleId : null;
       const cibleRow = cibleId ? await loadJoueur(c.tx, cibleId) : undefined;
@@ -216,6 +223,7 @@ export async function sortsRoutes(app: FastifyInstance) {
       if (!j) throw introuvable('Joueur');
       const cat = await loadCatalogue(c.tx, partieId);
       const book = (await loadBooks(c.tx, [j.id])).get(j.id)!;
+      if ((await engagedItems(c.tx, partieId, j.id, c.now)).has(input.itemId)) return refus(ENGAGEE.code, ENGAGEE.message);
       const rangs = new Map(cat.cartes.map((x) => [x.id, x.rang]));
       const o = transform({
         now: c.now,

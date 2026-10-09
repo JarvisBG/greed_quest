@@ -4,7 +4,7 @@ import { and, desc, eq, gt } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { STAFF, requireRole } from '../auth/guard.js';
 import { checkCode, hashCode } from '../auth/tokens.js';
-import { journal, staff } from '../db/schema.js';
+import { joueurs, journal, staff } from '../db/schema.js';
 import { Refus } from '../errors.js';
 import { newId } from '../ids.js';
 import { parse } from '../validation.js';
@@ -17,7 +17,7 @@ export async function staffRoutes(app: FastifyInstance) {
     const membres = await app.gq.db.select().from(staff).where(eq(staff.partieId, req.params.partieId));
     const m = membres.find((s) => checkCode(code, s.codeHash));
     if (!m) throw new Refus('code_invalide', 'Code invalide', 401);
-    return { ok: true, role: m.role, nom: m.nom, token: app.gq.tokens.issue({ role: m.role, sub: m.id, partieId: m.partieId }) };
+    return { ok: true, id: m.id, role: m.role, nom: m.nom, token: app.gq.tokens.issue({ role: m.role, sub: m.id, partieId: m.partieId }) };
   });
 
   // RG-3.2 : plusieurs GM possibles, même poids ; chaque membre est distingué au journal.
@@ -31,6 +31,18 @@ export async function staffRoutes(app: FastifyInstance) {
       await c.log({ action: 'ajout_staff', resultat: 'ok', details: { id, nom: body.nom, role: body.role } });
       return { ok: true, id };
     });
+  });
+
+  // Joueurs de la partie pour la console (sanction après une alerte, mission) : jamais de position (RG-10.12).
+  app.get<P>('/parties/:partieId/joueurs', async (req) => {
+    const { partieId } = req.params;
+    requireRole(req, partieId, ...STAFF);
+    const rows = await app.gq.db
+      .select({ id: joueurs.id, pseudo: joueurs.pseudo, statut: joueurs.statut, nen: joueurs.nen, jenny: joueurs.jenny, geleJusqua: joueurs.geleJusqua })
+      .from(joueurs)
+      .where(eq(joueurs.partieId, partieId))
+      .orderBy(joueurs.pseudo);
+    return { ok: true, joueurs: rows };
   });
 
   // RG-15 : alertes anti-triche pour la console (le moteur alerte, l'équipe décide).

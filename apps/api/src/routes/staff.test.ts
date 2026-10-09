@@ -33,7 +33,7 @@ describe('RG-3 rôles et authentification', () => {
 
   it('connexion de l’équipe par code', async () => {
     const ok = await app.inject({ method: 'POST', url: `/parties/${partieId}/staff/connexion`, payload: { code: 'secret-gm' } });
-    expect(ok.json()).toMatchObject({ ok: true, role: 'gm', nom: 'Sivraj' });
+    expect(ok.json()).toMatchObject({ ok: true, id: expect.any(String), role: 'gm', nom: 'Sivraj' });
     const ko = await app.inject({ method: 'POST', url: `/parties/${partieId}/staff/connexion`, payload: { code: 'mauvais' } });
     expect(ko.statusCode).toBe(401);
     expect(ko.json().message).toBe('Code invalide');

@@ -35,6 +35,16 @@ async function donnerCarte(joueurId: string, numero: number, origine: object = {
   return id;
 }
 
+describe('Console de l’équipe', () => {
+  it('RG-10.12 : liste des joueurs pour l’équipe, sans position ; refusée aux joueurs', async () => {
+    const res = await t.app.inject({ url: `/parties/${t.partieId}/joueurs`, headers: t.bearer(pnj) });
+    expect(res.json().joueurs.map((j: { pseudo: string }) => j.pseudo)).toEqual(['Gon', 'Kirua', 'Leorio']);
+    expect(res.json().joueurs[0]).toMatchObject({ id: gon.id, statut: 'actif' });
+    expect(res.json().joueurs[0]).not.toHaveProperty('position');
+    expect((await t.app.inject({ url: `/parties/${t.partieId}/joueurs`, headers: t.bearer(gon.token) })).statusCode).toBe(403);
+  });
+});
+
 describe('RG-3 / RG-15 sanctions', () => {
   it('RG-3.1 : motif obligatoire', async () => {
     const res = await post('/sanctions/avertissement', pnj, { joueurId: gon.id, motif: '' });

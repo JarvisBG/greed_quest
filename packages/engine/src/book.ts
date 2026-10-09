@@ -30,6 +30,8 @@ export interface CardItem {
    * « demasquee » après Analyse ou expertise (RG-8.8). Disparaît au changement de main.
    */
   marque?: 'creee' | 'demasquee';
+  /** Carte maudite (RG-12) : son porteur le sait, les autres la voient normale. Reste maudite en changeant de main. */
+  maudite?: true;
 }
 
 /** RG-8.7 : copie ratée de Duplication, ou doublon déguisé par Transformation. */
@@ -47,7 +49,7 @@ export type BookItem = CardItem | SpellItem;
 /** RG-8.13 : trace d'une carte qui a quitté le Livre. */
 export interface Perte {
   cardId: string;
-  cause: 'vol' | 'echange' | 'echange_force' | 'revente' | 'sanction' | 'malediction';
+  cause: 'vol' | 'echange' | 'echange_force' | 'revente' | 'sanction' | 'malediction' | 'retour_en_jeu';
   /** Joueur bénéficiaire (vol, échange). */
   par?: string;
   a: number;
@@ -189,6 +191,7 @@ export function describeLoss(perte: Perte, nom: (playerId: string) => string, he
     revente: 'Revendue',
     sanction: 'Retirée',
     malediction: 'Perdue (malédiction)',
+    retour_en_jeu: 'Remise en jeu',
   }[perte.cause];
   return `${verbe}${qui} à ${heure(perte.a)}`;
 }

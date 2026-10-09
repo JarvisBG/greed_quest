@@ -12,9 +12,9 @@
 - [x] Premier commit, poussé sur https://github.com/JarvisBG/greed_quest (branche `main`, auteur git local « Sivraj »)
 - [x] Plan détaillé des tâches : `docs/PLAN.md`
 
-**Phase 1 — Moteur** (en cours) : tâches 1.1 → 1.15 faites (types, RNG, paramètres RG-14, lissage J, tirage RG-8.3, Livre RG-8.5/8.13/8.14, scan RG-7, balises RG-6, géoloc RG-10.9→10.11 + RG-15, sorts RG-10, contrefaçons RG-8.6→8.9, échanges et enchères RG-11, boutique RG-9, classement et Clear RG-13, cycle de vie RG-4). 180 tests verts.
+**Phase 1 — Moteur** (en cours) : tâches 1.1 → 1.16 faites (types, RNG, paramètres RG-14, lissage J, tirage RG-8.3, Livre RG-8.5/8.13/8.14, scan RG-7, balises RG-6, géoloc RG-10.9→10.11 + RG-15, sorts RG-10, contrefaçons RG-8.6→8.9, échanges et enchères RG-11, boutique RG-9, classement et Clear RG-13, cycle de vie RG-4, événements RG-12). 202 tests verts.
 
-**Prochaine étape** : 1.16 événements GM RG-12.
+**Prochaine étape** : 1.17 simulateur de partie (10 / 30 / 80 joueurs) pour le calibrage — dernière tâche du moteur.
 
 ## Ambiguïtés du document (choix validés par Sivraj le 2026-10-09, réglables)
 - RG-6 vs tableau RG-8 : balise standard « rangs D à A » mais le tableau donne 1 % de S en standard → S exclu en standard (`draw.ts`).
@@ -65,6 +65,14 @@
 - Cycle de vie : la pause est possible en cours et en phase finale, et ramène à l'état d'avant. Le GM peut terminer depuis la pause. Les inscriptions restent possibles pendant une pause si elles sont ouvertes. Le GM ne peut que fermer les inscriptions (pas les rouvrir).
 - Clear confirmé : refusé pendant la pause (RG-4 cite En cours et Phase finale).
 - Horloge de jeu : 0 au démarrage, arrêtée pendant la pause ; toutes les heures du moteur sont en horloge de jeu.
+- Événements : lancés seulement en cours ou en phase finale ; zone (Apparition, Double gain, Zone maudite) = un à la fois par zone ; globaux cumulables, sauf une seule carte maudite à la fois.
+- Double gain : 2 gains par tirage, le stock de la balise ne baisse qu'une fois ; les limites d'exemplaires restent absolues.
+- Apparition : une balise dormante de la zone passe en fantôme ; refusée s'il n'y en a pas ; à la fin, la fantôme non épuisée redevient dormante.
+- Raid : 1 PV par bonne réponse, une fois par question et par joueur ; participant = au moins une bonne réponse ; récompense : 3 sorts par participant (débordement du Livre toléré). Questions à écrire (Phase 2).
+- Carte maudite : imite une carte du catalogue, ne compte jamais (comme une contrefaçon) ; son porteur la voit maudite, les autres la voient normale ; arrive chez un joueur actif au Livre non gelé ; à l'échéance, disparaît et le porteur perd 2 cartes hors SS (Livre gelé épargné) ; annulée = disparaît sans pénalité.
+- Mission secrète : durée par défaut 20 min, récompense en jenny fixée par le GM, aucune annonce.
+- RG-8.12 : SS rendues = vraies SS seulement ; inactif depuis 20 min, abandon ou disqualification.
+- RG-12.3 agenda automatique : reporté en Phase 2 (planification).
 - RG-14.5 : contenu des préréglages Petit groupe / Grande foule non défini.
 
 ## Feuille de route

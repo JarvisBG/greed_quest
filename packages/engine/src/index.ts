@@ -11,3 +11,4 @@ export * from './trades.js';
 export * from './shop.js';
 export * from './ranking.js';
 export * from './lifecycle.js';
+export * from './events.js';

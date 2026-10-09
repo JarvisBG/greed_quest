@@ -19,7 +19,7 @@ Chaque tâche = un commit (ou quelques-uns), tests verts avant de cocher.
 - [x] 1.13 Boutique RG-9 : paquets, stock par vague, revente (roulette RG-9.5 reportée : lots non définis)
 - [x] 1.14 Classement RG-13.5 / 13.7 (live vs final) et détection du Clear RG-13.1
 - [x] 1.15 Cycle de vie de partie RG-4 (transitions autorisées, horloge suspendue en pause)
-- [ ] 1.16 Événements GM RG-12 (effets sur scan/tirage/boutique, un seul par zone)
+- [x] 1.16 Événements GM RG-12 (effets sur scan/tirage/boutique, un seul par zone) + retour en jeu des SS RG-8.12
 - [ ] 1.17 Simulateur de partie (10 / 30 / 80 joueurs) pour le calibrage
 
 ## Phase 2 — API (`apps/api`)
@@ -31,7 +31,7 @@ Chaque tâche = un commit (ou quelques-uns), tests verts avant de cocher.
 - [ ] 2.5 Licence QR tournante 30 s (jeton signé) RG-5.2
 - [ ] 2.6 Endpoints d'intentions : scan, position, sort, achat, revente, session d'échange (cartes engagées verrouillées, 1 session active par joueur), enchère
 - [ ] 2.7 Socket.IO : rooms joueur / staff / tracker, matrice de diffusion (REGLES.md « Diffusion »)
-- [ ] 2.8 Tâches planifiées : J (2 min), rotation (20 min), recharge, vagues boutique, fin d'événements, inactivité
+- [ ] 2.8 Tâches planifiées : J (2 min), rotation (20 min), recharge, vagues boutique, fin d'événements (fantôme, carte maudite, raid), inactivité et retour des SS RG-8.12, agenda d'événements RG-12.3
 - [ ] 2.9 Endpoints GM/PNJ : cycle de vie, paramètres, balises, événements, corrections, sanctions, checkpoints, enchères, Clear
 - [ ] 2.10 Alertes anti-triche RG-15
 - [ ] 2.11 Tests d'intégration bout en bout (partie simulée)

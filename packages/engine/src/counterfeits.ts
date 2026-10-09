@@ -41,8 +41,8 @@ export interface CardView {
   cardId: string;
   /** « grisee » : contrefaçon démasquée par celui qui regarde (« Contrefaçon de [nom] »). */
   apparence: 'normale' | 'grisee';
-  /** Le créateur voit sa contrefaçon marquée tant qu'il la garde (RG-8.7). */
-  badge?: 'contrefacon';
+  /** Le créateur voit sa contrefaçon marquée tant qu'il la garde (RG-8.7) ; le porteur voit la carte maudite (RG-12). */
+  badge?: 'contrefacon' | 'maudite';
 }
 
 /**
@@ -51,6 +51,7 @@ export interface CardView {
  */
 export function viewCard(item: CardItem, regardeParDetenteur: boolean): CardView {
   const base = { itemId: item.id, cardId: item.cardId };
+  if (regardeParDetenteur && item.maudite) return { ...base, apparence: 'normale', badge: 'maudite' };
   if (!regardeParDetenteur || !item.faux) return { ...base, apparence: 'normale' };
   if (isRevealedCopy(item)) return { ...base, apparence: 'grisee' };
   if (item.marque === 'creee') return { ...base, apparence: 'normale', badge: 'contrefacon' };

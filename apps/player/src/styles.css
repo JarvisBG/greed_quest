@@ -48,3 +48,18 @@ button.lien { background: none; color: var(--doux); min-height: 0; padding: 4px 
 .ko { color: var(--ko); }
 .revelation { text-align: center; }
 .nen { font-size: 2rem; color: var(--or); }
+main { padding-bottom: 80px; }
+.onglets {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
+  background: var(--surface); border-top: 1px solid var(--bord);
+}
+.onglets button { background: transparent; color: var(--doux); font-weight: 600; }
+.onglets button.actif { color: var(--or); background: var(--fond); }
+.scan { display: grid; gap: 12px; }
+.viseur { position: relative; border-radius: 12px; overflow: hidden; background: #000; aspect-ratio: 1; }
+.viseur video { width: 100%; height: 100%; object-fit: cover; }
+.saisie { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.saisie button { text-align: center; }
+.gains li { font-size: 1.1rem; }

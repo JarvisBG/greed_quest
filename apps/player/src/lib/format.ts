@@ -1,6 +1,7 @@
 // Libellés et formats affichés au joueur (français).
 import type { GameState, NenType, SpellType } from '@gq/shared';
 import type { EvenementJoueur } from './realtime';
+import type { Gain, IssueScan } from './scan';
 
 const ETATS: Record<GameState, string> = {
   brouillon: 'En préparation',
@@ -78,3 +79,17 @@ export const NENS: Record<NenType, { nom: string; passif: string }> = {
   manipulation: { nom: 'Manipulation', passif: 'Un échange forcé gratuit (une fois par partie)' },
   specialisation: { nom: 'Spécialisation', passif: 'Type rare : un pouvoir unique et secret, révélé par l’organisation' },
 };
+
+/** RG-8.3 : un gain en une ligne. */
+export function libelleGain(g: Gain): string {
+  if (g.kind === 'carte') return `${g.nom} (rang ${g.rang})`;
+  if (g.kind === 'sort') return `Sort ${SORTS[g.sort].nom}`;
+  return `${g.montant} J`;
+}
+
+export function resumeIssue(i: IssueScan): string {
+  if (i.type === 'ok') return i.gains.map(libelleGain).join(' + ');
+  if (i.type === 'refus') return i.message;
+  if (i.type === 'en_file') return 'pas de réseau, scan gardé et envoyé au retour de la connexion';
+  return 'cette balise attend déjà dans la file';
+}

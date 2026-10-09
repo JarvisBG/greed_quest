@@ -3,8 +3,10 @@ import { Examen } from './ecrans/Examen';
 import { Inscription, type Kit as KitRecu } from './ecrans/Inscription';
 import { Kit } from './ecrans/Kit';
 import { Nen } from './ecrans/Nen';
+import { Scan } from './ecrans/Scan';
 import { api, session } from './lib/client';
-import { formatDuree, libelleEtat, libelleEvenement, NENS } from './lib/format';
+import { formatDuree, libelleEtat, NENS } from './lib/format';
+import { baliseDepuisUrl } from './lib/qr';
 import type { Question } from './lib/quiz';
 import { useJeu } from './lib/useJeu';
 
@@ -19,6 +21,9 @@ export function App() {
   const [quiz, setQuiz] = useState<Questionnaires | null>(null);
   const [examenOuvert, setExamenOuvert] = useState(false);
   const [, majReport] = useState(0);
+  const [onglet, setOnglet] = useState<'accueil' | 'scan'>('accueil');
+  // Balise scannée avec l'appareil photo du téléphone : l'app s'ouvre sur `?balise=<id>`.
+  const [baliseLien, setBaliseLien] = useState<string | null>(() => baliseDepuisUrl(location.search));
 
   useEffect(() => {
     if (!jeu.partieId || quiz) return;
@@ -34,6 +39,14 @@ export function App() {
     else if (!moi.examenFait && (examenOuvert || !session.examenReporte(moi.id))) ecran = 'examen';
     else if (moi.nen === null) ecran = 'nen';
   }
+  useEffect(() => {
+    if (ecran !== 'accueil' || !baliseLien) return;
+    setOnglet('scan');
+    const u = new URL(location.href);
+    u.searchParams.delete('balise');
+    history.replaceState(null, '', u);
+  }, [ecran, baliseLien]);
+
   const finEtape = () => {
     setExamenOuvert(false);
     void jeu.rafraichir();
@@ -81,7 +94,16 @@ export function App() {
             )}
             {ecran === 'nen' && quiz && <Nen partieId={partie.id} questions={quiz.nen} onFini={finEtape} />}
             {(ecran === 'examen' || ecran === 'nen') && !quiz && <p className="info">Chargement…</p>}
-            {ecran === 'accueil' && (
+            {ecran === 'accueil' && onglet === 'scan' && (
+              <Scan
+                scannerBalise={jeu.scannerBalise}
+                enFile={jeu.enFile}
+                gpsErreur={jeu.gpsErreur}
+                baliseInitiale={baliseLien}
+                key={baliseLien ?? 'camera'}
+              />
+            )}
+            {ecran === 'accueil' && onglet === 'accueil' && (
               <>
                 <div className="carte">
                   <h1>{moi.pseudo}</h1>
@@ -103,7 +125,7 @@ export function App() {
                   {jeu.notifs.length === 0 && <p className="info">Rien pour l'instant.</p>}
                   <ul className="fil">
                     {jeu.notifs.map((n) => (
-                      <li key={n.n}>{libelleEvenement(n.nom)}</li>
+                      <li key={n.n}>{n.texte}</li>
                     ))}
                   </ul>
                 </section>
@@ -112,6 +134,22 @@ export function App() {
           </>
         )}
       </main>
+      {jeu.phase === 'en_jeu' && ecran === 'accueil' && (
+        <nav className="onglets">
+          <button className={onglet === 'accueil' ? 'actif' : ''} onClick={() => setOnglet('accueil')}>
+            Accueil
+          </button>
+          <button
+            className={onglet === 'scan' ? 'actif' : ''}
+            onClick={() => {
+              setBaliseLien(null);
+              setOnglet('scan');
+            }}
+          >
+            Scanner
+          </button>
+        </nav>
+      )}
     </div>
   );
 }

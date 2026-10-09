@@ -23,7 +23,7 @@ export interface ApiOptions {
 
 export type Ok<T> = { ok: true } & T;
 
-export function createApi({ baseUrl, getToken, fetch: f = globalThis.fetch.bind(globalThis) }: ApiOptions) {
+export function createApi({ baseUrl, getToken, fetch: f }: ApiOptions) {
   async function request<T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<Ok<T>> {
     const headers: Record<string, string> = {};
     const token = getToken();
@@ -31,7 +31,8 @@ export function createApi({ baseUrl, getToken, fetch: f = globalThis.fetch.bind(
     if (body !== undefined) headers['content-type'] = 'application/json';
     let res: Response;
     try {
-      res = await f(baseUrl + path, { method, headers, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) });
+      // fetch lu à chaque appel (pas de référence figée au chargement).
+      res = await (f ?? globalThis.fetch)(baseUrl + path, { method, headers, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) });
     } catch {
       throw new ApiError('reseau', 'Pas de connexion au serveur', 0);
     }

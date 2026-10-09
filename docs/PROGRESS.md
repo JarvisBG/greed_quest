@@ -23,15 +23,15 @@
 - [x] 2.3 Auth : jetons signés HMAC (`src/auth/tokens.ts`, rôle + id + partie), `requireRole` (GM ⊇ PNJ). Création de partie : `POST /admin/parties` avec l'en-tête `x-code-admin` (`GQ_ADMIN_CODE`), crée le premier GM. Équipe : connexion par code (`/parties/:id/staff/connexion`), ajout par un GM, journal lisible par l'équipe. Jeton joueur délivré à l'inscription (2.4). Erreurs : `{ ok: false, code, message }` (`src/errors.ts`), requêtes validées par Zod (`@gq/shared/api.ts`).
 - [x] 2.4 Inscription RG-5 : moteur `registration.ts` (Examen, test de Nen, kit, rattrapage) ; routes `src/routes/joueurs.ts` : `POST /inscription` (pseudo, appareilId, position obligatoire), `/reconnexion`, `GET /questionnaires`, `POST /examen`, `POST /nen`, `GET /moi`. Nouveaux paramètres RG-14 : `kitJenny`, `bonusExamenJ`, `specialisationPct`, `rattrapageJParMin`. Paramètres lus via le service unique `src/core/params.ts`.
 - [x] 2.5 Licence RG-5.2 (`src/core/licence.ts`) : `GQL1.<joueurId>.<fenêtre 30 s>.<HMAC du secret joueur>`, ±1 fenêtre tolérée ; `GET /licence` (joueur), `POST /licence/verifier` (équipe). Le secret est donné par `/moi` pour que l'app calcule la licence hors ligne.
-- [ ] 2.6 Intentions (en cours) :
+- [x] 2.6 Intentions :
   - [x] Couche base ⇄ moteur `src/core/state.ts` (`loadBooks` / `saveBooks` : différences de Livres, transferts, sorts utilisés, pertes ; balises, catalogue, circulation, événements).
   - [x] `POST /position` (journalisée, alerte vitesse RG-15, envoyée au GM seulement) et `POST /scan` (RG-7 complet, tirage RG-8.3, Double gain, épuisement + remplacement RG-6.3, scan hors ligne RG-7.5, alerte photo partagée RG-15, diffusion joueur / équipe / écran).
   - [x] Sorts `src/routes/sorts.ts` : `GET /a-portee` (pseudos seulement), `POST /sort` (8 sorts + pouvoirs Émission / Manipulation), `POST /transformation` (RG-5.4) ; alerte à la cible, fil de l'écran, Analyse privée.
   - [x] Boutique `src/routes/boutique.ts` : `GET /boutique`, `POST /boutique/achat`, `POST /boutique/revente` (QR du lieu exigé, vague en base `parties.vague_boutique`, Krach, révélation Masadora). Zones de lieu (Masadora, Antokiba, Soufrabi) : colonne `qr`.
   - [x] Échanges `src/routes/echanges.ts` (table `echanges`) : `POST /echanges` (proposition), `/echanges/:id/reponse|offre|valider|annuler`, `GET /echanges/courant` ; une session active par joueur ; cartes engagées verrouillées (revente, échange forcé, Transformation) ; pas d'Analyse pendant un échange (RG-10.8).
-  - [ ] Enchères.
+  - [x] Enchères `src/routes/encheres.ts` (table `encheres`) : ouverture par PNJ/GM, `rejoindre` (QR d'Antokiba), `offre`, clôture `closeDueAuctions` (aussi `POST /encheres/cloturer`, et tâche planifiée en 2.8).
 
-**Prochaine étape** : 2.6 suite (enchères). Le calibrage n'est pas bloquant : tout passe par des paramètres.
+**Prochaine étape** : 2.7 (Socket.IO : rooms et matrice de diffusion). Le calibrage n'est pas bloquant : tout passe par des paramètres.
 
 ## Reprise de session (lire en premier)
 - Phase 1 terminée et poussée (`main`, dernier commit « Simulateur v2 »). Engine pur dans `packages/engine/src/` : un module par domaine (`params`, `draw`, `book`, `scan`, `beacons`, `geo`, `spells`, `counterfeits`, `trades`, `shop`, `ranking`, `lifecycle`, `events`) + `sim/`. Chaque module a son `*.test.ts`.
@@ -82,6 +82,7 @@
 - Masadora révèle la contrefaçon vendue (RG-8.9) : prix selon ce qu'elle est vraiment (copie → 1 J ; déguisé → prix de sa vraie carte). Une SS apparente non démasquée est refusée comme une vraie SS (rien n'est révélé).
 - Échanges : seules les cartes et les jenny s'échangent (pas les sorts) ; refusés pour un joueur gelé (sanction PNJ), disqualifié, ayant abandonné, ou au Livre gelé (Clear provisoire).
 - Échanges : la portée est vérifiée à la proposition seulement ; une fois la session ouverte, s'éloigner ne l'annule pas. Tout le reste (cartes encore présentes, jenny, fréquence) est revérifié à l'exécution.
+- Enchères : la carte vient du catalogue (stock du PNJ non modélisé) ; refusée si sa limite d'exemplaires est atteinte, à l'ouverture comme à la clôture (vente annulée, RG-8.2 limite absolue). Les enchères ouvertes sont diffusées à tous les joueurs.
 - Enchères : prix de départ fixé par le PNJ (1 J par défaut), surenchère d'au moins 1 J, offre limitée aux jenny possédés ; à la clôture, si le meilleur enchérisseur ne peut plus payer, l'offre précédente d'un autre joueur l'emporte.
 - Boutique : achat et revente exigent le scan du QR de la boutique et un GPS valide ; refusés aux joueurs gelés (sanction), disqualifiés, ayant abandonné.
 - Achat : refusé s'il reste moins de 3 emplacements libres (l'achat ne fait jamais déborder le Livre). Revente : cartes uniquement, pas les sorts.

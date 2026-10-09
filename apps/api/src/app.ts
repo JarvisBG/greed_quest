@@ -10,6 +10,7 @@ import { Refus } from './errors.js';
 import { adminRoutes } from './routes/admin.js';
 import { boutiqueRoutes } from './routes/boutique.js';
 import { echangesRoutes } from './routes/echanges.js';
+import { encheresRoutes } from './routes/encheres.js';
 import { joueursRoutes } from './routes/joueurs.js';
 import { scanRoutes } from './routes/scan.js';
 import { sortsRoutes } from './routes/sorts.js';
@@ -83,5 +84,6 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(sortsRoutes);
   await app.register(boutiqueRoutes);
   await app.register(echangesRoutes);
+  await app.register(encheresRoutes);
   return app;
 }

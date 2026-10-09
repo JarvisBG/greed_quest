@@ -1,4 +1,5 @@
 // Connexion à la base : PostgreSQL si DATABASE_URL est fourni (prod), sinon PGlite embarqué (dev, tests).
+import { mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
@@ -33,6 +34,8 @@ export async function openDb(opts: { url?: string | undefined; dataDir?: string 
     await migratePg(db, { migrationsFolder });
     return { db: db as unknown as Db, close: () => pool.end() };
   }
+  // PGlite ne crée que le dernier dossier du chemin (ENOENT si `.data/` manque).
+  if (opts.dataDir) mkdirSync(opts.dataDir, { recursive: true });
   const client = new PGlite(opts.dataDir);
   const db = drizzlePglite(client, { schema });
   await migratePglite(db, { migrationsFolder });

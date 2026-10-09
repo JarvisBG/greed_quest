@@ -45,6 +45,25 @@ Au-delà de × 2, multiplier les limites ne change plus rien : plus aucun tirage
 
 Conseil retenu : ≈ 1,5 carte de checkpoint par joueur attendu. Il manque toujours ≈ 2 SS au meilleur joueur : d'où l'arène de Soufrabi et les enchères de SS (non modélisées).
 
+## Arène de Soufrabi et enchères de SS (2026-10-09, 10 graines)
+Modèle : à chaque action, un joueur à qui il manque une carte A / S / SS va à l'arène avec la probabilité `probaArene` (à la place d'un scan), s'il en a le droit (`enterArena` : mise 30 J, une tentative / 15 min) ; il gagne avec `probaVictoireArene` (0,5) et tire alors une carte A / S / SS (`arenaReward`). Toutes les `encheresSSToutesLesMin`, le PNJ met aux enchères une SS encore sous sa limite (départ `prixDepartEnchereSS`, 50 J) ; chaque joueur à qui elle manque vient avec la probabilité `probaVenirEnchere` (0,3) et y passe les 3 min ; enchère à l'anglaise, chacun prêt à miser tous ses jenny (`openAuction`, `placeBid`, `closeAuction`). Options désactivées par défaut.
+
+Réglages communs : 0,75 balise / joueur, limites × 2, `probaCheckpoint=0.05`.
+
+| Scénario | Meilleur /30 (10 / 30 / 80 j.) | SS du meilleur / SS en jeu (10 / 30 / 80) | Arène : tentatives / victoires / SS (30 j.) | Enchères SS vendues / ouvertes, prix (30 j.) |
+|---|---|---|---|---|
+| Sans arène ni enchère | 21 / 24 / 24 | 0 / 0 · 0,5 / 3,0 · 0,7 / 5,4 | — | — |
+| Arène 5 % | 21 / 23 / 24 | 0,1 · 0,3 · 0,3 | 53 / 27 / 1,7 | — |
+| Enchère de SS toutes les 30 min | 21 / 23 / 24 | 0,2 · 0,1 · 0,5 | — | 2,4 / 2,4 (71 J) |
+| Arène 5 % + enchères / 30 min | 22 / 24 / 25 | 0,4 / 3,2 · 0,2 / 4,0 · 0,6 / 14,9 | 54 / 26 / 0,8 | 1,6 / 1,8 (56 J) |
+| Arène 15 % + enchères / 15 min | 22 / 23 / 24 | 0,6 · 0,3 · 0,4 | 70 / 34 / 1,8 | 1,2 / 2,1 (51 J) |
+
+Constats :
+1. **Les SS ne manquent plus en jeu** : avec l'arène et les enchères, la limite de SS est vite atteinte (4 exemplaires à 10-30 joueurs, ≈ 15 à 80 joueurs). Les enchères ne trouvent alors plus de SS à vendre (seulement 2,1 ouvertes sur 10 prévues à 30 joueurs).
+2. **Mais elles sont dispersées** : le meilleur joueur n'en a que 0,2 à 0,6. Il lui faut les 2, et elles sont chez d'autres joueurs, qui les gardent dans leur Livre.
+3. **Le verrou n'est donc plus l'offre de SS, c'est leur circulation entre joueurs.** Le simulateur ne fait échanger ou vendre que des doublons ; il ne modélise pas un joueur qui cède une carte de son Livre (une SS) contre des jenny ou d'autres cartes, ni les vols ciblés. C'est pourtant ce qui se passera sur le terrain (négociation).
+4. Pour 10 joueurs, beaucoup d'enchères restent invendues : peu de joueurs ont 50 J à ce moment (les jenny partent en paquets de sorts).
+
 ## Recommandations (validées le 2026-10-09, voir PROGRESS.md « Calibrage »)
 - Limites en mode Multiplicateur × 2 par défaut (ou formules RG-14 revues pour ~20 exemplaires par joueur).
 - Nombre de balises posées recommandé ≈ 0,75 × joueurs attendus (min 10).

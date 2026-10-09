@@ -5,9 +5,11 @@
 //   (Vol, sinon Échange forcé avec un doublon, sinon Gel), puis tente un échange ou lui achète un doublon ;
 // - la Barrière est gardée comme protection ; les autres sorts sont utilisés aussitôt, sans effet modélisé ;
 // - à Masadora : revente des doublons (hors SS) et achat de paquets de sorts ;
-// - le GM lance une Apparition à intervalle régulier (seule source de SS).
+// - le GM lance une Apparition à intervalle régulier ;
+// - options (calibrage du 2026-10-09) : arène de Soufrabi (mise, défi, tirage A / S / SS) et enchères de SS à Antokiba.
 import { NEN_TYPES, RANKS, type NenType, type Rank } from '@gq/shared';
 import { consumeDraw, fillToTarget, rechargeBeacons, replaceExhausted, rotate, ROTATION_INTERVAL_MS, type Beacon } from '../beacons.js';
+import { arenaReward, enterArena } from '../arena.js';
 import { addItem, emptyBook, isBookFull, layoutBook, removeItem, type Book, type CardItem } from '../book.js';
 import { countInCirculation } from '../counterfeits.js';
 import { draw, type CatalogCard } from '../draw.js';
@@ -19,7 +21,7 @@ import { randomInt, seededRng, weightedPick, type Rng } from '../rng.js';
 import { checkScan, previousDrawsOn, type ScanRefusalCode } from '../scan.js';
 import { DEFAULT_SHOP_CONFIG, buyPack, currentWave, type ShopWave } from '../shop.js';
 import { castOffensive, type NenPower, type OffensiveSpell, type SpellPlayer } from '../spells.js';
-import { trade } from '../trades.js';
+import { closeAuction, joinAuction, openAuction, placeBid, trade, type Auction } from '../trades.js';
 
 const MIN = 60_000;
 
@@ -51,6 +53,20 @@ export interface SimConfig {
    */
   probaCheckpoint: number;
   rangsCheckpoint: Partial<Record<Rank, number>>;
+  /**
+   * Arène de Soufrabi : à chaque action, probabilité qu'un joueur à qui il manque une carte A, S ou SS
+   * y aille (à la place d'un scan), s'il en a le droit (mise, délai). 0 = pas d'arène.
+   */
+  probaArene: number;
+  /** Chance de gagner le défi de l'arène. */
+  probaVictoireArene: number;
+  areneMiseJ: number;
+  areneDelaiMin: number;
+  /** Intervalle entre deux enchères de SS lancées par le PNJ d'Antokiba (min), null = aucune. */
+  encheresSSToutesLesMin: number | null;
+  prixDepartEnchereSS: number;
+  /** Probabilité qu'un joueur à qui manque la SS mise en vente vienne enchérir (il y passe les 3 min). */
+  probaVenirEnchere: number;
   /** Répartition du catalogue par rang (RG-8 : SS 2, S 3, A 5, B 6, C 7, D 7). */
   catalogue: Record<Rank, number>;
 }
@@ -70,6 +86,13 @@ export const DEFAULT_SIM: Omit<SimConfig, 'joueurs' | 'seed'> = {
   achatsCartes: true,
   probaCheckpoint: 0,
   rangsCheckpoint: { S: 15, A: 35, B: 50 },
+  probaArene: 0,
+  probaVictoireArene: 0.5,
+  areneMiseJ: 30,
+  areneDelaiMin: 15,
+  encheresSSToutesLesMin: null,
+  prixDepartEnchereSS: 50,
+  probaVenirEnchere: 0.3,
   catalogue: { SS: 2, S: 3, A: 5, B: 6, C: 7, D: 7 },
 };
 
@@ -90,6 +113,18 @@ export interface SimResult {
   volsReussis: number;
   paquetsAchetes: number;
   checkpoints: number;
+  areneTentatives: number;
+  areneVictoires: number;
+  /** SS obtenues à l'arène. */
+  areneSS: number;
+  encheresSS: number;
+  encheresSSVendues: number;
+  /** Prix moyen d'une SS vendue aux enchères (null si aucune). */
+  prixMoyenSS: number | null;
+  /** SS vraies détenues par le meilleur joueur à la fin. */
+  ssDuMeilleur: number;
+  /** Exemplaires de SS en jeu à la fin, tous joueurs confondus. */
+  ssEnJeu: number;
   refus: Partial<Record<ScanRefusalCode, number>>;
   /** Cartes manquantes au meilleur joueur, par rang. */
   manquesDuMeilleur: Partial<Record<Rank, number>>;
@@ -109,6 +144,7 @@ interface SimPlayer {
   dernierOffensifA: number | null;
   geleJusqua: number | null;
   pouvoirsUtilises: NenPower[];
+  derniereAreneA: number | null;
 }
 
 function buildCatalogue(c: Record<Rank, number>): { ids: string[]; rang: Map<string, Rank> } {
@@ -160,6 +196,7 @@ export function simulate(cfg: SimConfig): SimResult {
     dernierOffensifA: null,
     geleJusqua: null,
     pouvoirsUtilises: [],
+    derniereAreneA: null,
   }));
 
   // Tous les joueurs restent actifs : J = nombre de joueurs.
@@ -177,8 +214,9 @@ export function simulate(cfg: SimConfig): SimResult {
   let prochaineRotation = ROTATION_INTERVAL_MS;
   let prochaineApparition = cfg.apparitionToutesLesMin === null ? Infinity : cfg.apparitionToutesLesMin * MIN;
   let prochainRecalcul = 2 * MIN;
+  let prochaineEnchereSS = cfg.encheresSSToutesLesMin === null ? Infinity : cfg.encheresSSToutesLesMin * MIN;
   let clearA: number | null = null;
-  const stats = { checkpoints: 0, tirages: 0, tiragesCarte: 0, replis: 0, echanges: 0, achatsCartes: 0, vols: 0, paquets: 0 };
+  const stats = { arene: 0, areneVictoires: 0, areneSS: 0, encheresSS: 0, encheresSSVendues: 0, prixSS: 0, checkpoints: 0, tirages: 0, tiragesCarte: 0, replis: 0, echanges: 0, achatsCartes: 0, vols: 0, paquets: 0 };
   const refus: SimResult['refus'] = {};
 
   const limites = (): Record<Rank, number> => ({
@@ -297,6 +335,69 @@ export function simulate(cfg: SimConfig): SimResult {
     checkClearOf(autre, now);
   }
 
+  const catalogueNow = (): CatalogCard[] => {
+    const circ = countInCirculation(players.map((x) => x.book));
+    return designees.map((id) => ({ id, rank: rangDe(id), enCirculation: circ.get(id) ?? 0 }));
+  };
+  const hautRangManquant = (p: SimPlayer) => [...missing(p)].some((id) => ['A', 'S', 'SS'].includes(rangDe(id)));
+
+  /** Arène de Soufrabi : mise, défi arbitré par le PNJ, victoire = tirage A / S / SS (moteur arena.ts). */
+  function arene(p: SimPlayer, now: number): boolean {
+    const entree = enterArena(
+      { statut: 'actif', jenny: p.jenny, derniereEntreeA: p.derniereAreneA, tentativeEnCours: false },
+      now,
+      { mise: cfg.areneMiseJ, delaiMin: cfg.areneDelaiMin },
+    );
+    if (!entree.ok) return false;
+    p.jenny -= entree.mise;
+    p.derniereAreneA = now;
+    stats.arene++;
+    if (rng.next() >= cfg.probaVictoireArene) return true;
+    stats.areneVictoires++;
+    const g = arenaReward(catalogueNow(), limites(), rng);
+    if (g.kind === 'carte') {
+      p.book = addItem(p.book, { kind: 'carte', id: newId(), cardId: g.cardId, origine: { type: 'arene', tentativeId: 'sim' }, obtenuA: now });
+      if (g.rank === 'SS') stats.areneSS++;
+      checkClearOf(p, now);
+    } else if (g.kind === 'jenny') p.jenny += g.amount;
+    return true;
+  }
+
+  /**
+   * Enchère d'une SS (RG-11.4, moteur trades.ts) : les joueurs à qui elle manque viennent avec une
+   * probabilité donnée ; enchère à l'anglaise, chacun prêt à miser tous ses jenny. Résolue à l'ouverture,
+   * les participants sont occupés pendant les 3 min.
+   */
+  function enchereSS(now: number) {
+    const ss = catalogueNow().filter((c) => c.rank === 'SS' && c.enCirculation < limites().SS);
+    if (ss.length === 0) return;
+    const carte = ss[randomInt(rng, ss.length)]!;
+    let a: Auction = openAuction(newId(), carte.id, now, cfg.prixDepartEnchereSS);
+    stats.encheresSS++;
+    const venus = players.filter((x) => missing(x).has(carte.id) && rng.next() < cfg.probaVenirEnchere);
+    for (const x of venus) {
+      const r = joinAuction(a, x.id, now);
+      if (r.ok) a = r.auction;
+      x.prochaineAction = Math.max(x.prochaineAction, a.fin);
+    }
+    // Le deuxième plus riche mise tout ce qu'il a, le plus riche le dépasse de 1 J.
+    const parBudget = [...venus].sort((x, y) => y.jenny - x.jenny);
+    for (const x of parBudget.slice(0, 2).reverse()) {
+      const meilleure = a.offres.at(-1)?.montant ?? 0;
+      const montant = x === parBudget[0] ? Math.max(cfg.prixDepartEnchereSS, meilleure + 1) : x.jenny;
+      const r = placeBid(a, x.id, montant, x.jenny, now);
+      if (r.ok) a = r.auction;
+    }
+    const { gagnant } = closeAuction(a, (id) => players.find((x) => x.id === id)!.jenny);
+    if (!gagnant) return;
+    const g = players.find((x) => x.id === gagnant.playerId)!;
+    g.jenny -= gagnant.montant;
+    g.book = addItem(g.book, { kind: 'carte', id: newId(), cardId: carte.id, origine: { type: 'enchere', enchereId: a.id }, obtenuA: a.fin });
+    stats.encheresSSVendues++;
+    stats.prixSS += gagnant.montant;
+    checkClearOf(g, a.fin);
+  }
+
   function masadora(p: SimPlayer, now: number) {
     for (const d of duplicates(p)) {
       const prix = DEFAULT_SHOP_CONFIG.revente[rangDe(d.cardId)];
@@ -358,9 +459,21 @@ export function simulate(cfg: SimConfig): SimResult {
       }
       prochaineApparition += (cfg.apparitionToutesLesMin ?? Infinity) * MIN;
     }
+    while (prochaineEnchereSS <= now) {
+      enchereSS(prochaineEnchereSS);
+      prochaineEnchereSS += (cfg.encheresSSToutesLesMin ?? Infinity) * MIN;
+    }
+    if (clearA !== null) break;
 
     if (p.versMasadora) {
       masadora(p, now);
+      p.prochaineAction = now + marche(rng, cfg.marcheMin);
+      continue;
+    }
+
+    // Arène : le trajet et le défi remplacent le scan de cette action.
+    if (cfg.probaArene > 0 && hautRangManquant(p) && rng.next() < cfg.probaArene && arene(p, now)) {
+      if (clearA !== null) break;
       p.prochaineAction = now + marche(rng, cfg.marcheMin);
       continue;
     }
@@ -452,6 +565,7 @@ export function simulate(cfg: SimConfig): SimResult {
   const manques: SimResult['manquesDuMeilleur'] = {};
   for (const id of missing(players[iBest]!)) manques[rangDe(id)] = (manques[rangDe(id)] ?? 0) + 1;
   const finalClear = clearA as number | null;
+  const ssDuMeilleur = layoutBook(players[iBest]!.book, designees).designes.filter((d) => d.slot.etat === 'plein' && rangDe(d.cardId) === 'SS').length;
 
   return {
     joueurs: cfg.joueurs,
@@ -466,6 +580,14 @@ export function simulate(cfg: SimConfig): SimResult {
     volsReussis: stats.vols,
     paquetsAchetes: stats.paquets,
     checkpoints: stats.checkpoints,
+    areneTentatives: stats.arene,
+    areneVictoires: stats.areneVictoires,
+    areneSS: stats.areneSS,
+    encheresSS: stats.encheresSS,
+    encheresSSVendues: stats.encheresSSVendues,
+    prixMoyenSS: stats.encheresSSVendues === 0 ? null : stats.prixSS / stats.encheresSSVendues,
+    ssDuMeilleur,
+    ssEnJeu: [...countInCirculation(players.map((x) => x.book))].filter(([id]) => rangDe(id) === 'SS').reduce((a, [, n]) => a + n, 0),
     refus,
     manquesDuMeilleur: manques,
   };

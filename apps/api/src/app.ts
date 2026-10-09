@@ -13,6 +13,7 @@ import { adminRoutes } from './routes/admin.js';
 import { boutiqueRoutes } from './routes/boutique.js';
 import { echangesRoutes } from './routes/echanges.js';
 import { encheresRoutes } from './routes/encheres.js';
+import { gmRoutes } from './routes/gm.js';
 import { joueursRoutes } from './routes/joueurs.js';
 import { scanRoutes } from './routes/scan.js';
 import { sortsRoutes } from './routes/sorts.js';
@@ -95,5 +96,6 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(boutiqueRoutes);
   await app.register(echangesRoutes);
   await app.register(encheresRoutes);
+  await app.register(gmRoutes);
   return app;
 }

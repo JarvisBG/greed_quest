@@ -102,3 +102,35 @@ export const EnchereOuverture = z.object({ carteId: z.string(), prixDepart: z.nu
 /** RG-11.4 : participer exige le QR de l'enchère, scanné sur place. */
 export const EnchereInscription = z.object({ qr: z.string().min(1).max(100), position: PositionInput });
 export const EnchereOffre = z.object({ montant: z.number().int().min(1) });
+
+// --- Console GM / PNJ (RG-3) ---
+
+/** RG-4 : actions du GM sur le cycle de vie. */
+export const CycleIntent = z.object({
+  action: z.enum(['ouvrir_inscriptions', 'demarrer', 'pause', 'reprendre', 'phase_finale', 'terminer', 'fermer_inscriptions']),
+  motif: z.string().max(200).optional(),
+});
+
+/** RG-14.2 : réglage d'un paramètre. */
+export const ParamSettingInput = z.discriminatedUnion('mode', [
+  z.object({ mode: z.literal('auto') }),
+  z.object({ mode: z.literal('verrouille'), value: z.number().min(0) }),
+  z.object({ mode: z.literal('multiplicateur'), coef: z.number().min(0).max(10) }),
+]);
+export const ParamIntent = z.object({ cle: z.string(), reglage: ParamSettingInput });
+
+export const PrereglageCreation = z.object({ nom: z.string().trim().min(1).max(60), description: z.string().max(200).default('') });
+export const PrereglageApplication = z.object({ id: z.string() });
+
+/** RG-6 : le GM active, coupe ou endort une balise. */
+export const BaliseEtatIntent = z.object({ action: z.enum(['activer', 'couper', 'endormir']), motif: z.string().max(200).optional() });
+
+const LatLngInput = z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) });
+export const ZoneCreation = z.object({
+  nom: z.string().trim().min(1).max(40),
+  type: z.enum(['masadora', 'antokiba', 'soufrabi', 'sauvage']),
+  polygone: z.array(LatLngInput).min(3),
+});
+export const BaliseCreation = z.object({ zoneId: z.string(), libelle: z.string().trim().min(1).max(20), position: LatLngInput.optional() });
+/** RG-8.1 : carte du catalogue (nom, lot réel). */
+export const CarteModification = z.object({ nom: z.string().trim().min(1).max(60).optional(), lotReel: z.string().max(120).nullable().optional() });

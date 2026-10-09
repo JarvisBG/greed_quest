@@ -31,7 +31,7 @@ describe('RG-11.4 / 11.5 enchères d’Antokiba', () => {
     expect((await post(gon.token, 'encheres', { carteId: t.carteIds[5] })).statusCode).toBe(403);
     const res = await post(pnj, 'encheres', { carteId: t.carteIds[5], prixDepart: 10 });
     id = res.json().enchere.id;
-    expect(res.json().enchere).toMatchObject({ carte: { nom: 'Boussole céleste', rang: 'A' }, prixDepart: 10, meilleureOffre: null });
+    expect(res.json().enchere).toMatchObject({ carte: { nom: 'Boussole céleste', rang: 'A' }, prixDepart: 10, meilleureOffre: null, resteMs: 180_000 }); // RG-11.4 : 3 min
   });
 
   it('RG-11.4 : surenchérir exige d’avoir scanné le QR de l’enchère', async () => {

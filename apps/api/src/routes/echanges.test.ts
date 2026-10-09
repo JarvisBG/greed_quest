@@ -2,6 +2,8 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { exemplaires, joueurs, zones } from '../db/schema.js';
 import { newId } from '../ids.js';
+import { SYSTEME } from '../core/journal.js';
+import { tickPartie } from '../core/taches.js';
 import { CENTRE, testApp } from '../test/helpers.js';
 
 let t: Awaited<ReturnType<typeof testApp>>;
@@ -94,5 +96,14 @@ describe('RG-11.1 amendé : échange à la Pokémon', () => {
     t.clock.t += 61_000;
     const rep = await post(gon, `echanges/${res.json().sessionId}/reponse`, { accepte: true });
     expect(rep.json()).toMatchObject({ ok: false, message: 'Échange expiré' });
+  });
+
+  it('expiration : la tâche planifiée prévient les deux joueurs', async () => {
+    const res = await proposer(leorio, kirua);
+    const id = res.json().sessionId;
+    t.clock.t += 61_000;
+    await t.app.gq.runner.run(t.partieId, SYSTEME, tickPartie);
+    const notifs = recues.filter((e) => e.evenement === 'echange' && e.data.id === id && e.data.etat === 'expire').map((e) => e.a);
+    expect(notifs.sort()).toEqual([leorio.id, kirua.id].sort());
   });
 });

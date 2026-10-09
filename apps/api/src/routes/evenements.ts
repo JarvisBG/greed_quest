@@ -56,6 +56,7 @@ export async function publicEvent(c: ActionCtx, e: GameEvent) {
     zoneId: e.zoneId,
     texte: a?.texte ?? null,
     fin: e.fin,
+    resteMs: Math.max(0, e.fin - c.now),
     ...(e.data.type === 'raid' ? { pv: e.data.pv, pvMax: e.data.pvMax } : {}),
   };
 }
@@ -221,6 +222,7 @@ export async function evenementsRoutes(app: FastifyInstance) {
         const barre = { id: next.id, pv: next.data.pv, pvMax: next.data.pvMax };
         c.emit({ type: 'tracker' }, 'raid', barre); // barre de vie
         c.emit({ type: 'staff' }, 'raid', barre);
+        c.emit({ type: 'joueurs' }, 'raid', barre);
       }
       if (next.etat === 'termine') await finishEvent(c, next, false);
       else await saveEvent(c.tx, partieId, next);

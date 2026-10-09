@@ -41,6 +41,8 @@ async function publicView(c: ActionCtx, a: Auction) {
     id: a.id,
     carte: { id: a.cardId, nom: cat.nomDe(a.cardId), rang: cat.rangDe(a.cardId) },
     fin: a.fin,
+    /** Temps restant (heure de jeu) au moment de l'envoi : l'app le décompte. */
+    resteMs: Math.max(0, a.fin - c.now),
     prixDepart: a.prixDepart,
     meilleureOffre: best ? { montant: best.montant, pseudo } : null,
   };

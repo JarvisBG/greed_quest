@@ -24,7 +24,7 @@ import { emitBeaconChanges, visitesParZone } from '../routes/scan.js';
 import { computeRanking, publicRanking } from './classement.js';
 import { alerte } from './alertes.js';
 import { applyLifecycle } from './cycle.js';
-import { activeSession } from './echanges.js';
+import { expireSessions } from './echanges.js';
 import { finishEvent } from './evenements.js';
 import { SYSTEME } from './journal.js';
 import { paramsOf } from './params.js';
@@ -150,8 +150,12 @@ async function returnSS(c: ActionCtx) {
 }
 
 /** Sessions d'échange expirées : les deux joueurs sont prévenus. */
+/** RG-11.1 amendé : invitation sans réponse (60 s) ou session inactive (3 min) → expirée, les deux joueurs sont prévenus. */
 async function expireTrades(c: ActionCtx) {
-  for (const j of await loadJoueurs(c.tx, c.partie.id)) await activeSession(c.tx, c.partie.id, j.id, c.now);
+  for (const s of await expireSessions(c.tx, c.partie.id, c.now)) {
+    await c.log({ action: 'echange', resultat: 'expire', details: { sessionId: s.id } });
+    for (const id of [s.a, s.b]) c.emit({ type: 'joueur', id }, 'echange', { id: s.id, etat: 'expire' });
+  }
 }
 
 /** RG-9.3 : nouvelle vague de boutique, stock calculé à son ouverture (RG-14.3). */

@@ -75,6 +75,7 @@ describe('RG-12 événements', () => {
     // Kirua n'a donné aucune bonne réponse : pas participant.
     expect(recues.some((e) => e.a === kirua.id && e.evenement === 'recompense_raid')).toBe(false);
     expect(recues.some((e) => e.a === 'tracker' && e.evenement === 'raid')).toBe(true);
+    expect(recues.some((e) => e.a === 'joueurs' && e.evenement === 'raid')).toBe(true); // barre de vie dans l'app
   });
 
   it('Carte maudite : arrive chez un joueur actif, son porteur est prévenu', async () => {

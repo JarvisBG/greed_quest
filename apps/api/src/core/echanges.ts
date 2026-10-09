@@ -40,6 +40,19 @@ export async function activeSession(db: DbOrTx, partieId: string, joueurId: stri
   return active;
 }
 
+/** Marque les sessions expirées de la partie et les renvoie (pour prévenir les deux joueurs). */
+export async function expireSessions(db: DbOrTx, partieId: string, now: number): Promise<TradeSession[]> {
+  const rows = await db.select().from(echanges).where(and(eq(echanges.partieId, partieId), inArray(echanges.etat, ['invitation', 'composition'])));
+  const expirees: TradeSession[] = [];
+  for (const r of rows) {
+    const s = expireTradeSession(sessionOf(r), now);
+    if (s.etat !== 'expire') continue;
+    await saveSession(db, partieId, s);
+    expirees.push(s);
+  }
+  return expirees;
+}
+
 /** Cartes qu'un joueur a engagées dans sa session en cours : il ne peut pas s'en servir ailleurs. */
 export async function engagedItems(db: DbOrTx, partieId: string, joueurId: string, now: number): Promise<Set<string>> {
   const s = await activeSession(db, partieId, joueurId, now);

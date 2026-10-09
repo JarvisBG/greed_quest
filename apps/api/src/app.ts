@@ -16,6 +16,7 @@ import { echangesRoutes } from './routes/echanges.js';
 import { encheresRoutes } from './routes/encheres.js';
 import { evenementsRoutes } from './routes/evenements.js';
 import { gmRoutes } from './routes/gm.js';
+import { livreRoutes } from './routes/livre.js';
 import { pnjRoutes } from './routes/pnj.js';
 import { joueursRoutes } from './routes/joueurs.js';
 import { scanRoutes } from './routes/scan.js';
@@ -103,5 +104,6 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(evenementsRoutes);
   await app.register(pnjRoutes);
   await app.register(clearRoutes);
+  await app.register(livreRoutes);
   return app;
 }

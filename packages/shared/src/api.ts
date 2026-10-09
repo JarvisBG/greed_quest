@@ -43,3 +43,11 @@ export const ReponsesQuiz = z.object({ reponses: z.array(z.number().int().min(0)
 
 /** RG-5.2 : licence scannée par un PNJ ou le GM. */
 export const LicenceScan = z.object({ qr: z.string().min(10).max(200) });
+
+/** RG-7 : « j'ai scanné cette balise, ici ». `scanneA` (heure réelle du téléphone, ms) pour un scan mis en file hors ligne (RG-7.5). */
+export const ScanIntent = z.object({
+  baliseId: z.string().min(1).max(100),
+  position: PositionInput,
+  scanneA: z.number().int().positive().optional(),
+});
+export type ScanIntent = z.infer<typeof ScanIntent>;

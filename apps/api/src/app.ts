@@ -9,6 +9,7 @@ import type { Db } from './db/client.js';
 import { Refus } from './errors.js';
 import { adminRoutes } from './routes/admin.js';
 import { joueursRoutes } from './routes/joueurs.js';
+import { scanRoutes } from './routes/scan.js';
 import { staffRoutes } from './routes/staff.js';
 
 export interface AppDeps {
@@ -75,5 +76,6 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(adminRoutes);
   await app.register(staffRoutes);
   await app.register(joueursRoutes);
+  await app.register(scanRoutes);
   return app;
 }

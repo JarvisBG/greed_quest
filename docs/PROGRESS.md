@@ -12,9 +12,9 @@
 - [x] Premier commit, poussé sur https://github.com/JarvisBG/greed_quest (branche `main`, auteur git local « Sivraj »)
 - [x] Plan détaillé des tâches : `docs/PLAN.md`
 
-**Phase 1 — Moteur** (en cours) : tâches 1.1 → 1.10 faites (types, RNG, paramètres RG-14, lissage J, tirage RG-8.3, Livre RG-8.5/8.13/8.14, scan RG-7, balises RG-6, géoloc RG-10.9→10.11 + RG-15, sorts RG-10). 101 tests verts.
+**Phase 1 — Moteur** (en cours) : tâches 1.1 → 1.11 faites (types, RNG, paramètres RG-14, lissage J, tirage RG-8.3, Livre RG-8.5/8.13/8.14, scan RG-7, balises RG-6, géoloc RG-10.9→10.11 + RG-15, sorts RG-10, contrefaçons RG-8.6→8.9). 119 tests verts.
 
-**Prochaine étape** : 1.11 contrefaçons RG-8.6 → 8.9 (Transformation, affichage par joueur, effets de la révélation, Masadora).
+**Prochaine étape** : 1.12 échanges RG-11.1 → 11.3.
 
 ## Ambiguïtés du document (choix validés par Sivraj le 2026-10-09, réglables)
 - RG-6 vs tableau RG-8 : balise standard « rangs D à A » mais le tableau donne 1 % de S en standard → S exclu en standard (`draw.ts`).
@@ -46,6 +46,9 @@
 - Radar : la cible est prévenue (diffusion « Sort lancé : lanceur et cible notifiés »).
 - Duplication d'une contrefaçon : toujours une contrefaçon.
 - RG-10.8 « jamais les cartes d'un échange en cours » : à appliquer en Phase 2 (verrouillage des cartes engagées dans une offre).
+- Transformation : seul un vrai exemplaire dont le joueur a au moins un autre exemplaire (vrai ou non) peut être déguisé ; recharge 20 min depuis la dernière utilisation, disponible dès le début.
+- Expertise PNJ (RG-8.8) : payée même si rien n'est trouvé ; le Livre entier inclut les emplacements libres.
+- Masadora révèle la contrefaçon vendue (RG-8.9) : prix selon ce qu'elle est vraiment (copie → 1 J ; déguisé → prix de sa vraie carte). À coder en 1.13.
 - RG-14.5 : contenu des préréglages Petit groupe / Grande foule non défini.
 
 ## Feuille de route

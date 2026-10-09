@@ -1,7 +1,8 @@
 // Sorts (RG-10) et pouvoirs de Nen liés (RG-5.4). Un refus ne consomme rien ;
 // un sort accepté est consommé même s'il est bloqué ou sans effet.
 import type { GameState, NenType, PlayerStatus, Rank, SpellType } from '@gq/shared';
-import { addItem, layoutBook, removeItem, transferItem, type Book, type BookItem, type CardItem } from './book.js';
+import { addItem, removeItem, transferItem, type Book, type BookItem, type CardItem } from './book.js';
+import { counterfeitsOnPage, revealItems } from './counterfeits.js';
 import { isInRange, isOffRadar, isValidPosition, zoneOf, type Polygon, type Position, type RangeSettings } from './geo.js';
 import { pick, type Rng } from './rng.js';
 
@@ -321,24 +322,17 @@ export function castDuplication(
 /**
  * Analyse (RG-10.8) : révèle les contrefaçons d'une page de son propre Livre (pages numérotées à partir de 1).
  * La page est lue avant de retirer la carte Analyse. Résultat visible du lanceur seulement.
- * Les effets de la révélation (RG-8.9) sont appliqués par le module contrefaçons.
+ * Effets de la révélation : RG-8.9 (revealItems).
  */
 export function castAnalyse(
   w: SpellWorld,
   input: { lanceur: SpellPlayer; itemId: string; page: number; designees: readonly string[] },
 ): SimpleSuccess<{ contrefacons: string[] }> | SpellRefusal {
-  const pages = layoutBook(input.lanceur.book, input.designees).pages;
-  const slots = pages[input.page - 1];
-  if (!slots) return refuse('page_invalide', 'Cette page n’existe pas');
+  const ids = counterfeitsOnPage(input.lanceur.book, input.designees, input.page);
+  if (ids === null) return refuse('page_invalide', 'Cette page n’existe pas');
 
   let lanceur = consumeSimple(w, input.lanceur, input.itemId, 'analyse');
   if (isRefusal(lanceur)) return lanceur;
-
-  const ids = slots.flatMap((s) => (s.etat === 'plein' && s.item.kind === 'carte' && s.item.faux ? [s.item.id] : []));
-  const book = {
-    ...lanceur.book,
-    items: lanceur.book.items.map((i) => (ids.includes(i.id) && i.kind === 'carte' ? { ...i, marque: 'demasquee' as const } : i)),
-  };
-  lanceur = { ...lanceur, book };
+  lanceur = { ...lanceur, book: revealItems(lanceur.book, ids) };
   return { ok: true, lanceur, resultat: { contrefacons: ids }, notice: { lanceur: lanceur.id, cible: null, sort: 'analyse', resultat: 'reussi' } };
 }

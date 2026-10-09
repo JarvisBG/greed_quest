@@ -92,7 +92,9 @@ export function layoutBook(book: Book, designees: readonly string[]): BookLayout
   const libresItems: BookItem[] = [];
 
   for (const item of items) {
-    if (item.kind === 'carte' && designees.includes(item.cardId) && !occupant.has(item.cardId)) {
+    // RG-8.9 : une copie démasquée (grisée) libère l'emplacement désigné.
+    const grisee = item.kind === 'carte' && item.faux?.nature === 'copie' && item.marque === 'demasquee';
+    if (item.kind === 'carte' && !grisee && designees.includes(item.cardId) && !occupant.has(item.cardId)) {
       occupant.set(item.cardId, item);
     } else {
       libresItems.push(item);

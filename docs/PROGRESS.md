@@ -9,7 +9,23 @@
 - [x] pnpm 10.34 installé via `npm i -g pnpm` (corepack exige les droits admin : EPERM)
 - [x] `git init` (branche `main`) + monorepo : `packages/engine`, `packages/shared` ; TS 7, Vitest 5, Zod 4 ; `pnpm typecheck` et `pnpm test` OK
 
-**Prochaine étape** : Phase 1 — engine : formules RG-14, puis tirage RG-8.3 (RNG injecté).
+- [x] Premier commit, poussé sur https://github.com/JarvisBG/greed_quest (branche `main`, auteur git local « Sivraj »)
+- [x] Plan détaillé des tâches : `docs/PLAN.md`
+
+**Phase 1 — Moteur** (en cours) : tâches 1.1 → 1.5 faites (types, RNG, paramètres RG-14, lissage J, tirage RG-8.3). 25 tests verts.
+
+**Prochaine étape** : 1.6 Livre RG-8.5, puis 1.7 vérifications de scan RG-7.
+
+## Ambiguïtés du document (valeurs provisoires dans le code, à valider)
+- RG-6 vs tableau RG-8 : balise standard « rangs D à A » mais le tableau donne 1 % de S en standard → S exclu en standard (`draw.ts`).
+- Poids des rangs en balise rare (« poids relevés ») non chiffrés → S 15, A 25, B 30, C 30.
+- Balise fantôme : SS 50 / S 50, et toujours une carte (ni sort ni jenny).
+- Montant d'un gain jenny non fixé → 10 J. Répartition des sorts tirés → uniforme ; « sort de rareté commune » (RG-5.5) : rareté des sorts non définie.
+- RG-7.2 : un rang au-dessus du plafond est ramené au plafond (et non retiré puis renormalisé).
+- RG-8.3 : si le rang tiré et tous les rangs inférieurs sont épuisés → jenny, même si un rang supérieur reste dispo.
+- RG-14.1 « baisse limitée à un palier toutes les 10 min » : interprété comme une baisse appliquée au plus une fois par fenêtre de 10 min.
+- RG-14.2 multiplicateur : arrondi à l'entier le plus proche.
+- RG-14.5 : contenu des préréglages Petit groupe / Grande foule non défini.
 
 ## Feuille de route
 1. **Phase 0 — Cadrage** : stack, environnement, `git init`.

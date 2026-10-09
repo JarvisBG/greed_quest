@@ -4,7 +4,8 @@ Chasse au trésor numérique sur le terrain (inspirée de Greed Island) : balise
 
 ## Où lire quoi (économiser les tokens)
 - `docs/REGLES.md` : règles de gestion condensées (RG-x.y). **Lire ça, pas le .docx.** Ne relire que la section utile.
-- `docs/PROGRESS.md` : avancement, prochaine étape, décisions prises. À lire en début de session, à mettre à jour en fin de tâche.
+- `docs/PLAN.md` : liste des tâches par phase, à cocher.
+- `docs/PROGRESS.md` : avancement, ambiguïtés du document, prochaine étape, décisions prises. À lire en début de session, à mettre à jour en fin de tâche.
 - `Greed Quest - Règles de gestion.docx` : source de vérité, à ne relire que s'il a changé.
 
 ## Stack (validée le 2026-10-09)

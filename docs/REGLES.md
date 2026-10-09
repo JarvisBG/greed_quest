@@ -164,7 +164,7 @@ Prix défaut (réglables) : paquet 50 J · revente D/C/B 5/10/20 J · A/S 40/80 
 - 13.7 Live : compte les contrefaçons (rien ne trahit) ; final et Clear : vraies seulement.
 
 ## RG-14 Paramètres dynamiques
-> **Conseils d'organisation (calibrage validé le 2026-10-09, non bloquants)** : ≈ 0,75 balise posée par joueur attendu (min 10) ; 1 checkpoint PNJ pour 10 joueurs, ≈ 1,5 carte de checkpoint par joueur attendu (≈ 15 par checkpoint), stock B / A / S en 50 / 35 / 15 % (moteur `conseils.ts`). Un Clear reste rare : la plupart des parties finissent au classement (RG-13.4).
+> **Conseils d'organisation (calibrage validé le 2026-10-09, non bloquants)** : ≈ 0,75 balise posée par joueur attendu (min 10) ; 1 checkpoint PNJ pour 10 joueurs, ≈ 2,5 cartes de checkpoint par joueur attendu (objectif « Clear possible », décision du 2026-10-09), stock B / A / S en 50 / 35 / 15 % (moteur `conseils.ts`) ; taille du catalogue : voir l'amendement RG-8.1.
 - 14.1 J recalculé toutes les 2 min ; hausse immédiate, baisse max un palier / 10 min.
 - 14.2 Modes : Auto · Verrouillé · Multiplicateur (formule × coef).
 - 14.3 Pas de rétroactivité.

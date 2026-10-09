@@ -61,6 +61,7 @@ Seul le GM avance l'état, sauf passage auto en phase finale et fin du temps. Un
 
 États → réponse au scan : Dormante « Cette balise dort » · Active → tirage · Épuisée « Plus rien ici, cherche ailleurs » · Coupée (GM) refus sans motif.
 Types : **Standard** rangs D–A, stock normal, rotation auto · **Rare** C–S poids relevés, stock ½, peu nombreuses · **Fantôme** S/SS, stock 1–2, seulement pendant événement GM.
+> **Amendement 2026-10-09 (Sivraj)** : toutes les balises imprimées sont identiques. Le type n'est pas attaché à une balise : le serveur le tire à chaque activation (rare avec la probabilité `partRaresPct`, 15 % par défaut, réglable RG-14). Le mode fantôme s'applique à n'importe quelle balise dormante pendant une Apparition.
 
 ## RG-7 Scan (vérifs dans l'ordre, arrêt au 1er échec)
 1. Partie en cours (ni pause ni terminée). 2. Joueur actif, non gelé, GPS valide. 3. Balise active, zone non fermée par événement. 4. Boucle (7.1). 5. Délai (7.3). 6. Place dans le Livre (8.5). 7. Stock > 0. → tirage.

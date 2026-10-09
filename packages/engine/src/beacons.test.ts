@@ -16,7 +16,7 @@ import { seededRng } from './rng.js';
 const b = (id: string, zoneId: string, over: Partial<Beacon> = {}): Beacon => ({
   id,
   zoneId,
-  type: 'standard',
+  type: null,
   state: 'dormante',
   stock: 0,
   epuiseeA: null,
@@ -41,7 +41,7 @@ describe('RG-6.2 stock à l’activation', () => {
 
 describe('RG-6.2 / RG-6.3 tirage et épuisement', () => {
   it('décrémente, puis épuise à 0', () => {
-    const { beacon: a } = consumeDraw(b('x', 'z1', { state: 'active', stock: 2 }), 100);
+    const { beacon: a } = consumeDraw(b('x', 'z1', { type: 'standard', state: 'active', stock: 2 }), 100);
     expect(a).toMatchObject({ state: 'active', stock: 1 });
     const r = consumeDraw(a, 200);
     expect(r.beacon).toMatchObject({ state: 'epuisee', stock: 0, epuiseeA: 200 });
@@ -63,15 +63,15 @@ describe('RG-6.2 / RG-6.3 tirage et épuisement', () => {
   it('remplacement dans une autre zone que la balise épuisée', () => {
     const beacons = terrain().map((x) => (x.id === 'z1-1' ? { ...x, state: 'epuisee' as const, epuiseeA: 0 } : x));
     for (let seed = 0; seed < 20; seed++) {
-      const r = replaceExhausted(beacons, beacons[0]!, 3, { stockBalise: 10, visitesParZone: noVisits }, seededRng(seed));
+      const r = replaceExhausted(beacons, beacons[0]!, 3, { stockBalise: 10, partRaresPct: 0, visitesParZone: noVisits }, seededRng(seed));
       expect(r.changes).toHaveLength(1);
       expect(r.changes[0]?.zoneId).not.toBe('z1');
     }
   });
 
   it('pas de remplacement si la cible est déjà atteinte', () => {
-    const beacons = terrain().map((x, i) => (i < 3 ? { ...x, state: 'active' as const, stock: 5 } : x));
-    expect(replaceExhausted(beacons, beacons[0]!, 3, { stockBalise: 10, visitesParZone: noVisits }, rng()).changes).toHaveLength(0);
+    const beacons = terrain().map((x, i) => (i < 3 ? { ...x, type: 'standard' as const, state: 'active' as const, stock: 5 } : x));
+    expect(replaceExhausted(beacons, beacons[0]!, 3, { stockBalise: 10, partRaresPct: 0, visitesParZone: noVisits }, rng()).changes).toHaveLength(0);
   });
 });
 
@@ -82,7 +82,7 @@ describe('activation par zones les moins visitées', () => {
       ['z2', 0],
       ['z3', 1],
     ]);
-    const r = activateBeacons(terrain(), { count: 3, stockBalise: 10, visitesParZone: visites, cause: 'cible' }, rng());
+    const r = activateBeacons(terrain(), { count: 3, stockBalise: 10, partRaresPct: 0, visitesParZone: visites, cause: 'cible' }, rng());
     // z2 d'abord (0 visite) ; ensuite z2 et z3 sont à égalité (1) et partagés ; z1 jamais.
     const zones = r.changes.map((c) => c.zoneId);
     expect(zones[0]).toBe('z2');
@@ -91,29 +91,43 @@ describe('activation par zones les moins visitées', () => {
   });
 
   it('n’active jamais une balise fantôme ni coupée', () => {
-    const beacons = [b('f', 'z1', { type: 'fantome' }), b('c', 'z1', { state: 'coupee' }), b('s', 'z2')];
-    const r = activateBeacons(beacons, { count: 3, stockBalise: 10, visitesParZone: noVisits, cause: 'cible' }, rng());
+    const beacons = [b('f', 'z1', { type: 'fantome', state: 'active', stock: 1 }), b('c', 'z1', { state: 'coupee' }), b('s', 'z2')];
+    const r = activateBeacons(beacons, { count: 3, stockBalise: 10, partRaresPct: 0, visitesParZone: noVisits, cause: 'cible' }, rng());
     expect(r.changes.map((c) => c.beaconId)).toEqual(['s']);
+  });
+
+  it('le type est tiré à l’activation selon partRaresPct', () => {
+    const many = Array.from({ length: 2000 }, (_, i) => b(`b${i}`, `z${i % 5}`));
+    const r = activateBeacons(many, { count: 2000, stockBalise: 10, partRaresPct: 15, visitesParZone: noVisits, cause: 'cible' }, rng());
+    const rares = r.changes.filter((c) => c.type === 'rare');
+    expect(rares.length / 2000).toBeCloseTo(0.15, 1);
+    expect(rares.every((c) => c.stock === 5)).toBe(true);
+    expect(r.changes.filter((c) => c.type === 'standard').every((c) => c.stock === 10)).toBe(true);
+  });
+
+  it('retour en dormante : le type est effacé', () => {
+    const r = rechargeBeacons([b('x', 'z1', { type: 'rare', state: 'epuisee', epuiseeA: 0 })], RECHARGE_MS);
+    expect(r.beacons[0]?.type).toBeNull();
   });
 });
 
 describe('cible (RG-14.3)', () => {
   it('complète jusqu’à la cible', () => {
-    const r = fillToTarget(terrain(), 5, { stockBalise: 10, visitesParZone: noVisits }, rng());
+    const r = fillToTarget(terrain(), 5, { stockBalise: 10, partRaresPct: 0, visitesParZone: noVisits }, rng());
     expect(countActive(r.beacons)).toBe(5);
   });
 
   it('une cible plus basse ne coupe rien', () => {
-    const beacons = terrain().map((x) => ({ ...x, state: 'active' as const, stock: 5 }));
-    expect(fillToTarget(beacons, 2, { stockBalise: 10, visitesParZone: noVisits }, rng()).changes).toHaveLength(0);
+    const beacons = terrain().map((x) => ({ ...x, type: 'standard' as const, state: 'active' as const, stock: 5 }));
+    expect(fillToTarget(beacons, 2, { stockBalise: 10, partRaresPct: 0, visitesParZone: noVisits }, rng()).changes).toHaveLength(0);
   });
 });
 
 describe('RG-6.4 rotation', () => {
   it('remplace 30 % des actives par d’autres balises', () => {
-    const start = fillToTarget(terrain(), 10, { stockBalise: 10, visitesParZone: noVisits }, rng()).beacons;
+    const start = fillToTarget(terrain(), 10, { stockBalise: 10, partRaresPct: 0, visitesParZone: noVisits }, rng()).beacons;
     const avant = new Set(start.filter((x) => x.state === 'active').map((x) => x.id));
-    const r = rotate(start, 10, { stockBalise: 10, visitesParZone: noVisits }, rng());
+    const r = rotate(start, 10, { stockBalise: 10, partRaresPct: 0, visitesParZone: noVisits }, rng());
 
     const retirees = r.changes.filter((c) => c.to === 'dormante');
     const ajoutees = r.changes.filter((c) => c.to === 'active');
@@ -123,8 +137,8 @@ describe('RG-6.4 rotation', () => {
   });
 
   it('au moins une balise tourne', () => {
-    const beacons = [b('a', 'z1', { state: 'active', stock: 5 }), b('d', 'z2')];
-    const r = rotate(beacons, 1, { stockBalise: 10, visitesParZone: noVisits }, rng());
+    const beacons = [b('a', 'z1', { type: 'standard', state: 'active', stock: 5 }), b('d', 'z2')];
+    const r = rotate(beacons, 1, { stockBalise: 10, partRaresPct: 0, visitesParZone: noVisits }, rng());
     expect(r.changes.map((c) => `${c.beaconId}:${c.to}`)).toEqual(['a:dormante', 'd:active']);
   });
 });

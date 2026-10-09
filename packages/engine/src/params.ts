@@ -3,6 +3,7 @@
 export const PARAM_KEYS = [
   'balisesActives',
   'stockBalise',
+  'partRaresPct',
   'limiteSS',
   'limiteS',
   'limiteA',
@@ -40,6 +41,8 @@ const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(mi
 export const AUTO_FORMULAS: Record<ParamKey, (c: ParamContext) => number> = {
   balisesActives: (c) => clamp(Math.ceil(c.J / 3), Math.min(5, c.balisesPosees), c.balisesPosees),
   stockBalise: (c) => clamp(Math.ceil(c.J / 2), 5, 30),
+  // Décision 2026-10-09 : type de balise tiré à l'activation (hors document, valeur proposée).
+  partRaresPct: () => 15,
   limiteSS: (c) => Math.max(1, Math.floor(c.J / 20)),
   limiteS: (c) => Math.max(2, Math.ceil(c.J / 10)),
   limiteA: (c) => Math.max(3, Math.ceil(c.J / 5)),

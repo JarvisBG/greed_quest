@@ -12,7 +12,7 @@
 - [x] Premier commit, poussé sur https://github.com/JarvisBG/greed_quest (branche `main`, auteur git local « Sivraj »)
 - [x] Plan détaillé des tâches : `docs/PLAN.md`
 
-**Phase 1 — Moteur** (en cours) : tâches 1.1 → 1.8 faites (types, RNG, paramètres RG-14, lissage J, tirage RG-8.3, Livre RG-8.5/8.13/8.14, scan RG-7, balises RG-6). 60 tests verts.
+**Phase 1 — Moteur** (en cours) : tâches 1.1 → 1.8 faites (types, RNG, paramètres RG-14, lissage J, tirage RG-8.3, Livre RG-8.5/8.13/8.14, scan RG-7, balises RG-6). 62 tests verts.
 
 **Prochaine étape** : 1.9 géoloc (distance, portée RG-10.11, hors radar RG-10.10, vitesse RG-15).
 
@@ -30,7 +30,6 @@
 - Livre plein et réception par vol / échange / échange forcé : débordement autorisé ; scan interdit tant que les emplacements libres occupés sont ≥ 15 (validé le 2026-10-09).
 - RG-7.3 « 30 s entre deux scans » : compté depuis le dernier tirage réussi (un refus ne coûte rien, RG-7.4). (validé)
 - RG-7 étape 2 : un joueur « inactif » (RG-5.7) peut scanner, l'action le rend actif ; seuls disqualifié, abandon et gelé sont refusés. (validé)
-- RG-6 balises rares « peu nombreuses » : pas de quota, rares et standard partagent la cible ; leur rareté vient du nombre imprimé.
 - RG-6.4 rotation : 30 % des actives arrondi, au moins 1 ; balises retirées au hasard (→ dormantes, non réactivables dans la même rotation) ; remplaçantes par zone la moins visitée (visites + activations du tour), tirage au hasard en cas d'égalité.
 - RG-6.3 remplacement : si aucune dormante hors de la zone épuisée, la zone épuisée redevient éligible.
 - RG-14.3 : une baisse de la cible de balises actives ne coupe aucune balise ; on ne réactive simplement pas.
@@ -49,6 +48,7 @@
 _(date — décision — raison)_
 - 2026-10-09 — Stack TypeScript monorepo validée (voir CLAUDE.md) — moteur testable isolément, un seul langage pour api et fronts.
 - 2026-10-09 — Ordre : engine avant api — l'engine porte la logique métier, l'api l'orchestre.
+- 2026-10-09 — Balises toutes identiques ; type (standard/rare) tiré par le serveur à chaque activation, `partRaresPct` = 15 % ; fantôme = mode temporaire d'une balise quelconque (amendement RG-6 dans REGLES.md).
 - 2026-10-09 — Pas de Docker. Dev et tests : PGlite (PostgreSQL embarqué, zéro installation) via Drizzle ; prod : PostgreSQL hébergé. Raison : rien à installer sur le poste Windows, même dialecte SQL qu'en prod.
 
 ## Points ouverts (repris du document de règles)

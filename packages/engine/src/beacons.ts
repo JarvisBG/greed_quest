@@ -10,7 +10,11 @@ export const ROTATION_SHARE = 0.3; // RG-6.4
 export interface Beacon {
   id: string;
   zoneId: string;
-  type: BeaconType;
+  /**
+   * Type tiré par le serveur à chaque activation (standard ou rare), ou fantôme pendant
+   * une Apparition. null quand la balise n'est pas active. Les QR imprimés sont tous identiques.
+   */
+  type: BeaconType | null;
   state: BeaconState;
   stock: number;
   /** Heure de passage à « épuisée », pour la recharge. */
@@ -23,6 +27,7 @@ export interface BeaconChange {
   from: BeaconState;
   to: BeaconState;
   cause: 'tirage' | 'recharge' | 'remplacement' | 'cible' | 'rotation';
+  type?: BeaconType;
   stock?: number;
 }
 
@@ -31,8 +36,13 @@ export interface BeaconUpdate {
   changes: BeaconChange[];
 }
 
-/** Balises gérées par le moteur : les fantômes ne s'activent que par événement (RG-12). */
+/** Une balise en mode fantôme (Apparition, RG-12) échappe à la rotation et à la cible. */
 const isRotating = (b: Beacon) => b.type !== 'fantome';
+
+/** Type tiré à l'activation (décision 2026-10-09) : rare avec la probabilité partRaresPct. */
+export function rollBeaconType(partRaresPct: number, rng: Rng): BeaconType {
+  return rng.next() * 100 < partRaresPct ? 'rare' : 'standard';
+}
 
 /** RG-6.2 et tableau RG-6 : stock à l'activation. Rare = moitié du normal ; fantôme = 1 ou 2. */
 export function initialStock(type: BeaconType, stockBalise: number, rng: Rng): number {
@@ -46,6 +56,8 @@ export interface ActivationOptions {
   count: number;
   /** Paramètre stockBalise (RG-14). */
   stockBalise: number;
+  /** Paramètre partRaresPct (RG-14) : part des activations en balise rare. */
+  partRaresPct: number;
   /** Visites récentes par zone : les zones les moins visitées passent en premier (RG-6.4). */
   visitesParZone: ReadonlyMap<string, number>;
   /** Zones à éviter (RG-6.3 : remplacer dans une autre zone). */
@@ -78,10 +90,19 @@ export function activateBeacons(beacons: readonly Beacon[], opts: ActivationOpti
     const beacon = pick(rng, candidates.filter((b) => b.zoneId === zone));
 
     beacon.state = 'active';
+    beacon.type = rollBeaconType(opts.partRaresPct, rng);
     beacon.stock = initialStock(beacon.type, opts.stockBalise, rng);
     beacon.epuiseeA = null;
     charge.set(zone, minCharge + 1);
-    changes.push({ beaconId: beacon.id, zoneId: zone, from: 'dormante', to: 'active', cause: opts.cause, stock: beacon.stock });
+    changes.push({
+      beaconId: beacon.id,
+      zoneId: zone,
+      from: 'dormante',
+      to: 'active',
+      cause: opts.cause,
+      type: beacon.type,
+      stock: beacon.stock,
+    });
   }
   return { beacons: next, changes };
 }
@@ -105,7 +126,7 @@ export function rechargeBeacons(beacons: readonly Beacon[], now: number, recharg
   const next = beacons.map((b) => {
     if (b.state !== 'epuisee' || b.epuiseeA === null || now - b.epuiseeA < rechargeMs) return b;
     changes.push({ beaconId: b.id, zoneId: b.zoneId, from: 'epuisee', to: 'dormante', cause: 'recharge' });
-    return { ...b, state: 'dormante' as const, epuiseeA: null };
+    return { ...b, state: 'dormante' as const, type: null, epuiseeA: null };
   });
   return { beacons: next, changes };
 }
@@ -166,7 +187,7 @@ export function rotate(
   const apresRetrait = beacons.map((b) => {
     if (!retirees.has(b.id)) return b;
     changes.push({ beaconId: b.id, zoneId: b.zoneId, from: 'active', to: 'dormante', cause: 'rotation' });
-    return { ...b, state: 'dormante' as const, stock: 0 };
+    return { ...b, state: 'dormante' as const, type: null, stock: 0 };
   });
 
   const manque = cible - countActive(apresRetrait);

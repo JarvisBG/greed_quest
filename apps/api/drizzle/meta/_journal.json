@@ -43,6 +43,13 @@
       "when": 1791565479867,
       "tag": "0005_gagnant",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791575927677,
+      "tag": "0006_arene",
+      "breakpoints": true
     }
   ]
 }

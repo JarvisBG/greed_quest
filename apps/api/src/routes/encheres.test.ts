@@ -34,6 +34,11 @@ describe('RG-11.4 / 11.5 enchères d’Antokiba', () => {
     expect(res.json().enchere).toMatchObject({ carte: { nom: 'Boussole céleste', rang: 'A' }, prixDepart: 10, meilleureOffre: null, resteMs: 180_000 }); // RG-11.4 : 3 min
   });
 
+  it('Calibrage 2026-10-09 : le PNJ met librement une SS aux enchères (dans la limite d’exemplaires)', async () => {
+    const res = await post(pnj, 'encheres', { carteId: t.carteIds[0], prixDepart: 100 });
+    expect(res.json().enchere).toMatchObject({ carte: { nom: 'Couronne du Roi-Dragon', rang: 'SS' }, prixDepart: 100 });
+  });
+
   it('RG-11.4 : surenchérir exige d’avoir scanné le QR de l’enchère', async () => {
     expect((await post(gon.token, `encheres/${id}/offre`, { montant: 10 })).json()).toMatchObject({ ok: false, code: 'non_inscrit' });
     expect((await post(gon.token, `encheres/${id}/rejoindre`, { qr: 'faux', position: ici })).json()).toMatchObject({ ok: false, code: 'non_inscrit' });

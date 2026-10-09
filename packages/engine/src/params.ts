@@ -22,6 +22,8 @@ export const PARAM_KEYS = [
   'specialisationPct',
   'rattrapageJParMin',
   'agendaIntervalleMin',
+  'areneMiseJ',
+  'areneDelaiMin',
 ] as const;
 export type ParamKey = (typeof PARAM_KEYS)[number];
 
@@ -74,6 +76,9 @@ export const AUTO_FORMULAS: Record<ParamKey, (c: ParamContext) => number> = {
   rattrapageJParMin: () => 2,
   /** RG-12.3 : agenda automatique, une proposition d'événement au GM toutes les N min ; 0 = désactivé (défaut). */
   agendaIntervalleMin: () => 0,
+  /** Arène de Soufrabi (amendement 2026-10-09) : mise d'entrée et délai entre deux tentatives d'un joueur. */
+  areneMiseJ: () => 30,
+  areneDelaiMin: () => 15,
 };
 
 /** Calibrage validé le 2026-10-09 (docs/SIMULATION.md) : limites d'exemplaires × 2 par défaut. */

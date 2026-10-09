@@ -135,6 +135,8 @@ Prix défaut (réglables) : paquet 50 J · revente D/C/B 5/10/20 J · A/S 40/80 
 - 11.3 Une même paire : 1 échange / 10 min.
 - 11.4 Enchères Antokiba : PNJ met une carte en vente 3 min ; scan QR enchère sur place puis surenchère dans l'app ; seul le gagnant est débité.
 - 11.5 Sans offre → retour au stock du PNJ.
+> **Amendement 2026-10-09 (Sivraj, calibrage)** : le PNJ d'Antokiba peut mettre **librement** une SS aux enchères, dans la limite d'exemplaires (RG-8.2).
+> **Amendement 2026-10-09 (Sivraj) — Arène de Soufrabi** : un PNJ tient l'arène. Il scanne la licence du joueur, qui paie une **mise** (`areneMiseJ`, 30 J). Le PNJ arbitre un défi physique ou d'adresse. **Victoire** : tirage d'une carte A / S / SS (50 / 40 / 10 %, rang épuisé → rang inférieur, limites RG-8.2). **Défaite** : mise perdue. Une tentative par joueur toutes les `areneDelaiMin` (15 min, depuis l'entrée), une à la fois, Livre non plein. Entrée par erreur : le PNJ annule (motif), mise remboursée. Victoire en S ou SS annoncée sur l'écran.
 - 11.6 Carte reçue apparaît toujours vraie ; pas de vérification avant acceptation.
 
 ## RG-12 Événements GM
@@ -161,6 +163,7 @@ Prix défaut (réglables) : paquet 50 J · revente D/C/B 5/10/20 J · A/S 40/80 
 - 13.7 Live : compte les contrefaçons (rien ne trahit) ; final et Clear : vraies seulement.
 
 ## RG-14 Paramètres dynamiques
+> **Conseils d'organisation (calibrage validé le 2026-10-09, non bloquants)** : ≈ 0,75 balise posée par joueur attendu (min 10) ; 1 checkpoint PNJ pour 10 joueurs, ≈ 1,5 carte de checkpoint par joueur attendu (≈ 15 par checkpoint), stock B / A / S en 50 / 35 / 15 % (moteur `conseils.ts`). Un Clear reste rare : la plupart des parties finissent au classement (RG-13.4).
 - 14.1 J recalculé toutes les 2 min ; hausse immédiate, baisse max un palier / 10 min.
 - 14.2 Modes : Auto · Verrouillé · Multiplicateur (formule × coef).
 - 14.3 Pas de rétroactivité.
@@ -183,6 +186,8 @@ Prix défaut (réglables) : paquet 50 J · revente D/C/B 5/10/20 J · A/S 40/80 
 | PV boss | J × 10 | Auto |
 | K boucle | 3, ou 2 si < 8 balises actives | Auto |
 | Durée partie | 150 min | Verrouillé |
+| Mise de l'arène (amendement) | 30 J | Auto |
+| Délai entre deux tentatives à l'arène (amendement) | 15 min | Auto |
 | N cartes désignées | 30 | Verrouillé |
 
 ## RG-15 Anti-triche (le moteur alerte, ne sanctionne jamais seul)

@@ -267,6 +267,26 @@ export const encheres = pgTable('encheres', {
   prix: integer('prix'),
 });
 
+/** Gain d'une victoire à l'arène (tirage A / S / SS, ou repli en jenny). */
+export type GainArene = { kind: 'carte'; carteId: string; rang: Rank } | { kind: 'jenny'; montant: number };
+
+/** Tentative à l'arène de Soufrabi (amendement 2026-10-09) : mise payée à l'entrée, issue donnée par le PNJ. */
+export const arene = pgTable(
+  'arene',
+  {
+    id: text('id').primaryKey(),
+    partieId: text('partie_id').notNull().references(() => parties.id, { onDelete: 'cascade' }),
+    joueurId: text('joueur_id').notNull().references(() => joueurs.id, { onDelete: 'cascade' }),
+    pnjId: text('pnj_id'),
+    mise: integer('mise').notNull(),
+    entreeA: heureJeu('entree_a').notNull(),
+    etat: text('etat').$type<'en_cours' | 'gagnee' | 'perdue' | 'annulee'>().notNull().default('en_cours'),
+    gain: jsonb('gain').$type<GainArene>(),
+    finA: heureJeu('fin_a'),
+  },
+  (t) => [index('arene_partie').on(t.partieId, t.etat), index('arene_joueur').on(t.joueurId, t.entreeA)],
+);
+
 export type ActeurType = 'joueur' | 'pnj' | 'gm' | 'systeme';
 
 /** Journal (RG-3.1, P5) : chaque action d'état y écrit une ligne, dans la même transaction. */

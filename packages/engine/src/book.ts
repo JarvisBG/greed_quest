@@ -11,6 +11,7 @@ export type Origine =
   | { type: 'echange'; avec: string }
   | { type: 'vol'; sur: string }
   | { type: 'enchere'; enchereId: string }
+  | { type: 'arene'; tentativeId: string }
   | { type: 'duplication' }
   | { type: 'kit' }
   | { type: 'correction_gm'; par: string };

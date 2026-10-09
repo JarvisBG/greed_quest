@@ -173,6 +173,12 @@ export const CheckpointCreation = z.object({
 export const CheckpointReussite = z.object({ licence: z.string(), carteId: z.string().optional(), jenny: z.number().int().min(0).max(500).default(0) });
 /** RG-8.8 : expertise à Antokiba, payée par le joueur (licence scannée par le PNJ). */
 export const ExpertiseIntent = z.object({ licence: z.string(), page: z.number().int().min(1).optional() });
+/** Arène de Soufrabi (amendement 2026-10-09) : le PNJ scanne la licence, le joueur paie la mise. */
+export const AreneEntree = z.object({ licence: z.string() });
+/** Issue du défi, arbitrée par le PNJ. */
+export const AreneIssue = z.object({ victoire: z.boolean() });
+/** Entrée enregistrée par erreur : mise remboursée, motif obligatoire (RG-3.1). */
+export const AreneAnnulation = z.object({ motif: Motif });
 
 // --- Clear (RG-13) ---
 /** RG-13.2 : le GM scanne la licence du joueur dont le Livre est gelé. */

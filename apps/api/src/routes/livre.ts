@@ -42,6 +42,8 @@ export async function livreRoutes(app: FastifyInstance) {
             return `Volée à ${nom(o.sur)}`;
           case 'enchere':
             return 'Enchère';
+          case 'arene':
+            return 'Arène de Soufrabi';
           case 'duplication':
             return 'Duplication';
           case 'kit':

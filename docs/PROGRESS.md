@@ -12,9 +12,9 @@
 - [x] Premier commit, poussé sur https://github.com/JarvisBG/greed_quest (branche `main`, auteur git local « Sivraj »)
 - [x] Plan détaillé des tâches : `docs/PLAN.md`
 
-**Phase 1 — Moteur** (en cours) : tâches 1.1 → 1.13 faites (types, RNG, paramètres RG-14, lissage J, tirage RG-8.3, Livre RG-8.5/8.13/8.14, scan RG-7, balises RG-6, géoloc RG-10.9→10.11 + RG-15, sorts RG-10, contrefaçons RG-8.6→8.9, échanges et enchères RG-11, boutique RG-9). 151 tests verts.
+**Phase 1 — Moteur** (en cours) : tâches 1.1 → 1.14 faites (types, RNG, paramètres RG-14, lissage J, tirage RG-8.3, Livre RG-8.5/8.13/8.14, scan RG-7, balises RG-6, géoloc RG-10.9→10.11 + RG-15, sorts RG-10, contrefaçons RG-8.6→8.9, échanges et enchères RG-11, boutique RG-9, classement et Clear RG-13). 166 tests verts.
 
-**Prochaine étape** : 1.14 classement RG-13.5 / 13.7 et détection du Clear RG-13.1.
+**Prochaine étape** : 1.15 cycle de vie de partie RG-4.
 
 ## Ambiguïtés du document (choix validés par Sivraj le 2026-10-09, réglables)
 - RG-6 vs tableau RG-8 : balise standard « rangs D à A » mais le tableau donne 1 % de S en standard → S exclu en standard (`draw.ts`).
@@ -57,6 +57,11 @@
 - Vagues : numérotées depuis le début de la partie (horloge de jeu, donc suspendue en pause) ; stock calculé à l'ouverture de la vague.
 - Krach de Masadora : prix multiplié par 0,5, arrondi au jenny supérieur.
 - RG-9.5 roulette : non codée, lots et coût à définir.
+- Classement live : compte ce que montrent les emplacements désignés (contrefaçons comprises, sauf copie déjà démasquée par son détenteur, qui libère l'emplacement). Final : vrais exemplaires, un doublon déguisé compte pour sa vraie carte.
+- RG-13.5 critère 2 « somme des rangs » : des cartes désignées distinctes comptées au critère 1 (pas des doublons). Critère 4 : heure du premier exemplaire de chaque carte comptée, puis la plus tardive ; sans carte = dernier.
+- Ex æquo parfaits : même place (1, 1, 3). Disqualifiés absents du classement ; abandons classés.
+- RG-13.1 Clear : vérifié sur les emplacements désignés ; refusé avec la page de la première contrefaçon trouvée.
+- RG-13.3 : les 3 cartes de récompense sont 3 cartes désignées distinctes, vraies, du Livre du gagnant.
 - RG-14.5 : contenu des préréglages Petit groupe / Grande foule non défini.
 
 ## Feuille de route

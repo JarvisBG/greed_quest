@@ -9,3 +9,4 @@ export * from './spells.js';
 export * from './counterfeits.js';
 export * from './trades.js';
 export * from './shop.js';
+export * from './ranking.js';

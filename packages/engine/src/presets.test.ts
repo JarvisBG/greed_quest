@@ -14,7 +14,7 @@ describe('RG-14.5 préréglages', () => {
     expect(presetSettings(preset('standard'))).toEqual(DEFAULT_SETTINGS);
   });
 
-  it('Petit groupe : portée 20 m, limites doublées, le reste en auto', () => {
+  it('Petit groupe : portée 20 m, limites × 2 comme par défaut, le reste en auto', () => {
     const p = resolveParams(presetSettings(preset('petit_groupe')), ctx);
     expect(p.porteeSortsM).toBe(20);
     expect(p.limiteSS).toBe(2);

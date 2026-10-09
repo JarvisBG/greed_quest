@@ -121,8 +121,8 @@ function buildCatalogue(c: Record<Rank, number>): { ids: string[]; rang: Map<str
 const marche = (rng: Rng, [a, b]: [number, number]) => (a + rng.next() * (b - a)) * MIN;
 
 function settingsFor(cfg: SimConfig): ParamSettings {
-  if (cfg.multLimites === 1) return DEFAULT_SETTINGS;
-  const m = { mode: 'multiplicateur' as const, coef: cfg.multLimites };
+  // multLimites = 1 : formules du document telles quelles (le défaut du jeu est × 2).
+  const m = cfg.multLimites === 1 ? ({ mode: 'auto' } as const) : ({ mode: 'multiplicateur', coef: cfg.multLimites } as const);
   return { ...DEFAULT_SETTINGS, limiteSS: m, limiteS: m, limiteA: m, limiteB: m, limiteCD: m };
 }
 

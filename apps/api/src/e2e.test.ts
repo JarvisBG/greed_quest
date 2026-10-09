@@ -80,14 +80,15 @@ describe('2.11 partie simulée de bout en bout', () => {
     expect(fin!.etat).toBe('terminee');
     expect(fin!.classementFinal).toHaveLength(NB_JOUEURS);
 
-    // RG-8.2 : jamais plus d'exemplaires vrais en circulation que la limite maximale atteinte.
+    // RG-8.2 : jamais plus d'exemplaires vrais en circulation que la limite maximale atteinte
+    // (formules RG-14 × 2, multiplicateur par défaut depuis le calibrage).
     const lim = (J: number): Record<Rank, number> => ({
-      SS: Math.max(1, Math.floor(J / 20)),
-      S: Math.max(2, Math.ceil(J / 10)),
-      A: Math.max(3, Math.ceil(J / 5)),
-      B: Math.max(4, Math.ceil(J / 3)),
-      C: Math.max(5, Math.ceil(J / 2)),
-      D: Math.max(5, Math.ceil(J / 2)),
+      SS: 2 * Math.max(1, Math.floor(J / 20)),
+      S: 2 * Math.max(2, Math.ceil(J / 10)),
+      A: 2 * Math.max(3, Math.ceil(J / 5)),
+      B: 2 * Math.max(4, Math.ceil(J / 3)),
+      C: 2 * Math.max(5, Math.ceil(J / 2)),
+      D: 2 * Math.max(5, Math.ceil(J / 2)),
     });
     const n = await circulation(t.db, t.partieId);
     const cat = await t.db.select().from(cartes).where(eq(cartes.partieId, t.partieId));

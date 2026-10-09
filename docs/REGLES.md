@@ -168,15 +168,17 @@ Prix défaut (réglables) : paquet 50 J · revente D/C/B 5/10/20 J · A/S 40/80 
 - 14.5 Préréglages (Petit groupe, Standard, Grande foule) + enregistrement de nouveaux.
 - 14.6 Console : J, valeur auto, mode, valeur appliquée.
 
+> **Amendement 2026-10-09 (Sivraj, calibrage)** : les limites d'exemplaires (SS, S, A, B, C/D) sont en mode **Multiplicateur × 2** par défaut (donc limite SS ≥ 2). Les formules du tableau restent la valeur « auto ». Simulation : au-delà de × 2, plus d'effet.
+
 | Paramètre | Formule auto | Mode défaut |
 |---|---|---|
 | Balises actives | ceil(J/3), borné [5, nb posées] | Auto |
 | Stock balise | ceil(J/2), borné [5, 30] | Auto |
-| Limite SS | max(1, floor(J/20)) | Auto |
-| Limite S | max(2, ceil(J/10)) | Auto |
-| Limite A | max(3, ceil(J/5)) | Auto |
-| Limite B | max(4, ceil(J/3)) | Auto |
-| Limite C/D | max(5, ceil(J/2)) | Auto |
+| Limite SS | max(1, floor(J/20)) | Multiplicateur × 2 |
+| Limite S | max(2, ceil(J/10)) | Multiplicateur × 2 |
+| Limite A | max(3, ceil(J/5)) | Multiplicateur × 2 |
+| Limite B | max(4, ceil(J/3)) | Multiplicateur × 2 |
+| Limite C/D | max(5, ceil(J/2)) | Multiplicateur × 2 |
 | Paquets par vague | ceil(J/2) | Auto |
 | PV boss | J × 10 | Auto |
 | K boucle | 3, ou 2 si < 8 balises actives | Auto |

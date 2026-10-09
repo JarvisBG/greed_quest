@@ -37,7 +37,7 @@ export function pouvoirDispo(nen: NenType | null, utilises: readonly NenPouvoir[
 }
 
 /** Les sorts qui visent un joueur, et ceux qui ne visent que des joueurs à portée. */
-export const VISE_JOUEUR: readonly SpellType[] = ['vol', 'echange_force', 'gel', 'radar'];
+export const VISE_JOUEUR: readonly SpellType[] = ['vol', 'echange_force', 'gel', 'radar', 'regard'];
 export const OFFENSIF: readonly SpellType[] = ['vol', 'echange_force', 'gel'];
 
 /** Réponse de `POST /sort` (champs privés selon le sort). */
@@ -49,6 +49,8 @@ export interface ReponseSort {
   zone?: string | null;
   copie?: { itemId: string; carteId: string; contrefacon: boolean };
   contrefacons?: string[];
+  /** Regard : cartes du joueur regardé, telles qu'elles paraissent. */
+  cartes?: { carteId: string; numero: number; nom: string; rang: string; n: number; contrefacon: boolean }[];
 }
 
 const PROTECTION = { barriere: 'sa Barrière', renforcement: 'son Renforcement' } as const;
@@ -78,12 +80,19 @@ export function resumeSort(r: ReponseSort, cible: string | null, noms: (itemId: 
     }
     case 'barriere':
       return SORTS.barriere.effet;
+    case 'regard': {
+      const l = r.cartes ?? [];
+      if (l.length === 0) return `${qui} n’a aucune carte.`;
+      return `Cartes de ${qui} : ${l.map((x) => `${x.nom}${x.n > 1 ? ` ×${x.n}` : ''}${x.contrefacon ? ' (contrefaçon)' : ''}`).join(', ')}.`;
+    }
   }
 }
 
 /** RG-10.5 : alerte reçue par la cible (`sort_recu` : lanceur, sort, résultat). */
-export function texteSortRecu(d: { lanceur: string; sort: SpellType; resultat: ReponseSort['resultat'] }): string {
+export function texteSortRecu(d: { lanceur: string | null; sort: SpellType; resultat: ReponseSort['resultat'] }): string {
   const nom = SORTS[d.sort]?.nom ?? d.sort;
+  // Regard est anonyme : la cible sait seulement qu'on a consulté son Livre.
+  if (d.sort === 'regard' || d.lanceur === null) return 'Quelqu’un a consulté ton Livre.';
   if (d.resultat === 'bloque') return `${d.lanceur} t’a lancé ${nom}, mais ta protection l’a bloqué.`;
   if (d.resultat === 'sans_effet') return `${d.lanceur} t’a lancé ${nom}, sans effet.`;
   switch (d.sort) {
@@ -121,6 +130,7 @@ export function corpsSort(c: ChoixSort, position: PositionInput): Record<string,
     case 'echange_force':
       return { sort: c.sort, source, cibleId: c.cibleId, carteDonneeId: c.carteItemId, ...(c.emission ? { emission: true } : {}), position };
     case 'radar':
+    case 'regard':
       return { sort: c.sort, itemId: c.itemId, cibleId: c.cibleId, position };
     case 'duplication':
       return { sort: c.sort, itemId: c.itemId, carteItemId: c.carteItemId, position };

@@ -76,6 +76,7 @@ export const SortIntent = z.discriminatedUnion('sort', [
     position: PositionInput,
   }),
   z.object({ sort: z.literal('radar'), itemId: z.string(), cibleId: z.string(), position: PositionInput }),
+  z.object({ sort: z.literal('regard'), itemId: z.string(), cibleId: z.string(), position: PositionInput }),
   z.object({ sort: z.literal('revelation'), itemId: z.string(), position: PositionInput }),
   z.object({ sort: z.literal('duplication'), itemId: z.string(), carteItemId: z.string(), position: PositionInput }),
   z.object({ sort: z.literal('analyse'), itemId: z.string(), page: z.number().int().min(1), position: PositionInput }),

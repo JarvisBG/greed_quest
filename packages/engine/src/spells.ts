@@ -51,7 +51,8 @@ export type SpellRefusalCode =
   | 'cible_hors_portee'
   | 'cible_immunisee'
   | 'carte_absente'
-  | 'page_invalide';
+  | 'page_invalide'
+  | 'cible_non_rencontree';
 
 export interface SpellRefusal {
   ok: false;
@@ -279,6 +280,45 @@ export function castRadar(
     lanceur,
     resultat: { zoneId },
     notice: { lanceur: lanceur.id, cible: input.cible.id, sort: 'radar', resultat: zoneId ? 'reussi' : 'sans_effet' },
+  };
+}
+
+/** Ce que Regard montre d'une carte. */
+export interface CarteVue {
+  cardId: string;
+  n: number;
+  /** Copie déjà démasquée par son détenteur : elle apparaît comme contrefaçon. */
+  contrefacon: boolean;
+}
+
+/**
+ * Amendement 2026-10-09 : Regard (« Peek » de Greed Island). Montre les cartes d'un joueur déjà rencontré,
+ * telles qu'elles paraissent : une contrefaçon non démasquée paraît vraie (bluff), sorts non montrés.
+ * La cible est prévenue sans savoir qui a regardé ; le Livre gelé d'un Clear provisoire est protégé (RG-13.1).
+ */
+export function castRegard(
+  w: SpellWorld,
+  input: { lanceur: SpellPlayer; itemId: string; cible: { id: string; book: Book; livreGele: boolean }; rencontre: boolean },
+): SimpleSuccess<{ cartes: CarteVue[] }> | SpellRefusal {
+  if (input.cible.id === input.lanceur.id) return refuse('cible_invalide', 'Cible invalide');
+  if (!input.rencontre) return refuse('cible_non_rencontree', 'Tu n’as encore jamais croisé ce joueur');
+  if (input.cible.livreGele) return refuse('cible_livre_gele', 'Ce Livre est protégé');
+  const lanceur = consumeSimple(w, input.lanceur, input.itemId, 'regard');
+  if (isRefusal(lanceur)) return lanceur;
+  const vues = new Map<string, CarteVue>();
+  for (const i of input.cible.book.items) {
+    if (i.kind !== 'carte') continue;
+    const contrefacon = !!i.faux && i.marque === 'demasquee';
+    const cle = `${i.cardId}:${contrefacon}`;
+    const v = vues.get(cle);
+    if (v) v.n++;
+    else vues.set(cle, { cardId: i.cardId, n: 1, contrefacon });
+  }
+  return {
+    ok: true,
+    lanceur,
+    resultat: { cartes: [...vues.values()] },
+    notice: { lanceur: lanceur.id, cible: input.cible.id, sort: 'regard', resultat: 'reussi' },
   };
 }
 

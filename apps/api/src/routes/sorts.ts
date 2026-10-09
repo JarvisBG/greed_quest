@@ -5,6 +5,7 @@ import {
   castDuplication,
   castOffensive,
   castRadar,
+  castRegard,
   castRevelation,
   playersInRange,
   transform,
@@ -22,6 +23,7 @@ import { requireRole } from '../auth/guard.js';
 import { ENGAGEE, activeSession, engagedItems } from '../core/echanges.js';
 import { paramsOf } from '../core/params.js';
 import { recordPosition } from '../core/position.js';
+import { noterRencontre, rencontresDe, seSontRencontres } from '../core/rencontres.js';
 import type { ActionCtx } from '../core/runner.js';
 import {
   actionPatch,
@@ -91,7 +93,10 @@ export async function sortsRoutes(app: FastifyInstance) {
       const proches = playersInRange(moi, autres, c.now, rangeOf(p));
       // `tous` : cibles du Radar (RG-10, « liste joueurs ») et de l'Émission (hors portée, RG-10.1) ; pseudos seulement.
       const tous = autres.map((j) => ({ id: j.id, pseudo: j.pseudo })).sort((a, b) => a.pseudo.localeCompare(b.pseudo, 'fr'));
-      return { ok: true as const, joueurs: proches.map((j) => ({ id: j.id, pseudo: j.pseudo })), tous };
+      // `croises` : cibles de Regard, joueurs déjà rencontrés (amendement 2026-10-09).
+      const deja = new Set(await rencontresDe(c.tx, moi.id));
+      const croises = tous.filter((x) => deja.has(x.id));
+      return { ok: true as const, joueurs: proches.map((j) => ({ id: j.id, pseudo: j.pseudo })), tous, croises };
     });
   });
 
@@ -164,6 +169,27 @@ export async function sortsRoutes(app: FastifyInstance) {
           res = o.ok ? { ok: true, lanceur: o.lanceur, notice: o.notice, prive: { zone: zs.find((z) => z.id === o.resultat.zoneId)?.nom ?? null } } : o;
           break;
         }
+        case 'regard': {
+          const o = castRegard(w, {
+            lanceur,
+            itemId: input.itemId,
+            cible: { id: cible!.id, book: cible!.book, livreGele: cible!.livreGele },
+            rencontre: await seSontRencontres(c.tx, j.id, cible!.id),
+          });
+          res = o.ok
+            ? {
+                ok: true,
+                lanceur: o.lanceur,
+                notice: o.notice,
+                prive: {
+                  cartes: o.resultat.cartes
+                    .map((x) => ({ carteId: x.cardId, numero: cat.numeroDe(x.cardId), nom: cat.nomDe(x.cardId), rang: cat.rangDe(x.cardId), n: x.n, contrefacon: x.contrefacon }))
+                    .sort((x, y) => x.numero - y.numero),
+                },
+              }
+            : o;
+          break;
+        }
         case 'revelation': {
           const rares = (await loadBeacons(c.tx, partieId)).filter((b) => b.state === 'active' && b.type === 'rare');
           const o = castRevelation(w, { lanceur, itemId: input.itemId, balisesRaresActives: rares }, c.rng);
@@ -210,10 +236,20 @@ export async function sortsRoutes(app: FastifyInstance) {
       await c.log({ action: 'sort', resultat: notice.resultat, details: { ...notice, ...res.prive } });
       // RG-10.5 alerte à la cible ; RG-10.6 écran géant (lanceur, cible, résultat).
       const pseudoCible = cibleRow?.pseudo ?? null;
+      // Amendement 2026-10-09 : Regard reste anonyme (la cible sait qu'on l'a regardée, pas qui ; l'écran ne nomme personne).
+      const anonyme = notice.sort === 'regard';
       if (notice.cible) {
-        c.emit({ type: 'joueur', id: notice.cible }, 'sort_recu', { lanceur: j.pseudo, sort: notice.sort, resultat: notice.resultat });
+        c.emit({ type: 'joueur', id: notice.cible }, 'sort_recu', { lanceur: anonyme ? null : j.pseudo, sort: notice.sort, resultat: notice.resultat });
+        await noterRencontre(c, j.id, notice.cible); // un sort ciblé vaut rencontre (Radar, Émission)
       }
-      c.emit({ type: 'tracker' }, 'fil', { type: 'sort', lanceur: j.pseudo, cible: pseudoCible, sort: notice.sort, resultat: notice.resultat, heureJeu: c.now });
+      c.emit({ type: 'tracker' }, 'fil', {
+        type: 'sort',
+        lanceur: anonyme ? null : j.pseudo,
+        cible: anonyme ? null : pseudoCible,
+        sort: notice.sort,
+        resultat: notice.resultat,
+        heureJeu: c.now,
+      });
       return { ok: true as const, sort: notice.sort, resultat: notice.resultat, ...res.prive };
     });
     return send(reply, r);

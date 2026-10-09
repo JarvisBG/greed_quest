@@ -299,6 +299,18 @@ export const fil = pgTable(
   (t) => [index('fil_partie').on(t.partieId, t.id)],
 );
 
+/** Joueurs qui se sont déjà croisés (à portée l'un de l'autre, ou sort ciblé) : condition du sort Regard. `a` < `b`. */
+export const rencontres = pgTable(
+  'rencontres',
+  {
+    partieId: text('partie_id').notNull().references(() => parties.id, { onDelete: 'cascade' }),
+    a: text('a').notNull().references(() => joueurs.id, { onDelete: 'cascade' }),
+    b: text('b').notNull().references(() => joueurs.id, { onDelete: 'cascade' }),
+    premiereA: heureJeu('premiere_a').notNull(),
+  },
+  (t) => [uniqueIndex('rencontres_paire').on(t.a, t.b), index('rencontres_partie').on(t.partieId)],
+);
+
 export type ActeurType = 'joueur' | 'pnj' | 'gm' | 'systeme';
 
 /** Journal (RG-3.1, P5) : chaque action d'état y écrit une ligne, dans la même transaction. */

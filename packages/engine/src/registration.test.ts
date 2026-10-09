@@ -40,6 +40,11 @@ describe('RG-5.5 / 5.6 kit et rattrapage', () => {
     expect(kitSpell(sequenceRng([0]))).toBe('vol');
   });
 
+  it('amendement 2026-10-09 : Regard, sort rare, n’est jamais dans le kit', () => {
+    expect(kitSpell(sequenceRng([0.999]))).toBe('analyse');
+    for (let i = 0; i < 100; i++) expect(kitSpell(sequenceRng([i / 100]))).not.toBe('regard');
+  });
+
   it('rattrapage proportionnel aux minutes de jeu écoulées, désactivable', () => {
     expect(catchUpBonus(0, 2)).toBe(0);
     expect(catchUpBonus(30 * 60_000 + 59_000, 2)).toBe(60);

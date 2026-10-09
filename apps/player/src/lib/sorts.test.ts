@@ -86,4 +86,15 @@ describe('sorts côté app (RG-10)', () => {
     expect(texteSortRecu({ lanceur: 'Hisoka', sort: 'vol', resultat: 'reussi' })).toBe('Hisoka t’a volé une carte !');
     expect(texteSortRecu({ lanceur: 'Hisoka', sort: 'gel', resultat: 'bloque' })).toBe('Hisoka t’a lancé Gel, mais ta protection l’a bloqué.');
   });
+
+  it('Regard (amendement 2026-10-09) : résultat listé, alerte anonyme, corps de la requête', () => {
+    const cartes = [
+      { carteId: 'a', numero: 1, nom: 'Couronne', rang: 'SS', n: 1, contrefacon: false },
+      { carteId: 'b', numero: 4, nom: 'Boussole', rang: 'A', n: 2, contrefacon: true },
+    ];
+    expect(resumeSort({ sort: 'regard', resultat: 'reussi', cartes }, 'Kirua', () => '')).toBe('Cartes de Kirua : Couronne, Boussole ×2 (contrefaçon).');
+    expect(texteSortRecu({ lanceur: null, sort: 'regard', resultat: 'reussi' })).toBe('Quelqu’un a consulté ton Livre.');
+    expect(corpsSort({ sort: 'regard', itemId: 'g', cibleId: 'k' }, { lat: 1, lng: 2, precisionM: 5 })).toEqual({ sort: 'regard', itemId: 'g', cibleId: 'k', position: { lat: 1, lng: 2, precisionM: 5 } });
+    expect(etapes('regard')).toEqual(['cible']);
+  });
 });

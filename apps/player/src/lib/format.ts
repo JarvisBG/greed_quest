@@ -69,6 +69,7 @@ export const SORTS: Record<SpellType, { nom: string; effet: string }> = {
   revelation: { nom: 'Révélation', effet: 'Montre la zone d’une balise rare active' },
   duplication: { nom: 'Duplication', effet: 'Copie une carte de ton Livre (contrefaçon si la limite est atteinte)' },
   analyse: { nom: 'Analyse', effet: 'Révèle les contrefaçons d’une page de ton Livre' },
+  regard: { nom: 'Regard', effet: 'Montre les cartes d’un joueur que tu as déjà croisé' },
 };
 
 /** RG-5.4 : type de Nen et son passif. */

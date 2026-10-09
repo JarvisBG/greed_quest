@@ -147,6 +147,7 @@ export interface Catalogue {
   designees: string[];
   rangDe: (cardId: string) => Rank;
   nomDe: (cardId: string) => string;
+  numeroDe: (cardId: string) => number;
 }
 
 export async function loadCatalogue(db: DbOrTx, partieId: string): Promise<Catalogue> {
@@ -157,6 +158,7 @@ export async function loadCatalogue(db: DbOrTx, partieId: string): Promise<Catal
     designees: rows.filter((c) => c.designee).map((c) => c.id),
     rangDe: (id) => byId.get(id)?.rang ?? 'D',
     nomDe: (id) => byId.get(id)?.nom ?? '?',
+    numeroDe: (id) => byId.get(id)?.numero ?? 0,
   };
 }
 

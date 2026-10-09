@@ -3,6 +3,8 @@
 import { isImpossibleMove, speedKmh, type Position } from '@gq/engine';
 import type { PositionInput } from '@gq/shared';
 import { alerte } from './alertes.js';
+import { paramsOf } from './params.js';
+import { noterRencontresProches } from './rencontres.js';
 import type { ActionCtx } from './runner.js';
 import { updateJoueur, type JoueurRow } from './state.js';
 
@@ -20,6 +22,9 @@ export async function recordPosition(c: ActionCtx, j: JoueurRow, input: Position
   }
   await updateJoueur(c.tx, j.id, { position: pos });
   j.position = pos;
+  // Amendement 2026-10-09 (Regard) : joueurs croisés à portée.
+  const p = await paramsOf(c.tx, c.partie);
+  await noterRencontresProches(c, j.id, pos, { porteeM: p.porteeSortsM, margeMaxM: p.margeGpsMaxM });
   c.emit({ type: 'gm' }, 'position', { joueurId: j.id, ...pos });
   return pos;
 }

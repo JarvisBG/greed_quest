@@ -30,7 +30,8 @@ export const DEFAULT_DRAW_CONFIG: DrawConfig = {
     // RG-6 : rangs S et SS.
     fantome: { SS: 50, S: 50 },
   },
-  sorts: Object.fromEntries(SPELL_TYPES.map((s) => [s, 1])) as Record<SpellType, number>,
+  // Regard (sort d'information puissant) : deux fois plus rare que les autres.
+  sorts: { ...(Object.fromEntries(SPELL_TYPES.map((s) => [s, 1])) as Record<SpellType, number>), regard: 0.5 },
   jenny: 10,
 };
 

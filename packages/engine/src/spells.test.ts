@@ -13,6 +13,7 @@ import {
   castDuplication,
   castOffensive,
   castRadar,
+  castRegard,
   castRevelation,
   type OffensiveInput,
   type SpellPlayer,
@@ -247,6 +248,39 @@ describe('Sorts non offensifs', () => {
     const r = castRadar(world(), { lanceur, itemId: 'r', cible: { id: 'B', position: pos(0, 0) }, zones });
     expect(r).toMatchObject({ ok: true, resultat: { zoneId: 'masadora' }, notice: { cible: 'B', sort: 'radar' } });
     expect(r.ok && r.lanceur.book.items).toEqual([]);
+  });
+
+  it('Amendement 2026-10-09 : Regard montre les cartes d’un joueur déjà rencontré, contrefaçons comprises (non démasquées = vraies)', () => {
+    const lanceur = player('A', { book: book(mkSort('g', 'regard')) });
+    const livreB = book(
+      carte('c1', 'SS1'),
+      carte('c2', 'X'),
+      carte('c3', 'X'),
+      carte('c4', 'Y', 0, { faux: { nature: 'copie' }, marque: 'creee' }),
+      carte('c5', 'Z', 0, { faux: { nature: 'copie' }, marque: 'demasquee' }),
+      mkSort('s', 'vol'),
+    );
+    const r = castRegard(world(), { lanceur, itemId: 'g', cible: { id: 'B', book: livreB, livreGele: false }, rencontre: true });
+    expect(r).toMatchObject({ ok: true, notice: { lanceur: 'A', cible: 'B', sort: 'regard', resultat: 'reussi' } });
+    expect(r.ok && r.resultat.cartes).toEqual([
+      { cardId: 'SS1', n: 1, contrefacon: false },
+      { cardId: 'X', n: 2, contrefacon: false },
+      { cardId: 'Y', n: 1, contrefacon: false }, // bluff : la fausse paraît vraie
+      { cardId: 'Z', n: 1, contrefacon: true }, // déjà démasquée par son détenteur
+    ]);
+    expect(r.ok && r.lanceur.book.items).toEqual([]);
+  });
+
+  it('Regard : refus sans rencontre, sur soi-même, sur un Livre gelé (RG-13.1) ; le sort n’est pas consommé', () => {
+    const lanceur = player('A', { book: book(mkSort('g', 'regard')) });
+    const cible = { id: 'B', book: emptyBook(), livreGele: false };
+    expect(castRegard(world(), { lanceur, itemId: 'g', cible, rencontre: false })).toMatchObject({
+      ok: false,
+      code: 'cible_non_rencontree',
+      message: 'Tu n’as encore jamais croisé ce joueur',
+    });
+    expect(castRegard(world(), { lanceur, itemId: 'g', cible: { ...cible, id: 'A' }, rencontre: true })).toMatchObject({ code: 'cible_invalide' });
+    expect(castRegard(world(), { lanceur, itemId: 'g', cible: { ...cible, livreGele: true }, rencontre: true })).toMatchObject({ code: 'cible_livre_gele' });
   });
 
   it('Révélation : zone d’une balise rare active, ou rien', () => {

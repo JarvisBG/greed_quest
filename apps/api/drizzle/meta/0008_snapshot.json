@@ -1,0 +1,1982 @@
+{
+  "id": "9ba8a054-9cc1-407a-b0d7-37db41523344",
+  "prevId": "13bee284-2750-490d-89b9-420ccca43920",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.arene": {
+      "name": "arene",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "partie_id": {
+          "name": "partie_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "joueur_id": {
+          "name": "joueur_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pnj_id": {
+          "name": "pnj_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mise": {
+          "name": "mise",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entree_a": {
+          "name": "entree_a",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "etat": {
+          "name": "etat",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'en_cours'"
+        },
+        "gain": {
+          "name": "gain",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fin_a": {
+          "name": "fin_a",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "arene_partie": {
+          "name": "arene_partie",
+          "columns": [
+            {
+              "expression": "partie_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "etat",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "arene_joueur": {
+          "name": "arene_joueur",
+          "columns": [
+            {
+              "expression": "joueur_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "entree_a",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "arene_partie_id_parties_id_fk": {
+          "name": "arene_partie_id_parties_id_fk",
+          "tableFrom": "arene",
+          "tableTo": "parties",
+          "columnsFrom": [
+            "partie_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "arene_joueur_id_joueurs_id_fk": {
+          "name": "arene_joueur_id_joueurs_id_fk",
+          "tableFrom": "arene",
+          "tableTo": "joueurs",
+          "columnsFrom": [
+            "joueur_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.balises": {
+      "name": "balises",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "partie_id": {
+          "name": "partie_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "zone_id": {
+          "name": "zone_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "libelle": {
+          "name": "libelle",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "etat": {
+          "name": "etat",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'dormante'"
+        },
+        "stock": {
+          "name": "stock",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "epuisee_a": {
+          "name": "epuisee_a",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "position": {
+          "name": "position",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "balises_partie": {
+          "name": "balises_partie",
+          "columns": [
+            {
+              "expression": "partie_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "balises_partie_id_parties_id_fk": {
+          "name": "balises_partie_id_parties_id_fk",
+          "tableFrom": "balises",
+          "tableTo": "parties",
+          "columnsFrom": [
+            "partie_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "balises_zone_id_zones_id_fk": {
+          "name": "balises_zone_id_zones_id_fk",
+          "tableFrom": "balises",
+          "tableTo": "zones",
+          "columnsFrom": [
+            "zone_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.cartes": {
+      "name": "cartes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "partie_id": {
+          "name": "partie_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "numero": {
+          "name": "numero",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nom": {
+          "name": "nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rang": {
+          "name": "rang",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "designee": {
+          "name": "designee",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "lot_reel": {
+          "name": "lot_reel",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "cartes_partie_numero": {
+          "name": "cartes_partie_numero",
+          "columns": [
+            {
+              "expression": "partie_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "numero",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "cartes_partie_id_parties_id_fk": {
+          "name": "cartes_partie_id_parties_id_fk",
+          "tableFrom": "cartes",
+          "tableTo": "parties",
+          "columnsFrom": [
+            "partie_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.checkpoints": {
+      "name": "checkpoints",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "partie_id": {
+          "name": "partie_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "zone_id": {
+          "name": "zone_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "arbitre_id": {
+          "name": "arbitre_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "defi": {
+          "name": "defi",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cartes": {
+          "name": "cartes",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "checkpoints_partie_id_parties_id_fk": {
+          "name": "checkpoints_partie_id_parties_id_fk",
+          "tableFrom": "checkpoints",
+          "tableTo": "parties",
+          "columnsFrom": [
+            "partie_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "checkpoints_zone_id_zones_id_fk": {
+          "name": "checkpoints_zone_id_zones_id_fk",
+          "tableFrom": "checkpoints",
+          "tableTo": "zones",
+          "columnsFrom": [
+            "zone_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "checkpoints_arbitre_id_staff_id_fk": {
+          "name": "checkpoints_arbitre_id_staff_id_fk",
+          "tableFrom": "checkpoints",
+          "tableTo": "staff",
+          "columnsFrom": [
+            "arbitre_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.echanges": {
+      "name": "echanges",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "partie_id": {
+          "name": "partie_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "a": {
+          "name": "a",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "b": {
+          "name": "b",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "etat": {
+          "name": "etat",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "derniere_action_a": {
+          "name": "derniere_action_a",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "donne_a": {
+          "name": "donne_a",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "donne_b": {
+          "name": "donne_b",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valide_a": {
+          "name": "valide_a",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "valide_b": {
+          "name": "valide_b",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "conclu_a": {
+          "name": "conclu_a",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "echanges_partie": {
+          "name": "echanges_partie",
+          "columns": [
+            {
+              "expression": "partie_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "etat",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "echanges_partie_id_parties_id_fk": {
+          "name": "echanges_partie_id_parties_id_fk",
+          "tableFrom": "echanges",
+          "tableTo": "parties",
+          "columnsFrom": [
+            "partie_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "echanges_a_joueurs_id_fk": {
+          "name": "echanges_a_joueurs_id_fk",
+          "tableFrom": "echanges",
+          "tableTo": "joueurs",
+          "columnsFrom": [
+            "a"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "echanges_b_joueurs_id_fk": {
+          "name": "echanges_b_joueurs_id_fk",
+          "tableFrom": "echanges",
+          "tableTo": "joueurs",
+          "columnsFrom": [
+            "b"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.encheres": {
+      "name": "encheres",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "partie_id": {
+          "name": "partie_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "carte_id": {
+          "name": "carte_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pnj_id": {
+          "name": "pnj_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prix_depart": {
+          "name": "prix_depart",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "debut": {
+          "name": "debut",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fin": {
+          "name": "fin",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "participants": {
+          "name": "participants",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "offres": {
+          "name": "offres",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "etat": {
+          "name": "etat",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ouverte'"
+        },
+        "gagnant_id": {
+          "name": "gagnant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prix": {
+          "name": "prix",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "encheres_partie_id_parties_id_fk": {
+          "name": "encheres_partie_id_parties_id_fk",
+          "tableFrom": "encheres",
+          "tableTo": "parties",
+          "columnsFrom": [
+            "partie_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "encheres_carte_id_cartes_id_fk": {
+          "name": "encheres_carte_id_cartes_id_fk",
+          "tableFrom": "encheres",
+          "tableTo": "cartes",
+          "columnsFrom": [
+            "carte_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.evenements": {
+      "name": "evenements",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "partie_id": {
+          "name": "partie_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "zone_id": {
+          "name": "zone_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "debut": {
+          "name": "debut",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fin": {
+          "name": "fin",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "etat": {
+          "name": "etat",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reussi": {
+          "name": "reussi",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data": {
+          "name": "data",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lance_par": {
+          "name": "lance_par",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "evenements_partie": {
+          "name": "evenements_partie",
+          "columns": [
+            {
+              "expression": "partie_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "evenements_partie_id_parties_id_fk": {
+          "name": "evenements_partie_id_parties_id_fk",
+          "tableFrom": "evenements",
+          "tableTo": "parties",
+          "columnsFrom": [
+            "partie_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.exemplaires": {
+      "name": "exemplaires",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "partie_id": {
+          "name": "partie_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "joueur_id": {
+          "name": "joueur_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "carte_id": {
+          "name": "carte_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "origine": {
+          "name": "origine",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "obtenu_a": {
+          "name": "obtenu_a",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "faux": {
+          "name": "faux",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "marque": {
+          "name": "marque",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "maudite": {
+          "name": "maudite",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {
+        "exemplaires_joueur": {
+          "name": "exemplaires_joueur",
+          "columns": [
+            {
+              "expression": "joueur_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "exemplaires_partie": {
+          "name": "exemplaires_partie",
+          "columns": [
+            {
+              "expression": "partie_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "exemplaires_partie_id_parties_id_fk": {
+          "name": "exemplaires_partie_id_parties_id_fk",
+          "tableFrom": "exemplaires",
+          "tableTo": "parties",
+          "columnsFrom": [
+            "partie_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "exemplaires_joueur_id_joueurs_id_fk": {
+          "name": "exemplaires_joueur_id_joueurs_id_fk",
+          "tableFrom": "exemplaires",
+          "tableTo": "joueurs",
+          "columnsFrom": [
+            "joueur_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "exemplaires_carte_id_cartes_id_fk": {
+          "name": "exemplaires_carte_id_cartes_id_fk",
+          "tableFrom": "exemplaires",
+          "tableTo": "cartes",
+          "columnsFrom": [
+            "carte_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.fil": {
+      "name": "fil",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "partie_id": {
+          "name": "partie_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "heure_jeu": {
+          "name": "heure_jeu",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "data": {
+          "name": "data",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "fil_partie": {
+          "name": "fil_partie",
+          "columns": [
+            {
+              "expression": "partie_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fil_partie_id_parties_id_fk": {
+          "name": "fil_partie_id_parties_id_fk",
+          "tableFrom": "fil",
+          "tableTo": "parties",
+          "columnsFrom": [
+            "partie_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.joueurs": {
+      "name": "joueurs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "partie_id": {
+          "name": "partie_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pseudo": {
+          "name": "pseudo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "appareil_id": {
+          "name": "appareil_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "licence_secret": {
+          "name": "licence_secret",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nen": {
+          "name": "nen",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "examen_score": {
+          "name": "examen_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "jenny": {
+          "name": "jenny",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "statut": {
+          "name": "statut",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'actif'"
+        },
+        "position": {
+          "name": "position",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "derniere_action_a": {
+          "name": "derniere_action_a",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gele_jusqua": {
+          "name": "gele_jusqua",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "immunite_jusqua": {
+          "name": "immunite_jusqua",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dernier_offensif_a": {
+          "name": "dernier_offensif_a",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pouvoirs_utilises": {
+          "name": "pouvoirs_utilises",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "transformation_dispo_a": {
+          "name": "transformation_dispo_a",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "historique_tirages": {
+          "name": "historique_tirages",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "dernier_tirage_a": {
+          "name": "dernier_tirage_a",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "inscrit_a": {
+          "name": "inscrit_a",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "cree_le": {
+          "name": "cree_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "joueurs_partie_pseudo": {
+          "name": "joueurs_partie_pseudo",
+          "columns": [
+            {
+              "expression": "partie_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "pseudo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "joueurs_partie_appareil": {
+          "name": "joueurs_partie_appareil",
+          "columns": [
+            {
+              "expression": "partie_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "appareil_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "joueurs_partie_id_parties_id_fk": {
+          "name": "joueurs_partie_id_parties_id_fk",
+          "tableFrom": "joueurs",
+          "tableTo": "parties",
+          "columnsFrom": [
+            "partie_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.journal": {
+      "name": "journal",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "partie_id": {
+          "name": "partie_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cree_le": {
+          "name": "cree_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "heure_jeu": {
+          "name": "heure_jeu",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "acteur_type": {
+          "name": "acteur_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "acteur_id": {
+          "name": "acteur_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resultat": {
+          "name": "resultat",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "motif": {
+          "name": "motif",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "details": {
+          "name": "details",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "journal_partie": {
+          "name": "journal_partie",
+          "columns": [
+            {
+              "expression": "partie_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "journal_partie_id_parties_id_fk": {
+          "name": "journal_partie_id_parties_id_fk",
+          "tableFrom": "journal",
+          "tableTo": "parties",
+          "columnsFrom": [
+            "partie_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.livres": {
+      "name": "livres",
+      "schema": "",
+      "columns": {
+        "joueur_id": {
+          "name": "joueur_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "gele": {
+          "name": "gele",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "gele_a": {
+          "name": "gele_a",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "livres_joueur_id_joueurs_id_fk": {
+          "name": "livres_joueur_id_joueurs_id_fk",
+          "tableFrom": "livres",
+          "tableTo": "joueurs",
+          "columnsFrom": [
+            "joueur_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.parties": {
+      "name": "parties",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nom": {
+          "name": "nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "etat": {
+          "name": "etat",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'brouillon'"
+        },
+        "etat_avant_pause": {
+          "name": "etat_avant_pause",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "inscriptions_ouvertes": {
+          "name": "inscriptions_ouvertes",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "demarree_a": {
+          "name": "demarree_a",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pause_depuis": {
+          "name": "pause_depuis",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pause_cumulee": {
+          "name": "pause_cumulee",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "terminee_a": {
+          "name": "terminee_a",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "parametres": {
+          "name": "parametres",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "j": {
+          "name": "j",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{\"value\":0,\"lastDecreaseAt\":null}'::jsonb"
+        },
+        "perimetre": {
+          "name": "perimetre",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vague_boutique": {
+          "name": "vague_boutique",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reglages_boutique": {
+          "name": "reglages_boutique",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "taches": {
+          "name": "taches",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "gagnant_id": {
+          "name": "gagnant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recompenses": {
+          "name": "recompenses",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "classement_final": {
+          "name": "classement_final",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "graine": {
+          "name": "graine",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "cree_le": {
+          "name": "cree_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.pertes": {
+      "name": "pertes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "joueur_id": {
+          "name": "joueur_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "carte_id": {
+          "name": "carte_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cause": {
+          "name": "cause",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "par": {
+          "name": "par",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "a": {
+          "name": "a",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "pertes_joueur": {
+          "name": "pertes_joueur",
+          "columns": [
+            {
+              "expression": "joueur_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "pertes_joueur_id_joueurs_id_fk": {
+          "name": "pertes_joueur_id_joueurs_id_fk",
+          "tableFrom": "pertes",
+          "tableTo": "joueurs",
+          "columnsFrom": [
+            "joueur_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.prereglages": {
+      "name": "prereglages",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nom": {
+          "name": "nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "systeme": {
+          "name": "systeme",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "reglages": {
+          "name": "reglages",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cree_le": {
+          "name": "cree_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.rencontres": {
+      "name": "rencontres",
+      "schema": "",
+      "columns": {
+        "partie_id": {
+          "name": "partie_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "a": {
+          "name": "a",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "b": {
+          "name": "b",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "premiere_a": {
+          "name": "premiere_a",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "rencontres_paire": {
+          "name": "rencontres_paire",
+          "columns": [
+            {
+              "expression": "a",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "b",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "rencontres_partie": {
+          "name": "rencontres_partie",
+          "columns": [
+            {
+              "expression": "partie_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "rencontres_partie_id_parties_id_fk": {
+          "name": "rencontres_partie_id_parties_id_fk",
+          "tableFrom": "rencontres",
+          "tableTo": "parties",
+          "columnsFrom": [
+            "partie_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "rencontres_a_joueurs_id_fk": {
+          "name": "rencontres_a_joueurs_id_fk",
+          "tableFrom": "rencontres",
+          "tableTo": "joueurs",
+          "columnsFrom": [
+            "a"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "rencontres_b_joueurs_id_fk": {
+          "name": "rencontres_b_joueurs_id_fk",
+          "tableFrom": "rencontres",
+          "tableTo": "joueurs",
+          "columnsFrom": [
+            "b"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.sorts": {
+      "name": "sorts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "partie_id": {
+          "name": "partie_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "joueur_id": {
+          "name": "joueur_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "obtenu_a": {
+          "name": "obtenu_a",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "utilise": {
+          "name": "utilise",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "utilise_a": {
+          "name": "utilise_a",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "sorts_joueur": {
+          "name": "sorts_joueur",
+          "columns": [
+            {
+              "expression": "joueur_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "sorts_partie_id_parties_id_fk": {
+          "name": "sorts_partie_id_parties_id_fk",
+          "tableFrom": "sorts",
+          "tableTo": "parties",
+          "columnsFrom": [
+            "partie_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "sorts_joueur_id_joueurs_id_fk": {
+          "name": "sorts_joueur_id_joueurs_id_fk",
+          "tableFrom": "sorts",
+          "tableTo": "joueurs",
+          "columnsFrom": [
+            "joueur_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.staff": {
+      "name": "staff",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "partie_id": {
+          "name": "partie_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nom": {
+          "name": "nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code_hash": {
+          "name": "code_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "staff_partie_id_parties_id_fk": {
+          "name": "staff_partie_id_parties_id_fk",
+          "tableFrom": "staff",
+          "tableTo": "parties",
+          "columnsFrom": [
+            "partie_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.zones": {
+      "name": "zones",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "partie_id": {
+          "name": "partie_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nom": {
+          "name": "nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "polygone": {
+          "name": "polygone",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "qr": {
+          "name": "qr",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "zones_partie_id_parties_id_fk": {
+          "name": "zones_partie_id_parties_id_fk",
+          "tableFrom": "zones",
+          "tableTo": "parties",
+          "columnsFrom": [
+            "partie_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "zones_qr_unique": {
+          "name": "zones_qr_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "qr"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

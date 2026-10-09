@@ -78,7 +78,8 @@ export function nenFromAnswers(reponses: readonly number[], specialisationPct: n
 
 /** RG-5.5 : sort du kit, « de rareté commune » ; rareté des sorts non définie → uniforme. */
 export function kitSpell(rng: Rng): SpellType {
-  return pick(rng, SPELL_TYPES);
+  // Regard est un sort rare : jamais dans le kit.
+  return pick(rng, SPELL_TYPES.filter((s) => s !== 'regard'));
 }
 
 /** RG-5.6 : bonus de rattrapage proportionnel au temps de jeu écoulé (0 si désactivé). */

@@ -136,3 +136,30 @@ describe('RG-10 sorts', () => {
     expect((await lancer(leorio, { sort: 'barriere', itemId: b })).json()).toMatchObject({ ok: false, code: 'sort_passif' });
   });
 });
+
+describe('Amendement 2026-10-09 : sort Regard', () => {
+  it('rencontre notée à portée ; Regard montre les cartes, la cible est prévenue sans savoir qui', async () => {
+    const regard = await donnerSort(leorio.id, 'regard');
+    await donnerCarte(gon.id, 1);
+    t.clock.t += 6 * 60_000; // immunités et délais des tests précédents passés
+    await bouger(gon);
+    await bouger(leorio); // Gon et Leorio sont à portée : rencontre
+    const croises = (await t.app.inject({ url: `/parties/${t.partieId}/a-portee`, headers: t.bearer(leorio.token) })).json().croises;
+    expect(croises.map((j: { pseudo: string }) => j.pseudo)).toContain('Gon');
+    expect(croises.map((j: { pseudo: string }) => j.pseudo)).not.toContain('Hisoka');
+
+    recues.length = 0;
+    const res = await lancer(leorio, { sort: 'regard', itemId: regard, cibleId: gon.id });
+    expect(res.json()).toMatchObject({ ok: true, sort: 'regard', resultat: 'reussi' });
+    expect(res.json().cartes).toContainEqual(expect.objectContaining({ numero: 1, rang: 'SS', contrefacon: false }));
+    expect(recues).toContainEqual({ a: gon.id, evenement: 'sort_recu', data: { lanceur: null, sort: 'regard', resultat: 'reussi' } });
+    expect(recues.find((e) => e.a === 'tracker' && e.evenement === 'fil')?.data).toMatchObject({ lanceur: null, cible: null, sort: 'regard' });
+  });
+
+  it('refus en clair sur un joueur jamais croisé ; le sort n’est pas consommé', async () => {
+    const regard = await donnerSort(leorio.id, 'regard');
+    const res = await lancer(leorio, { sort: 'regard', itemId: regard, cibleId: hisoka.id });
+    expect(res.json()).toMatchObject({ ok: false, message: 'Tu n’as encore jamais croisé ce joueur' });
+    expect(await t.db.select().from(sorts).where(and(eq(sorts.id, regard), eq(sorts.utilise, false)))).toHaveLength(1);
+  });
+});

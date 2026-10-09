@@ -48,6 +48,8 @@ export const SPELL_TYPES = [
   'revelation',
   'duplication',
   'analyse',
+  /** Amendement 2026-10-09 : voir les cartes d'un joueur déjà rencontré (« Peek » de Greed Island). */
+  'regard',
 ] as const;
 export type SpellType = (typeof SPELL_TYPES)[number];
 

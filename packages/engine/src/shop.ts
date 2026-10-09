@@ -25,7 +25,7 @@ export const DEFAULT_SHOP_CONFIG: ShopConfig = {
   revente: { D: 5, C: 10, B: 20, A: 40, S: 80, SS: null },
   reventeContrefacon: 1,
   maxPaquetsParJoueurParVague: 2,
-  sorts: { vol: 1, echange_force: 1, gel: 1, barriere: 1, radar: 1, revelation: 1, duplication: 1, analyse: 1 },
+  sorts: { vol: 1, echange_force: 1, gel: 1, barriere: 1, radar: 1, revelation: 1, duplication: 1, analyse: 1, regard: 0.5 },
 };
 
 // --- Vagues (RG-9.3) ---

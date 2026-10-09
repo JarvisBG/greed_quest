@@ -45,6 +45,9 @@ describe('RG-10 sorts', () => {
     const pseudos = res.json().joueurs.map((j: { pseudo: string }) => j.pseudo).sort();
     expect(pseudos).toEqual(['Kirua', 'Leorio']);
     expect(res.json().joueurs[0]).not.toHaveProperty('position');
+    // Radar et Émission : tous les autres joueurs, par pseudo, sans position (RG-10.12).
+    expect(res.json().tous.map((j: { pseudo: string }) => j.pseudo)).toContain('Kirua');
+    expect(res.json().tous.every((j: object) => Object.keys(j).sort().join() === 'id,pseudo')).toBe(true);
   });
 
   it('RG-10 Vol : la carte change de main, la cible est prévenue (RG-10.5), immunisée (RG-10.2), garde une trace (RG-8.13)', async () => {
@@ -58,6 +61,11 @@ describe('RG-10 sorts', () => {
     const [s] = await t.db.select().from(sorts).where(eq(sorts.id, vol));
     expect(s?.utilise).toBe(true);
     expect(await t.db.select().from(pertes).where(eq(pertes.joueurId, kirua.id))).toMatchObject([{ cause: 'vol', par: gon.id }]);
+    // RG-10.3 : le lanceur voit le délai avant son prochain sort offensif.
+    const moi = (await t.app.inject({ url: `/parties/${t.partieId}/moi`, headers: t.bearer(gon.token) })).json();
+    expect(moi.delais.offensif).toBeGreaterThan(0);
+    expect(moi.delais.offensif).toBeLessThanOrEqual(120_000);
+    expect(moi.pouvoirsUtilises).toEqual([]);
     const [k] = await t.db.select().from(joueurs).where(eq(joueurs.id, kirua.id));
     expect(k?.immuniteJusqua).toBeGreaterThan(0);
     expect(recues).toContainEqual({ a: kirua.id, evenement: 'sort_recu', data: { lanceur: 'Gon', sort: 'vol', resultat: 'reussi' } });

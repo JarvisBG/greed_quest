@@ -1,9 +1,11 @@
 // Inscription et profil du joueur (RG-5).
 import {
+  CASTER_DELAY_MS,
   EXAMEN,
   NEN_TEST,
   canRegister,
   catchUpBonus,
+  gameClock,
   kitSpell,
   nenFromAnswers,
   scoreExamen,
@@ -17,7 +19,7 @@ import { alerte } from '../core/alertes.js';
 import { licenceCode, verifyLicence } from '../core/licence.js';
 import { paramsOf } from '../core/params.js';
 import { lifecycleOf } from '../core/partie.js';
-import { joueurs, livres, sorts } from '../db/schema.js';
+import { joueurs, livres, parties, sorts } from '../db/schema.js';
 import { introuvable } from '../errors.js';
 import { refus, send } from '../http.js';
 import { newId, newSecret } from '../ids.js';
@@ -152,9 +154,18 @@ export async function joueursRoutes(app: FastifyInstance) {
     const s = requireRole(req, partieId, 'joueur');
     const [j] = await app.gq.db.select().from(joueurs).where(eq(joueurs.id, s.sub));
     if (!j) throw introuvable('Joueur');
+    const [partie] = await app.gq.db.select().from(parties).where(eq(parties.id, partieId));
+    const now = partie ? gameClock(lifecycleOf(partie), app.gq.now()) : 0; // heures de jeu (RG-4.4)
     return {
       ok: true,
       joueur: { id: j.id, pseudo: j.pseudo, jenny: j.jenny, nen: j.nen, statut: j.statut, examenFait: j.examenScore !== null },
+      // Pour l'écran des sorts : pouvoirs de Nen déjà utilisés (RG-5.4) et délais restants, en ms.
+      pouvoirsUtilises: j.pouvoirsUtilises,
+      delais: {
+        offensif: Math.max(0, (j.dernierOffensifA ?? -Infinity) + CASTER_DELAY_MS - now), // RG-10.3
+        transformation: Math.max(0, (j.transformationDispoA ?? 0) - now), // RG-5.4
+        gel: Math.max(0, (j.geleJusqua ?? 0) - now),
+      },
       // RG-5.2 : de quoi calculer la licence hors ligne (voir core/licence.ts).
       licenceSecret: j.licenceSecret,
     };

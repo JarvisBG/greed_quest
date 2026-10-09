@@ -89,7 +89,9 @@ export async function sortsRoutes(app: FastifyInstance) {
       const p = await paramsOf(c.tx, c.partie);
       const autres = (await loadJoueurs(c.tx, partieId, [moi.id])).filter((j) => !EXCLUS.has(j.statut));
       const proches = playersInRange(moi, autres, c.now, rangeOf(p));
-      return { ok: true as const, joueurs: proches.map((j) => ({ id: j.id, pseudo: j.pseudo })) };
+      // `tous` : cibles du Radar (RG-10, « liste joueurs ») et de l'Émission (hors portée, RG-10.1) ; pseudos seulement.
+      const tous = autres.map((j) => ({ id: j.id, pseudo: j.pseudo })).sort((a, b) => a.pseudo.localeCompare(b.pseudo, 'fr'));
+      return { ok: true as const, joueurs: proches.map((j) => ({ id: j.id, pseudo: j.pseudo })), tous };
     });
   });
 

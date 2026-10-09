@@ -19,8 +19,9 @@
 **Phase 2 — API** (en cours) :
 - [x] 2.0 Préréglages RG-14.5 dans le moteur (`presets.ts`) : Petit groupe, Standard, Grande foule + enregistrement d'un préréglage GM (seules les différences sont gardées).
 - [x] 2.1 `apps/api` : Fastify 5, Drizzle 0.45 + PGlite 0.5 (dev/tests, en mémoire ou `PGLITE_DIR`) / `pg` (prod, `DATABASE_URL`). Schéma `src/db/schema.ts` : les 11 entités + `prereglages`, `staff`, `pertes` ; migrations `drizzle/` (`pnpm --filter @gq/api db:generate`) appliquées à l'ouverture. Seed : `pnpm --filter @gq/api seed` (partie de démo : 30 cartes, 6 zones, 20 balises). Helper de test `src/test/helpers.ts`.
+- [x] 2.2 Journal RG-3.1 (`src/core/journal.ts`) et `Runner` (`src/core/runner.ts`) : toute action d'état passe par `runner.run(partieId, acteur, fn)` = verrou par partie + transaction + heure de jeu + `log()` + `emit()` diffusé seulement après commit (bus `src/core/bus.ts`). Motif obligatoire pour corrections et sanctions PNJ/GM.
 
-**Prochaine étape** : 2.2 (journal transactionnel). Le calibrage n'est pas bloquant : tout passe par des paramètres.
+**Prochaine étape** : 2.3 (auth joueur / PNJ / GM). Le calibrage n'est pas bloquant : tout passe par des paramètres.
 
 ## Reprise de session (lire en premier)
 - Phase 1 terminée et poussée (`main`, dernier commit « Simulateur v2 »). Engine pur dans `packages/engine/src/` : un module par domaine (`params`, `draw`, `book`, `scan`, `beacons`, `geo`, `spells`, `counterfeits`, `trades`, `shop`, `ranking`, `lifecycle`, `events`) + `sim/`. Chaque module a son `*.test.ts`.
@@ -111,6 +112,7 @@ _(date — décision — raison)_
 - 2026-10-09 — Ordre : engine avant api — l'engine porte la logique métier, l'api l'orchestre.
 - 2026-10-09 — Balises toutes identiques ; type (standard/rare) tiré par le serveur à chaque activation, `partRaresPct` = 15 % ; fantôme = mode temporaire d'une balise quelconque (amendement RG-6 dans REGLES.md).
 - 2026-10-09 — Échanges à la Pokémon (amendement RG-11.1) : liste des joueurs à portée, proposition, acceptation, composition des deux parts, double validation ; cartes + jenny. Plus de scan de licence pour échanger.
+- 2026-10-09 — Une seule instance d'API par partie : les actions d'une partie sont sérialisées par un verrou en mémoire, en plus de la transaction. Raison : ≤ 80 joueurs, simplicité, aucune course entre deux scans sur la même balise. Passer à un verrou PostgreSQL (`pg_advisory_xact_lock`) si on veut plusieurs instances.
 - 2026-10-09 — Pas de Docker. Dev et tests : PGlite (PostgreSQL embarqué, zéro installation) via Drizzle ; prod : PostgreSQL hébergé. Raison : rien à installer sur le poste Windows, même dialecte SQL qu'en prod.
 
 ## Points ouverts (repris du document de règles)

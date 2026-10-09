@@ -161,6 +161,22 @@ export async function joueursRoutes(app: FastifyInstance) {
     };
   });
 
+  // RG-5.7 : abandon. Le joueur reste classé (RG-13) ; ses SS retournent en jeu (RG-8.12).
+  app.post<P>('/parties/:partieId/abandon', async (req, reply) => {
+    const { partieId } = req.params;
+    const s = requireRole(req, partieId, 'joueur');
+    const r = await runner.run(partieId, { type: 'joueur', id: s.sub }, async (c) => {
+      const [j] = await c.tx.select().from(joueurs).where(eq(joueurs.id, s.sub));
+      if (!j) throw introuvable('Joueur');
+      if (j.statut === 'abandon' || j.statut === 'disqualifie') return refus('deja_sorti', 'Tu ne joues déjà plus');
+      if (c.partie.etat === 'terminee') return refus('partie_terminee', 'La partie est terminée');
+      await c.tx.update(joueurs).set({ statut: 'abandon' }).where(eq(joueurs.id, j.id));
+      await c.log({ action: 'abandon', resultat: 'ok' });
+      return { ok: true as const };
+    });
+    return send(reply, r);
+  });
+
   // RG-5.2 : licence QR courante, à rafraîchir avant `expireA`.
   app.get<P>('/parties/:partieId/licence', async (req) => {
     const { partieId } = req.params;

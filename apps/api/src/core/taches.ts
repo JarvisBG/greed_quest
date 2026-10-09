@@ -64,9 +64,16 @@ export async function tickPartie(c: ActionCtx): Promise<void> {
   c.partie.taches = taches;
 }
 
-/** RG-5.7 : sans action depuis 15 min, un joueur devient inactif (exclu de J). */
+/** RG-5.7 : sans action depuis 15 min, un joueur devient inactif (exclu de J). Fin des gels de sanction. */
 async function markInactive(c: ActionCtx) {
   for (const j of await loadJoueurs(c.tx, c.partie.id)) {
+    // Fin du gel infligé par un PNJ (5 min).
+    if (j.statut === 'gele' && (j.geleJusqua ?? 0) <= c.now) {
+      await updateJoueur(c.tx, j.id, { statut: 'actif', derniereActionA: c.now });
+      await c.log({ action: 'statut', resultat: 'degele', details: { joueurId: j.id } });
+      c.emit({ type: 'joueur', id: j.id }, 'degel', {});
+      continue;
+    }
     if (j.statut !== 'actif' || (j.derniereActionA ?? 0) > c.now - INACTIVITY_MS) continue;
     await updateJoueur(c.tx, j.id, { statut: 'inactif' });
     await c.log({ action: 'statut', resultat: 'inactif', details: { joueurId: j.id } });

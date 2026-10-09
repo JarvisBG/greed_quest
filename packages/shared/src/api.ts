@@ -146,3 +146,30 @@ export const EvenementIntent = z.object({
   recompenseJenny: z.number().int().min(0).optional(),
 });
 export const RaidReponse = z.object({ questionId: z.string(), choix: z.number().int().min(0) });
+
+// --- Sanctions et corrections (RG-3.1 : motif obligatoire, RG-15) ---
+const Motif = z.string().trim().min(3, 'Motif obligatoire').max(200);
+export const AvertissementIntent = z.object({ joueurId: z.string(), motif: Motif });
+export const GelSanctionIntent = z.object({ joueurId: z.string(), motif: Motif });
+/** RG-15 photo de balise : gains de cette balise annulés + gel 5 min. */
+export const AnnulationGainsIntent = z.object({ joueurId: z.string(), baliseId: z.string(), motif: Motif });
+export const DisqualificationIntent = z.object({ joueurId: z.string(), motif: Motif });
+export const CorrectionLivreIntent = z.object({
+  joueurId: z.string(),
+  ajouterCarteId: z.string().optional(),
+  retirerItemId: z.string().optional(),
+  motif: Motif,
+});
+export const CorrectionJennyIntent = z.object({ joueurId: z.string(), delta: z.number().int(), motif: Motif });
+
+// --- Checkpoints PNJ et expertise ---
+export const CheckpointCreation = z.object({
+  zoneId: z.string(),
+  defi: z.string().trim().min(1).max(200),
+  cartes: z.array(z.string()).max(50).default([]),
+  arbitreId: z.string().optional(),
+});
+/** Le PNJ scanne la licence du joueur qui a réussi le défi, et donne une carte du checkpoint et/ou des jenny. */
+export const CheckpointReussite = z.object({ licence: z.string(), carteId: z.string().optional(), jenny: z.number().int().min(0).max(500).default(0) });
+/** RG-8.8 : expertise à Antokiba, payée par le joueur (licence scannée par le PNJ). */
+export const ExpertiseIntent = z.object({ licence: z.string(), page: z.number().int().min(1).optional() });

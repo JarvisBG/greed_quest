@@ -35,9 +35,10 @@
 - [ ] 2.9 Console GM / PNJ (en cours) :
   - [x] `src/routes/gm.ts` : `GET /parties/:id` (état public), `POST /cycle` (RG-4, démarrage = balises activées + J tout de suite), `GET|PUT /parametres` (RG-14.6 / 14.2), préréglages (liste, enregistrer, appliquer), balises (carte pour l'équipe, création, activer / couper / endormir, rotation forcée), zones (création avec QR de lieu), catalogue (`GET /cartes` public sans lot réel, `PATCH /cartes/:id`).
   - [x] `src/routes/evenements.ts` : `POST /evenements` (7 types, annonces écran / push du tableau RG-12), `/evenements/:id/annuler` (RG-12.2), `/evenements/:id/valider` (mission, PNJ), `GET /evenements` (bannières ; mission visible du seul joueur visé et de l'équipe), raid (`GET /raid`, `POST /raid/reponse`, barre de vie sur l'écran). Questions du raid provisoires (`engine/raid.ts`).
-  - [ ] Sanctions et corrections ; checkpoints PNJ et expertise ; Clear.
+  - [x] `src/routes/pnj.ts` : sanctions (avertissement, gel 5 min, annulation des gains d'une balise + gel, disqualification GM), corrections GM (Livre, jenny), checkpoints (création GM, réussite PNJ par licence : carte du stock + jenny, bonus Matérialisation ≤ C), expertise d'Antokiba (RG-8.8). `POST /abandon` (joueur). Dégel automatique dans la tâche planifiée.
+  - [ ] Clear (RG-13.1 à 13.3).
 
-**Prochaine étape** : 2.9 suite (sanctions, corrections, checkpoints). Le calibrage n'est pas bloquant : tout passe par des paramètres.
+**Prochaine étape** : 2.9 suite (Clear). Le calibrage n'est pas bloquant : tout passe par des paramètres.
 
 ## Reprise de session (lire en premier)
 - Phase 1 terminée et poussée (`main`, dernier commit « Simulateur v2 »). Engine pur dans `packages/engine/src/` : un module par domaine (`params`, `draw`, `book`, `scan`, `beacons`, `geo`, `spells`, `counterfeits`, `trades`, `shop`, `ranking`, `lifecycle`, `events`) + `sim/`. Chaque module a son `*.test.ts`.
@@ -126,6 +127,8 @@
 - J mesuré = joueurs actifs ou gelés ayant agi dans les 15 dernières minutes (les inactifs, disqualifiés et abandons ne comptent pas).
 - Heatmap de l'écran : dernière position de chaque joueur entre 4 et 2 min avant, arrondie à 4 décimales (~10 m), sans identifiant.
 - Agenda RG-12.3 : une proposition (type au hasard hors mission secrète, zone au hasard pour un événement de zone) envoyée au GM seulement ; le GM la lance par l'endpoint normal.
+- Sanctions : le gel PNJ met le statut « gelé » 5 min (scans, sorts, échanges, boutique refusés), levé par la tâche planifiée. « Photo de balise » : seules les cartes tirées sur la balise désignée sont retirées (les sorts n'ont pas d'origine en base). Disqualification : cartes retirées (traces de perte « sanction »), sorts marqués utilisés.
+- Checkpoint : la carte donnée doit être dans le stock du checkpoint (un id par exemplaire) et sous sa limite (RG-8.2) ; le Livre plein n'empêche pas de recevoir (comme un vol). Bonus Matérialisation = tirage complet (nature carte / sort / jenny) avec rangs C et D seulement.
 - RG-14.5 : contenu des préréglages non défini → proposé : Petit groupe = portée 20 m, marge GPS 10 m, limites d'exemplaires × 2 ; Standard = défauts du document ; Grande foule = portée 20 m, marge GPS 15 m (foule dense). Les formules auto suivent déjà J.
 
 ## Feuille de route

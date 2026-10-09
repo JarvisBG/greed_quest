@@ -36,7 +36,7 @@ Seul le GM avance l'état, sauf passage auto en phase finale et fin du temps. Un
 
 ## RG-5 Joueurs
 - 5.1 Pseudo unique par partie ; 1 appareil = 1 joueur par partie ; géoloc obligatoire.
-- 5.2 Licence = QR dans l'app renouvelé toutes les 30 s ; sert aux interactions consenties (échange, checkpoint, enchère, Clear). Pas de badge.
+- 5.2 Licence = QR dans l'app renouvelé toutes les 30 s ; sert aux interactions consenties (échange, checkpoint, enchère, Clear). Pas de badge. *(Plus utilisée pour les échanges depuis l'amendement RG-11.1.)*
 - 5.3 Examen Hunter : quiz 3 questions, non bloquant ; bonne réponse = bonus jenny.
 - 5.4 Test de Nen : 5 questions → 1 des 6 types. Spécialisation rare (5 % réglable).
 - 5.5 Kit : jenny + 1 sort aléatoire commun.
@@ -129,6 +129,7 @@ Prix défaut (réglables) : paquet 50 J · revente D/C/B 5/10/20 J · A/S 40/80 
 
 ## RG-11 Échanges & enchères
 - 11.1 A compose l'offre (cartes, jenny) ; B scanne la licence de A puis accepte sous 60 s. Atomique.
+> **Amendement 2026-10-09 (Sivraj)** — échange « à la Pokémon », sans scan de licence : A choisit B dans la liste des joueurs **à portée** (même rayon que les sorts) et propose ; B reçoit une notification et accepte ou refuse (60 s) ; chacun compose sa part (cartes et/ou jenny) en voyant celle de l'autre ; l'échange n'a lieu que si **les deux valident**. Toute modification d'une part annule les deux validations. Session expirée après 3 min sans action ; chacun peut annuler. RG-11.2, 11.3 et 11.6 inchangées.
 - 11.2 Chaque côté donne ≥ 1 carte ou 1 jenny. Don pur refusé.
 - 11.3 Une même paire : 1 échange / 10 min.
 - 11.4 Enchères Antokiba : PNJ met une carte en vente 3 min ; scan QR enchère sur place puis surenchère dans l'app ; seul le gagnant est débité.

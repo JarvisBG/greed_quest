@@ -1,8 +1,12 @@
-// Échanges face à face (RG-11.1 à 11.3, 11.6) et enchères d'Antokiba (RG-11.4, 11.5).
+// Échanges (RG-11.1 amendé, 11.2, 11.3, 11.6) et enchères d'Antokiba (RG-11.4, 11.5).
 import type { GameState, PlayerStatus, Rank } from '@gq/shared';
 import { transferItem, type Book, type BookItem, type CardItem } from './book.js';
+import { isInRange, isValidPosition, type Position, type RangeSettings } from './geo.js';
 
-export const TRADE_ACCEPT_WINDOW_MS = 60_000; // RG-11.1
+/** Délai pour répondre à une proposition d'échange. */
+export const TRADE_INVITATION_TIMEOUT_MS = 60_000;
+/** Une session d'échange sans action pendant ce délai expire. */
+export const TRADE_IDLE_TIMEOUT_MS = 3 * 60_000;
 export const PAIR_TRADE_INTERVAL_MS = 10 * 60_000; // RG-11.3
 export const AUCTION_DURATION_MS = 3 * 60_000; // RG-11.4
 
@@ -26,14 +30,10 @@ export interface TradeSide {
 export interface TradeInput {
   now: number;
   gameState: GameState;
-  /** A compose l'offre et montre sa licence. */
   a: TradeParty;
-  /** B scanne la licence de A puis accepte. */
   b: TradeParty;
   donneA: TradeSide;
   donneB: TradeSide;
-  /** Heure du scan de la licence de A par B. */
-  scanneA: number;
   /** Dernier échange conclu entre A et B, null si aucun. */
   dernierEchangePaireA: number | null;
 }
@@ -43,7 +43,6 @@ export type TradeRefusalCode =
   | 'joueur_bloque'
   | 'meme_joueur'
   | 'livre_gele'
-  | 'delai_depasse'
   | 'don_pur'
   | 'element_invalide'
   | 'jenny_insuffisants'
@@ -73,7 +72,8 @@ function cardsOf(p: TradeParty, side: TradeSide): CardItem[] | null {
 }
 
 /**
- * RG-11 : vérifie puis applique un échange, tout ou rien.
+ * RG-11 : vérifie puis applique un échange, tout ou rien. Appelé quand les deux joueurs ont validé
+ * la session (voir plus bas) ; tout est revérifié car les Livres ont pu changer entre-temps.
  * Les cartes reçues paraissent vraies (RG-11.6) : la marque de contrefaçon disparaît au transfert.
  */
 export function trade(t: TradeInput, rangDe: (cardId: string) => Rank): TradeResult {
@@ -85,7 +85,6 @@ export function trade(t: TradeInput, rangDe: (cardId: string) => Rank): TradeRes
     }
     if (p.livreGele) return refuse('livre_gele', 'Un Livre complet ne peut plus échanger');
   }
-  if (t.now - t.scanneA > TRADE_ACCEPT_WINDOW_MS) return refuse('delai_depasse', 'Offre expirée : scanne à nouveau la licence'); // RG-11.1
   if (isEmpty(t.donneA) || isEmpty(t.donneB)) return refuse('don_pur', 'Chacun doit donner au moins 1 carte ou 1 jenny'); // RG-11.2
   if (t.donneA.jenny < 0 || t.donneB.jenny < 0 || !Number.isInteger(t.donneA.jenny) || !Number.isInteger(t.donneB.jenny)) {
     return refuse('element_invalide', 'Montant invalide');
@@ -127,6 +126,135 @@ export function trade(t: TradeInput, rangDe: (cardId: string) => Rank): TradeRes
     recuParB,
     publicSurEcran,
   };
+}
+
+// --- Session d'échange (RG-11.1 amendé le 2026-10-09, à la Pokémon) ---
+// A choisit B dans la liste des joueurs à portée et propose ; B accepte ou refuse ;
+// chacun compose sa part en voyant celle de l'autre ; l'échange n'a lieu que si les deux valident.
+// Toute modification d'une part annule les deux validations.
+
+export type TradeSessionState = 'invitation' | 'composition' | 'conclu' | 'refuse' | 'annule' | 'expire';
+
+export interface TradeSession {
+  id: string;
+  a: string;
+  b: string;
+  etat: TradeSessionState;
+  derniereActionA: number;
+  donneA: TradeSide;
+  donneB: TradeSide;
+  valideA: boolean;
+  valideB: boolean;
+}
+
+export type SessionRefusalCode = TradeRefusalCode | 'hors_portee' | 'gps_invalide' | 'etat_invalide' | 'pas_participant';
+export type SessionRefusal = { ok: false; code: SessionRefusalCode; message: string };
+export type SessionResult = { ok: true; session: TradeSession } | SessionRefusal;
+
+const sessionRefuse = (code: SessionRefusalCode, message: string): SessionRefusal => ({ ok: false, code, message });
+const emptySide: TradeSide = { itemIds: [], jenny: 0 };
+
+export interface ProposeInput {
+  id: string;
+  now: number;
+  gameState: GameState;
+  a: TradeParty & { position: Position | null };
+  b: TradeParty & { position: Position | null };
+  portee: RangeSettings;
+  dernierEchangePaireA: number | null;
+}
+
+/** A propose un échange à un joueur de la liste « à portée » (même rayon que les sorts). */
+export function proposeTrade(p: ProposeInput): SessionResult {
+  if (!gameOpen(p.gameState)) return sessionRefuse('partie_fermee', 'Les échanges sont fermés pour le moment');
+  if (p.a.id === p.b.id) return sessionRefuse('meme_joueur', 'Tu ne peux pas échanger avec toi-même');
+  for (const x of [p.a, p.b]) {
+    if (x.status === 'disqualifie' || x.status === 'abandon' || x.status === 'gele') {
+      return sessionRefuse('joueur_bloque', 'Ce joueur ne peut pas échanger maintenant');
+    }
+    if (x.livreGele) return sessionRefuse('livre_gele', 'Un Livre complet ne peut plus échanger');
+  }
+  if (!isValidPosition(p.a.position, p.now)) return sessionRefuse('gps_invalide', 'Position GPS introuvable : active ta localisation');
+  if (!isValidPosition(p.b.position, p.now) || !isInRange(p.a.position, p.b.position, p.portee)) {
+    return sessionRefuse('hors_portee', 'Ce joueur est trop loin pour échanger');
+  }
+  if (p.dernierEchangePaireA !== null && p.now - p.dernierEchangePaireA < PAIR_TRADE_INTERVAL_MS) {
+    const min = Math.ceil((p.dernierEchangePaireA + PAIR_TRADE_INTERVAL_MS - p.now) / 60_000);
+    return sessionRefuse('frequence_paire', `Vous avez déjà échangé : réessayez dans ${min} min`); // RG-11.3
+  }
+  return {
+    ok: true,
+    session: {
+      id: p.id,
+      a: p.a.id,
+      b: p.b.id,
+      etat: 'invitation',
+      derniereActionA: p.now,
+      donneA: emptySide,
+      donneB: emptySide,
+      valideA: false,
+      valideB: false,
+    },
+  };
+}
+
+/** Met à jour l'état si la session a expiré (invitation sans réponse, ou inactivité). */
+export function expireTradeSession(s: TradeSession, now: number): TradeSession {
+  const delai = s.etat === 'invitation' ? TRADE_INVITATION_TIMEOUT_MS : s.etat === 'composition' ? TRADE_IDLE_TIMEOUT_MS : null;
+  return delai !== null && now - s.derniereActionA > delai ? { ...s, etat: 'expire' } : s;
+}
+
+/** Session vivante, joueur participant, état attendu ; sinon le refus. */
+function active(s: TradeSession, now: number, playerId: string, etat: TradeSessionState): TradeSession | SessionRefusal {
+  const cur = expireTradeSession(s, now);
+  if (playerId !== cur.a && playerId !== cur.b) return sessionRefuse('pas_participant', 'Tu ne participes pas à cet échange');
+  if (cur.etat === 'expire') return sessionRefuse('etat_invalide', 'Échange expiré');
+  if (cur.etat !== etat) return sessionRefuse('etat_invalide', 'Cet échange n’est plus modifiable');
+  return cur;
+}
+const isRefusal = (x: TradeSession | SessionRefusal): x is SessionRefusal => 'ok' in x;
+
+/** B accepte ou refuse la proposition (dans les 60 s). */
+export function answerTrade(s: TradeSession, playerId: string, accepte: boolean, now: number): SessionResult {
+  const cur = active(s, now, playerId, 'invitation');
+  if (isRefusal(cur)) return cur;
+  if (playerId !== cur.b) return sessionRefuse('pas_participant', 'Seul le joueur invité peut répondre');
+  return { ok: true, session: { ...cur, etat: accepte ? 'composition' : 'refuse', derniereActionA: now } };
+}
+
+/** Un joueur compose sa part ; les deux validations sont annulées. */
+export function setTradeOffer(s: TradeSession, playerId: string, side: TradeSide, now: number): SessionResult {
+  const cur = active(s, now, playerId, 'composition');
+  if (isRefusal(cur)) return cur;
+  const part = playerId === cur.a ? { donneA: side } : { donneB: side };
+  return { ok: true, session: { ...cur, ...part, valideA: false, valideB: false, derniereActionA: now } };
+}
+
+/**
+ * Un joueur valide. Quand les deux ont validé, `pret` est vrai : l'appelant exécute trade()
+ * avec donneA / donneB, puis marque la session conclue (concludeTrade) si l'échange a réussi.
+ */
+export function confirmTrade(
+  s: TradeSession,
+  playerId: string,
+  now: number,
+): { ok: true; session: TradeSession; pret: boolean } | SessionRefusal {
+  const cur = active(s, now, playerId, 'composition');
+  if (isRefusal(cur)) return cur;
+  if (isEmpty(cur.donneA) || isEmpty(cur.donneB)) {
+    return sessionRefuse('don_pur', 'Chacun doit donner au moins 1 carte ou 1 jenny'); // RG-11.2
+  }
+  const session = { ...cur, ...(playerId === cur.a ? { valideA: true } : { valideB: true }), derniereActionA: now };
+  return { ok: true, session, pret: session.valideA && session.valideB };
+}
+
+export const concludeTrade = (s: TradeSession): TradeSession => ({ ...s, etat: 'conclu' });
+
+/** Chacun peut annuler tant que l'échange n'est pas conclu. */
+export function cancelTrade(s: TradeSession, playerId: string, now: number): SessionResult {
+  if (playerId !== s.a && playerId !== s.b) return sessionRefuse('pas_participant', 'Tu ne participes pas à cet échange');
+  if (s.etat !== 'invitation' && s.etat !== 'composition') return sessionRefuse('etat_invalide', 'Cet échange est déjà terminé');
+  return { ok: true, session: { ...s, etat: 'annule', derniereActionA: now } };
 }
 
 // --- Enchères d'Antokiba (RG-11.4, 11.5) ---

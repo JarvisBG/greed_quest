@@ -4,7 +4,14 @@ import { emptyBook, type Book, type BookItem, type CardItem } from './book.js';
 import {
   AUCTION_DURATION_MS,
   PAIR_TRADE_INTERVAL_MS,
-  TRADE_ACCEPT_WINDOW_MS,
+  TRADE_IDLE_TIMEOUT_MS,
+  TRADE_INVITATION_TIMEOUT_MS,
+  answerTrade,
+  cancelTrade,
+  confirmTrade,
+  expireTradeSession,
+  proposeTrade,
+  setTradeOffer,
   closeAuction,
   joinAuction,
   openAuction,
@@ -12,8 +19,11 @@ import {
   trade,
   type Auction,
   type TradeInput,
+  type ProposeInput,
   type TradeParty,
+  type TradeSession,
 } from './trades.js';
+import type { Position } from './geo.js';
 
 const NOW = 5_000_000;
 const rangDe = (cardId: string): Rank => (cardId.startsWith('S') ? 'S' : 'C');
@@ -43,7 +53,6 @@ const input = (over: Partial<TradeInput> = {}): TradeInput => ({
   b: party('B', { book: book(carte('b1', '003')) }),
   donneA: { itemIds: ['a1'], jenny: 0 },
   donneB: { itemIds: ['b1'], jenny: 0 },
-  scanneA: NOW - 10_000,
   dernierEchangePaireA: null,
   ...over,
 });
@@ -65,10 +74,6 @@ describe('RG-11.1 échange atomique', () => {
   it('cartes et jenny', () => {
     const r = trade(input({ donneA: { itemIds: ['a1', 'a2'], jenny: 0 }, donneB: { itemIds: [], jenny: 30 } }), rangDe);
     expect(r.ok && [r.a.jenny, r.b.jenny]).toEqual([130, 70]);
-  });
-
-  it('acceptation au-delà de 60 s refusée', () => {
-    expect(code(trade(input({ scanneA: NOW - TRADE_ACCEPT_WINDOW_MS - 1 }), rangDe))).toBe('delai_depasse');
   });
 
   it('une carte absente : rien ne passe', () => {
@@ -167,5 +172,73 @@ describe('RG-11.4 / 11.5 enchères', () => {
     // P2 a dépensé ses jenny entre-temps : P1 l'emporte à son offre.
     expect(closeAuction(a, (p) => (p === 'P2' ? 5 : 100))).toEqual({ gagnant: { playerId: 'P1', montant: 10, a: NOW } });
     expect(closeAuction(ouverte(), () => 100)).toEqual({ gagnant: null });
+  });
+});
+
+describe('RG-11.1 (amendé) session d’échange à la Pokémon', () => {
+  const M = 1 / 111_195;
+  const pos = (nordM: number): Position => ({ lat: 48.85 + nordM * M, lng: 2.35, precisionM: 0, a: NOW });
+  const propose = (over: Partial<ProposeInput> = {}) =>
+    proposeTrade({
+      id: 't1',
+      now: NOW,
+      gameState: 'en_cours',
+      a: { ...party('A'), position: pos(0) },
+      b: { ...party('B'), position: pos(10) },
+      portee: { porteeM: 30, margeMaxM: 20 },
+      dernierEchangePaireA: null,
+      ...over,
+    });
+  const ouverte = (): TradeSession => {
+    const p = propose();
+    if (!p.ok) throw new Error('proposition refusée');
+    const r = answerTrade(p.session, 'B', true, NOW + 5_000);
+    if (!r.ok) throw new Error('réponse refusée');
+    return r.session;
+  };
+
+  it('proposition à un joueur à portée uniquement', () => {
+    expect(propose()).toMatchObject({ ok: true, session: { etat: 'invitation', a: 'A', b: 'B' } });
+    expect(code(propose({ b: { ...party('B'), position: pos(200) } }))).toBe('hors_portee');
+    expect(code(propose({ a: { ...party('A'), position: null } }))).toBe('gps_invalide');
+    expect(code(propose({ dernierEchangePaireA: NOW - 60_000 }))).toBe('frequence_paire');
+    expect(code(propose({ gameState: 'pause' }))).toBe('partie_fermee');
+  });
+
+  it('l’invité accepte ou refuse dans les 60 s ; seul l’invité répond', () => {
+    const p = propose();
+    if (!p.ok) return;
+    expect(answerTrade(p.session, 'B', false, NOW)).toMatchObject({ ok: true, session: { etat: 'refuse' } });
+    expect(code(answerTrade(p.session, 'A', true, NOW))).toBe('pas_participant');
+    expect(code(answerTrade(p.session, 'B', true, NOW + TRADE_INVITATION_TIMEOUT_MS + 1))).toBe('etat_invalide');
+    expect(expireTradeSession(p.session, NOW + TRADE_INVITATION_TIMEOUT_MS + 1).etat).toBe('expire');
+  });
+
+  it('les deux validations sont nécessaires ; toute modification les annule', () => {
+    let s = ouverte();
+    const step = (r: { ok: true; session: TradeSession } | { ok: false }) => {
+      if (!r.ok) throw new Error(JSON.stringify(r));
+      s = r.session;
+    };
+    step(setTradeOffer(s, 'A', { itemIds: ['a1'], jenny: 0 }, NOW + 10_000));
+    expect(code(confirmTrade(s, 'A', NOW + 11_000))).toBe('don_pur');
+    step(setTradeOffer(s, 'B', { itemIds: ['b1'], jenny: 0 }, NOW + 12_000));
+
+    const ca = confirmTrade(s, 'A', NOW + 13_000);
+    expect(ca).toMatchObject({ ok: true, pret: false });
+    step(ca);
+    // B change sa part : la validation de A tombe.
+    step(setTradeOffer(s, 'B', { itemIds: [], jenny: 5 }, NOW + 14_000));
+    expect([s.valideA, s.valideB]).toEqual([false, false]);
+
+    step(confirmTrade(s, 'A', NOW + 15_000));
+    expect(confirmTrade(s, 'B', NOW + 16_000)).toMatchObject({ ok: true, pret: true });
+  });
+
+  it('annulation par l’un ou l’autre ; expiration après 3 min d’inactivité', () => {
+    const s = ouverte();
+    expect(cancelTrade(s, 'B', NOW)).toMatchObject({ ok: true, session: { etat: 'annule' } });
+    expect(code(cancelTrade(s, 'X', NOW))).toBe('pas_participant');
+    expect(code(setTradeOffer(s, 'A', { itemIds: ['a1'], jenny: 0 }, NOW + 5_000 + TRADE_IDLE_TIMEOUT_MS + 1))).toBe('etat_invalide');
   });
 });

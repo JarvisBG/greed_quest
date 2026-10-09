@@ -49,8 +49,8 @@
 - Transformation : seul un vrai exemplaire dont le joueur a au moins un autre exemplaire (vrai ou non) peut être déguisé ; recharge 20 min depuis la dernière utilisation, disponible dès le début.
 - Expertise PNJ (RG-8.8) : payée même si rien n'est trouvé ; le Livre entier inclut les emplacements libres.
 - Masadora révèle la contrefaçon vendue (RG-8.9) : prix selon ce qu'elle est vraiment (copie → 1 J ; déguisé → prix de sa vraie carte). À coder en 1.13.
-- Échanges : seules les cartes et les jenny s'échangent (pas les sorts) ; pas de GPS exigé (le scan de licence prouve le face-à-face) ; refusés pour un joueur gelé (sanction PNJ), disqualifié, ayant abandonné, ou au Livre gelé (Clear provisoire).
-- Échanges : le moteur reçoit les éléments des deux côtés ; le parcours dans l'app (qui choisit les cartes de B, et quand) est à concevoir en Phase 3. Les 60 s courent depuis le scan de la licence.
+- Échanges : seules les cartes et les jenny s'échangent (pas les sorts) ; refusés pour un joueur gelé (sanction PNJ), disqualifié, ayant abandonné, ou au Livre gelé (Clear provisoire).
+- Échanges : la portée est vérifiée à la proposition seulement ; une fois la session ouverte, s'éloigner ne l'annule pas. Tout le reste (cartes encore présentes, jenny, fréquence) est revérifié à l'exécution.
 - Enchères : prix de départ fixé par le PNJ (1 J par défaut), surenchère d'au moins 1 J, offre limitée aux jenny possédés ; à la clôture, si le meilleur enchérisseur ne peut plus payer, l'offre précédente d'un autre joueur l'emporte.
 - RG-14.5 : contenu des préréglages Petit groupe / Grande foule non défini.
 
@@ -68,6 +68,7 @@ _(date — décision — raison)_
 - 2026-10-09 — Stack TypeScript monorepo validée (voir CLAUDE.md) — moteur testable isolément, un seul langage pour api et fronts.
 - 2026-10-09 — Ordre : engine avant api — l'engine porte la logique métier, l'api l'orchestre.
 - 2026-10-09 — Balises toutes identiques ; type (standard/rare) tiré par le serveur à chaque activation, `partRaresPct` = 15 % ; fantôme = mode temporaire d'une balise quelconque (amendement RG-6 dans REGLES.md).
+- 2026-10-09 — Échanges à la Pokémon (amendement RG-11.1) : liste des joueurs à portée, proposition, acceptation, composition des deux parts, double validation ; cartes + jenny. Plus de scan de licence pour échanger.
 - 2026-10-09 — Pas de Docker. Dev et tests : PGlite (PostgreSQL embarqué, zéro installation) via Drizzle ; prod : PostgreSQL hébergé. Raison : rien à installer sur le poste Windows, même dialecte SQL qu'en prod.
 
 ## Points ouverts (repris du document de règles)

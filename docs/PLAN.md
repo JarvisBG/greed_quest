@@ -29,7 +29,7 @@ Chaque tâche = un commit (ou quelques-uns), tests verts avant de cocher.
 - [ ] 2.3 Auth : joueur (appareil), PNJ, GM ; rôles RG-3
 - [ ] 2.4 Inscription RG-5 : pseudo, appareil unique, Examen Hunter, test de Nen, kit, retardataire
 - [ ] 2.5 Licence QR tournante 30 s (jeton signé) RG-5.2
-- [ ] 2.6 Endpoints d'intentions : scan, position, sort, achat, revente, échange, enchère
+- [ ] 2.6 Endpoints d'intentions : scan, position, sort, achat, revente, session d'échange (cartes engagées verrouillées, 1 session active par joueur), enchère
 - [ ] 2.7 Socket.IO : rooms joueur / staff / tracker, matrice de diffusion (REGLES.md « Diffusion »)
 - [ ] 2.8 Tâches planifiées : J (2 min), rotation (20 min), recharge, vagues boutique, fin d'événements, inactivité
 - [ ] 2.9 Endpoints GM/PNJ : cycle de vie, paramètres, balises, événements, corrections, sanctions, checkpoints, enchères, Clear
@@ -42,7 +42,7 @@ Chaque tâche = un commit (ou quelques-uns), tests verts avant de cocher.
 - [ ] 3.3 Scan QR caméra + envoi position ; file hors ligne RG-7.5
 - [ ] 3.4 Livre (pages, provenance, pertes), licence QR
 - [ ] 3.5 Sorts (liste à portée), alertes reçues
-- [ ] 3.6 Échanges, boutique, enchères, raid
+- [ ] 3.6 Échanges (liste à portée, proposition, double validation), boutique, enchères, raid
 
 ## Phase 4 — Console PNJ / GM (`apps/staff`)
 - [ ] 4.1 Console PNJ : scan licence, checkpoint, photo-preuve, enchère, avertir/geler

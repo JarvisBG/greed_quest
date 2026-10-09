@@ -31,8 +31,9 @@
   - [x] Échanges `src/routes/echanges.ts` (table `echanges`) : `POST /echanges` (proposition), `/echanges/:id/reponse|offre|valider|annuler`, `GET /echanges/courant` ; une session active par joueur ; cartes engagées verrouillées (revente, échange forcé, Transformation) ; pas d'Analyse pendant un échange (RG-10.8).
   - [x] Enchères `src/routes/encheres.ts` (table `encheres`) : ouverture par PNJ/GM, `rejoindre` (QR d'Antokiba), `offre`, clôture `closeDueAuctions` (aussi `POST /encheres/cloturer`, et tâche planifiée en 2.8).
 - [x] 2.7 Temps réel `src/realtime.ts` : Socket.IO sur le serveur Fastify ; connexion avec `auth: { token }` (joueur, PNJ, GM) ou `auth: { tracker: partieId }` (écran, public). Rooms `P:joueur:<id>`, `P:joueurs`, `P:staff`, `P:gm`, `P:tracker`, alimentées par le bus après commit. Chaque ligne de journal est poussée à l'équipe (`journal`), sauf les positions. CORS (`CORS_ORIGINS`).
+- [x] 2.8 Tâches planifiées `src/core/taches.ts` : `tickPartie` (toutes les 5 s via `Scheduler`, démarré dans `main.ts`) = transitions auto RG-4.5 / fin du temps (classement final figé `parties.classement_final`, `core/cycle.ts`), inactivité RG-5.7, J toutes les 2 min, recharge / cible / rotation des balises, fin des événements (`core/evenements.ts` : fantôme, carte maudite, récompense du raid), retour des SS RG-8.12, clôture des enchères, expiration des échanges, vagues de boutique, écran (classement live + heatmap anonyme décalée de 2 min, toutes les 30 s), agenda RG-12.3 (paramètre `agendaIntervalleMin`, 0 = désactivé).
 
-**Prochaine étape** : 2.8 (tâches planifiées). Le calibrage n'est pas bloquant : tout passe par des paramètres.
+**Prochaine étape** : 2.9 (endpoints GM / PNJ). Le calibrage n'est pas bloquant : tout passe par des paramètres.
 
 ## Reprise de session (lire en premier)
 - Phase 1 terminée et poussée (`main`, dernier commit « Simulateur v2 »). Engine pur dans `packages/engine/src/` : un module par domaine (`params`, `draw`, `book`, `scan`, `beacons`, `geo`, `spells`, `counterfeits`, `trades`, `shop`, `ranking`, `lifecycle`, `events`) + `sim/`. Chaque module a son `*.test.ts`.
@@ -118,6 +119,9 @@
 - Sans test de Nen passé, un joueur n'a aucun passif (ni Renforcement, ni Émission…).
 - RG-9.2 / 11.4 : chaque lieu (Masadora, Antokiba, Soufrabi) a un QR secret affiché sur place ; l'app l'envoie avec l'achat / la revente / l'enchère comme preuve de présence. Prix de boutique réglables par partie (`parties.reglages_boutique`).
 - Diffusion : positions exactes uniquement à la room `gm` (pas aux PNJ, RG-10.12 « serveur + GM seulement »).
+- J mesuré = joueurs actifs ou gelés ayant agi dans les 15 dernières minutes (les inactifs, disqualifiés et abandons ne comptent pas).
+- Heatmap de l'écran : dernière position de chaque joueur entre 4 et 2 min avant, arrondie à 4 décimales (~10 m), sans identifiant.
+- Agenda RG-12.3 : une proposition (type au hasard hors mission secrète, zone au hasard pour un événement de zone) envoyée au GM seulement ; le GM la lance par l'endpoint normal.
 - RG-14.5 : contenu des préréglages non défini → proposé : Petit groupe = portée 20 m, marge GPS 10 m, limites d'exemplaires × 2 ; Standard = défauts du document ; Grande foule = portée 20 m, marge GPS 15 m (foule dense). Les formules auto suivent déjà J.
 
 ## Feuille de route

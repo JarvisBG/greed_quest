@@ -1,10 +1,17 @@
 // Schéma de la base (entités de docs/REGLES.md « Entités »).
 // Heures « de jeu » : ms d'horloge de jeu (gameClock, integer). Heures réelles : ms epoch (bigint) ou timestamptz.
 import type { GameState, NenType, PlayerStatus, Rank, SpellType, BeaconState, BeaconType } from '@gq/shared';
-import type { Bid, EventData, GameEvent, JState, ShopConfig, ShopWave, TradeSessionState, TradeSide, Origine, Faux, ParamKey, ParamSetting, ParamSettings, Perte, Position, Polygon } from '@gq/engine';
+import type { Bid, RankingEntry, EventData, GameEvent, JState, ShopConfig, ShopWave, TradeSessionState, TradeSide, Origine, Faux, ParamKey, ParamSetting, ParamSettings, Perte, Position, Polygon } from '@gq/engine';
 import { bigint, boolean, index, integer, jsonb, pgTable, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 
 const heureJeu = (nom: string) => integer(nom);
+
+export interface Taches {
+  jA?: number;
+  rotationA?: number;
+  ecranA?: number;
+  agendaA?: number;
+}
 const heureReelle = (nom: string) => bigint(nom, { mode: 'number' });
 
 /** RG-14.5 : préréglages (système + enregistrés par un GM). */
@@ -37,6 +44,10 @@ export const parties = pgTable('parties', {
   vagueBoutique: jsonb('vague_boutique').$type<ShopWave>(),
   /** RG-9 : prix réglés par le GM (les absents gardent leur valeur par défaut). */
   reglagesBoutique: jsonb('reglages_boutique').$type<Partial<ShopConfig>>(),
+  /** Heures de jeu des dernières tâches planifiées (recalcul de J, rotation, écran, agenda). */
+  taches: jsonb('taches').$type<Taches>().notNull().default({}),
+  /** RG-4.6 / RG-13 : classement figé à la fin de la partie. */
+  classementFinal: jsonb('classement_final').$type<(RankingEntry & { pseudo: string })[]>(),
   /** Graine du générateur aléatoire de la partie (reproductibilité des tests). */
   graine: integer('graine').notNull().default(0),
   creeLe: timestamp('cree_le', { withTimezone: true }).notNull().defaultNow(),

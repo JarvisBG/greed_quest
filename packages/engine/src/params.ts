@@ -20,6 +20,7 @@ export const PARAM_KEYS = [
   'bonusExamenJ',
   'specialisationPct',
   'rattrapageJParMin',
+  'agendaIntervalleMin',
 ] as const;
 export type ParamKey = (typeof PARAM_KEYS)[number];
 
@@ -68,6 +69,8 @@ export const AUTO_FORMULAS: Record<ParamKey, (c: ParamContext) => number> = {
   specialisationPct: () => 5,
   /** RG-5.6 : 0 = rattrapage désactivé. */
   rattrapageJParMin: () => 2,
+  /** RG-12.3 : agenda automatique, une proposition d'événement au GM toutes les N min ; 0 = désactivé (défaut). */
+  agendaIntervalleMin: () => 0,
 };
 
 /** Modes par défaut (RG-14) : tout en auto sauf durée et N, verrouillés. */

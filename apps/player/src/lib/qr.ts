@@ -20,3 +20,18 @@ export function baliseDepuisUrl(search: string): string | null {
   const id = new URLSearchParams(search).get('balise')?.trim();
   return id && ID.test(id) ? id : null;
 }
+
+/**
+ * QR d'un lieu (Masadora, Antokiba, RG-9.2 / RG-11.4) : code secret de la zone, brut ou dans un lien
+ * `…?lieu=<code>`. Le serveur vérifie que c'est bien le QR du lieu attendu.
+ */
+export function lireQrLieu(texte: string): string | null {
+  const t = texte.trim();
+  if (ID.test(t)) return t;
+  try {
+    const qr = new URL(t).searchParams.get('lieu')?.trim();
+    return qr && ID.test(qr) ? qr : null;
+  } catch {
+    return null;
+  }
+}

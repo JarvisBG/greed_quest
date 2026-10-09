@@ -52,6 +52,7 @@ const EVENEMENTS: Record<EvenementJoueur, string> = {
   clear_confirme: 'Clear confirmé',
   clear_refuse: 'Clear refusé',
   classement_final: 'Classement final',
+  raid: 'Raid : le boss perd des PV',
 };
 
 export function libelleEvenement(nom: EvenementJoueur): string {

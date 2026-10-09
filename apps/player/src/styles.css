@@ -105,3 +105,22 @@ main { padding-bottom: 80px; }
 .liste-sorts li button { min-width: 96px; }
 .resultat { border-color: var(--or); }
 .lancement .choix button { text-align: left; }
+.lieux { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.lieux button { text-align: center; }
+.evenement { display: flex; justify-content: space-between; gap: 8px; }
+.raid-appel { border-color: var(--ko); }
+.jauge.vie { width: 100%; height: 10px; }
+.jauge.vie span { background: var(--ko); }
+.onglets button { position: relative; }
+.point { position: absolute; top: 6px; right: 10px; width: 8px; height: 8px; border-radius: 50%; background: var(--or); }
+.alerte .lien { white-space: nowrap; }
+.composition section { display: grid; gap: 6px; }
+.composition h2 { margin: 8px 0 0; color: var(--texte); }
+.edition { display: grid; gap: 8px; }
+.edition label:not(.case) { display: grid; gap: 4px; }
+.ligne { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.ligne button { min-width: 88px; text-align: center; }
+.boutique, .encheres, .raid, .echanges { display: grid; gap: 12px; }
+.titre-enchere { display: flex; gap: 8px; align-items: center; margin: 0; color: var(--texte); }
+.titre-enchere .chrono { margin-left: auto; }
+p.ok { color: var(--ok); }

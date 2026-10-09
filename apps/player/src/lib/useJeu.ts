@@ -8,6 +8,7 @@ import { libelleEvenement, resumeIssue } from './format';
 import { positionActuelle } from './geo';
 import { connectRealtime, type EtatConnexion } from './realtime';
 import { rejouerFile, scanner, type IssueScan } from './scan';
+import { messageFin, termine, type EvenementEchange, type VueEchange } from './echanges';
 import { texteSortRecu } from './sorts';
 import { partieFromUrl, type Session } from './session';
 import { creerSuivi, type Suivi } from './suivi';
@@ -53,7 +54,12 @@ export function useJeu() {
   /** Heure locale de réception de `partie` : le temps restant est décompté à partir d'elle. */
   const [partieRecueA, setPartieRecueA] = useState(0);
   /** Alerte urgente affichée en bandeau (sort reçu, RG-10.5). */
-  const [alerte, setAlerte] = useState<{ n: number; texte: string } | null>(null);
+  const [alerte, setAlerte] = useState<{ n: number; texte: string; voir?: 'echanges' } | null>(null);
+  /** Session d'échange en cours (RG-11.1 amendé) et message de fin de la dernière. */
+  const [echange, setEchange] = useState<VueEchange | null>(null);
+  const [finEchange, setFinEchange] = useState<string | null>(null);
+  const echangeRef = useRef<VueEchange | null>(null);
+  echangeRef.current = echange;
   const [moi, setMoi] = useState<Moi | null>(null);
   const [licenceSecret, setLicenceSecret] = useState<string | null>(null);
   /** Incrémenté à chaque évènement reçu : les écrans (Livre…) se rechargent. */
@@ -140,6 +146,28 @@ export function useJeu() {
       },
       evenement: (nom, data) => {
         setVersion((v) => v + 1);
+        if (nom === 'echange') {
+          const e = data as EvenementEchange;
+          if (termine(e.etat)) {
+            const avec = 'avec' in e ? e.avec.pseudo : echangeRef.current?.avec.pseudo ?? null;
+            const texte = messageFin(e.etat, avec);
+            setEchange(null);
+            setFinEchange(texte);
+            notifier(texte);
+            if (e.etat === 'conclu') void rafraichir();
+            return;
+          }
+          const vue = e as VueEchange;
+          if (vue.etat === 'invitation' && vue.invite && echangeRef.current?.id !== vue.id) {
+            const texte = `${vue.avec.pseudo} te propose un échange`;
+            notifier(texte);
+            setAlerte({ n: Date.now(), texte, voir: 'echanges' });
+            navigator.vibrate?.(200);
+          }
+          setFinEchange(null);
+          setEchange(vue);
+          return;
+        }
         if (nom === 'sort_recu') {
           // RG-10.5 : alerte immédiate à la cible.
           const texte = texteSortRecu(data as Parameters<typeof texteSortRecu>[0]);
@@ -149,7 +177,10 @@ export function useJeu() {
           void rafraichir();
           return;
         }
-        notifier(libelleEvenement(nom));
+        // Mises à jour fréquentes (surenchères, PV du raid) : l'écran se met à jour, sans notification.
+        if (nom === 'enchere' || nom === 'raid') return;
+        const texte = (data as { texte?: unknown } | null)?.texte;
+        notifier(typeof texte === 'string' ? texte : libelleEvenement(nom));
         if (nom === 'partie') void rafraichir();
         const j = (data as { jenny?: unknown } | null)?.jenny;
         if (nom === 'tirage' && typeof j === 'number') majJenny(j);
@@ -161,6 +192,15 @@ export function useJeu() {
       t.close();
       removeEventListener('online', enLigne);
     };
+  }, [sess]);
+
+  // Reprise d'un échange en cours (app rechargée).
+  useEffect(() => {
+    if (!sess) return;
+    api.get<{ echange: VueEchange | null }>(`/parties/${sess.partieId}/echanges/courant`).then(
+      (r) => setEchange(r.echange),
+      () => undefined,
+    );
   }, [sess]);
 
   // RG-10.9 : suivi de position tant qu'une session est ouverte.
@@ -257,6 +297,10 @@ export function useJeu() {
     partieRecueA,
     alerte,
     fermerAlerte: () => setAlerte(null),
+    echange,
+    setEchange,
+    finEchange,
+    fermerFinEchange: () => setFinEchange(null),
     positionAction,
     apresAction,
     moi,

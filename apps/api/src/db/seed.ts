@@ -4,7 +4,7 @@ import type { Rank } from '@gq/shared';
 import { SYSTEM_PRESETS, presetSettings, type LatLng, type Polygon } from '@gq/engine';
 import { eq } from 'drizzle-orm';
 import { Refus } from '../errors.js';
-import { newBeaconId, newId } from '../ids.js';
+import { newBeaconId, newId, newSecret } from '../ids.js';
 import type { DbOrTx } from './client.js';
 import { balises, cartes, parties, prereglages, zones, type ZoneType } from './schema.js';
 
@@ -118,6 +118,7 @@ export async function seedDemoContent(
     nom: z.nom,
     type: z.type,
     polygone: square(offset(centre, (Math.floor(i / 3) - 0.5) * 120, ((i % 3) - 1) * 120), 100),
+    qr: z.type === 'sauvage' ? null : newSecret(12),
   }));
   await db.insert(zones).values(zoneRows);
 

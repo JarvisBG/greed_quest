@@ -1,7 +1,7 @@
 // Schéma de la base (entités de docs/REGLES.md « Entités »).
 // Heures « de jeu » : ms d'horloge de jeu (gameClock, integer). Heures réelles : ms epoch (bigint) ou timestamptz.
 import type { GameState, NenType, PlayerStatus, Rank, SpellType, BeaconState, BeaconType } from '@gq/shared';
-import type { EventData, GameEvent, JState, Origine, Faux, ParamKey, ParamSetting, ParamSettings, Perte, Position, Polygon } from '@gq/engine';
+import type { EventData, GameEvent, JState, ShopConfig, ShopWave, Origine, Faux, ParamKey, ParamSetting, ParamSettings, Perte, Position, Polygon } from '@gq/engine';
 import { bigint, boolean, index, integer, jsonb, pgTable, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 
 const heureJeu = (nom: string) => integer(nom);
@@ -33,6 +33,10 @@ export const parties = pgTable('parties', {
   j: jsonb('j').$type<JState>().notNull().default({ value: 0, lastDecreaseAt: null }),
   /** Contour du terrain (sortie de zone, RG-15). */
   perimetre: jsonb('perimetre').$type<Polygon>(),
+  /** RG-9.3 : vague de boutique en cours. */
+  vagueBoutique: jsonb('vague_boutique').$type<ShopWave>(),
+  /** RG-9 : prix réglés par le GM (les absents gardent leur valeur par défaut). */
+  reglagesBoutique: jsonb('reglages_boutique').$type<Partial<ShopConfig>>(),
   /** Graine du générateur aléatoire de la partie (reproductibilité des tests). */
   graine: integer('graine').notNull().default(0),
   creeLe: timestamp('cree_le', { withTimezone: true }).notNull().defaultNow(),
@@ -47,6 +51,8 @@ export const zones = pgTable('zones', {
   nom: text('nom').notNull(),
   type: text('type').$type<ZoneType>().notNull(),
   polygone: jsonb('polygone').$type<Polygon>().notNull(),
+  /** QR affiché sur place (boutique de Masadora, enchères d'Antokiba, arène) : prouve la présence (RG-9.2, RG-11.4). */
+  qr: text('qr').unique(),
 });
 
 /** Carte du catalogue (RG-8.1) : numéro 001..N, rang, lot réel. */

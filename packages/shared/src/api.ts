@@ -85,3 +85,8 @@ export type SortIntent = z.infer<typeof SortIntent>;
 
 /** RG-5.4 Transformation : Texture Surprise. */
 export const TransformationIntent = z.object({ itemId: z.string(), cibleCarteId: z.string() });
+
+/** RG-9.2 : achat d'un paquet, avec le QR de la boutique scanné sur place. */
+export const AchatIntent = z.object({ qr: z.string().min(1).max(100), position: PositionInput });
+/** RG-9.4 : revente d'une carte à Masadora. */
+export const ReventeIntent = z.object({ qr: z.string().min(1).max(100), itemId: z.string(), position: PositionInput });

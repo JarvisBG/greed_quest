@@ -47,7 +47,7 @@ Seul le GM avance l'état, sauf passage auto en phase finale et fin du temps. Un
 |---|---|
 | Renforcement | Annule le 1er sort offensif reçu (1×/partie) |
 | Émission | 1 sort offensif hors portée (1×/partie) |
-| Transformation | Texture Surprise : déguise 1 doublon en carte de même rang → contrefaçon (toutes les 20 min) |
+| Transformation | Texture Surprise : déguise 1 doublon en carte de même rang → contrefaçon (toutes les 20 min). *Amendement 2026-10-09 : un doublon S peut aussi imiter la SS (unique au catalogue), pour le bluff.* |
 | Matérialisation | +1 tirage bonus ≤ rang C à chaque checkpoint PNJ réussi |
 | Manipulation | 1 échange forcé gratuit (1×/partie) |
 | Spécialisation | Pouvoir unique secret tiré au sort (liste à définir) |

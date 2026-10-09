@@ -117,7 +117,7 @@ export interface TransformInput {
   book: Book;
   /** Le doublon à déguiser. */
   itemId: string;
-  /** Carte imitée : même rang, autre carte. */
+  /** Carte imitée : même rang, autre carte ; la SS pour un doublon S (amendement 2026-10-09). */
   cibleCardId: string;
   rangDe: (cardId: string) => Rank | undefined;
 }
@@ -150,8 +150,11 @@ export function transform(t: TransformInput): TransformResult {
   if (!estDoublon || !isCard(item)) return { ok: false, code: 'pas_un_doublon', message: 'Choisis un doublon de ton Livre' };
 
   const rang = t.rangDe(item.cardId);
-  if (t.cibleCardId === item.cardId || rang === undefined || t.rangDe(t.cibleCardId) !== rang) {
-    return { ok: false, code: 'carte_invalide', message: 'Choisis une autre carte du même rang' };
+  const rangCible = t.rangDe(t.cibleCardId);
+  // Amendement 2026-10-09 (Sivraj) : une seule SS au catalogue, donc un doublon S peut aussi imiter la SS (bluff).
+  const cibleOk = rangCible === rang || (rang === 'S' && rangCible === 'SS');
+  if (t.cibleCardId === item.cardId || rang === undefined || !cibleOk) {
+    return { ok: false, code: 'carte_invalide', message: 'Choisis une autre carte du même rang (ou la SS pour un doublon S)' };
   }
 
   const deguise: CardItem = {

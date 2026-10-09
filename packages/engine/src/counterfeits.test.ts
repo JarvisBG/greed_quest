@@ -117,7 +117,7 @@ describe('RG-8.8 expertise PNJ à Antokiba', () => {
 });
 
 describe('RG-5.4 / RG-8.7 Transformation (Texture Surprise)', () => {
-  const rangs: Record<string, Rank> = { '001': 'C', '002': 'C', '003': 'B' };
+  const rangs: Record<string, Rank> = { '001': 'C', '002': 'C', '003': 'B', '010': 'SS', '011': 'S', '012': 'S' };
   const input = (over: Partial<TransformInput> = {}): TransformInput => ({
     now: 1000,
     gameState: 'en_cours',
@@ -137,6 +137,14 @@ describe('RG-5.4 / RG-8.7 Transformation (Texture Surprise)', () => {
       item: { id: 'b', cardId: '002', faux: { nature: 'deguise', vraieCarteId: '001' }, marque: 'creee' },
       disponibleA: 1000 + TRANSFORMATION_COOLDOWN_MS,
     });
+  });
+
+  it('Amendement 2026-10-09 : un doublon S peut imiter la SS (unique au catalogue) ; jamais un rang plus bas', () => {
+    const s = book(carte('a', '011'), carte('b', '011'));
+    expect(transform(input({ book: s, cibleCardId: '010' }))).toMatchObject({ ok: true, item: { cardId: '010', faux: { nature: 'deguise', vraieCarteId: '011' } } });
+    expect(transform(input({ book: s, cibleCardId: '012' }))).toMatchObject({ ok: true });
+    expect(transform(input({ cibleCardId: '010' }))).toMatchObject({ code: 'carte_invalide' }); // doublon C → SS : non
+    expect(transform(input({ book: book(carte('a', '003'), carte('b', '003')), cibleCardId: '011' }))).toMatchObject({ code: 'carte_invalide' }); // B → S : non
   });
 
   it('le déguisé compte toujours pour sa vraie carte', () => {

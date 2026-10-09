@@ -12,6 +12,8 @@ export const PARAM_KEYS = [
   'paquetsParVague',
   'pvBoss',
   'kBoucle',
+  'porteeSortsM',
+  'margeGpsMaxM',
   'dureePartieMin',
   'cartesDesignees',
 ] as const;
@@ -51,6 +53,9 @@ export const AUTO_FORMULAS: Record<ParamKey, (c: ParamContext) => number> = {
   paquetsParVague: (c) => Math.ceil(c.J / 2),
   pvBoss: (c) => c.J * 10,
   kBoucle: (c) => (c.balisesActivesCourantes < 8 ? 2 : 3),
+  // RG-10.11 : portée des sorts et plafond de la marge GPS, à adapter au lieu (parking, parc…).
+  porteeSortsM: () => 30,
+  margeGpsMaxM: () => 20,
   dureePartieMin: () => 150,
   cartesDesignees: () => 30,
 };
@@ -59,6 +64,8 @@ export const AUTO_FORMULAS: Record<ParamKey, (c: ParamContext) => number> = {
 export const DEFAULT_SETTINGS: ParamSettings = {
   ...(Object.fromEntries(PARAM_KEYS.map((k) => [k, { mode: 'auto' }])) as ParamSettings),
   dureePartieMin: { mode: 'verrouille', value: 150 },
+  porteeSortsM: { mode: 'verrouille', value: 30 },
+  margeGpsMaxM: { mode: 'verrouille', value: 20 },
   cartesDesignees: { mode: 'verrouille', value: 30 },
 };
 

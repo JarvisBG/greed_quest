@@ -21,6 +21,8 @@ describe('RG-14 formules auto', () => {
       paquetsParVague: 15,
       pvBoss: 300,
       kBoucle: 3,
+      porteeSortsM: 30,
+      margeGpsMaxM: 20,
       dureePartieMin: 150,
       cartesDesignees: 30,
     });

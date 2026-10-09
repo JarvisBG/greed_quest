@@ -17,8 +17,12 @@ export interface LatLng {
 export const POSITION_SEND_INTERVAL_MS = 15_000; // RG-10.9
 export const POSITION_SEND_MIN_MOVE_M = 10; // RG-10.9
 export const RADAR_TIMEOUT_MS = 2 * 60_000; // RG-10.10
-export const DEFAULT_RANGE_M = 30; // RG-10.11
-export const GPS_MARGIN_CAP_M = 20; // RG-10.11
+/** RG-10.11 : portée des sorts, réglable par partie (paramètres porteeSortsM et margeGpsMaxM). */
+export interface RangeSettings {
+  porteeM: number;
+  margeMaxM: number;
+}
+export const DEFAULT_RANGE: RangeSettings = { porteeM: 30, margeMaxM: 20 };
 /** Au-delà, une position est trop imprécise pour jouer (RG-7.6). Valeur proposée. */
 export const MAX_PRECISION_M = 100;
 export const MAX_WALK_SPEED_KMH = 15; // RG-15
@@ -69,12 +73,12 @@ export function shouldSendPosition(dernierEnvoi: Position | null, courante: Posi
  * RG-10.11 : portée + marge GPS plafonnée à 20 m.
  * Marge = somme des précisions des deux joueurs (les deux erreurs s'additionnent).
  */
-export function effectiveRangeM(lanceur: Position, cible: Position, porteeM = DEFAULT_RANGE_M): number {
-  return porteeM + Math.min(GPS_MARGIN_CAP_M, lanceur.precisionM + cible.precisionM);
+export function effectiveRangeM(lanceur: Position, cible: Position, r: RangeSettings = DEFAULT_RANGE): number {
+  return r.porteeM + Math.min(r.margeMaxM, lanceur.precisionM + cible.precisionM);
 }
 
-export function isInRange(lanceur: Position, cible: Position, porteeM = DEFAULT_RANGE_M): boolean {
-  return distanceM(lanceur, cible) <= effectiveRangeM(lanceur, cible, porteeM);
+export function isInRange(lanceur: Position, cible: Position, r: RangeSettings = DEFAULT_RANGE): boolean {
+  return distanceM(lanceur, cible) <= effectiveRangeM(lanceur, cible, r);
 }
 
 /** RG-10.1 : joueurs ciblables par un sort offensif, calculés au moment du lancement. */
@@ -82,12 +86,12 @@ export function playersInRange<T extends { id: string; position: Position | null
   lanceur: { id: string; position: Position | null },
   autres: readonly T[],
   now: number,
-  porteeM = DEFAULT_RANGE_M,
+  r: RangeSettings = DEFAULT_RANGE,
 ): T[] {
   const pos = lanceur.position;
   if (isOffRadar(pos, now) || pos === null) return [];
   return autres.filter(
-    (p) => p.id !== lanceur.id && p.position !== null && !isOffRadar(p.position, now) && isInRange(pos, p.position, porteeM),
+    (p) => p.id !== lanceur.id && p.position !== null && !isOffRadar(p.position, now) && isInRange(pos, p.position, r),
   );
 }
 

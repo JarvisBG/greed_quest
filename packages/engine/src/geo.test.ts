@@ -59,7 +59,13 @@ describe('RG-10.11 portée', () => {
     expect(effectiveRangeM(at(0, 0, 0), at(0, 0, 0))).toBe(30);
     expect(effectiveRangeM(at(0, 0, 5), at(0, 0, 8))).toBe(43);
     expect(effectiveRangeM(at(0, 0, 50), at(0, 0, 50))).toBe(50);
-    expect(effectiveRangeM(at(0, 0, 0), at(0, 0, 0), 40)).toBe(40);
+    expect(effectiveRangeM(at(0, 0, 0), at(0, 0, 0), { porteeM: 40, margeMaxM: 20 })).toBe(40);
+  });
+
+  it('portée réduite pour un petit lieu (parking)', () => {
+    const parking = { porteeM: 10, margeMaxM: 5 };
+    expect(effectiveRangeM(at(0, 0, 8), at(0, 0, 8), parking)).toBe(15);
+    expect(isInRange(at(0, 0, 8), at(20, 0, 8), parking)).toBe(false);
   });
 
   it('à portée ou non', () => {

@@ -36,6 +36,7 @@
 - RG-10.11 marge GPS = somme des précisions du lanceur et de la cible, plafonnée à 20 m.
 - RG-7.6 position valide : < 2 min, coordonnées correctes, précision ≤ 100 m (seuil proposé).
 - RG-15 vitesse : distance moins les deux précisions, sur un intervalle ≥ 5 s (évite les fausses alertes dues au bruit GPS).
+- RG-10.11 : portée (`porteeSortsM`, 30 m) et plafond de marge GPS (`margeGpsMaxM`, 20 m) sont des paramètres de partie ; à réduire pour un petit lieu (parking). À valider sur le terrain.
 - RG-14.5 : contenu des préréglages Petit groupe / Grande foule non défini.
 
 ## Feuille de route

@@ -50,7 +50,7 @@
 
 - [x] 3.4 Livre et licence : onglets Accueil / Scanner / Livre / Licence. `ecrans/Livre.tsx` : pages de 10 (« 001 – 010 »… puis « Libres 1, 2 »), compteur cartes désignées et emplacements libres, alerte Livre plein / gelé ; emplacement désigné vide = numéro, nom et rang grisés ; perdu = message RG-8.13 ; carte = provenance RG-8.14 + heure, badges contrefaçon / maudite / dans un échange, copie démasquée « Contrefaçon de X » ; sort = nom + effet. Rechargé à chaque évènement reçu (`version` dans `useJeu`). API : `GET /livre` donne `designe` et, pour un désigné vide, `carte` (numéro, nom, rang) — test ajouté. `ecrans/Licence.tsx` + `lib/licence.ts` RG-5.2 : licence calculée sur le téléphone (WebCrypto HMAC, même format que l'API, donc valable hors ligne), recalée sur l'horloge du serveur via `GET /licence` quand le réseau est là, jauge des 30 s ; QR dessiné en SVG (`qrcode-generator`). Retour sur l'app (`visibilitychange`) : position redemandée aussitôt (`suivi.relancer`), profil resynchronisé, file de scans rejouée, Livre rechargé. 36 tests app. Vérifié dans Chrome : Livre (pages, sorts dans les libres), carte ajoutée par le GM visible aussitôt, QR de licence relu par le décodeur et accepté par `POST /licence/verifier`.
 
-**Prochaine étape** : 3.5 (sorts : liste à portée, alertes reçues). **Question ouverte posée à Sivraj** : joueurs invisibles (GPS refusé ou téléphone en veille → hors radar après 2 min, donc intouchables par les sorts) ; voir « Points ouverts géolocalisation ».
+**Prochaine étape** : 3.5 (sorts : liste à portée, alertes reçues). Amendement RG-10.10 (ciblable 10 min) fait avant la 3.5 ; voir « Géolocalisation ».
 
 ## Reprise de session (lire en premier)
 - Phases 1 (moteur) et 2 (API) terminées et poussées (`main`). Phase 3 (app joueur `apps/player`) en cours : 3.1 à 3.4 faits, prochaine 3.5.
@@ -64,10 +64,10 @@
 - Décisions de calibrage **en attente** (ne pas appliquer sans accord) : voir la section suivante.
 - Choix d'interprétation de la Phase 2 (préréglages, montants du kit / Examen / rattrapage, QR de lieu, licence ±1 fenêtre, seuils RG-15, sanctions, Clear…) **présentés à Sivraj le 2026-10-09, validation en attente** : voir « Ambiguïtés ». Questions Examen / Nen / raid et noms des cartes : provisoires.
 
-## Points ouverts géolocalisation (posés le 2026-10-09, décision de Sivraj attendue)
-- Une PWA ne suit pas la position en arrière-plan : écran verrouillé ou app quittée → plus d'envoi ; au bout de 2 min le joueur sort du radar (RG-10.10). Même effet si le GPS est coupé après l'inscription. Le joueur ne peut alors ni scanner, ni acheter, ni lancer de sort, mais il devient aussi intouchable : un joueur pourrait se « cacher » pour protéger son Livre.
-- Piste proposée : rester ciblable à sa dernière position connue pendant N min (ex. 10) après le dernier envoi, au lieu de sortir du radar à 2 min ; alerte à l'équipe si un joueur actif reste sans position longtemps.
-- Précision : GPS d'un téléphone en extérieur ≈ 5 à 15 m, plus en ville dense / sous les arbres ; positions de plus de 100 m de précision refusées ; portée 30 m + marge plafonnée 20 m (RG-10.11). À calibrer lors de la partie test (6.2). Une fausse position (appli de localisation simulée sur Android) reste possible : RG-15 (vitesse, photo partagée) ne fait que la détecter.
+## Géolocalisation (décision de Sivraj le 2026-10-09)
+- Amendement RG-10.10 appliqué (voir REGLES.md) : ciblable 10 min à sa dernière position (`ciblableMin`, moteur `isTargetable`, utilisé par la liste « à portée » et la vérification de cible des sorts) ; alerte `sans_position` à l'équipe dans `tickPartie` (une par disparition, mémorisée dans `parties.taches.sansPosition`). Les échanges exigent toujours une position fraîche des deux joueurs (consentement).
+- Limites connues : une PWA ne suit pas la position en arrière-plan (écran verrouillé) ; précision GPS ≈ 5-15 m en extérieur, plus en ville dense ; positions > 100 m de précision refusées ; fausse position possible sur Android, seulement détectée (RG-15). Calibrage de la portée lors de la partie test (6.2).
+- Idée en attente de décision : option « garder l'écran allumé » (Wake Lock) dans l'app, et affichage du temps restant dans la barre du haut.
 
 ## Calibrage — propositions en attente de validation (simulation v2)
 - Limites d'exemplaires × 2 par défaut (mode Multiplicateur RG-14.2).
@@ -96,7 +96,7 @@
 - App joueur (3.1, validé le 2026-10-09) : entrée par lien `?partie=<id>` (QR d'accueil) ou saisie du code ; pas de bibliothèque d'état ni de routeur ; thème sombre doré.
 - App joueur (3.2, à valider) : l'Examen (non bloquant, RG-5.3) peut être remis à plus tard ; le test de Nen n'a pas de « Plus tard » (passif utile dès le début) mais n'est pas exigé par le serveur ; la position est demandée au moment d'appuyer sur « S'inscrire » ; le corrigé de l'Examen est montré au joueur ; le montant du bonus Examen n'est pas annoncé avant (paramètre serveur). (validé)
 - App joueur (3.3, à valider) : battement de position toutes les 60 s même immobile (sinon RG-10.10 sort du radar un joueur arrêté plus de 2 min) ; QR de balise accepté brut ou sous forme de lien `?balise=` (pour scanner avec l'appareil photo natif) ; file hors ligne limitée à un scan par balise ; scans périmés (≥ 10 min) écartés par l'app avec un message, sans appel ; au rejeu, les refus éventuels (ex. 30 s entre deux scans, RG-7.3, comptés à la réception) sont affichés comme des refus normaux. (validé)
-- App joueur (3.4, à valider) : un emplacement désigné vide montre le nom et le rang de la carte manquante (le catalogue est déjà public via `GET /cartes`) ; « Livre plein » affiché dès 15 emplacements libres occupés ; licence calculée hors ligne et recalée sur l'heure du serveur.
+- App joueur (3.4, validé) : un emplacement désigné vide montre le nom et le rang de la carte manquante (le catalogue est déjà public via `GET /cartes`) ; « Livre plein » affiché dès 15 emplacements libres occupés ; licence calculée hors ligne et recalée sur l'heure du serveur.
 - RG-10.11 marge GPS = somme des précisions du lanceur et de la cible, plafonnée à 20 m.
 - RG-7.6 position valide : < 2 min, coordonnées correctes, précision ≤ 100 m (seuil proposé).
 - RG-15 vitesse : distance moins les deux précisions, sur un intervalle ≥ 5 s (évite les fausses alertes dues au bruit GPS).

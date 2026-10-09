@@ -21,8 +21,12 @@ export const RADAR_TIMEOUT_MS = 2 * 60_000; // RG-10.10
 export interface RangeSettings {
   porteeM: number;
   margeMaxM: number;
+  /** Amendement RG-10.10 : durée pendant laquelle un joueur reste ciblable à sa dernière position (paramètre ciblableMin). */
+  ciblableMs?: number;
 }
-export const DEFAULT_RANGE: RangeSettings = { porteeM: 30, margeMaxM: 20 };
+/** Amendement RG-10.10 (2026-10-09) : 10 min par défaut. */
+export const TARGETABLE_MS = 10 * 60_000;
+export const DEFAULT_RANGE: RangeSettings = { porteeM: 30, margeMaxM: 20, ciblableMs: TARGETABLE_MS };
 /** Au-delà, une position est trop imprécise pour jouer (RG-7.6). Valeur proposée. */
 export const MAX_PRECISION_M = 100;
 export const MAX_WALK_SPEED_KMH = 15; // RG-15
@@ -45,6 +49,15 @@ export function distanceM(a: LatLng, b: LatLng): number {
 /** RG-10.10 : sans position depuis plus de 2 min, le joueur ne peut ni viser ni être visé. */
 export function isOffRadar(pos: Position | null, now: number): boolean {
   return pos === null || now - pos.a > RADAR_TIMEOUT_MS;
+}
+
+/**
+ * Amendement RG-10.10 : un joueur reste ciblable à sa dernière position connue pendant `ciblableMs`
+ * (10 min par défaut), même s'il a coupé son GPS ou mis son téléphone en veille. Pour agir lui-même
+ * (scan, achat, sort), il lui faut toujours une position de moins de 2 min (RG-7.6).
+ */
+export function isTargetable(pos: Position | null, now: number, r: RangeSettings = DEFAULT_RANGE): pos is Position {
+  return pos !== null && now - pos.a <= (r.ciblableMs ?? TARGETABLE_MS);
 }
 
 /** RG-7.6 : position utilisable pour scanner, acheter ou lancer un sort. */
@@ -81,7 +94,7 @@ export function isInRange(lanceur: Position, cible: Position, r: RangeSettings =
   return distanceM(lanceur, cible) <= effectiveRangeM(lanceur, cible, r);
 }
 
-/** RG-10.1 : joueurs ciblables par un sort offensif, calculés au moment du lancement. */
+/** RG-10.1 : joueurs ciblables par un sort offensif, calculés au moment du lancement (amendement RG-10.10 pour les cibles). */
 export function playersInRange<T extends { id: string; position: Position | null }>(
   lanceur: { id: string; position: Position | null },
   autres: readonly T[],
@@ -91,7 +104,7 @@ export function playersInRange<T extends { id: string; position: Position | null
   const pos = lanceur.position;
   if (isOffRadar(pos, now) || pos === null) return [];
   return autres.filter(
-    (p) => p.id !== lanceur.id && p.position !== null && !isOffRadar(p.position, now) && isInRange(pos, p.position, r),
+    (p) => p.id !== lanceur.id && isTargetable(p.position, now, r) && isInRange(pos, p.position, r),
   );
 }
 

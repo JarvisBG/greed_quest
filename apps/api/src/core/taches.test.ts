@@ -54,6 +54,14 @@ describe('tâches planifiées', () => {
     expect((await t.db.select().from(balises).where(eq(balises.id, b!.id)))[0]!.etat).toBe('dormante');
   });
 
+  it('amendement RG-10.10 : joueur actif sans position depuis 10 min → une seule alerte à l’équipe par disparition', async () => {
+    const alertes = async () => (await t.db.select().from(journal).where(and(eq(journal.action, 'alerte'), eq(journal.resultat, 'sans_position')))).length;
+    expect(await alertes()).toBe(3); // les 3 joueurs n'ont plus envoyé de position depuis l'inscription
+    expect(recues.some((e) => e.a === 'staff' && e.evenement === 'alerte' && e.data.type === 'sans_position')).toBe(true);
+    await tickA(15.5);
+    expect(await alertes()).toBe(3);
+  });
+
   it('RG-5.7 : sans action depuis 15 min, le joueur devient inactif ; J baisse (RG-14.1)', async () => {
     await tickA(16);
     const js = await t.db.select().from(joueurs).where(eq(joueurs.partieId, t.partieId));

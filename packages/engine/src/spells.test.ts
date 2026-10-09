@@ -92,7 +92,9 @@ describe('RG-10 sorts offensifs : refus (rien n’est consommé)', () => {
 
   it('RG-10.11 hors de portée, RG-10.10 hors radar', () => {
     expect(code(castOffensive(world(), offensive({ cible: player('B', { position: pos(80) }) }), rng()))).toBe('cible_hors_portee');
-    expect(code(castOffensive(world(), offensive({ cible: player('B', { position: pos(5, NOW - 200_000) }) }), rng()))).toBe(
+    // Amendement RG-10.10 : 200 s sans position, encore ciblable ; au-delà de 10 min, hors radar.
+    expect(code(castOffensive(world(), offensive({ cible: player('B', { position: pos(5, NOW - 200_000) }) }), rng()))).not.toBe('cible_hors_radar');
+    expect(code(castOffensive(world(), offensive({ cible: player('B', { position: pos(5, NOW - 600_001) }) }), rng()))).toBe(
       'cible_hors_radar',
     );
   });

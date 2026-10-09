@@ -22,6 +22,7 @@ import { journal, parties, zones, type Taches } from '../db/schema.js';
 import { closeDueAuctions } from '../routes/encheres.js';
 import { emitBeaconChanges, visitesParZone } from '../routes/scan.js';
 import { computeRanking, publicRanking } from './classement.js';
+import { alerte } from './alertes.js';
 import { applyLifecycle } from './cycle.js';
 import { activeSession } from './echanges.js';
 import { finishEvent } from './evenements.js';
@@ -45,6 +46,7 @@ export async function tickPartie(c: ActionCtx): Promise<void> {
 
   const taches: Taches = { ...c.partie.taches };
   await markInactive(c);
+  await alertNoPosition(c, taches, p0.ciblableMin * 60_000);
   if (taches.jA === undefined || c.now - taches.jA >= J_RECALC_INTERVAL_MS) {
     await recalcJ(c);
     taches.jA = c.now;
@@ -78,6 +80,21 @@ async function markInactive(c: ActionCtx) {
     await updateJoueur(c.tx, j.id, { statut: 'inactif' });
     await c.log({ action: 'statut', resultat: 'inactif', details: { joueurId: j.id } });
   }
+}
+
+/**
+ * Amendement RG-10.10 : un joueur actif sans nouvelle position depuis `ciblableMin` n'est plus ciblable.
+ * L'équipe est prévenue une fois par disparition (GPS coupé, téléphone en veille, triche possible).
+ */
+async function alertNoPosition(c: ActionCtx, taches: Taches, delaiMs: number) {
+  const vus = { ...taches.sansPosition };
+  for (const j of await loadJoueurs(c.tx, c.partie.id)) {
+    if ((j.statut !== 'actif' && j.statut !== 'gele') || !j.position || c.now - j.position.a <= delaiMs) continue;
+    if (vus[j.id] === j.position.a) continue;
+    vus[j.id] = j.position.a;
+    await alerte(c, 'sans_position', { joueurId: j.id, pseudo: j.pseudo, depuisMin: Math.floor((c.now - j.position.a) / 60_000) });
+  }
+  taches.sansPosition = vus;
 }
 
 /** RG-14.1 : J = joueurs actifs, recalculé toutes les 2 min ; hausse immédiate, baisse lissée. */

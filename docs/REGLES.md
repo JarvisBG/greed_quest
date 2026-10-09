@@ -126,6 +126,7 @@ Prix défaut (réglables) : paquet 50 J · revente D/C/B 5/10/20 J · A/S 40/80 
 - 10.7 Duplication : sous limite → vrai exemplaire compté ; à la limite → contrefaçon.
 - 10.8 Analyse : sa propre page, jamais un échange en cours ; résultat privé.
 **Géoloc** : 10.9 envoi toutes les 15 s si déplacement > 10 m, + à chaque scan/achat/sort. 10.10 Position > 2 min → hors radar (ni viser ni être visé). 10.11 Portée 30 m (réglable) + marge GPS plafonnée 20 m. 10.12 Positions exactes : serveur + GM seulement ; écran = points anonymes/heatmap, décalage 2 min ; joueur ne reçoit jamais la position d'autrui (sauf zone via Radar).
+> **Amendement 2026-10-09 (Sivraj)** — RG-10.10 : un joueur sans nouvelle position (GPS coupé, téléphone en veille, app quittée) reste **ciblable à sa dernière position connue pendant 10 min** (paramètre `ciblableMin`, réglable), au lieu de sortir du radar après 2 min. Au-delà, il est hors radar et l'équipe reçoit une alerte (`sans_position`, une par disparition). Pour agir lui-même (scan, achat, sort, échange), une position de moins de 2 min reste exigée (RG-7.6). But : qu'on ne puisse pas se cacher en coupant le GPS pour protéger son Livre.
 
 ## RG-11 Échanges & enchères
 - 11.1 A compose l'offre (cartes, jenny) ; B scanne la licence de A puis accepte sous 60 s. Atomique.

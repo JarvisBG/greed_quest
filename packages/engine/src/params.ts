@@ -14,6 +14,7 @@ export const PARAM_KEYS = [
   'kBoucle',
   'porteeSortsM',
   'margeGpsMaxM',
+  'ciblableMin',
   'dureePartieMin',
   'cartesDesignees',
   'kitJenny',
@@ -61,6 +62,8 @@ export const AUTO_FORMULAS: Record<ParamKey, (c: ParamContext) => number> = {
   // RG-10.11 : portée des sorts et plafond de la marge GPS, à adapter au lieu (parking, parc…).
   porteeSortsM: () => 30,
   margeGpsMaxM: () => 20,
+  /** Amendement RG-10.10 : minutes pendant lesquelles un joueur sans nouvelle position reste ciblable ; au-delà, alerte à l'équipe. */
+  ciblableMin: () => 10,
   dureePartieMin: () => 150,
   cartesDesignees: () => 30,
   // RG-5.3 / 5.5 / 5.6 / 5.4 : montants non chiffrés dans le document, valeurs proposées (PROGRESS.md).

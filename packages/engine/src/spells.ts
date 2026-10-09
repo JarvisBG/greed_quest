@@ -3,7 +3,7 @@
 import type { GameState, NenType, PlayerStatus, Rank, SpellType } from '@gq/shared';
 import { addItem, removeItem, transferItem, type Book, type BookItem, type CardItem } from './book.js';
 import { counterfeitsOnPage, revealItems } from './counterfeits.js';
-import { isInRange, isOffRadar, isValidPosition, zoneOf, type Polygon, type Position, type RangeSettings } from './geo.js';
+import { isInRange, isTargetable, isValidPosition, zoneOf, type Polygon, type Position, type RangeSettings } from './geo.js';
 import { pick, type Rng } from './rng.js';
 
 export const IMMUNITY_MS = 5 * 60_000; // RG-10.2
@@ -154,7 +154,7 @@ export function castOffensive(w: SpellWorld, input: OffensiveInput, rng: Rng): O
     return refuse('cible_invalide', 'Cible invalide');
   }
   if (cible.livreGele) return refuse('cible_livre_gele', 'Ce joueur a complété son Livre : il ne peut plus être visé');
-  if (isOffRadar(cible.position, w.now) || cible.position === null) return refuse('cible_hors_radar', 'Ce joueur est hors radar'); // RG-10.10
+  if (!isTargetable(cible.position, w.now, w.portee)) return refuse('cible_hors_radar', 'Ce joueur est hors radar'); // RG-10.10 amendé
   let viaEmission = false;
   if (!isInRange(lanceur.position!, cible.position, w.portee)) {
     if (!input.emission || !hasPower(lanceur, 'emission')) return refuse('cible_hors_portee', 'Ce joueur est hors de portée');

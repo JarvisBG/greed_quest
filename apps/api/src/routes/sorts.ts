@@ -70,7 +70,11 @@ const playerPatch = (p: SpellPlayer) => ({
   geleJusqua: p.geleJusqua,
 });
 
-export const rangeOf = (p: { porteeSortsM: number; margeGpsMaxM: number }) => ({ porteeM: p.porteeSortsM, margeMaxM: p.margeGpsMaxM });
+export const rangeOf = (p: { porteeSortsM: number; margeGpsMaxM: number; ciblableMin: number }) => ({
+  porteeM: p.porteeSortsM,
+  margeMaxM: p.margeGpsMaxM,
+  ciblableMs: p.ciblableMin * 60_000, // amendement RG-10.10
+});
 
 export async function sortsRoutes(app: FastifyInstance) {
   const { runner } = app.gq;

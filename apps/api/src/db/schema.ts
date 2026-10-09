@@ -11,6 +11,8 @@ export interface Taches {
   rotationA?: number;
   ecranA?: number;
   agendaA?: number;
+  /** Amendement RG-10.10 : heure de la dernière position déjà signalée, par joueur (une alerte par disparition). */
+  sansPosition?: Record<string, number>;
 }
 const heureReelle = (nom: string) => bigint(nom, { mode: 'number' });
 

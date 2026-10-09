@@ -6,6 +6,7 @@ import {
   isInPolygon,
   isInRange,
   isOffRadar,
+  isTargetable,
   isSharedPhotoSuspect,
   isValidPosition,
   playersInRange,
@@ -74,6 +75,13 @@ describe('RG-10.11 portée', () => {
     expect(isInRange(at(0, 0, 5), at(35, 0, 5))).toBe(true);
   });
 
+  it('amendement RG-10.10 : ciblable 10 min à sa dernière position, durée réglable', () => {
+    expect(isTargetable(null, 0)).toBe(false);
+    expect(isTargetable(at(0, 0), 600_000)).toBe(true);
+    expect(isTargetable(at(0, 0), 600_001)).toBe(false);
+    expect(isTargetable(at(0, 0), 200_000, { porteeM: 30, margeMaxM: 20, ciblableMs: 120_000 })).toBe(false);
+  });
+
   it('RG-10.1 liste à portée : exclut le lanceur, les hors radar et les trop loin', () => {
     const now = 60_000;
     const lanceur = { id: 'me', position: at(0, now) };
@@ -81,10 +89,11 @@ describe('RG-10.11 portée', () => {
       { id: 'me', position: at(0, now) },
       { id: 'proche', position: at(10, now) },
       { id: 'loin', position: at(80, now) },
-      { id: 'perdu', position: at(5, now - 130_000) },
+      { id: 'perdu', position: at(5, now - 130_000) }, // amendement RG-10.10 : encore ciblable
+      { id: 'disparu', position: at(5, now - 600_001) },
       { id: 'sans', position: null },
     ];
-    expect(playersInRange(lanceur, autres, now).map((p) => p.id)).toEqual(['proche']);
+    expect(playersInRange(lanceur, autres, now).map((p) => p.id)).toEqual(['proche', 'perdu']);
     expect(playersInRange({ id: 'me', position: null }, autres, now)).toEqual([]);
   });
 });

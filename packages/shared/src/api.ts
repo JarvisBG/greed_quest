@@ -173,3 +173,10 @@ export const CheckpointCreation = z.object({
 export const CheckpointReussite = z.object({ licence: z.string(), carteId: z.string().optional(), jenny: z.number().int().min(0).max(500).default(0) });
 /** RG-8.8 : expertise à Antokiba, payée par le joueur (licence scannée par le PNJ). */
 export const ExpertiseIntent = z.object({ licence: z.string(), page: z.number().int().min(1).optional() });
+
+// --- Clear (RG-13) ---
+/** RG-13.2 : le GM scanne la licence du joueur dont le Livre est gelé. */
+export const ClearConfirmation = z.object({ licence: z.string() });
+export const ClearAnnulation = z.object({ joueurId: z.string(), motif: z.string().trim().min(3, 'Motif obligatoire').max(200) });
+/** RG-13.3 : 3 cartes désignées choisies par le gagnant. */
+export const RecompensesIntent = z.object({ itemIds: z.array(z.string()).length(3, 'Choisis exactement 3 cartes') });

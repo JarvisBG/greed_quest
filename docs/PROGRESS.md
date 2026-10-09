@@ -32,13 +32,13 @@
   - [x] Enchères `src/routes/encheres.ts` (table `encheres`) : ouverture par PNJ/GM, `rejoindre` (QR d'Antokiba), `offre`, clôture `closeDueAuctions` (aussi `POST /encheres/cloturer`, et tâche planifiée en 2.8).
 - [x] 2.7 Temps réel `src/realtime.ts` : Socket.IO sur le serveur Fastify ; connexion avec `auth: { token }` (joueur, PNJ, GM) ou `auth: { tracker: partieId }` (écran, public). Rooms `P:joueur:<id>`, `P:joueurs`, `P:staff`, `P:gm`, `P:tracker`, alimentées par le bus après commit. Chaque ligne de journal est poussée à l'équipe (`journal`), sauf les positions. CORS (`CORS_ORIGINS`).
 - [x] 2.8 Tâches planifiées `src/core/taches.ts` : `tickPartie` (toutes les 5 s via `Scheduler`, démarré dans `main.ts`) = transitions auto RG-4.5 / fin du temps (classement final figé `parties.classement_final`, `core/cycle.ts`), inactivité RG-5.7, J toutes les 2 min, recharge / cible / rotation des balises, fin des événements (`core/evenements.ts` : fantôme, carte maudite, récompense du raid), retour des SS RG-8.12, clôture des enchères, expiration des échanges, vagues de boutique, écran (classement live + heatmap anonyme décalée de 2 min, toutes les 30 s), agenda RG-12.3 (paramètre `agendaIntervalleMin`, 0 = désactivé).
-- [ ] 2.9 Console GM / PNJ (en cours) :
+- [x] 2.9 Console GM / PNJ :
   - [x] `src/routes/gm.ts` : `GET /parties/:id` (état public), `POST /cycle` (RG-4, démarrage = balises activées + J tout de suite), `GET|PUT /parametres` (RG-14.6 / 14.2), préréglages (liste, enregistrer, appliquer), balises (carte pour l'équipe, création, activer / couper / endormir, rotation forcée), zones (création avec QR de lieu), catalogue (`GET /cartes` public sans lot réel, `PATCH /cartes/:id`).
   - [x] `src/routes/evenements.ts` : `POST /evenements` (7 types, annonces écran / push du tableau RG-12), `/evenements/:id/annuler` (RG-12.2), `/evenements/:id/valider` (mission, PNJ), `GET /evenements` (bannières ; mission visible du seul joueur visé et de l'équipe), raid (`GET /raid`, `POST /raid/reponse`, barre de vie sur l'écran). Questions du raid provisoires (`engine/raid.ts`).
   - [x] `src/routes/pnj.ts` : sanctions (avertissement, gel 5 min, annulation des gains d'une balise + gel, disqualification GM), corrections GM (Livre, jenny), checkpoints (création GM, réussite PNJ par licence : carte du stock + jenny, bonus Matérialisation ≤ C), expertise d'Antokiba (RG-8.8). `POST /abandon` (joueur). Dégel automatique dans la tâche planifiée.
-  - [ ] Clear (RG-13.1 à 13.3).
+  - [x] `src/routes/clear.ts` : `POST /clear` (provisoire, Livre gelé, demande à l'équipe), `/clear/confirmer` (GM, licence, partie terminée, `parties.gagnant_id`), `/clear/annuler` (GM, motivé), `/clear/recompenses` (3 cartes → lots réels, `parties.recompenses`).
 
-**Prochaine étape** : 2.9 suite (Clear). Le calibrage n'est pas bloquant : tout passe par des paramètres.
+**Prochaine étape** : 2.10 (alertes anti-triche RG-15). Le calibrage n'est pas bloquant : tout passe par des paramètres.
 
 ## Reprise de session (lire en premier)
 - Phase 1 terminée et poussée (`main`, dernier commit « Simulateur v2 »). Engine pur dans `packages/engine/src/` : un module par domaine (`params`, `draw`, `book`, `scan`, `beacons`, `geo`, `spells`, `counterfeits`, `trades`, `shop`, `ranking`, `lifecycle`, `events`) + `sim/`. Chaque module a son `*.test.ts`.
@@ -129,6 +129,7 @@
 - Agenda RG-12.3 : une proposition (type au hasard hors mission secrète, zone au hasard pour un événement de zone) envoyée au GM seulement ; le GM la lance par l'endpoint normal.
 - Sanctions : le gel PNJ met le statut « gelé » 5 min (scans, sorts, échanges, boutique refusés), levé par la tâche planifiée. « Photo de balise » : seules les cartes tirées sur la balise désignée sont retirées (les sorts n'ont pas d'origine en base). Disqualification : cartes retirées (traces de perte « sanction »), sorts marqués utilisés.
 - Checkpoint : la carte donnée doit être dans le stock du checkpoint (un id par exemplaire) et sous sa limite (RG-8.2) ; le Livre plein n'empêche pas de recevoir (comme un vol). Bonus Matérialisation = tirage complet (nature carte / sort / jenny) avec rangs C et D seulement.
+- Clear : le Livre gelé ne peut plus être revendu ; le Clear est revérifié à la confirmation du GM. Le GM peut refuser un Clear provisoire (Livre dégelé, motif obligatoire).
 - RG-14.5 : contenu des préréglages non défini → proposé : Petit groupe = portée 20 m, marge GPS 10 m, limites d'exemplaires × 2 ; Standard = défauts du document ; Grande foule = portée 20 m, marge GPS 15 m (foule dense). Les formules auto suivent déjà J.
 
 ## Feuille de route

@@ -20,6 +20,7 @@ export const ACTIONS_AVEC_MOTIF: ReadonlySet<string> = new Set([
   'gel_sanction',
   'annulation_gains',
   'disqualification',
+  'clear_annulation',
 ]);
 
 export interface LogEntry {

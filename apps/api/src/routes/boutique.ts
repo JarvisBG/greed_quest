@@ -17,7 +17,7 @@ import { paramsOf } from '../core/params.js';
 import type { PartieRow } from '../core/partie.js';
 import { recordPosition } from '../core/position.js';
 import type { ActionCtx } from '../core/runner.js';
-import { actionPatch, loadActiveEvents, loadBook, loadCatalogue, loadJoueur, saveBooks, updateJoueur, type JoueurRow } from '../core/state.js';
+import { actionPatch, isLivreGele, loadActiveEvents, loadBook, loadCatalogue, loadJoueur, saveBooks, updateJoueur, type JoueurRow } from '../core/state.js';
 import type { DbOrTx } from '../db/client.js';
 import { parties, zones, type ZoneType } from '../db/schema.js';
 import { introuvable } from '../errors.js';
@@ -111,6 +111,8 @@ export async function boutiqueRoutes(app: FastifyInstance) {
       await recordPosition(c, j, input.position);
       const [book, cat] = await Promise.all([loadBook(c.tx, j.id), loadCatalogue(c.tx, partieId)]);
       if ((await engagedItems(c.tx, partieId, j.id, c.now)).has(input.itemId)) return refus(ENGAGEE.code, ENGAGEE.message);
+      // RG-13.1 : un Livre gelé (Clear provisoire) ne change plus.
+      if (await isLivreGele(c.tx, j.id)) return refus('livre_gele', 'Ton Livre est gelé : va voir le Game Master');
       const res = sellCard(
         {
           now: c.now,

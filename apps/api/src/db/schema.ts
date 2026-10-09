@@ -46,6 +46,9 @@ export const parties = pgTable('parties', {
   reglagesBoutique: jsonb('reglages_boutique').$type<Partial<ShopConfig>>(),
   /** Heures de jeu des dernières tâches planifiées (recalcul de J, rotation, écran, agenda). */
   taches: jsonb('taches').$type<Taches>().notNull().default({}),
+  /** RG-13.2 : joueur dont le Clear a été confirmé ; RG-13.3 : ses 3 cartes de récompense. */
+  gagnantId: text('gagnant_id'),
+  recompenses: jsonb('recompenses').$type<string[]>(),
   /** RG-4.6 / RG-13 : classement figé à la fin de la partie. */
   classementFinal: jsonb('classement_final').$type<(RankingEntry & { pseudo: string })[]>(),
   /** Graine du générateur aléatoire de la partie (reproductibilité des tests). */

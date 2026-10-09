@@ -23,7 +23,17 @@ export interface CardItem {
   cardId: string;
   origine: Origine;
   obtenuA: number;
+  /** Contrefaçon (RG-8.6, RG-8.7) : connue du serveur seulement. */
+  faux?: Faux;
+  /**
+   * Ce que le détenteur sait de cette contrefaçon : « creee » pour son créateur,
+   * « demasquee » après Analyse ou expertise (RG-8.8). Disparaît au changement de main.
+   */
+  marque?: 'creee' | 'demasquee';
 }
+
+/** RG-8.7 : copie ratée de Duplication, ou doublon déguisé par Transformation. */
+export type Faux = { nature: 'copie' } | { nature: 'deguise'; vraieCarteId: string };
 
 export interface SpellItem {
   kind: 'sort';
@@ -142,6 +152,29 @@ export function removeItem(book: Book, itemId: string, perte?: Omit<Perte, 'card
   const items = book.items.filter((i) => i.id !== itemId);
   if (item.kind === 'carte' && perte) return { items, pertes: [...book.pertes, { ...perte, cardId: item.cardId }] };
   return { ...book, items };
+}
+
+/**
+ * Fait passer un élément d'un Livre à l'autre (vol, échange, échange forcé).
+ * Le receveur l'obtient maintenant, avec sa provenance (RG-8.14) ; la marque
+ * de contrefaçon disparaît au changement de main (RG-8.7) ; le donneur garde une perte (RG-8.13).
+ */
+export function transferItem(
+  from: Book,
+  to: Book,
+  itemId: string,
+  t: { now: number; origine: Origine; perte: Omit<Perte, 'cardId' | 'a'> },
+): { from: Book; to: Book; item: BookItem } {
+  const item = from.items.find((i) => i.id === itemId);
+  if (!item) throw new Error(`Élément ${itemId} absent du Livre`);
+  let recu: BookItem;
+  if (item.kind === 'carte') {
+    const { marque: _oubliee, ...reste } = item;
+    recu = { ...reste, origine: t.origine, obtenuA: t.now };
+  } else {
+    recu = { ...item, obtenuA: t.now };
+  }
+  return { from: removeItem(from, itemId, { ...t.perte, a: t.now }), to: addItem(to, recu), item: recu };
 }
 
 /** Message affiché sur un emplacement perdu, ex. « Volée par Kevin à 14h05 ». */

@@ -12,9 +12,9 @@
 - [x] Premier commit, poussé sur https://github.com/JarvisBG/greed_quest (branche `main`, auteur git local « Sivraj »)
 - [x] Plan détaillé des tâches : `docs/PLAN.md`
 
-**Phase 1 — Moteur** (en cours) : tâches 1.1 → 1.9 faites (types, RNG, paramètres RG-14, lissage J, tirage RG-8.3, Livre RG-8.5/8.13/8.14, scan RG-7, balises RG-6, géoloc RG-10.9→10.11 + RG-15). 76 tests verts.
+**Phase 1 — Moteur** (en cours) : tâches 1.1 → 1.10 faites (types, RNG, paramètres RG-14, lissage J, tirage RG-8.3, Livre RG-8.5/8.13/8.14, scan RG-7, balises RG-6, géoloc RG-10.9→10.11 + RG-15, sorts RG-10). 101 tests verts.
 
-**Prochaine étape** : 1.10 sorts RG-10.
+**Prochaine étape** : 1.11 contrefaçons RG-8.6 → 8.9 (Transformation, affichage par joueur, effets de la révélation, Masadora).
 
 ## Ambiguïtés du document (choix validés par Sivraj le 2026-10-09, réglables)
 - RG-6 vs tableau RG-8 : balise standard « rangs D à A » mais le tableau donne 1 % de S en standard → S exclu en standard (`draw.ts`).
@@ -37,6 +37,15 @@
 - RG-7.6 position valide : < 2 min, coordonnées correctes, précision ≤ 100 m (seuil proposé).
 - RG-15 vitesse : distance moins les deux précisions, sur un intervalle ≥ 5 s (évite les fausses alertes dues au bruit GPS).
 - RG-10.11 : portée (`porteeSortsM`, 30 m) et plafond de marge GPS (`margeGpsMaxM`, 20 m) sont des paramètres de partie ; à réduire pour un petit lieu (parking). À valider sur le terrain.
+- Sorts : un refus ne consomme rien ; un sort accepté est consommé même s'il est bloqué (Barrière/Renforcement) ou sans effet (rien à voler).
+- RG-10.2 : immunité de 5 min seulement si le sort réussit (pas s'il est bloqué ou sans effet). Viser un joueur immunisé est refusé (sort conservé).
+- RG-10.3 : le délai de 2 min court dès qu'un offensif est lancé, même bloqué.
+- Vol / Échange forcé prennent uniquement des cartes (jamais des sorts) ; l'exemplaire reçu compte comme « obtenu maintenant » (relance l'immunité SS RG-8.11).
+- Gel (sort) bloque uniquement les scans ; le statut « gelé » (sanction PNJ) bloque aussi les sorts.
+- Émission ne contourne pas « hors radar », seulement « hors portée » ; non consommée si la cible était à portée.
+- Radar : la cible est prévenue (diffusion « Sort lancé : lanceur et cible notifiés »).
+- Duplication d'une contrefaçon : toujours une contrefaçon.
+- RG-10.8 « jamais les cartes d'un échange en cours » : à appliquer en Phase 2 (verrouillage des cartes engagées dans une offre).
 - RG-14.5 : contenu des préréglages Petit groupe / Grande foule non défini.
 
 ## Feuille de route

@@ -392,7 +392,7 @@ p { margin: 0; }
 .moi-halo { fill: rgba(31, 74, 156, 0.16); stroke: rgba(31, 74, 156, 0.5); stroke-width: 1; }
 .moi-point { fill: var(--bleu); stroke: #fff; stroke-width: 3; }
 .moi-nom { font: 800 12px/1 var(--f-texte); fill: var(--bleu); paint-order: stroke; stroke: var(--parchemin); stroke-width: 4px; }
-.rose { position: absolute; left: 20px; bottom: 18px; width: 22px; height: 44px; overflow: visible; pointer-events: none; }
+.rose { position: absolute; left: 42px; bottom: 18px; width: 22px; height: 44px; overflow: visible; pointer-events: none; }
 .rose-plein { fill: var(--encre-carte); }
 .rose-vide { fill: var(--parchemin); stroke: var(--encre-carte); stroke-width: 1; }
 .rose text { font: 400 10px var(--f-titre); fill: var(--encre-carte); }
@@ -409,6 +409,17 @@ p { margin: 0; }
 .rouleau::before, .rouleau::after { content: ''; position: absolute; left: 50%; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: #3a2a14; }
 .rouleau::before { top: -8px; }
 .rouleau::after { bottom: -8px; }
+.enroule { position: absolute; top: 6px; bottom: 6px; width: 22px; pointer-events: none; }
+.enroule::before { content: ''; position: absolute; inset: 0; border-radius: 11px / 7px; }
+.enroule.gauche { left: 2px; transform-origin: left; }
+.enroule.droite { right: 2px; transform-origin: right; }
+/* Le papier s'enroule vers l'arrière : face claire sur le dessus du rouleau, pli sombre côté carte, ombre portée sur la carte */
+.enroule.gauche::before { background: linear-gradient(90deg, #8f7140 0%, #d9c08a 18%, #f7ecd2 42%, #ead7a9 62%, #b8975a 84%, #6f5428 100%); box-shadow: 6px 0 10px -3px rgba(60, 38, 8, 0.55); }
+.enroule.droite::before { background: linear-gradient(270deg, #8f7140 0%, #d9c08a 18%, #f7ecd2 42%, #ead7a9 62%, #b8975a 84%, #6f5428 100%); box-shadow: -6px 0 10px -3px rgba(60, 38, 8, 0.55); }
+/* Bout du rouleau : la spirale du papier vue de dessus et de dessous */
+.enroule::after, .enroule > i { content: ''; position: absolute; left: 2px; right: 2px; height: 10px; border-radius: 50%; background: radial-gradient(ellipse at 50% 55%, #4a3616 0 22%, #c9ad74 24% 38%, #8a6b36 40% 50%, #e6d3a3 52% 100%); }
+.enroule::after { top: -3px; }
+.enroule > i { bottom: -3px; }
 .zoom { position: absolute; right: 18px; top: 18px; display: grid; gap: 8px; }
 .zoom button { width: 48px; height: 48px; display: grid; place-items: center; padding: 0; border: var(--trait) solid var(--encre); background: var(--case); }
 .zoom svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: square; }

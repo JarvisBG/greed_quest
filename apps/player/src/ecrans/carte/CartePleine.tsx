@@ -1,4 +1,4 @@
-// Carte agrandie : le parchemin se déroule entre deux rouleaux, puis l'encre trace les zones une à une,
+// Carte agrandie : le parchemin se déroule entre deux rouleaux (ses bords restent enroulés), puis l'encre trace les zones une à une,
 // les trames et les noms se posent, et ton point tombe (≈ 2,3 s, toucher pour passer ; validé le 2026-10-10).
 // Ensuite : pincer pour zoomer, glisser pour bouger, toucher deux fois pour zoomer, « Me retrouver ».
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -125,6 +125,10 @@ export function CartePleine({ plan, evenements, onFermer }: { plan: Plan; evenem
         { duration: 840, delay: 120, easing: 'linear' },
       );
     });
+    // Les rouleaux arrivés aux bords, le papier y reste enroulé.
+    scene.querySelectorAll('.enroule').forEach((el) =>
+      A(el, [{ opacity: 0, transform: 'scaleX(1.8)' }, { opacity: 1, transform: 'none' }], { duration: 320, delay: 760, easing: 'ease-out', fill: 'backwards' }),
+    );
     // 2. L'encre : chaque zone se trace, puis sa trame et son nom se posent.
     const zones = [...svg.querySelectorAll('.zone')];
     zones.forEach((z, i) => {
@@ -330,6 +334,13 @@ export function CartePleine({ plan, evenements, onFermer }: { plan: Plan; evenem
           >
             <DessinCarte plan={plan} evenements={evenements} p="pl" />
           </svg>
+        </div>
+        {/* Bords restés enroulés une fois la carte dépliée (demande de Sivraj, 2026-10-10). */}
+        <div className="enroule gauche" aria-hidden="true">
+          <i />
+        </div>
+        <div className="enroule droite" aria-hidden="true">
+          <i />
         </div>
         <svg className="rose" viewBox="-11 -30 22 46" aria-hidden="true">
           <path d="M0 -14 4 0 0 14 -4 0z" className="rose-plein" />

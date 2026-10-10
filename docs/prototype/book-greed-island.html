@@ -260,11 +260,24 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 }
 .scene-hud b { font: 800 20px var(--f-chiffre); font-variant-numeric: tabular-nums; }
 .livre-zone {
+  --bande: 58px;                 /* part visible de la page de gauche */
   position: relative;
   display: grid; place-items: center;
+  margin-inline: -14px;
   padding-block: 8px 30px;
-  perspective: 1700px;
+  perspective: 1500px;
+  perspective-origin: 58% 40%;
+  overflow-x: clip;
 }
+.livre-pos {
+  width: 100%;
+  padding-left: var(--bande);
+  padding-right: 16px;
+  transform: translateX(calc(var(--bande) / -2));
+  transform-style: preserve-3d;
+  transition: transform .8s var(--sortie);
+}
+.livre-zone.ouvert .livre-pos { transform: none; }
 .livre-ombre {
   position: absolute;
   bottom: 6px; left: 12%; right: 12%;
@@ -275,7 +288,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 }
 .livre {
   position: relative;
-  width: min(100%, 372px);
+  width: 100%;
   transform-style: preserve-3d;
   will-change: transform;
 }
@@ -370,6 +383,34 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 @keyframes arrivee { 0% { transform: scale(1.12); filter: brightness(1.25); } 100% { transform: none; filter: none; } }
 
 .page.dessous { position: absolute; inset: 0; }
+.page.droite { box-shadow: inset 16px 0 16px -12px rgba(0,0,0,.4); }
+
+/* Revers d'une page : reliure à droite, pochettes vues de dos, dos des cartes rangées */
+.page.verso {
+  border-left-width: var(--trait);
+  border-right-width: 14px;
+  border-radius: 6px 2px 2px 6px;
+  background-color: #dcdad1;
+  box-shadow: inset -16px 0 16px -12px rgba(0,0,0,.42);
+}
+.page.verso::before { left: auto; right: -11px; background-image: radial-gradient(circle, #dcdad1 2.4px, transparent 2.8px); }
+.verso .page-tete { visibility: hidden; }
+.verso .poches { direction: rtl; }
+.verso .poche { box-shadow: inset 0 0 0 1.5px rgba(17,17,17,.4); }
+.verso .poche::after { background: linear-gradient(62deg, rgba(255,255,255,.4) 0%, rgba(255,255,255,0) 35%); }
+.verso .page-folio { color: transparent; }
+.page.gauche { position: absolute; top: 0; right: 100%; width: 100%; height: 100%; }
+
+/* Intérieur de la couverture : cuir rabattu et garde */
+.interieur, .page.gauche.interieur {
+  background-color: #4a1418;
+  background-image: radial-gradient(rgba(215,178,90,.45) 1.1px, transparent 1.5px);
+  background-size: 14px 14px;
+  border: 3px solid #2b0a0d;
+  border-radius: 8px 3px 3px 8px;
+  box-shadow: inset 0 0 0 9px var(--cuir), inset 0 0 0 10px var(--or-fonce), inset -18px 0 18px -10px rgba(0,0,0,.6);
+}
+.page.gauche.interieur::before { display: none; }
 .feuille-tournee {
   position: absolute; inset: 0;
   transform-origin: left center;
@@ -377,12 +418,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   z-index: 5;
 }
 .feuille-tournee .page { position: absolute; inset: 0; }
-.feuille-tournee .verso {
-  transform: rotateY(180deg);
-  background-color: #dedcd3;
-  background-image: radial-gradient(var(--trame) 1px, transparent 1.2px);
-  background-size: 6px 6px;
-}
+.feuille-tournee .verso { transform: rotateY(180deg); }
 .ombre-page {
   position: absolute; inset: 0;
   pointer-events: none;
@@ -441,15 +477,14 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 }
 .couverture-dos {
   position: absolute; inset: 0;
-  border-radius: inherit;
   transform: rotateY(180deg);
   backface-visibility: hidden;
-  background: #3e1013;
 }
 .tranche {
   position: absolute; top: 6px; bottom: 6px; right: -7px; width: 8px;
   border-radius: 0 4px 4px 0;
-  background: repeating-linear-gradient(0deg, #f4f2ea 0 2px, #c9c6bb 2px 3px);
+  background: repeating-linear-gradient(90deg, #f4f2ea 0 2px, #b9b6ab 2px 3px);
+  transition: width .3s, right .3s;
   box-shadow: inset 0 0 0 1.5px var(--encre);
 }
 
@@ -678,13 +713,15 @@ dialog.fiche[open] { animation: monte .35s var(--sortie); }
     <div class="livre-zone" id="livre-zone">
       <div class="concentration" id="conc-livre" aria-hidden="true"></div>
       <div class="onomatopee" id="ono" aria-hidden="true">BOOK !</div>
+      <div class="livre-pos">
       <div class="livre" id="livre">
         <div class="feuillets" id="feuillets"></div>
-        <span class="tranche" aria-hidden="true"></span>
+        <span class="tranche" id="tranche" aria-hidden="true"></span>
         <button class="couverture" id="couverture" aria-label="Ouvrir le Book">
           <span class="couverture-face" id="couv-face"><span id="couv-embleme"></span><strong>BOOK</strong></span>
-          <span class="couverture-dos"></span>
+          <span class="couverture-dos interieur"></span>
         </button>
+      </div>
       </div>
       <div class="livre-ombre" aria-hidden="true"></div>
     </div>
@@ -858,13 +895,33 @@ dialog.fiche[open] { animation: monte .35s var(--sortie); }
     return `<div class="page-tete"><span>${pg.titre}</span><span>${pg.plage()}</span></div><div class="poches">${poches.map(pocheHTML).join('')}${folio}</div>`;
   };
 
+  // Revers d'une page : mêmes pochettes en miroir ; une carte rangée montre son dos
+  const versoHTML = (p) => {
+    const poches = pages[p].poches();
+    const pleine = ({ k, i }) => (k === 'd' ? designees[i].etat === 'pleine' : !!libres[i]);
+    const restes = 12 - poches.length;
+    return `<div class="page-tete"><span>.</span></div><div class="poches">${poches.map((x) => `<span class="poche">${pleine(x) ? dosHTML() : ''}</span>`).join('')}${restes > 0 ? `<span class="page-folio" style="grid-column: span ${restes % 3 || 3}"></span>` + '<span class="case-vide"></span>'.repeat(Math.max(0, restes - (restes % 3 || 3))) : ''}</div>`;
+  };
+
   const feuillets = $('#feuillets');
+  const gauche = document.createElement('div');
+  gauche.setAttribute('aria-hidden', 'true');
+  gauche.hidden = true;
   const base = document.createElement('div');
-  base.className = 'page';
-  feuillets.append(base);
+  base.className = 'page droite';
+  feuillets.append(gauche, base);
+  // Ce qu'on voit à gauche quand la page p est ouverte à droite : la garde, ou le revers de la page précédente
+  const poserGauche = (p) => {
+    if (p === 0) { gauche.className = 'page gauche interieur'; gauche.innerHTML = ''; }
+    else { gauche.className = 'page gauche verso'; gauche.innerHTML = versoHTML(p - 1); }
+  };
   let courante = 0;
   const rendre = () => {
     base.innerHTML = pageHTML(courante); compter();
+    poserGauche(courante);
+    const t = $('#tranche');
+    t.style.width = `${(pages.length - courante) * 2 + 3}px`;
+    t.style.right = `${-((pages.length - courante) * 2 + 2)}px`;
     $('#page-indic').innerHTML = `${pages[courante].titre} · page <b>${courante + 1}</b> / ${pages.length}`;
     $('#page-prec').disabled = courante === 0;
     $('#page-suiv').disabled = courante === pages.length - 1;
@@ -880,21 +937,24 @@ dialog.fiche[open] { animation: monte .35s var(--sortie); }
     const cible = courante + sens;
     if (cible < 0 || cible >= pages.length) return null;
     const dessous = document.createElement('div');
-    dessous.className = 'page dessous';
+    dessous.className = 'page dessous droite';
     dessous.innerHTML = pageHTML(sens > 0 ? cible : courante) + '<span class="ombre-page"></span>';
     const feuille = document.createElement('div');
     feuille.className = 'feuille-tournee';
-    feuille.innerHTML = `<div class="page recto">${pageHTML(sens > 0 ? courante : cible)}<span class="ombre-page"></span></div><div class="page verso"></div>`;
+    const tournee = sens > 0 ? courante : cible;
+    feuille.innerHTML = `<div class="page recto droite">${pageHTML(tournee)}<span class="ombre-page"></span></div><div class="page verso">${versoHTML(tournee)}</div>`;
     feuillets.append(dessous, feuille);
+    if (sens < 0) poserGauche(cible);
     base.style.visibility = 'hidden';
     return { sens, cible, dessous, feuille, p: 0 };
   };
   const poserTour = (t, p) => {
     t.p = Math.max(0, Math.min(1, p));
     const prog = t.sens > 0 ? t.p : 1 - t.p;          // 0 = à plat à droite, 1 = tournée à gauche
-    const angle = -180 * prog;
+    // le bord libre de la page suit le doigt : angle = arccos(1 - 2 × avancée)
+    const angle = -Math.acos(1 - 2 * prog) * 180 / Math.PI;
     const s = Math.sin(prog * Math.PI);
-    t.feuille.style.transform = `rotateY(${angle}deg) skewY(${-s * 3.5}deg)`;
+    t.feuille.style.transform = `translateZ(2px) rotateY(${angle}deg) skewY(${-s * 4}deg)`;
     t.feuille.querySelector('.ombre-page').style.opacity = (s * .9).toFixed(3);
     t.dessous.querySelector('.ombre-page').style.opacity = ((1 - prog) * s * 1.1).toFixed(3);
   };
@@ -909,6 +969,7 @@ dialog.fiche[open] { animation: monte .35s var(--sortie); }
       poserTour(t, depart + (fin - depart) * ease(x));
       if (x < 1) return requestAnimationFrame(pas);
       if (garder) courante = t.cible;
+      rendre();
       t.dessous.remove(); t.feuille.remove();
       base.style.visibility = '';
       rendre();
@@ -928,7 +989,7 @@ dialog.fiche[open] { animation: monte .35s var(--sortie); }
   let appui = null;
   feuillets.addEventListener('pointerdown', (e) => {
     if (!ouvert || tour) return;
-    appui = { x: e.clientX, y: e.clientY, id: e.pointerId, actif: false };
+    appui = { x: e.clientX, y: e.clientY, id: e.pointerId, actif: false, vx: 0, tx: e.clientX, tt: performance.now() };
   });
   feuillets.addEventListener('pointermove', (e) => {
     if (!appui || e.pointerId !== appui.id) return;
@@ -940,14 +1001,19 @@ dialog.fiche[open] { animation: monte .35s var(--sortie); }
       tour = t; appui.actif = true; glisse = true;
       try { feuillets.setPointerCapture(e.pointerId); } catch {}
     }
+    const now = performance.now();
+    appui.vx = (e.clientX - appui.tx) / Math.max(1, now - appui.tt);
+    appui.tx = e.clientX; appui.tt = now;
     const w = feuillets.getBoundingClientRect().width;
-    poserTour(tour, Math.abs(dx) / w);
+    // aller-retour libre : avancer dans le sens du tour, revenir en arrière
+    poserTour(tour, (tour.sens > 0 ? -dx : dx) / w);
   });
   const lacher = async (e) => {
     if (!appui || e.pointerId !== appui.id) return;
     const a = appui; appui = null;
     if (!a.actif) return;
-    await finirTour(tour, tour.p > .3);
+    const elan = (tour.sens > 0 ? -a.vx : a.vx);
+    await finirTour(tour, elan > .5 || (tour.p > .45 && elan > -.3));
     tour = null;
   };
   let glisse = false;
@@ -999,7 +1065,10 @@ dialog.fiche[open] { animation: monte .35s var(--sortie); }
       anim(livre, [{ transform: 'translateY(30px) scale(.82) rotateX(18deg)', filter: 'blur(3px)', opacity: .2 }, { transform: 'translateY(-8px) scale(1.02) rotateX(6deg)', filter: 'blur(0)', opacity: 1, offset: .6 }, { transform: 'translateY(0) scale(1) rotateX(4deg)', filter: 'blur(0)', opacity: 1 }], { duration: 760, easing: 'cubic-bezier(.16,1,.3,1)' })
     ]);
     livre.getAnimations().forEach((a) => a.cancel());
-    await anim(couv, [{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(-172deg)' }], { duration: 820, easing: 'cubic-bezier(.45,.05,.2,1)' });
+    $('#livre-zone').classList.add('ouvert');
+    await anim(couv, [{ transform: 'translateZ(3px) rotateY(0deg)' }, { transform: 'translateZ(3px) rotateY(-180deg)' }], { duration: 900, easing: 'cubic-bezier(.45,.05,.2,1)' });
+    poserGauche(courante);
+    gauche.hidden = false;
     couv.hidden = true;
     couv.getAnimations().forEach((a) => a.cancel());
     ouvert = true;
@@ -1014,8 +1083,11 @@ dialog.fiche[open] { animation: monte .35s var(--sortie); }
     if (occupe) return;
     occupe = true;
     livre.classList.remove('flotte');
+    courante = 0; rendre();
+    gauche.hidden = true;
     couv.hidden = false;
-    await anim(couv, [{ transform: 'rotateY(-172deg)' }, { transform: 'rotateY(0deg)' }], { duration: 620, easing: 'cubic-bezier(.45,.05,.2,1)' });
+    $('#livre-zone').classList.remove('ouvert');
+    await anim(couv, [{ transform: 'translateZ(3px) rotateY(-180deg)' }, { transform: 'translateZ(3px) rotateY(0deg)' }], { duration: 700, easing: 'cubic-bezier(.45,.05,.2,1)' });
     couv.getAnimations().forEach((a) => a.cancel());
     ouvert = false;
     $('#pages-nav').hidden = true;

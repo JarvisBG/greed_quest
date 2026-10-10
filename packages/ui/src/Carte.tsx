@@ -40,8 +40,8 @@ export function Carte({ genre, numero, nom, rang = null, limite = null, texte = 
     <div className={`gi-carte f-${genre}${grisee ? ' grisee' : ''}${className ? ` ${className}` : ''}`}>
       <div className="c-cadre">
         <div className="c-tete">
-          <span className="c-num">{num}</span>
-          <span className="c-nom">{nom}</span>
+          <span className={`c-num${num.length > 3 ? ' long' : ''}`}>{num}</span>
+          <span className={`c-nom${nom.length > 10 ? ' long' : ''}`}>{nom}</span>
           {coin}
         </div>
         <div className="c-art" aria-hidden="true">

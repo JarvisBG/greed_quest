@@ -1,19 +1,20 @@
 // Entrée : rejoindre une partie (code saisi, ou lien du QR d'accueil qui ouvre l'app sur `?partie=`).
-import { Concentration } from '@gq/ui';
+import { Concentration, DosCarte } from '@gq/ui';
 import { useState } from 'react';
 
 export function Entree({ onChoix }: { onChoix: (id: string) => void }) {
   const [id, setId] = useState('');
   return (
     <div className="planche">
-      <section className="gi-case gi-trame entree-titre">
+      <section className="gi-case entree-titre">
         <Concentration graine={11} />
         <h1>
           Greed
           <br />
           Island
         </h1>
-        <p>La chasse aux cartes de Hunter × Hunter, sur le terrain.</p>
+        <DosCarte className="entree-dos" />
+        <p className="recitatif">La chasse aux cartes de Hunter × Hunter, sur le terrain.</p>
       </section>
       <form
         className="gi-case"

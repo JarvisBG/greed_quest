@@ -348,6 +348,16 @@ export function useJeu() {
     history.replaceState(null, '', `?partie=${encodeURIComponent(id)}`);
   }, []);
 
+  /** Retour à l'entrée (partie disparue ou mauvais code) : oublie la partie et sa session. */
+  const quitterPartie = useCallback(() => {
+    session.clear();
+    setPartieId(null);
+    setSess(null);
+    setErreur(null);
+    setPhase('sans_partie');
+    history.replaceState(null, '', location.pathname);
+  }, []);
+
   /** Après l'inscription : garde le jeton ; le rafraîchissement charge le profil. */
   const ouvrirSession = useCallback((s: Session) => {
     session.set(s);
@@ -382,6 +392,7 @@ export function useJeu() {
     enFile,
     rafraichir,
     choisirPartie,
+    quitterPartie,
     ouvrirSession,
     scannerBalise,
   };

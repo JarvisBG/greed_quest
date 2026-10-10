@@ -12,7 +12,7 @@ export interface Kit {
   sort: SpellType;
 }
 
-export function Inscription({ partie, onInscrit }: { partie: Partie; onInscrit: (s: Session, kit: Kit) => void }) {
+export function Inscription({ partie, onInscrit, onAutrePartie }: { partie: Partie; onInscrit: (s: Session, kit: Kit) => void; onAutrePartie: () => void }) {
   const [pseudo, setPseudo] = useState('');
   const [etape, setEtape] = useState<'saisie' | 'position' | 'envoi'>('saisie');
   const [erreur, setErreur] = useState<string | null>(null);
@@ -23,6 +23,10 @@ export function Inscription({ partie, onInscrit }: { partie: Partie; onInscrit: 
         <section className="gi-case">
           <h1 className="titre-ecran">{partie.nom}</h1>
           <p className="texte-grand">Les inscriptions sont fermées.</p>
+          <p className="doux">L’organisation les ouvre avant le départ : réessaie dans un moment.</p>
+          <button className="gi-lien" onClick={onAutrePartie}>
+            Rejoindre une autre partie
+          </button>
         </section>
       </div>
     );
@@ -57,6 +61,7 @@ export function Inscription({ partie, onInscrit }: { partie: Partie; onInscrit: 
         }}
       >
         <h1 className="titre-ecran">{partie.nom}</h1>
+        <p className="doux">Inscris-toi : tu recevras ton kit de départ, puis tu passeras l’Examen de Hunter et ton test de Nen.</p>
         <div className="champ-groupe">
           <label htmlFor="pseudo">Ton pseudo de Hunter</label>
           <input
@@ -81,6 +86,9 @@ export function Inscription({ partie, onInscrit }: { partie: Partie; onInscrit: 
         )}
         <button type="submit" className="gi-btn-encre" disabled={!valide || etape !== 'saisie'}>
           {etape === 'position' ? 'Recherche de ta position…' : etape === 'envoi' ? 'Inscription…' : 'S’inscrire'}
+        </button>
+        <button type="button" className="gi-lien" onClick={onAutrePartie}>
+          Rejoindre une autre partie
         </button>
       </form>
     </div>

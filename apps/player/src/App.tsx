@@ -83,7 +83,9 @@ export function App() {
     u.searchParams.delete('balise');
     history.replaceState(null, '', u);
   }, [ecran, baliseLien]);
-  useEffect(() => window.scrollTo(0, 0), [onglet, sous, ecran]);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [onglet, sous, ecran]);
 
   const finEtape = () => {
     setExamenOuvert(false);
@@ -93,6 +95,7 @@ export function App() {
 
   return (
     <div className="app">
+      {jeu.phase !== 'sans_partie' && (
       <header className="barre">
         {enJeu ? (
           <>
@@ -110,6 +113,7 @@ export function App() {
           <span className="marque">Greed Island</span>
         )}
       </header>
+      )}
 
       {jeu.alerte && (
         <Annonce
@@ -149,12 +153,16 @@ export function App() {
               <button className="gi-btn-encre" onClick={() => void jeu.rafraichir()}>
                 Réessayer
               </button>
+              <button className="gi-lien" onClick={jeu.quitterPartie}>
+                Rejoindre une autre partie
+              </button>
             </section>
           </div>
         )}
         {jeu.phase === 'non_inscrit' && partie && (
           <Inscription
             partie={partie}
+            onAutrePartie={jeu.quitterPartie}
             onInscrit={(s, k) => {
               setKit(k);
               jeu.ouvrirSession(s);

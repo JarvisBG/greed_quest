@@ -112,7 +112,9 @@ function Offre({ partieId, enchere, jenny, onFait }: { partieId: string; enchere
   const min = offreMin(enchere);
   const [montant, setMontant] = useState(String(min));
   const [erreur, setErreur] = useState<string | null>(null);
-  useEffect(() => setMontant(String(min)), [min]);
+  useEffect(() => {
+    setMontant(String(min));
+  }, [min]);
   const n = Math.floor(Number(montant) || 0);
   const encherir = async () => {
     setErreur(null);

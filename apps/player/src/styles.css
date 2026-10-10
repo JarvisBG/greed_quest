@@ -69,18 +69,68 @@
 p { margin: 0; }
 .actions { display: grid; gap: 10px; }
 
-/* ---------- Entrée ---------- */
-.entree-titre { position: relative; overflow: hidden; padding: 34px 18px 26px; }
-.entree-titre h1 { position: relative; margin: 0; font: 400 clamp(46px, 15vw, 64px)/0.92 var(--f-titre); }
-.entree-titre p { position: relative; margin-top: 10px; font-weight: 600; }
-.entree-titre .gi-concentration { inset: -60% -50%; opacity: 0.18; }
+/* ---------- Récitatif : encadré de narration du manga ---------- */
+.recitatif {
+  position: relative; z-index: 1;
+  justify-self: start;
+  max-width: 30ch;
+  background: var(--case);
+  border: 2px solid var(--encre);
+  padding: 8px 12px;
+  font: 600 16px/1.35 var(--f-texte);
+  text-wrap: balance;
+}
+
+/* ---------- Entrée : case-titre, lignes de concentration, dos de carte ---------- */
+.entree-titre {
+  overflow: hidden;
+  padding: 26px 18px 18px;
+  gap: 18px;
+  justify-items: center;
+}
+.entree-titre .gi-concentration { inset: -12% -30%; }
+.entree-titre .entree-dos {
+  width: min(32vw, 132px);
+  rotate: -8deg;
+  filter: drop-shadow(0 12px 14px rgba(0, 0, 0, 0.3));
+}
+.entree-titre h1 {
+  position: relative;
+  margin: 0;
+  text-align: center;
+  font: 400 clamp(54px, 17vw, 76px)/0.9 var(--f-titre);
+  letter-spacing: -0.01em;
+  -webkit-text-stroke: 10px var(--case);
+  paint-order: stroke fill;
+}
+.entree-titre .recitatif { justify-self: stretch; max-width: none; text-align: center; }
 .champ-groupe { display: grid; gap: 8px; }
 .champ-groupe label { font: 800 16px var(--f-texte); }
 
-/* ---------- Kit ---------- */
-.kit-grille { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: center; }
-.montant { font: 800 44px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
-.montant small { font: 600 20px var(--f-texte); margin-left: 4px; }
+/* ---------- Kit : la carte de sort se retourne sur les lignes de concentration ---------- */
+.kit-titre { padding-block: 14px 16px; }
+.kit-scene { overflow: hidden; justify-items: center; padding-block: 26px 16px; perspective: 900px; }
+.kit-scene .gi-concentration { inset: -40%; animation: kit-lignes 0.9s var(--sortie) 0.2s both; }
+.kit-carte {
+  position: relative;
+  width: min(64vw, 250px);
+  aspect-ratio: 63 / 88;
+  transform-style: preserve-3d;
+  animation: kit-retourne 1.1s var(--sortie) 0.35s both;
+}
+.kit-carte > .gi-carte { position: absolute; inset: 0; backface-visibility: hidden; }
+.kit-carte > .dos { transform: rotateY(180deg); }
+.kit-scene .recitatif { justify-self: stretch; max-width: none; }
+@keyframes kit-retourne {
+  from { transform: translateY(24px) rotateY(-180deg) rotateZ(4deg) scale(0.82); }
+  to { transform: translateY(0) rotateY(0deg) rotateZ(-2deg) scale(1); }
+}
+@keyframes kit-lignes { from { opacity: 0; transform: scale(1.25); } to { opacity: 1; transform: none; } }
+.kit-jenny { grid-template-columns: 1fr auto; align-items: baseline; padding-block: 14px; }
+.kit-jenny span { font: 800 17px var(--f-texte); }
+.kit-jenny b { font: 800 40px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.kit-jenny b small { font: 600 18px var(--f-texte); margin-left: 4px; }
+.kit-jenny .doux { grid-column: 1 / -1; }
 
 /* ---------- Questionnaires (Examen, Nen) ---------- */
 .question-num { font: 800 15px var(--f-chiffre); letter-spacing: 0.04em; }

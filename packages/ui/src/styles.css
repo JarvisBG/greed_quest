@@ -138,7 +138,10 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55);
 }
 .gi-carte .c-num { font: 800 9cqi/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
-.gi-carte .c-nom { font: 800 6.4cqi/1.1 var(--f-texte); text-align: center; text-wrap: balance; overflow-wrap: anywhere; }
+.gi-carte .c-num.long { font-size: 7.4cqi; }
+/* Noms longs (« Pénétration », « Second souffle ») : plus petits, coupés à la syllabe, jamais en plein milieu. */
+.gi-carte .c-nom { font: 800 6.4cqi/1.1 var(--f-texte); text-align: center; text-wrap: balance; hyphens: auto; overflow-wrap: break-word; }
+.gi-carte .c-nom.long { font-size: 5.6cqi; }
 .gi-rang {
   font: 400 7cqi/1 var(--f-titre);
   padding: 1.6cqi 2.4cqi;

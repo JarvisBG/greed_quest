@@ -165,6 +165,12 @@ export interface Catalogue {
   numeroDe: (cardId: string) => number;
 }
 
+/** Ce qu'un joueur voit d'une carte du catalogue : numéro, nom, rang, texte d'ambiance, limite d'exemplaires (RG-8.2). */
+export function vueCarte(cat: Catalogue, cardId: string, limites: Record<Rank, number>) {
+  const x = cat.cartes.find((k) => k.id === cardId);
+  return { numero: x?.numero ?? null, nom: x?.nom ?? '?', rang: x?.rang ?? null, texte: x?.texte ?? null, limite: x ? limites[x.rang] : null };
+}
+
 export async function loadCatalogue(db: DbOrTx, partieId: string): Promise<Catalogue> {
   const rows = await db.select().from(cartes).where(eq(cartes.partieId, partieId)).orderBy(cartes.numero);
   const byId = new Map(rows.map((c) => [c.id, c]));

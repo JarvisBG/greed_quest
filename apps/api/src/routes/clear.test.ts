@@ -21,7 +21,7 @@ beforeAll(async () => {
   await t.setEtat('en_cours', { inscriptionsOuvertes: true, demarreeA: t.clock.t });
   gon = await t.inscrire('Gon');
   kirua = await t.inscrire('Kirua');
-  // Gon a 29 vraies cartes désignées et une contrefaçon de la 15e (page 2).
+  // Gon a 29 vraies cartes désignées et une contrefaçon de la 15e du catalogue (n° 010, page 1 du Book).
   for (const [i, carteId] of t.carteIds.entries()) {
     const id = newId();
     items.push(id);
@@ -50,7 +50,7 @@ describe('RG-13 Clear', () => {
   });
 
   it('RG-13.1 : contrefaçon présente → refus, la page est indiquée mais pas la carte', async () => {
-    expect((await post('/clear', gon.token)).json()).toMatchObject({ ok: false, code: 'contrefacon', message: 'Une contrefaçon se cache en page 2' });
+    expect((await post('/clear', gon.token)).json()).toMatchObject({ ok: false, code: 'contrefacon', message: 'Une contrefaçon se cache en page 1' });
   });
 
   it('RG-13.1 : Book complet → Book gelé, insensible aux sorts ; l’équipe est prévenue', async () => {
@@ -81,7 +81,7 @@ describe('RG-13 Clear', () => {
   it('RG-13.3 : le gagnant choisit 3 cartes désignées distinctes = lots réels', async () => {
     expect((await post('/clear/recompenses', gon.token, { itemIds: [items[0], items[0], items[1]] })).json()).toMatchObject({ ok: false, message: 'Choisis 3 cartes différentes' });
     const res = await post('/clear/recompenses', gon.token, { itemIds: items.slice(0, 3) });
-    expect(res.json().lots[0]).toEqual({ carte: 'Couronne du Roi-Dragon', lotReel: 'Lot n°1' });
+    expect(res.json().lots[0]).toEqual({ carte: 'Le bonheur du détenteur', lotReel: 'Lot n°1' });
     expect((await post('/clear/recompenses', gon.token, { itemIds: items.slice(3, 6) })).json().code).toBe('deja_choisi');
   });
 });

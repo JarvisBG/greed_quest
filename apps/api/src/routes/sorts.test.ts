@@ -152,7 +152,7 @@ describe('Amendement 2026-10-09 : sort Regard', () => {
     recues.length = 0;
     const res = await lancer(leorio, { sort: 'regard', itemId: regard, cibleId: gon.id });
     expect(res.json()).toMatchObject({ ok: true, sort: 'regard', resultat: 'reussi' });
-    expect(res.json().cartes).toContainEqual(expect.objectContaining({ numero: 1, rang: 'SS', contrefacon: false }));
+    expect(res.json().cartes).toContainEqual(expect.objectContaining({ numero: 0, rang: 'SS', contrefacon: false }));
     expect(recues).toContainEqual({ a: gon.id, evenement: 'sort_recu', data: { lanceur: null, sort: 'regard', resultat: 'reussi' } });
     expect(recues.find((e) => e.a === 'tracker' && e.evenement === 'fil')?.data).toMatchObject({ lanceur: null, cible: null, sort: 'regard' });
   });

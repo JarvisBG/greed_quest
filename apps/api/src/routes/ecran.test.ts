@@ -26,7 +26,7 @@ const get = (url: string, token?: string) => t.app.inject({ url: `/parties/${t.p
 describe('Écran géant : état à l’ouverture (GET /ecran, public)', () => {
   it('classement live, balises actives par zone, évènements, fil rejoué', async () => {
     await t.app.gq.runner.run(t.partieId, SYSTEME, async (c) => {
-      c.emit({ type: 'tracker' }, 'fil', { type: 'tirage', pseudo: 'Gon', carte: 'Boussole céleste', rang: 'A', heureJeu: c.now });
+      c.emit({ type: 'tracker' }, 'fil', { type: 'tirage', pseudo: 'Gon', carte: "Le dragon qui s'emballe", rang: 'A', heureJeu: c.now });
     });
     const res = await get('/ecran');
     expect(res.statusCode).toBe(200);
@@ -36,7 +36,7 @@ describe('Écran géant : état à l’ouverture (GET /ecran, public)', () => {
     expect(e.partie.zones[0]).toMatchObject({ nom: expect.any(String), polygone: expect.arrayContaining([expect.objectContaining({ lat: expect.any(Number) })]) });
     expect(e.classement.map((l: { pseudo: string }) => l.pseudo).sort()).toEqual(['Gon', 'Kirua']);
     expect(Object.values(e.balisesParZone as Record<string, number>).reduce((a, b) => a + b, 0)).toBeGreaterThan(0);
-    expect(e.fil).toEqual([expect.objectContaining({ type: 'tirage', carte: 'Boussole céleste' })]);
+    expect(e.fil).toEqual([expect.objectContaining({ type: 'tirage', carte: "Le dragon qui s'emballe" })]);
     expect(e.clear).toBeNull();
   });
 

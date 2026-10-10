@@ -179,6 +179,8 @@ export const CatalogueComposition = z.object({
         nom: z.string().trim().min(1).max(60),
         rang: z.enum(['SS', 'S', 'A', 'B', 'C', 'D']),
         lotReel: z.string().max(120).nullable().optional(),
+        /** Texte d'ambiance ; à défaut, celui de la banque si le numéro et le nom y correspondent. */
+        texte: z.string().trim().max(160).nullable().optional(),
         numero: z.number().int().min(0, 'Numéro de 000 à 099').max(99, 'Numéro de 000 à 099').optional(),
       }),
     )

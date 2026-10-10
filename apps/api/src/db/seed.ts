@@ -1,6 +1,6 @@
 // Données de départ : préréglages système (RG-14.5) et partie de démonstration
-// (catalogue de 30 cartes RG-8.1, zones, balises), en brouillon (RG-4.1).
-import type { Rank } from '@gq/shared';
+// (catalogue de 30 cartes de l'anime RG-8.1, zones, balises), en brouillon (RG-4.1).
+import { carteDeBanque, type CarteBanque } from '@gq/shared';
 import { SYSTEM_PRESETS, presetSettings, type LatLng, type Polygon } from '@gq/engine';
 import { eq } from 'drizzle-orm';
 import { Refus } from '../errors.js';
@@ -8,39 +8,16 @@ import { newBeaconId, newId, newSecret } from '../ids.js';
 import type { DbOrTx } from './client.js';
 import { balises, cartes, parties, prereglages, zones, type ZoneType } from './schema.js';
 
-/** Catalogue proposé (habillage définitif à trancher, REGLES.md « Points ouverts »). Ordre : 001 → 030. */
-export const DEMO_CATALOGUE: readonly { nom: string; rang: Rank }[] = [
-  { nom: 'Couronne du Roi-Dragon', rang: 'SS' },
-  { nom: 'Cœur de l’Île', rang: 'SS' },
-  { nom: 'Épée des Sept Vents', rang: 'S' },
-  { nom: 'Miroir des Âmes', rang: 'S' },
-  { nom: 'Clé du Labyrinthe', rang: 'S' },
-  { nom: 'Boussole céleste', rang: 'A' },
-  { nom: 'Lanterne éternelle', rang: 'A' },
-  { nom: 'Grimoire interdit', rang: 'A' },
-  { nom: 'Plume de phénix', rang: 'A' },
-  { nom: 'Sablier d’argent', rang: 'A' },
-  { nom: 'Masque du bouffon', rang: 'B' },
-  { nom: 'Bottes de sept lieues', rang: 'B' },
-  { nom: 'Fiole de jouvence', rang: 'B' },
-  { nom: 'Carte au trésor', rang: 'B' },
-  { nom: 'Anneau d’ombre', rang: 'B' },
-  { nom: 'Dé du destin', rang: 'B' },
-  { nom: 'Pomme d’or', rang: 'C' },
-  { nom: 'Cape de brume', rang: 'C' },
-  { nom: 'Flûte enchantée', rang: 'C' },
-  { nom: 'Gemme de feu', rang: 'C' },
-  { nom: 'Corde infinie', rang: 'C' },
-  { nom: 'Bourse sans fond', rang: 'C' },
-  { nom: 'Œil de chouette', rang: 'C' },
-  { nom: 'Pain magique', rang: 'D' },
-  { nom: 'Lampe de poche', rang: 'D' },
-  { nom: 'Galet chanceux', rang: 'D' },
-  { nom: 'Ticket de bus', rang: 'D' },
-  { nom: 'Bonbon arc-en-ciel', rang: 'D' },
-  { nom: 'Chaussette perdue', rang: 'D' },
-  { nom: 'Fourchette dorée', rang: 'D' },
-];
+/**
+ * Catalogue de démonstration : 30 cartes de la banque de l'anime (numéros de l'anime, RG-8.1 amendé),
+ * réparties selon repartitionCatalogue(30) : 1 SS, 4 S, 5 A, 6 B, 7 C, 7 D. Listé par rang décroissant.
+ */
+const DEMO_NUMEROS = [0, 17, 99, 5, 81, 51, 94, 15, 12, 8, 46, 73, 82, 3, 10, 13, 21, 22, 79, 90, 14, 83, 95, 11, 25, 84, 23, 52, 76, 63];
+export const DEMO_CATALOGUE: readonly CarteBanque[] = DEMO_NUMEROS.map((n) => {
+  const c = carteDeBanque(n);
+  if (!c) throw new Error(`Carte ${n} absente de la banque`);
+  return c;
+});
 
 const DEMO_ZONES: readonly { nom: string; type: ZoneType }[] = [
   { nom: 'Masadora', type: 'masadora' },
@@ -122,7 +99,7 @@ export async function seedDemoContent(
   }));
   await db.insert(zones).values(zoneRows);
 
-  const carteRows = DEMO_CATALOGUE.map((c, i) => ({ id: newId(), partieId, numero: i + 1, nom: c.nom, rang: c.rang }));
+  const carteRows = DEMO_CATALOGUE.map((c) => ({ id: newId(), partieId, numero: c.numero, nom: c.nom, rang: c.rang, texte: c.texte }));
   await db.insert(cartes).values(carteRows);
 
   const nb = o.nbBalises ?? 20;

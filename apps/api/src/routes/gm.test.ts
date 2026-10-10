@@ -94,7 +94,7 @@ describe('RG-6 balises pilotées par le GM', () => {
 
   it('RG-8.1 : lot réel d’une carte, visible de l’équipe seulement', async () => {
     await req('PATCH', `/cartes/${t.carteIds[0]}`, gm, { lotReel: 'Console de jeu' });
-    expect((await req('GET', '/cartes', pnj)).json().cartes[0]).toMatchObject({ numero: 1, lotReel: 'Console de jeu' });
+    expect((await req('GET', '/cartes', pnj)).json().cartes[0]).toMatchObject({ numero: 0, lotReel: 'Console de jeu' });
     expect((await t.app.inject({ url: `/parties/${t.partieId}/cartes` })).json().cartes[0]).not.toHaveProperty('lotReel');
   });
 });

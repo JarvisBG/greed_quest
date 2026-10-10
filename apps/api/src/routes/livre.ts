@@ -8,7 +8,8 @@ import { requireRole } from '../auth/guard.js';
 import type { ActionCtx } from '../core/runner.js';
 import { engagedItems } from '../core/echanges.js';
 import { ENGAGEE } from '../core/echanges.js';
-import { actionPatch, isLivreGele, loadBook, loadCatalogue, loadJoueur, loadJoueurs, saveBooks, updateJoueur } from '../core/state.js';
+import { actionPatch, isLivreGele, limitesOf, loadBook, loadCatalogue, loadJoueur, loadJoueurs, saveBooks, updateJoueur, vueCarte } from '../core/state.js';
+import { paramsOf } from '../core/params.js';
 import { refus, send } from '../http.js';
 import { parse } from '../validation.js';
 import { introuvable } from '../errors.js';
@@ -24,14 +25,13 @@ export function heureAffichee(a: number, gameNow: number, realNow: number): stri
 
 /** Livre d'un joueur, vu par lui-même (`equipe` faux) ou par le GM (`equipe` vrai : vérité de chaque carte). */
 export async function vueLivre(c: ActionCtx, partieId: string, joueurId: string, equipe: boolean) {
-  const [book, cat, joueurs] = await Promise.all([loadBook(c.tx, joueurId), loadCatalogue(c.tx, partieId), loadJoueurs(c.tx, partieId)]);
+  const [book, cat, joueurs, p] = await Promise.all([loadBook(c.tx, joueurId), loadCatalogue(c.tx, partieId), loadJoueurs(c.tx, partieId), paramsOf(c.tx, c.partie)]);
+  const limites = limitesOf(p);
   const pseudo = new Map(joueurs.map((j) => [j.id, j.pseudo]));
   const nom = (id: string) => pseudo.get(id) ?? '?';
   const engagees = await engagedItems(c.tx, partieId, joueurId, c.now);
-  const carte = (cardId: string) => {
-    const x = cat.cartes.find((k) => k.id === cardId);
-    return { numero: x?.numero ?? null, nom: x?.nom ?? '?', rang: x?.rang ?? null };
-  };
+  // RG-8.2 : la limite affichée (« A-3 ») est celle de la partie, pas celle de l'anime.
+  const carte = (cardId: string) => vueCarte(cat, cardId, limites);
   // RG-8.14 : provenance en clair (le donneur est nommé, RG-8.8).
   const provenance = (o: Origine): string => {
     switch (o.type) {

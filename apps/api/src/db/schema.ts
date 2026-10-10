@@ -82,6 +82,8 @@ export const cartes = pgTable(
     rang: text('rang').$type<Rank>().notNull(),
     designee: boolean('designee').notNull().default(true),
     lotReel: text('lot_reel'),
+    /** Texte d'ambiance (banque de l'anime, réécrit en description) : aucun effet, affiché sur la carte. */
+    texte: text('texte'),
   },
   (t) => [uniqueIndex('cartes_partie_numero').on(t.partieId, t.numero)],
 );

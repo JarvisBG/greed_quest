@@ -21,6 +21,7 @@ import {
   PrereglageApplication,
   PrereglageCreation,
   ZoneCreation,
+  carteDeBanque,
 } from '@gq/shared';
 import { and, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
@@ -37,6 +38,12 @@ import { refus, send } from '../http.js';
 import { newBeaconId, newId, newSecret } from '../ids.js';
 import { parse } from '../validation.js';
 import { visitesParZone, emitBeaconChanges } from './scan.js';
+
+/** Texte d'ambiance de la banque quand le GM reprend une carte de l'anime telle quelle (même numéro, même nom). */
+const texteDeBanque = (numero: number | undefined, nom: string): string | null => {
+  const b = numero === undefined ? undefined : carteDeBanque(numero);
+  return b && b.nom === nom ? b.texte : null;
+};
 
 type P = { Params: { partieId: string } };
 type PI = { Params: { partieId: string; id: string } };
@@ -248,7 +255,7 @@ export async function gmRoutes(app: FastifyInstance) {
   app.get<P>('/parties/:partieId/cartes', async (req) => {
     const staff = req.session?.partieId === req.params.partieId && req.session.role !== 'joueur';
     const rows = await app.gq.db.select().from(cartes).where(eq(cartes.partieId, req.params.partieId)).orderBy(cartes.numero);
-    return { ok: true, cartes: rows.map((x) => ({ id: x.id, numero: x.numero, nom: x.nom, rang: x.rang, designee: x.designee, ...(staff ? { lotReel: x.lotReel } : {}) })) };
+    return { ok: true, cartes: rows.map((x) => ({ id: x.id, numero: x.numero, nom: x.nom, rang: x.rang, texte: x.texte, designee: x.designee, ...(staff ? { lotReel: x.lotReel } : {}) })) };
   });
 
   // RG-8.1 (N réglable) : le GM compose le catalogue avant le démarrage ; N = nombre de cartes (paramètre verrouillé).
@@ -267,7 +274,15 @@ export async function gmRoutes(app: FastifyInstance) {
       await c.tx.delete(cartes).where(eq(cartes.partieId, c.partie.id));
       await c.tx.insert(cartes).values(
         // RG-8.1 amendé : numéro de l'anime s'il est donné, sinon 001..N dans l'ordre.
-        input.cartes.map((x, i) => ({ id: newId(), partieId: c.partie.id, numero: x.numero ?? i + 1, nom: x.nom, rang: x.rang, lotReel: x.lotReel ?? null })),
+        input.cartes.map((x, i) => ({
+          id: newId(),
+          partieId: c.partie.id,
+          numero: x.numero ?? i + 1,
+          nom: x.nom,
+          rang: x.rang,
+          lotReel: x.lotReel ?? null,
+          texte: x.texte ?? texteDeBanque(x.numero, x.nom),
+        })),
       );
       const n = input.cartes.length;
       const settings = { ...settingsOf(c.partie), cartesDesignees: { mode: 'verrouille' as const, value: n } };

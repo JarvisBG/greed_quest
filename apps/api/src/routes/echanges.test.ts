@@ -68,7 +68,7 @@ describe('RG-11.1 amendé : échange à la Pokémon', () => {
 
   it('chacun voit la part de l’autre ; modifier sa part annule les validations', async () => {
     const res = await post(kirua, `echanges/${sessionId}/offre`, { itemIds: [], jenny: 10 });
-    expect(res.json().echange.sonPart.cartes[0]).toMatchObject({ itemId: carteGon, nom: 'Épée des Sept Vents', rang: 'S' });
+    expect(res.json().echange.sonPart.cartes[0]).toMatchObject({ itemId: carteGon, nom: 'Maid panda', rang: 'S' });
     await post(gon, `echanges/${sessionId}/valider`);
     const modif = await post(kirua, `echanges/${sessionId}/offre`, { itemIds: [], jenny: 20 });
     expect(modif.json().echange).toMatchObject({ jeValide: false, ilValide: false });

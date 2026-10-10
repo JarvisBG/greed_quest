@@ -37,6 +37,7 @@ import {
   actionPatch,
   catalogForDraw,
   limitesOf,
+  vueCarte,
   loadActiveEvents,
   loadBeacons,
   loadBook,
@@ -227,7 +228,7 @@ export async function scanRoutes(app: FastifyInstance) {
 
       const vue = gains.map((g) =>
         g.kind === 'carte'
-          ? { kind: 'carte' as const, carteId: g.cardId, nom: cat.nomDe(g.cardId), rang: g.rank }
+          ? { kind: 'carte' as const, carteId: g.cardId, ...vueCarte(cat, g.cardId, limites), rang: g.rank }
           : g.kind === 'sort'
             ? { kind: 'sort' as const, sort: g.spell }
             : { kind: 'jenny' as const, montant: g.amount },

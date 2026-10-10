@@ -51,6 +51,18 @@ describe('RG-8.1 : N réglable, catalogue composé par le GM avant le démarrage
     await req('PUT', '/catalogue', gm, { cartes: catalogue(20) }); // état attendu par les tests suivants
   });
 
+  it('RG-8.1 : texte d’ambiance repris de la banque si la carte de l’anime est reprise telle quelle, sinon celui du GM ou rien', async () => {
+    const cs = catalogue(14).map((c, i) => ({ ...c, numero: [94, 0, 17, 99, 51, 46, 82, 73, 83, 21, 79, 11, 25, 84][i]! }));
+    cs[0] = { ...cs[0]!, nom: 'L\'épée du vol' }; // nom de la banque : texte repris
+    cs[1] = { ...cs[1]!, nom: 'Le bonheur du détenteur', texte: 'Texte du GM' } as (typeof cs)[number];
+    expect((await req('PUT', '/catalogue', gm, { cartes: cs })).json()).toMatchObject({ ok: true });
+    const cartes = (await req('GET', '/cartes')).json().cartes as { numero: number; texte: string | null }[];
+    expect(cartes.find((c) => c.numero === 94)?.texte).toBe('Une épée légendaire dont chaque coup vole une carte.');
+    expect(cartes.find((c) => c.numero === 0)?.texte).toBe('Texte du GM');
+    expect(cartes.find((c) => c.numero === 17)?.texte).toBeNull(); // nom inventé : pas de texte de la banque
+    await req('PUT', '/catalogue', gm, { cartes: catalogue(20) });
+  });
+
   it('démarrage refusé si le catalogue ne compte pas N cartes désignées', async () => {
     await req('PUT', '/parametres', gm, { cle: 'cartesDesignees', reglage: { mode: 'verrouille', value: 25 } });
     await req('POST', '/cycle', gm, { action: 'ouvrir_inscriptions' });

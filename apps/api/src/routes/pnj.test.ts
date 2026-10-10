@@ -101,7 +101,7 @@ describe('checkpoints PNJ', () => {
 
   it('défi réussi : le PNJ scanne la licence et donne une carte du stock + jenny', async () => {
     const res = await post(`/checkpoints/${cp}/reussite`, pnj, { licence: await licence(gon), carteId: t.carteIds[12], jenny: 20 });
-    expect(res.json()).toMatchObject({ ok: true, joueur: 'Gon', cartes: ['Fiole de jouvence'] });
+    expect(res.json()).toMatchObject({ ok: true, joueur: 'Gon', cartes: ['La canne du châtiment céleste'] });
     const cartes = await t.db.select().from(exemplaires).where(eq(exemplaires.joueurId, gon.id));
     expect(cartes.some((x) => x.origine.type === 'pnj')).toBe(true);
     expect((await joueur(gon.id)).jenny).toBe(85);

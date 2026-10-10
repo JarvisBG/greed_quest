@@ -28,15 +28,21 @@ describe('RG-8.5 Book du joueur', () => {
     const l = res.json();
     expect(l).toMatchObject({ ok: true, gele: false, total: 30, cartesDesignees: 2 });
     expect(l.pages).toHaveLength(5); // 30 désignés + 15 libres (sort du kit et doublon dedans)
-    expect(l.pages[0][0]).toMatchObject({ etat: 'plein', numero: 1, nom: 'Couronne du Roi-Dragon', provenance: 'Volée à Kirua' });
-    expect(l.pages[0][5]).toMatchObject({ badge: 'contrefacon', provenance: 'Duplication' });
-    expect(l.pages[2][9]).toMatchObject({ etat: 'perdu', message: expect.stringMatching(/^Volée par Kirua à \d\dh\d\d$/) });
+    expect(l.pages[0][0]).toMatchObject({ etat: 'plein', numero: 0, nom: 'Le bonheur du détenteur', provenance: 'Volée à Kirua' });
+    expect(l.pages[1][6]).toMatchObject({ badge: 'contrefacon', provenance: 'Duplication' });
+    expect(l.pages[1][8]).toMatchObject({ etat: 'perdu', message: expect.stringMatching(/^Volée par Kirua à \d\dh\d\d$/) });
     expect(l.libresUtilises).toBe(2);
+  });
+
+  it('RG-8.2 : chaque carte montre son texte d’ambiance et la limite d’exemplaires de la partie (« SS-1 »)', async () => {
+    const l = (await t.app.inject({ url: `/parties/${t.partieId}/livre`, headers: t.bearer(gon.token) })).json();
+    expect(l.pages[0][0]).toMatchObject({ rang: 'SS', texte: expect.stringContaining('10 000 habitants'), limite: expect.any(Number) });
+    expect(l.pages[0][1]).toMatchObject({ etat: 'vide', carte: { texte: expect.any(String), limite: expect.any(Number) } });
   });
 
   it('RG-8.5 : un emplacement désigné vide montre la carte qui manque ; un emplacement libre non', async () => {
     const l = (await t.app.inject({ url: `/parties/${t.partieId}/livre`, headers: t.bearer(gon.token) })).json();
-    expect(l.pages[0][1]).toMatchObject({ etat: 'vide', designe: true, carte: { numero: 2 } });
+    expect(l.pages[0][1]).toMatchObject({ etat: 'vide', designe: true, carte: { numero: 3 } });
     expect(l.pages[0][0]).toMatchObject({ designe: true });
     expect(l.pages[3][0]).toMatchObject({ etat: 'plein', designe: false });
     expect(l.pages[4][4]).toEqual({ etat: 'vide', designe: false });
@@ -50,13 +56,13 @@ describe('RG-3.1 Book d’un joueur pour le GM', () => {
     const url = `/parties/${t.partieId}/joueurs/${gon.id}/livre`;
     const l = (await t.app.inject({ url, headers: t.bearer(gm) })).json();
     expect(l).toMatchObject({ ok: true, pseudo: 'Gon', cartesDesignees: 2, total: 30 });
-    expect(l.pages[0][5]).toMatchObject({ itemId: expect.any(String), verite: { contrefacon: 'copie', marque: 'creee', maudite: false } });
+    expect(l.pages[1][6]).toMatchObject({ itemId: expect.any(String), verite: { contrefacon: 'copie', marque: 'creee', maudite: false } });
     expect(l.pages[0][0]).toMatchObject({ verite: { contrefacon: null } });
     expect((await t.app.inject({ url, headers: t.bearer(pnj) })).statusCode).toBe(403);
     expect((await t.app.inject({ url, headers: t.bearer(kirua.token) })).statusCode).toBe(403);
     // Le joueur ne reçoit jamais la vérité.
     const propre = (await t.app.inject({ url: `/parties/${t.partieId}/livre`, headers: t.bearer(gon.token) })).json();
-    expect(propre.pages[0][5].verite).toBeUndefined();
+    expect(propre.pages[1][6].verite).toBeUndefined();
   });
 
   it('RG-13.1 : un Book gelé (Clear déclaré) apparaît dans la liste des joueurs de l’équipe', async () => {

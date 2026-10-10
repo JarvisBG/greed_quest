@@ -1,0 +1,1 @@
+ALTER TABLE "cartes" ADD COLUMN "texte" text;

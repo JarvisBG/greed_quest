@@ -11,11 +11,12 @@ beforeAll(async () => {
 afterAll(() => t.close());
 
 describe('schéma et seed', () => {
-  it('RG-8.1 : catalogue de 30 cartes numérotées, 2 SS / 3 S / 5 A / 6 B / 7 C / 7 D', async () => {
+  it('RG-8.1 : catalogue de 30 cartes de l’anime, numéros de l’anime, 1 SS / 4 S / 5 A / 6 B / 7 C / 7 D, texte d’ambiance', async () => {
     const rows = await t.db.select().from(cartes).where(eq(cartes.partieId, t.partieId));
-    expect(rows.map((c) => c.numero).sort((a, b) => a - b)).toEqual(Array.from({ length: 30 }, (_, i) => i + 1));
+    expect(rows.map((c) => c.numero).sort((a, b) => a - b)).toEqual([0, 3, 5, 8, 10, 11, 12, 13, 14, 15, 17, 21, 22, 23, 25, 46, 51, 52, 63, 73, 76, 79, 81, 82, 83, 84, 90, 94, 95, 99]);
+    expect(rows.find((c) => c.numero === 0)).toMatchObject({ nom: 'Le bonheur du détenteur', rang: 'SS', texte: expect.stringContaining('10 000 habitants') });
     const parRang = Object.fromEntries(['SS', 'S', 'A', 'B', 'C', 'D'].map((r) => [r, rows.filter((c) => c.rang === r).length]));
-    expect(parRang).toEqual({ SS: 2, S: 3, A: 5, B: 6, C: 7, D: 7 });
+    expect(parRang).toEqual({ SS: 1, S: 4, A: 5, B: 6, C: 7, D: 7 });
   });
 
   it('RG-4.1 : la partie démarre en brouillon avec les paramètres du préréglage', async () => {

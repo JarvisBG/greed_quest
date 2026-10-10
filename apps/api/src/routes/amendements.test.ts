@@ -51,7 +51,7 @@ describe('RG-8.5 amendé : cacher une carte (POST /book/deplacer)', () => {
     const x = await donnerCarte(gon.id, 3);
     expect((await post(gon, '/book/deplacer', { itemId: x, cacher: true })).json()).toMatchObject({ ok: true, cachee: true });
     const l = (await get(gon, '/livre')).json();
-    expect(l.pages[0][2]).toMatchObject({ etat: 'vide', designe: true });
+    expect(l.pages[2][9]).toMatchObject({ etat: 'vide', designe: true }); // carteIds[2] = 099, dernière place fixe
     expect(l.pages.flat().find((s: { itemId?: string }) => s.itemId === x)).toMatchObject({ designe: false, cachee: true });
     expect(l.cartesDesignees).toBe(0); // RG-13 : une carte cachée ne compte pas
     expect((await post(gon, '/book/deplacer', { itemId: x, cacher: false })).json()).toMatchObject({ ok: true, cachee: false });
@@ -95,7 +95,7 @@ describe('RG-10 amendé : Vol, Pickpocket, Clairvoyance', () => {
     recues.length = 0;
     const res = await lancer(gon, { sort: 'clairvoyance', itemId: clair, cibleId: leorio.id });
     expect(res.json()).toMatchObject({ ok: true, sort: 'clairvoyance', resultat: 'reussi' });
-    expect(res.json().cartes).toContainEqual(expect.objectContaining({ numero: 7 }));
+    expect(res.json().cartes).toContainEqual(expect.objectContaining({ numero: 94 }));
     expect(recues).toContainEqual({ a: leorio.id, evenement: 'sort_recu', data: { lanceur: null, sort: 'clairvoyance', resultat: 'reussi' } });
   });
 });

@@ -1,6 +1,6 @@
 // Échanges (RG-11.1 amendé, 11.2, 11.3, 11.6) et enchères d'Antokiba (RG-11.4, 11.5).
 import type { GameState, PlayerStatus, Rank } from '@gq/shared';
-import { transferItem, type Book, type BookItem, type CardItem } from './book.js';
+import { transferItem, type Book, type BookItem, type CardItem, type ObjetItem } from './book.js';
 import { isInRange, isValidPosition, type Position, type RangeSettings } from './geo.js';
 
 /** Délai pour répondre à une proposition d'échange. */
@@ -65,10 +65,11 @@ const refuse = (code: TradeRefusalCode, message: string): TradeResult => ({ ok: 
 
 const isEmpty = (s: TradeSide) => s.itemIds.length === 0 && s.jenny <= 0;
 
-function cardsOf(p: TradeParty, side: TradeSide): CardItem[] | null {
+function cardsOf(p: TradeParty, side: TradeSide): (CardItem | ObjetItem)[] | null {
   if (new Set(side.itemIds).size !== side.itemIds.length) return null;
   const items = side.itemIds.map((id) => p.book.items.find((i) => i.id === id));
-  return items.every((i): i is CardItem => i?.kind === 'carte') ? items : null;
+  // Cartes et objets s'échangent (amendement 2026-10-10) ; les sorts, non.
+  return items.every((i): i is CardItem | ObjetItem => i?.kind === 'carte' || i?.kind === 'objet') ? items : null;
 }
 
 /**
@@ -117,7 +118,7 @@ export function trade(t: TradeInput, rangDe: (cardId: string) => Rank): TradeRes
     recuParA.push(r.item);
   }
 
-  const publicSurEcran = [...cartesA, ...cartesB].some((c) => rangDe(c.cardId) === 'S' || rangDe(c.cardId) === 'SS');
+  const publicSurEcran = [...cartesA, ...cartesB].some((c) => c.kind === 'carte' && (rangDe(c.cardId) === 'S' || rangDe(c.cardId) === 'SS'));
   return {
     ok: true,
     a: { ...t.a, book: bookA, jenny: t.a.jenny - t.donneA.jenny + t.donneB.jenny },

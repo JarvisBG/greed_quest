@@ -1,5 +1,5 @@
 // Livre du joueur (RG-8.5), pertes (RG-8.13) et provenance (RG-8.14).
-import type { SpellType } from '@gq/shared';
+import type { ObjetType, SpellType } from '@gq/shared';
 
 export const FREE_SLOTS = 15;
 export const PAGE_SIZE = 10;
@@ -33,6 +33,8 @@ export interface CardItem {
   marque?: 'creee' | 'demasquee';
   /** Carte maudite (RG-12) : son porteur le sait, les autres la voient normale. Reste maudite en changeant de main. */
   maudite?: true;
+  /** Coffre scellé (objet, amendement 2026-10-10) : ni volable ni prenable par échange forcé jusqu'à cette heure. */
+  coffreJusqua?: number;
 }
 
 /** RG-8.7 : copie ratée de Duplication, ou doublon déguisé par Transformation. */
@@ -45,7 +47,15 @@ export interface SpellItem {
   obtenuA: number;
 }
 
-export type BookItem = CardItem | SpellItem;
+/** Carte objet (amendement 2026-10-10) : section à part du Livre, ne compte pas pour le Clear. */
+export interface ObjetItem {
+  kind: 'objet';
+  id: string;
+  objet: ObjetType;
+  obtenuA: number;
+}
+
+export type BookItem = CardItem | SpellItem | ObjetItem;
 
 /** RG-8.13 : trace d'une carte qui a quitté le Livre. */
 export interface Perte {
@@ -95,6 +105,7 @@ export function layoutBook(book: Book, designees: readonly string[]): BookLayout
   const libresItems: BookItem[] = [];
 
   for (const item of items) {
+    if (item.kind === 'objet') continue; // section des objets, à part (objets.ts)
     // RG-8.9 : une copie démasquée (grisée) libère l'emplacement désigné.
     const grisee = item.kind === 'carte' && item.faux?.nature === 'copie' && item.marque === 'demasquee';
     if (item.kind === 'carte' && !grisee && designees.includes(item.cardId) && !occupant.has(item.cardId)) {
@@ -174,7 +185,7 @@ export function transferItem(
   if (!item) throw new Error(`Élément ${itemId} absent du Livre`);
   let recu: BookItem;
   if (item.kind === 'carte') {
-    const { marque: _oubliee, ...reste } = item;
+    const { marque: _oubliee, coffreJusqua: _ouvert, ...reste } = item;
     recu = { ...reste, origine: t.origine, obtenuA: t.now };
   } else {
     recu = { ...item, obtenuA: t.now };

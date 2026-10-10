@@ -98,8 +98,17 @@ const hasPower = (p: SpellPlayer, power: NenPower) => p.nen === power && !p.pouv
 /** RG-8.11 : une SS ne peut pas être prise dans les 10 min qui suivent son obtention. */
 export function takeableCards(book: Book, now: number, rangDe: (cardId: string) => Rank): CardItem[] {
   return book.items.filter(
-    (i): i is CardItem => i.kind === 'carte' && !(rangDe(i.cardId) === 'SS' && now - i.obtenuA < SS_THEFT_IMMUNITY_MS),
+    (i): i is CardItem =>
+      i.kind === 'carte' &&
+      !(rangDe(i.cardId) === 'SS' && now - i.obtenuA < SS_THEFT_IMMUNITY_MS) &&
+      // Coffre scellé (objet, amendement 2026-10-10).
+      !(i.coffreJusqua !== undefined && i.coffreJusqua > now),
   );
+}
+
+/** Voile d'ombre (objet, amendement 2026-10-10) : le plus ancien du Livre, s'il y en a un. */
+export function voileDe(book: Book): BookItem | undefined {
+  return [...book.items].sort((a, b) => a.obtenuA - b.obtenuA).find((i) => i.kind === 'objet' && i.objet === 'voile');
 }
 
 // --- Sorts offensifs (Vol, Échange forcé, Gel) ---
@@ -250,6 +259,21 @@ export interface SimpleSuccess<T> {
   lanceur: SpellPlayer;
   resultat: T;
   notice: SpellNotice;
+  /** Radar, Regard : Voile d'ombre de la cible consommé (objet, amendement 2026-10-10). */
+  voile?: { cibleBook: Book };
+}
+
+/** Radar et Regard bloqués par un Voile d'ombre : le sort est consommé, le lanceur ne voit rien. */
+function voileBloque<T>(lanceur: SpellPlayer, cible: { id: string; book?: Book }, sort: SpellType, vide: T): SimpleSuccess<T> | null {
+  const voile = cible.book ? voileDe(cible.book) : undefined;
+  if (!voile || !cible.book) return null;
+  return {
+    ok: true,
+    lanceur,
+    resultat: vide,
+    notice: { lanceur: lanceur.id, cible: cible.id, sort, resultat: 'bloque' },
+    voile: { cibleBook: removeItem(cible.book, voile.id) },
+  };
 }
 
 /** Vérifie le lanceur et retire la carte de sort. La Barrière ne se lance pas : elle agit seule. */
@@ -269,11 +293,19 @@ export function castBarrier(): SpellRefusal {
 /** Radar : zone de la dernière position connue d'un joueur choisi. La cible est prévenue (RG-10.5). */
 export function castRadar(
   w: SpellWorld,
-  input: { lanceur: SpellPlayer; itemId: string; cible: { id: string; position: Position | null }; zones: readonly { id: string; polygon: Polygon }[] },
+  input: {
+    lanceur: SpellPlayer;
+    itemId: string;
+    /** `book` : pour le Voile d'ombre de la cible. */
+    cible: { id: string; position: Position | null; book?: Book };
+    zones: readonly { id: string; polygon: Polygon }[];
+  },
 ): SimpleSuccess<{ zoneId: string | null }> | SpellRefusal {
   if (input.cible.id === input.lanceur.id) return refuse('cible_invalide', 'Cible invalide');
   const lanceur = consumeSimple(w, input.lanceur, input.itemId, 'radar');
   if (isRefusal(lanceur)) return lanceur;
+  const voile = voileBloque(lanceur, input.cible, 'radar', { zoneId: null });
+  if (voile) return voile;
   const zoneId = input.cible.position ? zoneOf(input.cible.position, input.zones) : null;
   return {
     ok: true,
@@ -305,6 +337,8 @@ export function castRegard(
   if (input.cible.livreGele) return refuse('cible_livre_gele', 'Ce Livre est protégé');
   const lanceur = consumeSimple(w, input.lanceur, input.itemId, 'regard');
   if (isRefusal(lanceur)) return lanceur;
+  const voile = voileBloque<{ cartes: CarteVue[] }>(lanceur, input.cible, 'regard', { cartes: [] });
+  if (voile) return voile;
   const vues = new Map<string, CarteVue>();
   for (const i of input.cible.book.items) {
     if (i.kind !== 'carte') continue;

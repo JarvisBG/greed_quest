@@ -24,6 +24,8 @@ export const PARAM_KEYS = [
   'agendaIntervalleMin',
   'areneMiseJ',
   'areneDelaiMin',
+  'objetsReplisPct',
+  'coffreMin',
 ] as const;
 export type ParamKey = (typeof PARAM_KEYS)[number];
 
@@ -81,6 +83,9 @@ export const AUTO_FORMULAS: Record<ParamKey, (c: ParamContext) => number> = {
   /** Arène de Soufrabi (amendement 2026-10-09) : mise d'entrée et délai entre deux tentatives d'un joueur. */
   areneMiseJ: () => 30,
   areneDelaiMin: () => 15,
+  // Amendement 2026-10-10 : 1 repli « carte épuisée » sur 3 donne un objet en plus des jenny ; Coffre scellé 20 min.
+  objetsReplisPct: () => 33,
+  coffreMin: () => 20,
 };
 
 /** Calibrage validé le 2026-10-09 (docs/SIMULATION.md) : limites d'exemplaires × 2 par défaut. */

@@ -1,8 +1,9 @@
 // Boutique de Masadora (RG-9) : paquets de sorts par vague, revente, contrefaçons révélées (RG-8.9).
-import type { GameState, PlayerStatus, Rank, SpellType } from '@gq/shared';
+import type { GameState, ObjetType, PlayerStatus, Rank, SpellType } from '@gq/shared';
 import { FREE_SLOTS, addItem, layoutBook, removeItem, type Book, type SpellItem } from './book.js';
 import { isRevealedCopy, trueCardId } from './counterfeits.js';
 import { isValidPosition, type Position } from './geo.js';
+import { DEFAULT_OBJETS_CONFIG, type ObjetsConfig } from './objets.js';
 import { weightedPick, type Rng } from './rng.js';
 
 export const WAVE_DURATION_MS = 20 * 60_000; // RG-9.3
@@ -190,4 +191,23 @@ export function sellCard(c: ShopContext, player: ShopPlayer, itemId: string, ran
     contrefacon,
     cardId,
   };
+}
+
+/**
+ * Revente d'un objet à Masadora (amendement 2026-10-10) : Pépite d'or 30 J, les autres 10 J ;
+ * le Ticket de la Fortune ne se revend pas, il se gratte.
+ */
+export function sellObjet(
+  c: ShopContext,
+  player: ShopPlayer,
+  itemId: string,
+  config: ObjetsConfig = DEFAULT_OBJETS_CONFIG,
+): { ok: true; player: ShopPlayer; prix: number; objet: ObjetType } | ShopRefusal {
+  const bloque = checkShopper(c, player);
+  if (bloque) return bloque;
+  const item = player.book.items.find((i) => i.id === itemId);
+  if (item?.kind !== 'objet') return refuse('carte_absente', 'Choisis un objet de ton Livre');
+  const prix = config.revente[item.objet];
+  if (prix === null) return refuse('revente_interdite', 'Le Ticket de la Fortune ne se revend pas : gratte-le');
+  return { ok: true, player: { ...player, jenny: player.jenny + prix, book: removeItem(player.book, itemId) }, prix, objet: item.objet };
 }

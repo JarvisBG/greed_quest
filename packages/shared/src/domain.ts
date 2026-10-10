@@ -53,6 +53,13 @@ export const SPELL_TYPES = [
 ] as const;
 export type SpellType = (typeof SPELL_TYPES)[number];
 
+/**
+ * Amendement 2026-10-10 : cartes objets (hors collection). Pépite d'or, Ticket de la Fortune, Boussole du chercheur,
+ * Second souffle, Voile d'ombre, Coffre scellé.
+ */
+export const OBJET_TYPES = ['pepite', 'ticket', 'boussole', 'souffle', 'voile', 'coffre'] as const;
+export type ObjetType = (typeof OBJET_TYPES)[number];
+
 /** Sorts offensifs soumis à portée, immunité et délai (RG-10.1 à 10.3). */
 export const OFFENSIVE_SPELLS: readonly SpellType[] = ['vol', 'echange_force', 'gel'];
 

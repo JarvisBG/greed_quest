@@ -31,6 +31,8 @@ export interface ScanContext {
   zonesFermees: ReadonlySet<string>;
   /** K de la règle de la boucle (paramètre kBoucle, RG-14). */
   k: number;
+  /** Second souffle (objet, amendement 2026-10-10) : la boucle (RG-7.1) ne s'applique pas à ce scan. */
+  ignorerBoucle?: boolean;
 }
 
 export type ScanRefusalCode =
@@ -104,7 +106,7 @@ export function checkScan(c: ScanContext): ScanCheck {
   if (c.zonesFermees.has(c.beacon.zoneId)) return refuse('zone_fermee', 'Zone maudite : cette zone est fermée');
 
   // 4. Règle de la boucle (RG-7.1).
-  const reste = loopRemaining(player.historiqueTirages, c.beacon.id, c.k);
+  const reste = c.ignorerBoucle ? 0 : loopRemaining(player.historiqueTirages, c.beacon.id, c.k);
   if (reste > 0) {
     const balises = reste === 1 ? '1 balise différente' : `${reste} balises différentes`;
     return refuse('boucle', `Boucle : scanne encore ${balises}`);

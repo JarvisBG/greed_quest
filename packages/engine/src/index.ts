@@ -18,3 +18,4 @@ export * from './raid.js';
 export * from './anticheat.js';
 export * from './conseils.js';
 export * from './arena.js';
+export * from './objets.js';

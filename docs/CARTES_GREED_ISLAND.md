@@ -151,4 +151,4 @@ Nos effets ne changent pas (règles RG-10) ; seuls les noms affichés changent. 
 
 ## Points à trancher par Sivraj
 1. Signaler un nom qui diffère de la VF que les joueurs connaissent (doublage de l'anime).
-2. **Numérotation** : la règle RG-8.1 numérote le catalogue 001..N. Proposition : afficher sur la carte son **numéro de l'anime** (ex. 094 pour la Lame du bandit) et ranger le Book dans l'ordre de ces numéros. C'est une modification de règle : à valider.
+2. ~~Numérotation~~ : **décidé le 2026-10-10**, amendement RG-8.1 (numéro de l'anime sur la carte, Book dans cet ordre).

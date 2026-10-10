@@ -159,13 +159,23 @@ export const BaliseCreation = z.object({ zoneId: z.string(), libelle: z.string()
 /** RG-8.1 : carte du catalogue (nom, lot réel). */
 /**
  * RG-8.1 (N réglable, décision 2026-10-09) : le GM compose le catalogue avant le démarrage.
- * Toutes les cartes sont désignées, numérotées 001..N dans l'ordre donné.
+ * Toutes les cartes sont désignées. Amendement 2026-10-10 : chaque carte porte son numéro de l'anime (000 à 099,
+ * unique), et le Book suit l'ordre de ces numéros ; sans numéro, les cartes sont numérotées 001..N dans l'ordre donné.
  */
 export const CatalogueComposition = z.object({
   cartes: z
-    .array(z.object({ nom: z.string().trim().min(1).max(60), rang: z.enum(['SS', 'S', 'A', 'B', 'C', 'D']), lotReel: z.string().max(120).nullable().optional() }))
+    .array(
+      z.object({
+        nom: z.string().trim().min(1).max(60),
+        rang: z.enum(['SS', 'S', 'A', 'B', 'C', 'D']),
+        lotReel: z.string().max(120).nullable().optional(),
+        numero: z.number().int().min(0, 'Numéro de 000 à 099').max(99, 'Numéro de 000 à 099').optional(),
+      }),
+    )
     .min(7, 'Au moins 7 cartes')
-    .max(60, 'Au plus 60 cartes'),
+    .max(60, 'Au plus 60 cartes')
+    .refine((cs) => cs.every((c) => c.numero === undefined) || cs.every((c) => c.numero !== undefined), 'Numérote toutes les cartes, ou aucune')
+    .refine((cs) => new Set(cs.map((c) => c.numero)).size === cs.length || cs.every((c) => c.numero === undefined), 'Deux cartes ont le même numéro'),
 });
 export const CarteModification = z.object({ nom: z.string().trim().min(1).max(60).optional(), lotReel: z.string().max(120).nullable().optional() });
 

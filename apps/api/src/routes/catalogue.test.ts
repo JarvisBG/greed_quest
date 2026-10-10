@@ -38,6 +38,19 @@ describe('RG-8.1 : N réglable, catalogue composé par le GM avant le démarrage
     expect(await N()).toBe(20);
   });
 
+  it('RG-8.1 amendé : numéros de l’anime (000 à 099), Book dans leur ordre ; tous ou aucun, sans doublon', async () => {
+    const cs = catalogue(14).map((c, i) => ({ ...c, numero: [94, 0, 17, 99, 51, 46, 82, 73, 83, 21, 79, 11, 25, 84][i]! }));
+    expect((await req('PUT', '/catalogue', gm, { cartes: cs })).json()).toMatchObject({ ok: true, n: 14 });
+    const cartes = (await req('GET', '/cartes')).json().cartes as { numero: number; nom: string }[];
+    expect(cartes.map((c) => c.numero)).toEqual([0, 11, 17, 21, 25, 46, 51, 73, 79, 82, 83, 84, 94, 99]);
+    const melange = cs.map((c, i) => (i === 0 ? { nom: c.nom, rang: c.rang } : c));
+    expect((await req('PUT', '/catalogue', gm, { cartes: melange })).json().message).toContain('Numérote toutes les cartes, ou aucune');
+    const doublon = cs.map((c, i) => (i === 1 ? { ...c, numero: 94 } : c));
+    expect((await req('PUT', '/catalogue', gm, { cartes: doublon })).json().message).toContain('Deux cartes ont le même numéro');
+    expect((await req('PUT', '/catalogue', gm, { cartes: cs.map((c) => ({ ...c, numero: c.numero + 100 })) })).statusCode).toBe(400);
+    await req('PUT', '/catalogue', gm, { cartes: catalogue(20) }); // état attendu par les tests suivants
+  });
+
   it('démarrage refusé si le catalogue ne compte pas N cartes désignées', async () => {
     await req('PUT', '/parametres', gm, { cle: 'cartesDesignees', reglage: { mode: 'verrouille', value: 25 } });
     await req('POST', '/cycle', gm, { action: 'ouvrir_inscriptions' });

@@ -266,7 +266,8 @@ export async function gmRoutes(app: FastifyInstance) {
       for (const x of vides) await c.tx.update(checkpoints).set({ cartes: [] }).where(eq(checkpoints.id, x.id));
       await c.tx.delete(cartes).where(eq(cartes.partieId, c.partie.id));
       await c.tx.insert(cartes).values(
-        input.cartes.map((x, i) => ({ id: newId(), partieId: c.partie.id, numero: i + 1, nom: x.nom, rang: x.rang, lotReel: x.lotReel ?? null })),
+        // RG-8.1 amendé : numéro de l'anime s'il est donné, sinon 001..N dans l'ordre.
+        input.cartes.map((x, i) => ({ id: newId(), partieId: c.partie.id, numero: x.numero ?? i + 1, nom: x.nom, rang: x.rang, lotReel: x.lotReel ?? null })),
       );
       const n = input.cartes.length;
       const settings = { ...settingsOf(c.partie), cartesDesignees: { mode: 'verrouille' as const, value: n } };

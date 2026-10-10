@@ -1,10 +1,15 @@
-// Accueil : profil, licence (RG-5.2), évènements en cours (RG-12 : bannières, raid), accès aux lieux
-// (boutique de Masadora RG-9, enchères d'Antokiba RG-11.4), Examen reporté, options, notifications.
-import { useEffect, useState } from 'react';
+// Accueil : profil et pouvoir de Nen (RG-5.4), gel (RG-10), Book fermé à invoquer, évènements en cours
+// (RG-12 : bannières, raid), villes (boutique de Masadora RG-9, enchères d'Antokiba RG-11.4, Retour),
+// licence (RG-5.2), Examen reporté, options, notifications.
+import { Dialogue } from '@gq/ui';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { api } from '../lib/client';
 import { eveilDisponible } from '../lib/eveil';
 import { formatChrono, libelleEtat, NENS } from '../lib/format';
+import { etatPouvoir } from '../lib/pouvoir';
+import { useLivre } from '../lib/useLivre';
 import type { Moi, Notif, Partie } from '../lib/useJeu';
+import { BookFerme } from './BookFerme';
 
 export interface Evenement {
   id: string;
@@ -30,99 +35,172 @@ export function useEvenements(partieId: string, version: number) {
   return ev;
 }
 
+const VILLES = [
+  { id: 'masadora', nom: 'Masadora', lieu: 'Boutique de sorts', ecran: 'boutique' },
+  { id: 'antokiba', nom: 'Antokiba', lieu: 'Enchères', ecran: 'encheres' },
+] as const;
+
 export function Accueil({
   partie,
   moi,
+  version,
   evenements,
   notifs,
   ecranAllume,
   onEcranAllume,
   onExamen,
   onOuvrir,
+  onBook,
 }: {
   partie: Partie;
   moi: Moi;
+  version: number;
   evenements: { liste: Evenement[]; recuA: number };
   notifs: Notif[];
   ecranAllume: boolean;
   onEcranAllume: (oui: boolean) => void;
   onExamen: () => void;
   onOuvrir: (s: SousEcran) => void;
+  onBook: () => void;
 }) {
   const [maintenant, setMaintenant] = useState(Date.now());
   useEffect(() => {
     const t = setInterval(() => setMaintenant(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
+  const { livre } = useLivre(partie.id, version);
+  const ecoule = maintenant - moi.recuA;
   const encours = evenements.liste.filter((e) => e.resteMs - (maintenant - evenements.recuA) > 0);
   const raid = encours.find((e) => e.type === 'raid');
+  const bannieres = encours.filter((e) => e.type !== 'raid');
+  const pouvoir = etatPouvoir(moi, ecoule);
+  const gel = Math.max(0, moi.delais.gel - ecoule);
+  const suivi = Math.max(0, moi.accompagne - ecoule);
+  const retour = moi.retour && moi.retour.resteMs - ecoule > 0 ? { ville: moi.retour.ville, reste: moi.retour.resteMs - ecoule } : null;
 
   return (
-    <>
-      <div className="carte">
-        <h1>{moi.pseudo}</h1>
-        <p>
+    <div className="planche accueil">
+      {moi.statut === 'gele' && (
+        <section className="gi-case gel" role="status">
+          <h2 className="sous-titre">Tu es gelé par l’équipe</h2>
+          <p>Tu ne peux plus jouer pour l’instant. Va voir un PNJ ou le Game Master.</p>
+        </section>
+      )}
+      {(gel > 0 || suivi > 0) && (
+        <section className="gi-case gel" role="status">
+          <h2 className="sous-titre">{suivi > 0 ? 'Accompagnement : tu es suivi' : 'Gel : tu ne peux plus scanner'}</h2>
+          <p className="temps">{formatChrono(Math.max(gel, suivi))}</p>
+        </section>
+      )}
+
+      <section className="gi-case profil">
+        <h1 className="pseudo">{moi.pseudo}</h1>
+        <p className="doux partie-ligne">
           {partie.nom} · {libelleEtat(partie.etat)}
         </p>
-        {moi.nen && <p className="info">Nen : {NENS[moi.nen].nom}</p>}
-        <button onClick={() => onOuvrir('licence')}>Ma licence</button>
-      </div>
-      {encours.length > 0 && (
-        <section>
-          <h2>En ce moment</h2>
-          <ul className="fil">
-            {encours.map((e) => (
-              <li key={e.id} className="evenement">
+        {moi.nen && (
+          <span className="nen-pastille" style={{ '--type': `var(--nen-${moi.nen})` } as CSSProperties}>
+            <span lang="ja">{NENS[moi.nen].court}</span>
+            {NENS[moi.nen].nom}
+          </span>
+        )}
+        {pouvoir && (
+          <div className={`pouvoir-ligne ${pouvoir.etat}`}>
+            <div>
+              <b>{pouvoir.nom === NENS[moi.nen!].nom ? `Pouvoir de ${pouvoir.nom}` : `Pouvoir secret : ${pouvoir.nom}`}</b>
+              <span>{pouvoir.libelle}</span>
+            </div>
+            {pouvoir.resteMs > 0 && <span className="temps">{formatChrono(pouvoir.resteMs)}</span>}
+            {pouvoir.etat === 'pret' && <span className="pret" aria-hidden="true">Prêt</span>}
+          </div>
+        )}
+        <button className="gi-btn-trait" onClick={() => onOuvrir('licence')}>
+          Ma licence de Hunter
+        </button>
+      </section>
+
+      <BookFerme designees={livre?.cartesDesignees ?? null} total={livre?.total ?? null} libres={livre?.libresUtilises ?? null} onOuvert={onBook} />
+
+      {raid && (
+        <section className="gi-case raid-case">
+          <h2 className="sous-titre">Raid en cours</h2>
+          <p>{raid.texte ?? 'Un monstre attaque : tout le monde peut frapper.'}</p>
+          <div className="vie" role="img" aria-label={`Points de vie : ${raid.pv ?? 0} sur ${raid.pvMax ?? 0}`}>
+            <i style={{ transform: `scaleX(${raid.pvMax ? (raid.pv ?? 0) / raid.pvMax : 0})` }} />
+          </div>
+          <div className="raid-pied">
+            <span className="temps">{formatChrono(raid.resteMs - (maintenant - evenements.recuA))}</span>
+            <button className="gi-btn-encre" onClick={() => onOuvrir('raid')}>
+              Combattre
+            </button>
+          </div>
+        </section>
+      )}
+
+      {bannieres.length > 0 && (
+        <section className="gi-case">
+          <h2 className="sous-titre">En ce moment</h2>
+          <ul className="evenements">
+            {bannieres.map((e) => (
+              <li key={e.id}>
                 <span>{e.texte ?? 'Évènement en cours'}</span>
-                <span className="chrono">{formatChrono(e.resteMs - (maintenant - evenements.recuA))}</span>
+                <span className="temps">{formatChrono(e.resteMs - (maintenant - evenements.recuA))}</span>
               </li>
             ))}
           </ul>
         </section>
       )}
-      {raid && (
-        <div className="carte raid-appel">
-          <h2>Raid en cours !</h2>
-          <div className="jauge vie" aria-hidden="true">
-            <span style={{ width: `${raid.pvMax ? ((raid.pv ?? 0) / raid.pvMax) * 100 : 0}%` }} />
-          </div>
-          <button onClick={() => onOuvrir('raid')}>Combattre</button>
-        </div>
-      )}
-      <div className="lieux">
-        <button className="secondaire" onClick={() => onOuvrir('boutique')}>
-          Boutique de Masadora
-        </button>
-        <button className="secondaire" onClick={() => onOuvrir('encheres')}>
-          Enchères d’Antokiba
-        </button>
+
+      <div className="villes">
+        {VILLES.map((v) => {
+          const distance = retour?.ville === v.id;
+          return (
+            <button key={v.id} className={`ville${distance ? ' a-distance' : ''}`} onClick={() => onOuvrir(v.ecran)}>
+              <b>{v.nom}</b>
+              <span>{v.lieu}</span>
+              {distance ? (
+                <span className="etat-ville">
+                  À distance <em className="temps">{formatChrono(retour.reste)}</em>
+                </span>
+              ) : (
+                moi.villesVisitees.includes(v.id) && <span className="etat-ville">Déjà visitée</span>
+              )}
+            </button>
+          );
+        })}
       </div>
+
       {!moi.examenFait && (
-        <div className="carte">
-          <p>L’Examen Hunter t’attend : des jenny à gagner.</p>
-          <button className="secondaire" onClick={onExamen}>
+        <>
+          <Dialogue qui="Examinateur">L’Examen Hunter t’attend : trois questions, des jenny à gagner.</Dialogue>
+          <button className="gi-btn-trait" onClick={onExamen}>
             Passer l’Examen
           </button>
-        </div>
+        </>
       )}
+
+      <section className="gi-case">
+        <h2 className="sous-titre">Notifications</h2>
+        {notifs.length === 0 ? (
+          <p className="doux">Rien pour l’instant.</p>
+        ) : (
+          <ul className="fil">
+            {notifs.map((n) => (
+              <li key={n.n}>{n.texte}</li>
+            ))}
+          </ul>
+        )}
+      </section>
+
       {eveilDisponible() && (
-        <label className="carte case">
+        <label className="gi-case option">
           <input type="checkbox" checked={ecranAllume} onChange={(e) => onEcranAllume(e.target.checked)} />
           <span>
-            Garder l’écran allumé
-            <span className="detail info"> Ta position reste à jour, mais la batterie se vide plus vite.</span>
+            <b>Garder l’écran allumé</b>
+            <span className="doux"> Ta position reste à jour, mais la batterie se vide plus vite.</span>
           </span>
         </label>
       )}
-      <section>
-        <h2>Notifications</h2>
-        {notifs.length === 0 && <p className="info">Rien pour l'instant.</p>}
-        <ul className="fil">
-          {notifs.map((n) => (
-            <li key={n.n}>{n.texte}</li>
-          ))}
-        </ul>
-      </section>
-    </>
+    </div>
   );
 }

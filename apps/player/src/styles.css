@@ -279,32 +279,107 @@ p { margin: 0; }
 @keyframes onde { from { opacity: 0.9; scale: 1; } to { opacity: 0; scale: 2.1; } }
 
 /* ---------- Accueil ---------- */
-.profil { grid-template-columns: 1fr auto; align-items: start; }
-.profil .pseudo { margin: 0; font: 400 30px/1 var(--f-titre); overflow-wrap: anywhere; }
-.profil .compteur { text-align: right; }
-.profil .compteur b { display: block; font: 800 30px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
-.profil .compteur span { font: 600 14px var(--f-texte); }
-.profil .ligne-nen { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-weight: 600; }
+.profil { grid-template-columns: 1fr auto; align-items: center; row-gap: 10px; }
+.profil .pseudo { margin: 0; font: 400 clamp(30px, 9vw, 38px)/1 var(--f-titre); overflow-wrap: anywhere; }
+.profil .partie-ligne { grid-column: 1; font-size: 15px; }
+.profil > .gi-btn-trait { grid-column: 1 / -1; }
+/* Type de Nen : la seule couleur du profil, celle de l'aura (même teinte que la divination) */
+.nen-pastille {
+  grid-column: 2; grid-row: 1 / span 2; justify-self: end;
+  display: grid; justify-items: center; gap: 4px;
+  font: 800 13px/1 var(--f-texte);
+}
+.nen-pastille span {
+  width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center;
+  background: radial-gradient(circle at 38% 32%, #fff 0, var(--type) 34%, color-mix(in srgb, var(--type) 70%, #111) 100%);
+  border: var(--trait) solid var(--encre);
+  font: 400 20px/1 var(--f-titre); color: var(--encre); letter-spacing: -0.04em;
+}
+.pouvoir-ligne { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; border-top: 2px solid var(--encre); padding-top: 12px; }
+.pouvoir-ligne > div { flex: 1; display: grid; gap: 2px; min-width: 0; }
+.pouvoir-ligne b { font: 800 16px/1.25 var(--f-texte); }
+.pouvoir-ligne > div span { font: 600 15px/1.3 var(--f-texte); color: var(--encre-2); }
+.pouvoir-ligne .temps { font: 800 24px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.pouvoir-ligne .pret { background: var(--encre); color: var(--case); font: 400 15px/1 var(--f-titre); padding: 6px 9px; rotate: -3deg; }
+.pouvoir-ligne.actif .temps { color: var(--bleu); }
 .gel { border-color: var(--bleu); background-color: #e6edf8; }
 .gel .temps { font: 800 42px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--bleu); }
+
+/* Book fermé : il flotte ; « Book ! » l'invoque */
+.book-case { overflow: hidden; padding-bottom: 16px; }
+.book-hud { display: flex; align-items: baseline; gap: 6px 16px; flex-wrap: wrap; position: relative; z-index: 2; }
+.book-hud .sous-titre { margin-right: auto; }
+.book-hud span { font: 600 15px var(--f-texte); }
+.book-hud b { font: 800 22px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.book-hud small { font: 800 15px var(--f-chiffre); }
+.book-zone { position: relative; display: grid; place-items: center; padding-block: 14px 26px; perspective: 1200px; }
+.book-zone .gi-concentration { inset: -40% -60%; opacity: 0; }
+.book-zone .onomatopee {
+  position: absolute; z-index: 5; left: 50%; top: 0;
+  font: 400 60px/1 var(--f-titre); color: var(--case); -webkit-text-stroke: 3px var(--encre); paint-order: stroke fill;
+  transform: translate(-50%, 0) rotate(-8deg) scale(0.4); opacity: 0; pointer-events: none; white-space: nowrap;
+}
+.book-volume {
+  position: relative; z-index: 3;
+  width: min(52vw, 200px); aspect-ratio: 0.74;
+  border: 0; padding: 0; background: transparent; cursor: pointer;
+  transform-style: preserve-3d; transform: rotateX(4deg);
+  animation: flotte 2.6s ease-in-out 3;
+}
+/* Sous la couverture : la première page et ses pochettes ; la tranche des feuillets dépasse à droite */
+.book-pages {
+  position: absolute; inset: 5px 0 5px 4px; border-radius: 0 4px 4px 0;
+  background-color: var(--case);
+  background-image:
+    linear-gradient(var(--case) 0 0), repeating-linear-gradient(90deg, transparent 0 calc(33.333% - 1.5px), var(--trame) 0 33.333%),
+    repeating-linear-gradient(180deg, transparent 0 calc(33.333% - 1.5px), var(--trame) 0 33.333%);
+  background-size: 0 0, 100% 100%, 100% 100%;
+  box-shadow: inset 0 0 0 1.5px var(--encre), inset 0 0 0 10px var(--case), inset 0 0 0 11.5px var(--trame);
+  transform: translateZ(-2px);
+}
+.book-pages::after {
+  content: ''; position: absolute; top: 1px; bottom: 1px; right: -7px; width: 8px; border-radius: 0 4px 4px 0;
+  background: repeating-linear-gradient(90deg, #f4f2ea 0 2px, #b9b6ab 2px 3px);
+  box-shadow: inset 0 0 0 1.5px var(--encre);
+}
+.book-couv {
+  position: absolute; inset: 0; border-radius: 3px 8px 8px 3px;
+  transform-origin: left center; backface-visibility: hidden;
+  background-color: var(--cuir);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.07) 0.8px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.45) 0, rgba(0, 0, 0, 0) 22px, rgba(255, 255, 255, 0.08) 26px, rgba(0, 0, 0, 0) 40px);
+  background-size: 3px 3px, 100% 100%;
+  box-shadow: inset 0 0 0 2px #2b0a0d, inset 0 0 0 9px var(--cuir), inset 0 0 0 11px var(--or-fonce), inset 0 0 0 14px var(--cuir), inset 0 0 0 15px var(--or-fonce);
+  display: grid; place-items: center; align-content: center; gap: 14px; color: var(--or);
+}
+.book-couv svg { width: 46%; height: auto; }
+.book-couv strong { font: 400 26px/1 var(--f-titre); letter-spacing: 0.32em; margin-right: -0.32em; text-shadow: 0 1px 0 #2b0a0d, 0 -1px 0 rgba(255, 236, 170, 0.35); }
+.book-ombre { position: absolute; bottom: 8px; left: 28%; right: 28%; height: 18px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0, 0, 0, 0.38), transparent); animation: ombre 2.6s ease-in-out 3; }
+@keyframes flotte { 0%, 100% { transform: translateY(0) rotateX(4deg); } 50% { transform: translateY(-12px) rotateX(2deg); } }
+@keyframes ombre { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.82); opacity: 0.6; } }
+
 .evenements { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .evenements li { display: flex; justify-content: space-between; align-items: center; gap: 12px; border: 2px solid var(--encre); padding: 10px 12px; background: var(--case); font-weight: 600; }
-.evenements .temps { font: 800 18px var(--f-chiffre); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.temps { font: 800 18px var(--f-chiffre); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .raid-case { border-color: var(--alerte); }
-.vie { height: 18px; border: var(--trait) solid var(--encre); background: var(--case); }
-.vie i { display: block; height: 100%; background: var(--alerte); transition: width 0.6s var(--sortie); }
+.raid-pied { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.raid-pied .gi-btn-encre { flex: 1; max-width: 60%; }
+.vie { height: 18px; border: var(--trait) solid var(--encre); background: var(--case); overflow: hidden; }
+.vie i { display: block; height: 100%; background: var(--alerte); transform-origin: left; transition: transform 0.6s var(--sortie); }
 .villes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gouttiere); }
 .ville {
-  border: var(--trait) solid var(--encre);
-  background: var(--case);
-  padding: 14px 12px;
-  text-align: left;
-  display: grid; gap: 4px; align-content: start;
-  min-height: 96px;
+  border: var(--trait) solid var(--encre); background: var(--case);
+  padding: 14px 12px; text-align: left;
+  display: grid; gap: 4px; align-content: start; min-height: 104px;
 }
-.ville b { font: 400 18px/1.1 var(--f-titre); }
+@media (hover: hover) { .ville:hover { background: var(--case-2); } }
+.ville:active { transform: translateY(2px); }
+.ville b { font: 400 20px/1.1 var(--f-titre); }
 .ville span { font: 600 14px/1.3 var(--f-texte); color: var(--encre-2); }
-.option { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; cursor: pointer; }
+.ville .etat-ville { margin-top: auto; font-weight: 800; color: var(--encre); }
+.ville.a-distance { background: var(--encre); color: var(--case); }
+.ville.a-distance span, .ville.a-distance .etat-ville { color: var(--case); }
+.ville em { font-style: normal; }
+.option { grid-template-columns: 28px 1fr; gap: 12px; align-items: start; cursor: pointer; }
 .option input { width: 26px; height: 26px; margin: 0; accent-color: var(--encre); }
 .fil { list-style: none; margin: 0; padding: 0; display: grid; }
 .fil li { padding: 10px 0; border-bottom: 1.5px solid var(--encre); font-weight: 600; }

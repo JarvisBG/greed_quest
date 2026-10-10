@@ -45,12 +45,14 @@ Seul le GM avance l'état, sauf passage auto en phase finale et fin du temps. Un
 
 | Nen | Passif |
 |---|---|
-| Renforcement | Annule le 1er sort offensif reçu (1×/partie) |
-| Émission | 1 sort offensif hors portée (1×/partie) |
+| Renforcement | Annule le 1er sort offensif reçu (1×/partie) — *amendé : se recharge, 30 min* |
+| Émission | 1 sort offensif hors portée (1×/partie) — *amendé : se recharge, 40 min* |
 | Transformation | Texture Surprise : déguise 1 doublon en carte de même rang → contrefaçon (toutes les 20 min). *Amendement 2026-10-09 : un doublon S peut aussi imiter la SS (unique au catalogue), pour le bluff.* |
-| Matérialisation | +1 tirage bonus ≤ rang C à chaque checkpoint PNJ réussi |
-| Manipulation | 1 échange forcé gratuit (1×/partie) |
+| Matérialisation | +1 tirage bonus ≤ rang C à chaque checkpoint PNJ réussi — *amendé : + 1 tirage bonus de réserve toutes les 40 min* |
+| Manipulation | 1 échange forcé gratuit (1×/partie) — *amendé : se recharge, 40 min* |
 | Spécialisation | Pouvoir unique secret tiré au sort (liste à définir) |
+
+> **Amendement 2026-10-10 (Sivraj) — Nen rechargeable** : les pouvoirs « une fois par partie » se rechargent après usage : Renforcement `rechargeRenforcementMin` 30 min, Émission `rechargeEmissionMin` 40 min, Manipulation `rechargeManipulationMin` 40 min (RG-14, réglables). Matérialisation reçoit en plus un tirage bonus ≤ C toutes les `reserveMaterialisationMin` 40 min (40 min après l'inscription, puis 40 min après le précédent), distribué par la tâche planifiée, débordement du Livre toléré comme au checkpoint. Simulation : SIMULATION.md « Pouvoirs de Nen ».
 
 ## RG-6 Balises
 - 6.1 Id unique non devinable ; QR imprimé fixe, seul l'état serveur change.

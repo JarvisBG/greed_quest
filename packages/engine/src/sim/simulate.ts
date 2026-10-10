@@ -8,7 +8,10 @@
 // - le GM lance une Apparition à intervalle régulier ;
 // - options (calibrage du 2026-10-09) : arène de Soufrabi (mise, défi, tirage A / S / SS), enchères de SS à Antokiba,
 //   cession de cartes du Livre (SS, S) d'un joueur distancé au joueur qui en a besoin ;
-// - option (2026-10-10) : cartes hors collection, données à la place d'une partie des replis en jenny.
+// - option (2026-10-10) : cartes hors collection, données à la place d'une partie des replis en jenny ;
+// - pouvoirs de Nen (RG-5.4) : Renforcement (dans le moteur), Manipulation (échange forcé sans carte quand le joueur
+//   n'a pas de sort offensif), Émission (sort offensif sur un joueur au hasard, hors portée), Matérialisation
+//   (tirage C/D en bonus à chaque checkpoint) ; option : recharge au lieu de « 1 fois par partie ».
 import { NEN_TYPES, RANKS, type NenType, type Rank } from '@gq/shared';
 import { consumeDraw, fillToTarget, rechargeBeacons, replaceExhausted, rotate, ROTATION_INTERVAL_MS, type Beacon } from '../beacons.js';
 import { arenaReward, enterArena } from '../arena.js';
@@ -104,6 +107,12 @@ export interface SimConfig {
   ticketGains: [number, number][];
   /** Voile, Coffre (défenses non modélisées) : revente du surplus à Masadora (1 de chaque gardé). */
   reventeHCJ: number;
+  /** Recharge des pouvoirs de Nen (min) ; absent = une fois par partie (RG-5.4). */
+  rechargeNen: Partial<Record<NenPower, number>>;
+  /** Matérialisation : tirage bonus C/D « de réserve » toutes les X min, même sans checkpoint. null = aucun. */
+  reserveMaterialisationMin: number | null;
+  /** Émission : à chaque action, probabilité de viser hors portée un joueur (si pouvoir et sort offensif). */
+  probaEmission: number;
   /** Répartition du catalogue par rang (RG-8 : SS 2, S 3, A 5, B 6, C 7, D 7). */
   catalogue: Record<Rank, number>;
 }
@@ -138,6 +147,9 @@ export const DEFAULT_SIM: Omit<SimConfig, 'joueurs' | 'seed'> = {
   limiteSSMin: 3,
   multLimiteCD: null,
   catalogue: { SS: 2, S: 3, A: 5, B: 6, C: 7, D: 7 },
+  rechargeNen: {},
+  reserveMaterialisationMin: null,
+  probaEmission: 0.3,
   partReplisHC: 0,
   poidsHC: { pepite: 3, ticket: 3, boussole: 2, souffle: 2, voile: 1, coffre: 1 },
   placesHC: 8,
@@ -187,6 +199,10 @@ export interface SimResult {
   souffles: number;
   /** Jenny rapportés par les Pépites, Tickets et reventes de cartes hors collection. */
   jennyHC: number;
+  /** Pouvoirs de Nen utilisés (par joueur du type), et tirages bonus de Matérialisation. */
+  pouvoirs: Partial<Record<NenType, number>>;
+  /** Vols réussis de SS. */
+  volsSS: number;
 }
 
 interface SimPlayer {
@@ -205,6 +221,8 @@ interface SimPlayer {
   pouvoirsUtilises: NenPower[];
   derniereAreneA: number | null;
   hc: CarteHC[];
+  pouvoirsA: Partial<Record<NenPower, number>>;
+  derniereReserveA: number;
 }
 
 function buildCatalogue(c: Record<Rank, number>): { ids: string[]; rang: Map<string, Rank> } {
@@ -264,6 +282,8 @@ export function simulate(cfg: SimConfig): SimResult {
     pouvoirsUtilises: [],
     derniereAreneA: null,
     hc: [],
+    pouvoirsA: {},
+    derniereReserveA: 0,
   }));
 
   // Tous les joueurs restent actifs : J = nombre de joueurs.
@@ -351,7 +371,14 @@ export function simulate(cfg: SimConfig): SimResult {
     geleJusqua: p.geleJusqua,
     livreGele: false,
   });
-  const fromSpellPlayer = (p: SimPlayer, s: SpellPlayer) => {
+  const pouvoirs: SimResult['pouvoirs'] = {};
+  let volsSS = 0;
+  const fromSpellPlayer = (p: SimPlayer, s: SpellPlayer, now: number) => {
+    for (const pw of s.pouvoirsUtilises) {
+      if (p.pouvoirsUtilises.includes(pw)) continue;
+      p.pouvoirsA[pw] = now;
+      pouvoirs[pw] = (pouvoirs[pw] ?? 0) + 1;
+    }
     p.book = s.book;
     p.pouvoirsUtilises = [...s.pouvoirsUtilises];
     p.immuniteJusqua = s.immuniteJusqua;
@@ -359,36 +386,70 @@ export function simulate(cfg: SimConfig): SimResult {
     p.geleJusqua = s.geleJusqua;
   };
 
-  function encounter(p: SimPlayer, autre: SimPlayer, now: number) {
-    // 1. Sort offensif : Vol, sinon Échange forcé avec un doublon, sinon Gel.
-    if (cfg.sorts) {
-      const pos: Position = { lat: 48.85, lng: 2.35, precisionM: 0, a: now };
-      const sorts = p.book.items.filter((i) => i.kind === 'sort');
-      const doublon = duplicates(p)[0];
-      const choix = (['vol', 'echange_force', 'gel'] as OffensiveSpell[]).find((s) =>
-        sorts.some((i) => i.kind === 'sort' && i.spell === s) && (s !== 'echange_force' || doublon),
-      );
-      if (choix) {
-        const item = sorts.find((i) => i.kind === 'sort' && i.spell === choix)!;
-        const r = castOffensive(
-          { now, gameState: 'en_cours', portee: { porteeM: 30, margeMaxM: 20 }, rangDe, newId },
-          {
-            sort: choix,
-            source: { type: 'carte', itemId: item.id },
-            lanceur: toSpellPlayer(p, pos),
-            cible: toSpellPlayer(autre, pos),
-            ...(choix === 'echange_force' && doublon ? { carteDonneeId: doublon.id } : {}),
-          },
-          rng,
-        );
-        if (r.ok) {
-          fromSpellPlayer(p, r.lanceur);
-          fromSpellPlayer(autre, r.cible);
-          if (choix === 'vol' && r.resultat === 'reussi') stats.vols++;
-          checkClearOf(p, now);
-        }
-      }
+  const pouvoirDispo = (p: SimPlayer, pw: NenPower) => p.nen === pw && !p.pouvoirsUtilises.includes(pw);
+  /** Recharge des pouvoirs (option) : un pouvoir utilisé redevient disponible après le délai. */
+  const recharger = (p: SimPlayer, now: number) => {
+    p.pouvoirsUtilises = p.pouvoirsUtilises.filter((pw) => {
+      const m = cfg.rechargeNen[pw];
+      return m === undefined || now - (p.pouvoirsA[pw] ?? now) < m * MIN;
+    });
+  };
+  /** Sort offensif choisi : Vol, sinon Échange forcé avec un doublon, sinon Gel ; Manipulation à défaut de carte. */
+  function lancer(p: SimPlayer, autre: SimPlayer, now: number, horsPortee: boolean): boolean {
+    const pos: Position = { lat: 48.85, lng: 2.35, precisionM: 0, a: now };
+    const loin: Position = { lat: 48.9, lng: 2.35, precisionM: 0, a: now };
+    const sorts = p.book.items.filter((i) => i.kind === 'sort');
+    const doublon = duplicates(p)[0];
+    const choix = (['vol', 'echange_force', 'gel'] as OffensiveSpell[]).find((s) =>
+      sorts.some((i) => i.kind === 'sort' && i.spell === s) && (s !== 'echange_force' || doublon),
+    );
+    let sort: OffensiveSpell;
+    let source: { type: 'carte'; itemId: string } | { type: 'pouvoir' };
+    if (choix) {
+      sort = choix;
+      source = { type: 'carte', itemId: sorts.find((i) => i.kind === 'sort' && i.spell === choix)!.id };
+    } else if (doublon && pouvoirDispo(p, 'manipulation')) {
+      sort = 'echange_force';
+      source = { type: 'pouvoir' };
+    } else return false;
+    const r = castOffensive(
+      { now, gameState: 'en_cours', portee: { porteeM: 30, margeMaxM: 20 }, rangDe, newId },
+      {
+        sort,
+        source,
+        lanceur: toSpellPlayer(p, pos),
+        cible: toSpellPlayer(autre, horsPortee ? loin : pos),
+        emission: horsPortee,
+        ...(sort === 'echange_force' && doublon ? { carteDonneeId: doublon.id } : {}),
+      },
+      rng,
+    );
+    if (!r.ok) return false;
+    fromSpellPlayer(p, r.lanceur, now);
+    fromSpellPlayer(autre, r.cible, now);
+    if (sort === 'vol' && r.resultat === 'reussi') {
+      stats.vols++;
+      if (r.recu?.kind === 'carte' && rangDe(r.recu.cardId) === 'SS') volsSS++;
     }
+    checkClearOf(p, now);
+    return true;
+  }
+  /** Matérialisation : tirage bonus C/D sous les limites (comme pnj.ts). */
+  function bonusMaterialisation(p: SimPlayer, now: number) {
+    const circ = countInCirculation(players.map((x) => x.book));
+    const dispo = designees.filter((id) => ['C', 'D'].includes(rangDe(id)) && (circ.get(id) ?? 0) < limites()[rangDe(id)]);
+    pouvoirs.materialisation = (pouvoirs.materialisation ?? 0) + 1;
+    if (dispo.length === 0 || isBookFull(p.book, designees)) {
+      p.jenny += 10;
+      return;
+    }
+    p.book = addItem(p.book, { kind: 'carte', id: newId(), cardId: dispo[randomInt(rng, dispo.length)]!, origine: { type: 'pnj', checkpointId: 'sim' }, obtenuA: now });
+    checkClearOf(p, now);
+  }
+
+  function encounter(p: SimPlayer, autre: SimPlayer, now: number) {
+    // 1. Sort offensif (ou Manipulation).
+    if (cfg.sorts) lancer(p, autre, now, false);
 
     // 2. Échange 1 contre 1, sinon achat d'un de ses doublons qui me manque.
     const mesManques = missing(p);
@@ -627,6 +688,20 @@ export function simulate(cfg: SimConfig): SimResult {
     }
     if (clearA !== null) break;
 
+    recharger(p, now);
+    // Matérialisation, réserve (option) : un tirage bonus toutes les X min.
+    if (p.nen === 'materialisation' && cfg.reserveMaterialisationMin !== null && now - p.derniereReserveA >= cfg.reserveMaterialisationMin * MIN) {
+      p.derniereReserveA = now;
+      bonusMaterialisation(p, now);
+      if (clearA !== null) break;
+    }
+    // Émission : un sort offensif sur un joueur au hasard, hors portée.
+    if (cfg.sorts && pouvoirDispo(p, 'emission') && rng.next() < cfg.probaEmission) {
+      const autre = players[randomInt(rng, players.length)]!;
+      if (autre !== p) lancer(p, autre, now, true);
+      if (clearA !== null) break;
+    }
+
     if (p.versMasadora) {
       masadora(p, now);
       p.prochaineAction = now + marche(rng, cfg.marcheMin);
@@ -658,6 +733,7 @@ export function simulate(cfg: SimConfig): SimResult {
         p.book = addItem(p.book, { kind: 'carte', id: newId(), cardId: c.id, origine: { type: 'pnj', checkpointId: 'sim' }, obtenuA: now });
         stats.checkpoints++;
         checkClearOf(p, now);
+        if (p.nen === 'materialisation') bonusMaterialisation(p, now);
         if (clearA !== null) break;
       }
     }
@@ -776,5 +852,9 @@ export function simulate(cfg: SimConfig): SimResult {
     boussoles: statsHC.boussoles,
     souffles: statsHC.souffles,
     jennyHC: statsHC.jenny,
+    pouvoirs: Object.fromEntries(
+      Object.entries(pouvoirs).map(([t, n]) => [t, n / Math.max(1, players.filter((x) => x.nen === t).length)]),
+    ),
+    volsSS,
   };
 }

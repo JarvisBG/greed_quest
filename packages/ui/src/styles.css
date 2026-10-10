@@ -226,6 +226,17 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   text-align: left;
   display: grid; gap: 8px;
 }
+/* Même boîte, posée dans la page (consigne d'un examinateur, d'un PNJ) */
+.gi-dialogue {
+  background: var(--nuit);
+  color: #f6f6f2;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f6f6f2, inset 0 0 0 8px var(--nuit), inset 0 0 0 9px #f6f6f2;
+  padding: 22px 22px 20px;
+  display: grid; gap: 10px;
+}
+.gi-dialogue .a-qui { justify-self: start; font: 400 15px/1 var(--f-jeu); background: #f6f6f2; color: var(--nuit); padding: 4px 8px; }
+.gi-dialogue .a-texte { font: 400 19px/1.45 var(--f-jeu); margin: 0; }
 .gi-annonce.visible { transform: translate(-50%, 0); visibility: visible; transition: transform 0.45s var(--sortie), visibility 0s; }
 .gi-annonce .a-qui { justify-self: start; font: 400 15px/1 var(--f-jeu); background: #f6f6f2; color: var(--nuit); padding: 4px 8px; }
 .gi-annonce.t-sort .a-qui { background: #8fb2ff; }
@@ -241,6 +252,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .gi-concentration svg { width: 100%; height: 100%; }
 
 /* ---------- Petits éléments ---------- */
+.sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .gi-chiffre { font-family: var(--f-chiffre); font-weight: 800; font-variant-numeric: tabular-nums; }
 .gi-pastille { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--encre); background: var(--alerte); display: inline-block; }
 .gi-pastille.en_ligne { background: var(--succes); }

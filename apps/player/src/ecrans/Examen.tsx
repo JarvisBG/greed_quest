@@ -1,4 +1,5 @@
 // RG-5.3 : Examen Hunter, 3 questions, non bloquant ; chaque bonne réponse rapporte des jenny.
+import { Concentration, Dialogue } from '@gq/ui';
 import { useState } from 'react';
 import { api } from '../lib/client';
 import type { Question } from '../lib/quiz';
@@ -12,41 +13,65 @@ interface Resultat {
   reponses: number[];
 }
 
-export function Examen({ partieId, questions, onReporter, onFini }: { partieId: string; questions: readonly Question[]; onReporter?: () => void; onFini: () => void }) {
+export function Examen({
+  partieId,
+  questions,
+  onReporter,
+  onBonus,
+  onFini,
+}: {
+  partieId: string;
+  questions: readonly Question[];
+  onReporter?: () => void;
+  /** Bonus crédité par le serveur : la barre du haut le montre tout de suite. */
+  onBonus: (bonus: number) => void;
+  onFini: () => void;
+}) {
   const [commence, setCommence] = useState(false);
   const [resultat, setResultat] = useState<Resultat | null>(null);
 
   if (resultat) {
     return (
       <div className="planche">
-        <section className="gi-case gi-trame">
+        <section className={`gi-case examen-score${resultat.bonnes > 0 ? ' reussi' : ''}`}>
+          {resultat.bonnes > 0 && <Concentration graine={23} />}
           <h1 className="titre-ecran">Examen Hunter</h1>
           <p className="score" aria-label={`${resultat.bonnes} bonnes réponses sur ${questions.length}`}>
-            {resultat.bonnes} / {questions.length}
+            {resultat.bonnes}
+            <span>/{questions.length}</span>
           </p>
-          <p className="texte-grand">{resultat.bonus > 0 ? `+${resultat.bonus} J ajoutés à ta bourse.` : 'Pas de bonus cette fois.'}</p>
+          {resultat.bonus > 0 ? (
+            <p className="tampon">+{resultat.bonus} J</p>
+          ) : (
+            <p className="recitatif">Pas de jenny cette fois. Le corrigé t’aidera sur le terrain.</p>
+          )}
         </section>
         <section className="gi-case">
           <h2 className="sous-titre">Corrigé</h2>
           <ul className="corrige">
             {questions.map((q, i) => {
               const bonne = resultat.corrige[i] ?? -1;
-              const juste = resultat.reponses[i] === bonne;
+              const donnee = resultat.reponses[i] ?? -1;
+              const juste = donnee === bonne;
               return (
                 <li key={q.id} className={juste ? 'juste' : 'faux'}>
                   {juste ? <IconeJuste /> : <IconeFaux />}
-                  <span>
-                    <span className="sr">{juste ? 'Juste : ' : 'Faux : '}</span>
-                    {q.texte} <strong>{q.choix[bonne]}</strong>
-                  </span>
+                  <div>
+                    <p>
+                      <span className="sr">{juste ? 'Juste : ' : 'Faux : '}</span>
+                      {q.texte}
+                    </p>
+                    <p className="bonne">{q.choix[bonne]}</p>
+                    {!juste && q.choix[donnee] && <p className="donnee">Ta réponse : <s>{q.choix[donnee]}</s></p>}
+                  </div>
                 </li>
               );
             })}
           </ul>
-          <button className="gi-btn-encre" onClick={onFini}>
-            Continuer
-          </button>
         </section>
+        <button className="gi-btn-encre" onClick={onFini}>
+          Continuer
+        </button>
       </div>
     );
   }
@@ -54,12 +79,12 @@ export function Examen({ partieId, questions, onReporter, onFini }: { partieId: 
   if (!commence) {
     return (
       <div className="planche">
-        <section className="gi-case gi-trame">
-          <h1 className="titre-ecran">Examen Hunter</h1>
-          <p className="texte-grand">
-            {questions.length} questions sur les règles. Chaque bonne réponse rapporte des jenny. Tu ne peux le passer qu’une fois.
-          </p>
+        <section className="gi-case gi-penchee examen-titre">
+          <h1>Examen Hunter</h1>
         </section>
+        <Dialogue qui="Examinateur">
+          {questions.length} questions sur les règles du jeu. Chaque bonne réponse rapporte des jenny. Une seule tentative.
+        </Dialogue>
         <div className="actions">
           <button className="gi-btn-encre" onClick={() => setCommence(true)}>
             Commencer l’Examen
@@ -81,6 +106,7 @@ export function Examen({ partieId, questions, onReporter, onFini }: { partieId: 
       onFini={async (reponses) => {
         const r = await api.post<Omit<Resultat, 'reponses'>>(`/parties/${partieId}/examen`, { reponses });
         setResultat({ ...r, reponses });
+        if (r.bonus > 0) onBonus(r.bonus);
       }}
     />
   );

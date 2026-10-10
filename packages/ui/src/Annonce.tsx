@@ -61,3 +61,13 @@ export function Annonce({ cle, genre, qui, texte, onFermer, action, dureeMs = 70
     </div>
   );
 }
+
+/** Réplique posée dans la page, dans la boîte de dialogue du jeu (consigne d'un examinateur, d'un PNJ). */
+export function Dialogue({ qui, children }: { qui: string; children: ReactNode }) {
+  return (
+    <div className="gi-dialogue">
+      <span className="a-qui">{qui}</span>
+      <p className="a-texte">{children}</p>
+    </div>
+  );
+}

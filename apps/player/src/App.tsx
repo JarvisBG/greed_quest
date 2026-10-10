@@ -176,6 +176,7 @@ export function App() {
               <Examen
                 partieId={partie.id}
                 questions={quiz.examen}
+                onBonus={(bonus) => jeu.majJenny(moi.jenny + bonus)}
                 onReporter={() => {
                   session.reporterExamen(moi.id);
                   setExamenOuvert(false);

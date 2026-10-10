@@ -3,4 +3,4 @@
 export { Carte, DosCarte, Rang, numeroCarte, type CarteProps, type GenreCarte } from './Carte';
 export { EmblemeBook, EmblemeDos, EmblemeHunter } from './Emblemes';
 export { Concentration, lignesConcentration } from './Concentration';
-export { Annonce, type AnnonceProps, type GenreAnnonce } from './Annonce';
+export { Annonce, Dialogue, type AnnonceProps, type GenreAnnonce } from './Annonce';

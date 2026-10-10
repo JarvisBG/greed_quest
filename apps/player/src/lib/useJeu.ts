@@ -393,6 +393,8 @@ export function useJeu() {
     rafraichir,
     choisirPartie,
     quitterPartie,
+    /** Solde annoncé par le serveur (bonus de l'Examen…) sans recharger tout le profil. */
+    majJenny,
     ouvrirSession,
     scannerBalise,
   };

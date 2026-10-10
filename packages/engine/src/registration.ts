@@ -14,7 +14,7 @@ export const EXAMEN: readonly (QuizQuestion & { bonne: number })[] = [
   { id: 'e1', texte: 'Combien de temps faut-il attendre entre deux scans ?', choix: ['10 secondes', '30 secondes', '2 minutes'], bonne: 1 },
   {
     id: 'e2',
-    texte: 'Que fait un Mur défensif gardé dans ton Book ?',
+    texte: 'Que fait la carte Mur défensif gardée dans ton Book ?',
     choix: ['Elle annule le prochain sort offensif reçu', 'Elle double tes gains', 'Elle gèle un joueur proche'],
     bonne: 0,
   },

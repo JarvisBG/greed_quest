@@ -168,6 +168,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   gap: 3cqi;
 }
 .f-sort { --cadre: var(--bleu); }
+.f-designee .c-txt { font-style: italic; }
 .f-objet { --cadre: var(--jaune); }
 .c-tete {
   display: grid;
@@ -233,6 +234,8 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   .c-num { font-size: 17cqi; }
   .c-rang { font-size: 13cqi; padding: 2.5cqi 4cqi; }
   .c-rang .lim { display: none; }
+  .r-sort, .r-objet { display: none; }
+  .f-sort .c-tete, .f-objet .c-tete { grid-template-columns: 1fr; }
   .c-cadre { padding: 6cqi; gap: 5cqi; grid-template-rows: auto 1fr; }
 }
 
@@ -362,6 +365,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   font: 400 34px/1 var(--f-titre);
   color: #c9c7be;
 }
+.case-vide { aspect-ratio: 63 / 88; }
 .poche.arrivee { animation: arrivee .7s var(--sortie); }
 @keyframes arrivee { 0% { transform: scale(1.12); filter: brightness(1.25); } 100% { transform: none; filter: none; } }
 
@@ -387,6 +391,21 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   z-index: 3;
 }
 .dessous .ombre-page { background: linear-gradient(90deg, rgba(0,0,0,.5) 0%, rgba(0,0,0,0) 45%); }
+
+.pages-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: -14px; }
+.pages-nav[hidden] { display: none; }
+.pages-nav span { font: 600 16px/1.2 var(--f-texte); text-align: center; }
+.pages-nav span b { font: 800 16px var(--f-chiffre); }
+.btn-page { width: 52px; height: 52px; flex: none; border: var(--trait) solid var(--encre); background: var(--case); display: grid; place-items: center; padding: 0; }
+.btn-page svg { width: 26px; height: 26px; fill: none; stroke: var(--encre); stroke-width: 3; stroke-linecap: square; }
+.btn-page:active { transform: translateY(2px); }
+.fiche-role { justify-self: start; font: 800 13px/1 var(--f-texte); letter-spacing: .06em; text-transform: uppercase; padding: 6px 8px; color: var(--case); background: var(--cadre, var(--rouge)); }
+.fiche-role.f-objet { color: var(--encre); }
+.fiche-texte { font-size: 18px; }
+.fiche-texte.ambiance { font-style: italic; color: var(--encre-2); }
+.fiche-info { gap: 8px; }
+.defile figure button { all: unset; cursor: pointer; display: block; }
+.defile figure button:focus-visible { outline: 3px solid var(--bleu); outline-offset: 3px; }
 
 /* Couverture */
 .couverture {
@@ -669,16 +688,21 @@ dialog.fiche[open] { animation: monte .35s var(--sortie); }
       </div>
       <div class="livre-ombre" aria-hidden="true"></div>
     </div>
+    <nav class="pages-nav" id="pages-nav" aria-label="Pages du Book" hidden>
+      <button class="btn-page" id="page-prec" aria-label="Page précédente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg></button>
+      <span id="page-indic"></span>
+      <button class="btn-page" id="page-suiv" aria-label="Page suivante"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
+    </nav>
     <div class="actions">
       <button class="btn-encre" id="btn-book">Book</button>
       <button class="btn-trait" id="btn-scan">Simuler un scan de balise</button>
     </div>
-    <p>Dis « Book » pour l'invoquer. Tourne les pages au doigt, touche une pochette pour voir la carte.</p>
+    <p>Dis « Book » pour l'invoquer. Tourne les pages au doigt ou avec les flèches, touche une carte pour la lire.</p>
   </section>
 
   <section class="case" aria-labelledby="t-cartes">
     <h2 id="t-cartes">Les cartes</h2>
-    <p>Numéro en haut à gauche, nom au centre, rang-limite à droite. Rouge pour les cartes désignées, bleu pour les sorts, jaune pour les objets.</p>
+    <p>Numéro en haut à gauche, nom au centre, rang-limite à droite. Rouge pour les cartes à collectionner, bleu pour les sorts, jaune pour les objets. Touche une carte pour la lire.</p>
     <div class="defile" id="defile" tabindex="0" aria-label="Exemples de cartes"></div>
   </section>
 
@@ -764,19 +788,19 @@ dialog.fiche[open] { animation: monte .35s var(--sortie); }
   /* ---------- Données de démonstration ---------- */
   const D = (n, nom, rang, lim, txt, m, etat, extra = {}) => ({ n, nom, rang, lim, txt, motif: m, type: 'designee', etat, ...extra });
   const designees = [
-    D('000', 'Le bonheur du détenteur', 'SS', 1, 'Un château et sa ville de 10 000 habitants, qui vivent selon tes lois.', 'chateau', 'vide'),
-    D('011', "La balance d'or", 'D', 8, "Face à deux choix, elle penche vers le meilleur pour ton avenir.", 'balance', 'pleine', { prov: 'Balise', heure: '13h12' }),
-    D('017', 'Le souffle du grand ange', 'S', 2, 'Guérit une personne de toutes ses blessures et maladies. Une seule fois.', 'aile', 'pleine', { prov: 'Échange avec Leolio', heure: '13h40' }),
-    D('021', 'Les lunettes squelettes', 'C', 6, 'Voient à travers tout, sauf un paquet de sorts de Masadora.', 'lunettes', 'perdue', { par: 'Kirua', heure: '14h05' }),
+    D('000', 'Le bonheur du détenteur', 'SS', 1, 'Un château et sa ville de 10 000 habitants, qui vivent selon les lois de son détenteur.', 'chateau', 'vide'),
+    D('011', "La balance d'or", 'D', 8, "Une balance d'or qui, face à deux choix, penche toujours vers le meilleur.", 'balance', 'pleine', { prov: 'Balise', heure: '13h12' }),
+    D('017', 'Le souffle du grand ange', 'S', 2, "Le souffle d'un ange, qui guérit toutes les blessures et toutes les maladies. Une seule fois.", 'aile', 'pleine', { prov: 'Échange avec Leolio', heure: '13h40' }),
+    D('021', 'Les lunettes squelettes', 'C', 6, 'Des lunettes qui voient à travers tout, sauf un paquet de sorts de Masadora.', 'lunettes', 'perdue', { par: 'Kirua', heure: '14h05' }),
     D('025', 'Le dé du risque', 'D', 8, 'Dix-neuf étoiles, une tête de mort. La tête de mort efface tout.', 'de', 'pleine', { prov: 'Balise', heure: '13h05' }),
     D('046', 'La jeune fille à la poudre d\'or', 'B', 4, 'Son bain quotidien laisse 500 g de poudre d\'or. Très timide.', 'etoile', 'pleine', { prov: 'Arène de Soufrabi', heure: '13h55' }),
-    D('051', "Le dragon qui s'emballe", 'A', 3, "Il t'obéit et finit par parler, si tu l'élèves avec amour.", 'flamme', 'vide'),
+    D('051', "Le dragon qui s'emballe", 'A', 3, "Un petit dragon qui obéit à son maître et finit par parler, s'il est élevé avec amour.", 'flamme', 'vide'),
     D('073', 'Le jade des ténèbres', 'B', 4, 'Béni par le Diable : il détourne le malheur sur un autre.', 'gemme', 'pleine', { prov: 'Balise', heure: '14h10' }),
-    D('079', 'Le diamant arc-en-ciel', 'C', 6, 'Demande en mariage avec lui : la réponse sera oui.', 'gemme', 'vide'),
-    D('082', 'La canne du châtiment céleste', 'B', 4, 'Nomme qui tu veux punir : le plus coupable des deux sera frappé.', 'canne', 'pleine', { prov: "Enchères d'Antokiba", heure: '14h20' }),
-    D('084', 'Le collier du chevalier', 'D', 8, 'Renvoie les malédictions et lève celles des cartes qu\'il touche.', 'collier', 'vide'),
-    D('090', 'Le casque de mémoire', 'C', 6, "Tu n'oublies rien de ce que tu vois ou entends.", 'casque', 'cachee'),
-    D('094', "L'épée du vol", 'A', 3, 'Chaque coup réussi vole une carte à la cible.', 'epee', 'vide'),
+    D('079', 'Le diamant arc-en-ciel', 'C', 6, 'Le diamant des demandes en mariage : la réponse est toujours oui.', 'gemme', 'vide'),
+    D('082', 'La canne du châtiment céleste', 'B', 4, 'Une canne qui frappe le plus coupable des deux noms prononcés.', 'canne', 'pleine', { prov: "Enchères d'Antokiba", heure: '14h20' }),
+    D('084', 'Le collier du chevalier', 'D', 8, 'Un collier qui renvoie les malédictions et lève celles des cartes qu\'il touche.', 'collier', 'vide'),
+    D('090', 'Le casque de mémoire', 'C', 6, "Un casque qui fait garder en mémoire tout ce qu'on voit et entend.", 'casque', 'cachee'),
+    D('094', "L'épée du vol", 'A', 3, 'Une épée légendaire dont chaque coup vole une carte.', 'epee', 'vide'),
     D('099', 'Maid panda', 'S', 2, 'Soigneuse, bonne cuisinière, parfaite avec les enfants.', 'coeur', 'vide')
   ];
   const sort = (n, nom, txt, m) => ({ n, nom, txt, motif: m, type: 'sort', rang: 'sort' });
@@ -829,8 +853,8 @@ dialog.fiche[open] { animation: monte .35s var(--sortie); }
   const pageHTML = (p) => {
     const pg = pages[p];
     const poches = pg.poches();
-    const restes = (3 - poches.length % 3) % 3;
-    const folio = restes > 0 ? `<span class="page-folio" style="grid-column: span ${restes}" aria-hidden="true">${p + 1}</span>` : '';
+    const restes = 12 - poches.length;
+    const folio = restes > 0 ? `<span class="page-folio" style="grid-column: span ${restes % 3 || 3}" aria-hidden="true">${p + 1}</span>` + '<span class="case-vide" aria-hidden="true"></span>'.repeat(Math.max(0, restes - (restes % 3 || 3))) : '';
     return `<div class="page-tete"><span>${pg.titre}</span><span>${pg.plage()}</span></div><div class="poches">${poches.map(pocheHTML).join('')}${folio}</div>`;
   };
 
@@ -839,7 +863,12 @@ dialog.fiche[open] { animation: monte .35s var(--sortie); }
   base.className = 'page';
   feuillets.append(base);
   let courante = 0;
-  const rendre = () => { base.innerHTML = pageHTML(courante); compter(); };
+  const rendre = () => {
+    base.innerHTML = pageHTML(courante); compter();
+    $('#page-indic').innerHTML = `${pages[courante].titre} · page <b>${courante + 1}</b> / ${pages.length}`;
+    $('#page-prec').disabled = courante === 0;
+    $('#page-suiv').disabled = courante === pages.length - 1;
+  };
   const compter = () => {
     $('#cpt-des').textContent = `${designees.filter((c) => c.etat === 'pleine').length} / 14`;
     $('#cpt-lib').textContent = `${libres.filter(Boolean).length} / 15`;
@@ -899,7 +928,7 @@ dialog.fiche[open] { animation: monte .35s var(--sortie); }
   let appui = null;
   feuillets.addEventListener('pointerdown', (e) => {
     if (!ouvert || tour) return;
-    appui = { x: e.clientX, y: e.clientY, id: e.pointerId, actif: false, cible: e.target.closest('.poche[data-k]') };
+    appui = { x: e.clientX, y: e.clientY, id: e.pointerId, actif: false };
   });
   feuillets.addEventListener('pointermove', (e) => {
     if (!appui || e.pointerId !== appui.id) return;
@@ -908,8 +937,8 @@ dialog.fiche[open] { animation: monte .35s var(--sortie); }
       if (Math.abs(dx) < 8 || Math.abs(dx) < Math.abs(dy)) return;
       const t = commencerTour(dx < 0 ? 1 : -1);
       if (!t) { appui = null; return; }
-      tour = t; appui.actif = true;
-      feuillets.setPointerCapture(e.pointerId);
+      tour = t; appui.actif = true; glisse = true;
+      try { feuillets.setPointerCapture(e.pointerId); } catch {}
     }
     const w = feuillets.getBoundingClientRect().width;
     poserTour(tour, Math.abs(dx) / w);
@@ -917,20 +946,22 @@ dialog.fiche[open] { animation: monte .35s var(--sortie); }
   const lacher = async (e) => {
     if (!appui || e.pointerId !== appui.id) return;
     const a = appui; appui = null;
-    if (!a.actif) {
-      if (a.cible && e.type === 'pointerup') ouvrirFiche(a.cible.dataset.k, +a.cible.dataset.i);
-      return;
-    }
+    if (!a.actif) return;
     await finirTour(tour, tour.p > .3);
     tour = null;
   };
+  let glisse = false;
+  feuillets.addEventListener('pointerdown', () => { glisse = false; }, true);
+  feuillets.addEventListener('click', (e) => {
+    if (glisse) { glisse = false; return; }
+    const p = e.target.closest('.poche[data-k]');
+    if (p && ouvert) ouvrirFiche(p.dataset.k, +p.dataset.i);
+  });
   feuillets.addEventListener('pointerup', lacher);
   feuillets.addEventListener('pointercancel', lacher);
   feuillets.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowRight') tourner(1);
     if (e.key === 'ArrowLeft') tourner(-1);
-    const p = e.target.closest('.poche[data-k]');
-    if (p && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); ouvrirFiche(p.dataset.k, +p.dataset.i); }
   });
 
   /* ---------- Lignes de concentration ---------- */
@@ -972,6 +1003,7 @@ dialog.fiche[open] { animation: monte .35s var(--sortie); }
     couv.hidden = true;
     couv.getAnimations().forEach((a) => a.cancel());
     ouvert = true;
+    $('#pages-nav').hidden = false;
     btnBook.textContent = 'Fermer le Book';
     livre.classList.remove('flotte'); void livre.offsetWidth;
     if (!reduit) livre.classList.add('flotte');
@@ -986,9 +1018,12 @@ dialog.fiche[open] { animation: monte .35s var(--sortie); }
     await anim(couv, [{ transform: 'rotateY(-172deg)' }, { transform: 'rotateY(0deg)' }], { duration: 620, easing: 'cubic-bezier(.45,.05,.2,1)' });
     couv.getAnimations().forEach((a) => a.cancel());
     ouvert = false;
+    $('#pages-nav').hidden = true;
     btnBook.textContent = 'Book';
     occupe = false;
   };
+  $('#page-prec').addEventListener('click', () => tourner(-1));
+  $('#page-suiv').addEventListener('click', () => tourner(1));
   btnBook.addEventListener('click', () => (ouvert ? fermer() : invoquer()));
   couv.addEventListener('click', invoquer);
 
@@ -1052,12 +1087,17 @@ dialog.fiche[open] { animation: monte .35s var(--sortie); }
 
   /* ---------- Fiche d'une carte ---------- */
   const fiche = $('#fiche'), ficheCorps = $('#fiche-corps');
+  const roleHTML = (c) => {
+    if (c.type === 'sort') return `<span class="fiche-role f-sort">Carte de sort</span><p class="fiche-texte">${c.txt}</p><p class="doux">Se lance depuis l'onglet Sorts, sur un joueur à portée.</p>`;
+    if (c.type === 'objet') return `<span class="fiche-role f-objet">Carte d'objet</span><p class="fiche-texte">${c.txt}</p><p class="doux">S'utilise depuis la section Objets du Book.</p>`;
+    return `<span class="fiche-role f-designee">Carte à collectionner · rang ${c.rang}</span><p class="fiche-texte ambiance">${c.txt}</p><p>Elle n'a aucun effet dans la partie : elle compte pour le Clear tant qu'elle est rangée dans son emplacement.</p>`;
+  };
   const ouvrirFiche = (k, i) => {
     let html = '';
     if (k === 'd') {
       const c = designees[i];
       if (c.etat === 'pleine') {
-        html = `${carteHTML(c)}<div class="fiche-info"><p class="gros" id="fiche-titre">${c.n} ${c.nom}</p><p class="doux">${c.prov} · ${c.heure}</p></div>
+        html = `${carteHTML(c)}<div class="fiche-info"><p class="gros" id="fiche-titre">${c.n} ${c.nom}</p>${roleHTML(c)}<p class="doux">Obtenue : ${c.prov} · ${c.heure}</p></div>
           <div class="actions"><button class="btn-trait" data-cacher="${i}">Cacher dans les emplacements libres</button><button class="btn-encre" data-fermer>Fermer</button></div>`;
       } else if (c.etat === 'perdue') {
         html = `<div class="fiche-vide">${c.n}</div><div class="fiche-info"><p class="gros" id="fiche-titre">${c.n} ${c.nom}</p><p>Volée par ${c.par} à ${c.heure}.</p></div><div class="actions"><button class="btn-encre" data-fermer>Fermer</button></div>`;
@@ -1068,8 +1108,8 @@ dialog.fiche[open] { animation: monte .35s var(--sortie); }
     } else {
       const l = libres[i];
       const c = l.carte;
-      const statut = l.cachee ? 'Cachée : ne compte pas tant qu\'elle n\'est pas remise en place.' : l.doublon ? 'Doublon.' : c.type === 'sort' ? c.txt : '';
-      html = `${carteHTML(c)}<div class="fiche-info"><p class="gros" id="fiche-titre">${c.n} ${c.nom}</p><p class="doux">${l.prov} · ${l.heure}</p>${statut ? `<p>${statut}</p>` : ''}</div>
+      const statut = l.cachee ? '<p><b>Cachée</b> : elle ne compte pas pour le Clear tant qu\'elle n\'est pas remise en place.</p>' : l.doublon ? '<p><b>Doublon</b> : à échanger, à revendre, ou à garder en réserve contre un Vol.</p>' : '';
+      html = `${carteHTML(c)}<div class="fiche-info"><p class="gros" id="fiche-titre">${c.n} ${c.nom}</p>${l.cachee || l.doublon ? `<span class="fiche-role f-designee">Carte à collectionner · rang ${c.rang}</span><p class="fiche-texte ambiance">${c.txt}</p>` : roleHTML(c)}${statut}<p class="doux">Obtenue : ${l.prov} · ${l.heure}</p></div>
         <div class="actions">${l.cachee ? `<button class="btn-trait" data-remettre="${i}">Remettre en place</button>` : ''}<button class="btn-encre" data-fermer>Fermer</button></div>`;
     }
     ficheCorps.innerHTML = html;
@@ -1104,7 +1144,15 @@ dialog.fiche[open] { animation: monte .35s var(--sortie); }
     [loterie, "Carte d'objet"],
     [parN('000'), "L'unique SS"],
     [null, 'Dos commun']
-  ].map(([c, l]) => `<figure>${c ? carteHTML(c) : dosHTML()}<figcaption>${l}</figcaption></figure>`).join('');
+  ].map(([c, l]) => `<figure>${c ? `<button data-vitrine="${c.n}" aria-label="Lire la carte ${c.nom}">${carteHTML(c)}</button>` : dosHTML()}<figcaption>${l}</figcaption></figure>`).join('');
+  const vitrine = { [vol.n]: vol, [loterie.n]: loterie };
+  $('#defile').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-vitrine]');
+    if (!b) return;
+    const c = vitrine[b.dataset.vitrine] || parN(b.dataset.vitrine);
+    ficheCorps.innerHTML = `${carteHTML(c)}<div class="fiche-info"><p class="gros" id="fiche-titre">${c.n} ${c.nom}</p>${roleHTML(c)}</div><div class="actions"><button class="btn-encre" data-fermer>Fermer</button></div>`;
+    fiche.showModal();
+  });
 
   const matieres = { SS: 'Or', S: 'Argent', A: 'Cuivre', B: 'Jade', C: 'Acier', D: 'Papier' };
   $('#rangs').innerHTML = Object.entries(matieres).map(([r, m]) => `<div class="rang-tuile"><span class="c-rang r-${r}">${r}</span>${m}</div>`).join('');

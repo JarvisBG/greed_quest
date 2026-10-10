@@ -140,6 +140,26 @@ Constats :
 3. **Matérialisation dépend des checkpoints** : la réserve toutes les 40 min double ses tirages bonus (1,5 → 3,4) sans effet visible sur les Clear (cartes C / D seulement).
 4. Le simulateur modélise mal la vraie valeur des pouvoirs offensifs (un joueur réel vise un joueur proche du Clear) : à surveiller en test terrain.
 
+## Pouvoirs de Spécialisation et équité des types de Nen (2026-10-10, 40 graines, N = 14, réglages du jeu)
+Options : `specialisationPct` (part de Spécialistes ; 30 pour avoir assez de Spécialistes à mesurer, 5 dans le jeu), `pouvoirSpe` (`alchimie`, `bandit`, `zetsu`, `fortune` ou `tous` = tiré au hasard), `rechargeSpeMin`, `zetsuMin` (10), `alchimieDoublons`, `alchimieMode` (`monte` : N doublons d'un rang → 1 carte du rang au-dessus ; `meme` : 1 doublon → 1 carte manquante du même rang). Mesure : **écart du score moyen d'un type (cartes désignées vraies à la fin) au score moyen de tous les joueurs**.
+
+Pouvoirs testés : **Alchimie** (doublon → carte manquante), **Bandit** (un Vol sans carte de sort), **Zetsu** (10 min invisible : ni ciblable, ni dans les listes), **Fortune** (le prochain scan donne deux gains).
+
+| Scénario (30 % de Spécialistes) | Alchimie | Bandit | Zetsu | Fortune | Clear 10 / 30 / 80 j. |
+|---|---|---|---|---|---|
+| Recharge 30 min, Alchimie « 3 doublons → rang au-dessus » | −0,7 / −0,8 / −0,2 | +0,8 / +0,5 / +0,4 | −0,1 / −0,5 / −0,4 | +1,3 / +0,7 / +0,6 | 25 / 21 / 35 |
+| Recharge 30 min, Alchimie « 2 doublons → rang au-dessus » | −0,4 / −0,7 / −0,1 | ≈ | ≈ | ≈ | 24 / 18 / 36 |
+| Recharge 30 min, Alchimie « 1 doublon → carte manquante du même rang » | −0,4 / 0,0 / 0,0 | +0,8 / +0,8 / +0,4 | +0,4 / −0,5 / 0,0 | +1,0 / +0,8 / +0,5 | 23 / 20 / 37 |
+| **Recharge 40 min, Alchimie même rang** | −0,2 / −0,6 / 0,0 | +0,8 / +0,4 / +0,4 | +0,6 / −0,3 / −0,2 | +0,3 / +0,7 / +0,7 | 24 / 20 / 38 |
+
+Types ordinaires dans les mêmes parties (écart moyen) : Matérialisation ≈ +0,7 (réserve comprise), Renforcement ≈ +0,2, Manipulation ≈ −0,3, Émission ≈ −0,4, Transformation ≈ −0,7. Sans Spécialistes : Clear 21 / 16 / 34 ; avec 5 % : 17-18 / 20-21 / 34-38 (bruit).
+
+Constats :
+1. **Aucun pouvoir ne déséquilibre la partie** : tous les types restent à ±1 carte de la moyenne, et le Clear ne bouge pas.
+2. **Alchimie « monter d'un rang » est perdante** (−0,2 à −0,8) : elle brûle des doublons qui servaient à échanger et à payer. La version « 1 doublon → 1 carte manquante du même rang » est neutre.
+3. **Fortune est le plus fort** (+0,3 à +1,3), **Bandit** suit (+0,4 à +0,8) ; une recharge de 40 min les tempère. **Zetsu** est neutre (défensif, comme Renforcement).
+4. Transformation reste le type le plus faible au score : son intérêt (bluff, fausses cartes refilées) n'est pas mesuré par le simulateur.
+
 ## Recommandations (validées le 2026-10-09, voir PROGRESS.md « Calibrage »)
 - Limites en mode Multiplicateur × 2 par défaut (ou formules RG-14 revues pour ~20 exemplaires par joueur).
 - Nombre de balises posées recommandé ≈ 0,75 × joueurs attendus (min 10).

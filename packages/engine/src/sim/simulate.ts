@@ -34,6 +34,10 @@ const MIN = 60_000;
 export type CarteHC = 'pepite' | 'ticket' | 'boussole' | 'souffle' | 'voile' | 'coffre';
 const CARTES_HC: CarteHC[] = ['pepite', 'ticket', 'boussole', 'souffle', 'voile', 'coffre'];
 
+/** Pouvoirs de Spécialisation candidats (proposition du 2026-10-10). */
+export type PouvoirSpe = 'alchimie' | 'bandit' | 'zetsu' | 'fortune';
+const POUVOIRS_SPE: PouvoirSpe[] = ['alchimie', 'bandit', 'zetsu', 'fortune'];
+
 export interface SimConfig {
   joueurs: number;
   seed: number;
@@ -113,6 +117,18 @@ export interface SimConfig {
   reserveMaterialisationMin: number | null;
   /** Émission : à chaque action, probabilité de viser hors portée un joueur (si pouvoir et sort offensif). */
   probaEmission: number;
+  /** Part de joueurs Spécialisation (RG-5.4 : 5 %) ; le simulateur les tirait jusque-là à 0 %. */
+  specialisationPct: number;
+  /** Pouvoir des Spécialistes : un seul pour tous, ou 'tous' = tiré au hasard pour chacun. */
+  pouvoirSpe: PouvoirSpe | 'tous';
+  /** Recharge du pouvoir de Spécialisation (min). */
+  rechargeSpeMin: number;
+  /** Zetsu : durée d'invisibilité (min). */
+  zetsuMin: number;
+  /** Alchimie : nombre de doublons d'un même rang consommés. */
+  alchimieDoublons: number;
+  /** Alchimie « meme » : 1 doublon devient une carte manquante du même rang (au lieu de monter d'un rang). */
+  alchimieMode: 'monte' | 'meme';
   /** Répartition du catalogue par rang (RG-8 : SS 2, S 3, A 5, B 6, C 7, D 7). */
   catalogue: Record<Rank, number>;
 }
@@ -148,6 +164,12 @@ export const DEFAULT_SIM: Omit<SimConfig, 'joueurs' | 'seed'> = {
   multLimiteCD: null,
   catalogue: { SS: 2, S: 3, A: 5, B: 6, C: 7, D: 7 },
   rechargeNen: {},
+  specialisationPct: 0,
+  pouvoirSpe: 'tous',
+  rechargeSpeMin: 30,
+  zetsuMin: 10,
+  alchimieDoublons: 3,
+  alchimieMode: 'monte',
   reserveMaterialisationMin: null,
   probaEmission: 0.3,
   partReplisHC: 0,
@@ -203,6 +225,12 @@ export interface SimResult {
   pouvoirs: Partial<Record<NenType, number>>;
   /** Vols réussis de SS. */
   volsSS: number;
+  /** Cartes désignées vraies à la fin, somme et nombre de joueurs, par type de Nen (Spécialisation : par pouvoir). */
+  scoresParType: Record<string, { somme: number; n: number }>;
+  /** Type de Nen (ou pouvoir de Spécialisation) de l'auteur du Clear. */
+  clearPar: string | null;
+  /** Utilisations du pouvoir de Spécialisation, par pouvoir. */
+  usagesSpe: Partial<Record<PouvoirSpe, number>>;
 }
 
 interface SimPlayer {
@@ -222,6 +250,10 @@ interface SimPlayer {
   hc: CarteHC[];
   pouvoirsA: Partial<Record<NenPower, number>>;
   derniereReserveA: number;
+  spe: PouvoirSpe | null;
+  speA: number | null;
+  /** Fortune : le prochain scan donne deux gains. */
+  fortune: boolean;
 }
 
 function buildCatalogue(c: Record<Rank, number>): { ids: string[]; rang: Map<string, Rank> } {
@@ -265,9 +297,10 @@ export function simulate(cfg: SimConfig): SimResult {
   }));
   const visites = new Map<string, number>();
   const nens = NEN_TYPES.filter((n) => n !== 'specialisation');
+  const tireSpe = () => rng.next() * 100 < cfg.specialisationPct;
   const players: SimPlayer[] = Array.from({ length: cfg.joueurs }, (_, i) => ({
     id: `p${i}`,
-    nen: nens[randomInt(rng, nens.length)]!,
+    nen: tireSpe() ? 'specialisation' : nens[randomInt(rng, nens.length)]!,
     book: emptyBook(),
     jenny: 50,
     historique: [],
@@ -282,7 +315,20 @@ export function simulate(cfg: SimConfig): SimResult {
     hc: [],
     pouvoirsA: {},
     derniereReserveA: 0,
+    spe: null,
+    speA: null,
+    fortune: false,
   }));
+  for (const p of players) {
+    if (p.nen === 'specialisation') p.spe = cfg.pouvoirSpe === 'tous' ? POUVOIRS_SPE[randomInt(rng, POUVOIRS_SPE.length)]! : cfg.pouvoirSpe;
+  }
+  const usagesSpe: SimResult['usagesSpe'] = {};
+  const speDispo = (p: SimPlayer, pw: PouvoirSpe, now: number) => p.spe === pw && (p.speA === null || now - p.speA >= cfg.rechargeSpeMin * MIN);
+  const useSpe = (p: SimPlayer, pw: PouvoirSpe, now: number) => {
+    p.speA = now;
+    usagesSpe[pw] = (usagesSpe[pw] ?? 0) + 1;
+  };
+  let clearPar: string | null = null;
 
   // Tous les joueurs restent actifs : J = nombre de joueurs.
   const ctx = () => ({
@@ -348,7 +394,10 @@ export function simulate(cfg: SimConfig): SimResult {
     return l.libres.flatMap((s) => (s.etat === 'plein' && s.item.kind === 'carte' ? [s.item] : []));
   };
   const checkClearOf = (p: SimPlayer, now: number) => {
-    if (clearA === null && checkClear(p.book, designees).etat === 'complet') clearA = now;
+    if (clearA === null && checkClear(p.book, designees).etat === 'complet') {
+      clearA = now;
+      clearPar = p.spe ?? p.nen;
+    }
   };
   /** Sorts sans effet modélisé : utilisés (retirés) aussitôt obtenus. */
   const useNonOffensive = (p: SimPlayer) => {
@@ -388,8 +437,6 @@ export function simulate(cfg: SimConfig): SimResult {
   const pouvoirDispo = (p: SimPlayer, pw: NenPower, now: number) => pouvoirDisponibleDans(p, pw, now, rechargeNenMs[pw]) === 0;
   /** Sort offensif choisi : Vol, sinon Échange forcé avec un doublon, sinon Gel ; Manipulation à défaut de carte. */
   function lancer(p: SimPlayer, autre: SimPlayer, now: number, horsPortee: boolean): boolean {
-    const pos: Position = { lat: 48.85, lng: 2.35, precisionM: 0, a: now };
-    const loin: Position = { lat: 48.9, lng: 2.35, precisionM: 0, a: now };
     const sorts = p.book.items.filter((i) => i.kind === 'sort');
     const doublon = duplicates(p)[0];
     const choix = (['vol', 'echange_force', 'gel'] as OffensiveSpell[]).find((s) =>
@@ -403,7 +450,31 @@ export function simulate(cfg: SimConfig): SimResult {
     } else if (doublon && pouvoirDispo(p, 'manipulation', now)) {
       sort = 'echange_force';
       source = { type: 'pouvoir' };
+    } else if (speDispo(p, 'bandit', now)) {
+      // Bandit (Spécialisation) : un Vol sans carte ; modélisé par une carte Vol fournie au moment du lancer.
+      const item = { kind: 'sort' as const, id: newId(), spell: 'vol' as const, obtenuA: now };
+      p.book = addItem(p.book, item);
+      sort = 'vol';
+      source = { type: 'carte', itemId: item.id };
+      const avant = p.book;
+      const ok = lancerAvec(p, autre, now, horsPortee, sort, source, doublon);
+      if (ok) useSpe(p, 'bandit', now);
+      else p.book = removeItem(avant, item.id);
+      return ok;
     } else return false;
+    return lancerAvec(p, autre, now, horsPortee, sort, source, doublon);
+  }
+  function lancerAvec(
+    p: SimPlayer,
+    autre: SimPlayer,
+    now: number,
+    horsPortee: boolean,
+    sort: OffensiveSpell,
+    source: { type: 'carte'; itemId: string } | { type: 'pouvoir' },
+    doublon: CardItem | undefined,
+  ): boolean {
+    const pos: Position = { lat: 48.85, lng: 2.35, precisionM: 0, a: now };
+    const loin: Position = { lat: 48.9, lng: 2.35, precisionM: 0, a: now };
     const r = castOffensive(
       { now, gameState: 'en_cours', portee: { porteeM: 30, margeMaxM: 20 }, rangDe, newId, rechargeNenMs },
       {
@@ -439,7 +510,53 @@ export function simulate(cfg: SimConfig): SimResult {
     checkClearOf(p, now);
   }
 
+  /** Zetsu (Spécialisation) : invisible pendant `zetsuMin`, ni ciblable ni dans les listes. Activé dès qu'il est rechargé. */
+  const invisible = (x: SimPlayer, now: number) => x.spe === 'zetsu' && x.speA !== null && now - x.speA < cfg.zetsuMin * MIN;
+
+  /**
+   * Alchimie (Spécialisation) : 3 doublons d'un même rang (hors SS) deviennent 1 carte au hasard du rang au-dessus,
+   * sous les limites, en préférant une carte qui manque. Les doublons sortent du jeu.
+   */
+  function alchimie(p: SimPlayer, now: number): boolean {
+    const parRang = new Map<Rank, CardItem[]>();
+    for (const d of duplicates(p)) {
+      if (d.faux) continue;
+      const r = rangDe(d.cardId);
+      parRang.set(r, [...(parRang.get(r) ?? []), d]);
+    }
+    const circ = countInCirculation(players.map((x) => x.book));
+    const manques = missing(p);
+    if (cfg.alchimieMode === 'meme') {
+      for (const r of ['S', 'A', 'B', 'C', 'D'] as Rank[]) {
+        const d = parRang.get(r)?.[0];
+        const voulues = designees.filter((id) => rangDe(id) === r && manques.has(id) && (circ.get(id) ?? 0) < limites()[r]);
+        if (!d || voulues.length === 0) continue;
+        p.book = removeItem(p.book, d.id);
+        p.book = addItem(p.book, { kind: 'carte', id: newId(), cardId: voulues[randomInt(rng, voulues.length)]!, origine: { type: 'duplication' }, obtenuA: now });
+        checkClearOf(p, now);
+        return true;
+      }
+      return false;
+    }
+    // Du rang le plus haut au plus bas : le meilleur gain d'abord.
+    for (const r of ['S', 'A', 'B', 'C', 'D'] as Rank[]) {
+      const ds = parRang.get(r) ?? [];
+      if (ds.length < cfg.alchimieDoublons) continue;
+      const dessus = RANKS[RANKS.indexOf(r) - 1]!;
+      const dispo = designees.filter((id) => rangDe(id) === dessus && (circ.get(id) ?? 0) < limites()[dessus]);
+      if (dispo.length === 0) continue;
+      const voulues = dispo.filter((id) => manques.has(id));
+      const choix = (voulues.length > 0 ? voulues : dispo)[randomInt(rng, (voulues.length > 0 ? voulues : dispo).length)]!;
+      for (const d of ds.slice(0, cfg.alchimieDoublons)) p.book = removeItem(p.book, d.id);
+      p.book = addItem(p.book, { kind: 'carte', id: newId(), cardId: choix, origine: { type: 'duplication' }, obtenuA: now });
+      checkClearOf(p, now);
+      return true;
+    }
+    return false;
+  }
+
   function encounter(p: SimPlayer, autre: SimPlayer, now: number) {
+    if (invisible(autre, now)) return;
     // 1. Sort offensif (ou Manipulation).
     if (cfg.sorts) lancer(p, autre, now, false);
 
@@ -686,10 +803,20 @@ export function simulate(cfg: SimConfig): SimResult {
       bonusMaterialisation(p, now);
       if (clearA !== null) break;
     }
+    // Spécialisation : Zetsu dès qu'il est rechargé ; Fortune arme le prochain scan ; Alchimie dès que possible.
+    if (speDispo(p, 'zetsu', now)) useSpe(p, 'zetsu', now);
+    if (speDispo(p, 'fortune', now) && !p.fortune) {
+      p.fortune = true;
+      useSpe(p, 'fortune', now);
+    }
+    if (speDispo(p, 'alchimie', now) && alchimie(p, now)) {
+      useSpe(p, 'alchimie', now);
+      if (clearA !== null) break;
+    }
     // Émission : un sort offensif sur un joueur au hasard, hors portée.
     if (cfg.sorts && pouvoirDispo(p, 'emission', now) && rng.next() < cfg.probaEmission) {
       const autre = players[randomInt(rng, players.length)]!;
-      if (autre !== p) lancer(p, autre, now, true);
+      if (autre !== p && !invisible(autre, now)) lancer(p, autre, now, true);
       if (clearA !== null) break;
     }
 
@@ -774,6 +901,13 @@ export function simulate(cfg: SimConfig): SimResult {
     } else {
       const circ = countInCirculation(players.map((x) => x.book));
       const catalogue: CatalogCard[] = designees.map((id) => ({ id, rank: rangDe(id), enCirculation: circ.get(id) ?? 0 }));
+      const nbGains = p.fortune ? 2 : 1;
+      p.fortune = false;
+      for (let g = 0; g < nbGains; g++) {
+      if (g > 0) {
+        const c2 = countInCirculation(players.map((x) => x.book));
+        for (const c of catalogue) c.enCirculation = c2.get(c.id) ?? 0;
+      }
       const gain = draw(
         { beaconType: beacon.type ?? 'standard', tiragesPrecedents: previousDrawsOn(p.historique, beacon.id), catalogue, limites: limites() },
         rng,
@@ -792,6 +926,7 @@ export function simulate(cfg: SimConfig): SimResult {
         stats.replis++;
         repli(p, gain.amount);
       } else p.jenny += gain.amount;
+      }
       p.historique.push(beacon.id);
       p.dernierTirageA = now;
 
@@ -847,5 +982,12 @@ export function simulate(cfg: SimConfig): SimResult {
       Object.entries(pouvoirs).map(([t, n]) => [t, n / Math.max(1, players.filter((x) => x.nen === t).length)]),
     ),
     volsSS,
+    scoresParType: players.reduce<SimResult['scoresParType']>((acc, p, i) => {
+      const t = p.spe ?? p.nen;
+      acc[t] = { somme: (acc[t]?.somme ?? 0) + scores[i]!, n: (acc[t]?.n ?? 0) + 1 };
+      return acc;
+    }, {}),
+    clearPar: finalClear === null ? null : clearPar,
+    usagesSpe,
   };
 }

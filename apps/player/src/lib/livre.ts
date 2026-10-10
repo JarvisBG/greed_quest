@@ -1,5 +1,5 @@
 // Livre du joueur tel que l'API le donne (GET /livre, RG-8.5). Chargement : useLivre.ts.
-import type { Rank, SpellType } from '@gq/shared';
+import type { ObjetType, Rank, SpellType } from '@gq/shared';
 
 export interface Carte {
   numero: number | null;
@@ -31,6 +31,9 @@ export interface LivreRecu {
   total: number;
   libresUtilises: number;
   pages: Emplacement[][];
+  /** Amendement 2026-10-10 : section des objets, à part. */
+  objets: { itemId: string; objet: ObjetType; obtenu: string; engage: boolean }[];
+  placesObjets: number;
 }
 
 export type EmplacementCarte = Extract<Emplacement, { kind: 'carte' }>;

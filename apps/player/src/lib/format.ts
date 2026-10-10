@@ -1,5 +1,5 @@
 // Libellés et formats affichés au joueur (français).
-import type { GameState, NenType, SpellType } from '@gq/shared';
+import type { GameState, NenType, ObjetType, SpellType } from '@gq/shared';
 import type { EvenementJoueur } from './realtime';
 import type { Gain, IssueScan } from './scan';
 
@@ -60,6 +60,16 @@ export function libelleEvenement(nom: EvenementJoueur): string {
 }
 
 /** RG-10 */
+/** Amendement 2026-10-10 : cartes objets. */
+export const OBJETS: Record<ObjetType, { nom: string; effet: string }> = {
+  pepite: { nom: 'Pépite d’or', effet: 'Se revend 30 J à Masadora' },
+  ticket: { nom: 'Ticket de la Fortune', effet: 'À gratter : 0, 10, 30 ou 100 J' },
+  boussole: { nom: 'Boussole du chercheur', effet: 'Indique la direction d’une balise active que tu n’as jamais scannée' },
+  souffle: { nom: 'Second souffle', effet: 'Rescanne une balise sans faire la boucle des autres balises' },
+  voile: { nom: 'Voile d’ombre', effet: 'Bloque le prochain Radar ou Regard lancé sur toi' },
+  coffre: { nom: 'Coffre scellé', effet: 'Une carte de ton choix ne peut être ni volée ni prise pendant 20 min' },
+};
+
 export const SORTS: Record<SpellType, { nom: string; effet: string }> = {
   vol: { nom: 'Vol', effet: 'Prend 1 carte au hasard à un joueur proche' },
   echange_force: { nom: 'Échange forcé', effet: 'Donne 1 carte choisie à un joueur proche et lui en prend 1 au hasard' },
@@ -86,6 +96,7 @@ export const NENS: Record<NenType, { nom: string; passif: string }> = {
 export function libelleGain(g: Gain): string {
   if (g.kind === 'carte') return `${g.nom} (rang ${g.rang})`;
   if (g.kind === 'sort') return `Sort ${SORTS[g.sort].nom}`;
+  if (g.kind === 'objet') return `Objet ${OBJETS[g.objet].nom}`;
   return `${g.montant} J`;
 }
 

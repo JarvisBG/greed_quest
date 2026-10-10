@@ -24,6 +24,8 @@ const livre: LivreRecu = {
   cartesDesignees: 3,
   total: 30,
   libresUtilises: 1,
+  objets: [],
+  placesObjets: 8,
   pages: [[carte('a'), carte('b', { engagee: true }), carte('c', { engagee: true }), carte('g', { apparence: 'grisee' }), { etat: 'plein', kind: 'sort', designe: false, itemId: 's', sort: 'vol' }]],
 };
 const part = (ids: string[], jenny = 0) => ({ cartes: ids.map((itemId) => ({ itemId, carteId: null, nom: itemId, rang: null })), jenny });

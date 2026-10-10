@@ -24,6 +24,8 @@ const livre: LivreRecu = {
   cartesDesignees: 2,
   total: 30,
   libresUtilises: 5,
+  objets: [],
+  placesObjets: 8,
   pages: [
     [carte('a'), carte('b', { engagee: true }), { etat: 'vide', designe: true, carte: { numero: 3, nom: 'X', rang: 'B' } }],
     [sort('s1', 'barriere'), sort('s2', 'vol'), sort('s3', 'vol'), carte('d', { designe: false }), carte('g', { designe: false, apparence: 'grisee' }), sort('s4', 'radar')],

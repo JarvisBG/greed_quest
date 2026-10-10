@@ -286,6 +286,7 @@ export function App() {
                 onExamen={() => setExamenOuvert(true)}
                 onOuvrir={setSous}
                 onBook={() => setOnglet('livre')}
+                position={jeu.positionCarte()}
               />
             )}
           </>

@@ -54,6 +54,22 @@ describe('Écran géant : état à l’ouverture (GET /ecran, public)', () => {
   });
 });
 
+describe('Carte de l’île du joueur (GET /carte)', () => {
+  it('RG-6.5 : contours des zones et nombre de balises actives par zone, jamais lesquelles ; RG-10.12 : aucune position', async () => {
+    const res = await get('/carte', gon.token);
+    expect(res.statusCode).toBe(200);
+    const c = res.json();
+    expect(c.zones.length).toBeGreaterThan(0);
+    expect(c.zones[0]).toMatchObject({ id: expect.any(String), nom: expect.any(String), type: expect.any(String), polygone: expect.any(Array) });
+    expect(Object.values(c.balisesParZone as Record<string, number>).reduce((a, b) => a + b, 0)).toBeGreaterThan(0);
+    expect(Object.keys(c)).toEqual(['ok', 'zones', 'balisesParZone']);
+    const balises = await t.app.gq.runner.run(t.partieId, SYSTEME, async (x) => (await import('../core/state.js')).loadBeacons(x.tx, t.partieId));
+    const brut = JSON.stringify(c);
+    for (const b of balises) expect(brut).not.toContain(b.id);
+    expect(brut).not.toContain(gon.id);
+  });
+});
+
 describe('Console GM : positions et équipe', () => {
   it('RG-10.12 : positions exactes pour le GM seulement', async () => {
     const res = await get('/positions', gm);

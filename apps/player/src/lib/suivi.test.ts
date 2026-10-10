@@ -43,6 +43,10 @@ describe('suivi de position (RG-10.9, RG-10.10)', () => {
     expect(s.fraiche()).toEqual({ lat: 48, lng: 2, precisionM: 7 });
     t = 31_000;
     expect(s.fraiche()).toBeNull();
+    // RG-10.10 : la carte garde la dernière position 2 min, même sans nouveau relevé (téléphone immobile).
+    expect(s.derniere()).toEqual({ lat: 48, lng: 2, precisionM: 7 });
+    t = 121_000;
+    expect(s.derniere()).toBeNull();
     s.arreter();
   });
 

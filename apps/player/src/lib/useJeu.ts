@@ -382,6 +382,8 @@ export function useJeu() {
     ouvrirSuivi: (s: Omit<SuiviCible, 'recuA'>) => setSuiviCible({ ...s, recuA: Date.now() }),
     /** Dernière position GPS connue de ce téléphone (pour la direction de l'Accompagnement). */
     positionConnue: () => suivi.current?.fraiche() ?? null,
+    /** Ta position pour la carte de l'île (moins de 2 min, RG-10.10). */
+    positionCarte: () => suivi.current?.derniere() ?? null,
     licenceSecret,
     version,
     connexion,

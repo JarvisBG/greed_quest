@@ -1,5 +1,6 @@
 // Accueil : profil et pouvoir de Nen (RG-5.4), gel (RG-10), Book fermé à invoquer, évènements en cours
-// (RG-12 : bannières, raid), villes (boutique de Masadora RG-9, enchères d'Antokiba RG-11.4, Retour),
+// (RG-12 : bannières, raid), carte de l'île (zones, balises actives par zone RG-6.5, ta position, évènements de zone)
+// et villes (boutique de Masadora RG-9, enchères d'Antokiba RG-11.4, Retour),
 // licence (RG-5.2), Examen reporté, options, notifications.
 import { Dialogue } from '@gq/ui';
 import { useEffect, useState, type CSSProperties } from 'react';
@@ -10,10 +11,13 @@ import { etatPouvoir } from '../lib/pouvoir';
 import { useLivre } from '../lib/useLivre';
 import type { Moi, Notif, Partie } from '../lib/useJeu';
 import { BookFerme } from './BookFerme';
+import { CaseCarte } from './carte/CaseCarte';
 
 export interface Evenement {
   id: string;
   type: string;
+  /** Zone visée (double gain, apparition, zone maudite) : l'évènement s'allume sur la carte. */
+  zoneId?: string | null;
   texte: string | null;
   resteMs: number;
   pv?: number;
@@ -35,6 +39,9 @@ export function useEvenements(partieId: string, version: number) {
   return ev;
 }
 
+/** Étiquette courte d'un évènement de zone sur la carte (RG-12). */
+const LIBELLE_ZONE: Record<string, string> = { double_gain: 'Double gain', apparition: 'Apparition', zone_maudite: 'Zone maudite' };
+
 const VILLES = [
   { id: 'masadora', nom: 'Masadora', lieu: 'Boutique de sorts', ecran: 'boutique' },
   { id: 'antokiba', nom: 'Antokiba', lieu: 'Enchères', ecran: 'encheres' },
@@ -51,6 +58,7 @@ export function Accueil({
   onExamen,
   onOuvrir,
   onBook,
+  position,
 }: {
   partie: Partie;
   moi: Moi;
@@ -62,6 +70,8 @@ export function Accueil({
   onExamen: () => void;
   onOuvrir: (s: SousEcran) => void;
   onBook: () => void;
+  /** Dernière position GPS de ce téléphone (seule position montrée, RG-10.12). */
+  position: { lat: number; lng: number; precisionM: number } | null;
 }) {
   const [maintenant, setMaintenant] = useState(Date.now());
   useEffect(() => {
@@ -72,7 +82,11 @@ export function Accueil({
   const ecoule = maintenant - moi.recuA;
   const encours = evenements.liste.filter((e) => e.resteMs - (maintenant - evenements.recuA) > 0);
   const raid = encours.find((e) => e.type === 'raid');
-  const bannieres = encours.filter((e) => e.type !== 'raid');
+  // Les évènements d'une zone s'allument sur la carte ; les autres restent en bannière.
+  const bannieres = encours.filter((e) => e.type !== 'raid' && !e.zoneId);
+  const surCarte = encours
+    .filter((e) => e.type !== 'raid' && e.zoneId)
+    .map((e) => ({ zoneId: e.zoneId!, texte: `${LIBELLE_ZONE[e.type] ?? 'Évènement'} · ${Math.max(1, Math.ceil((e.resteMs - (maintenant - evenements.recuA)) / 60_000))} min` }));
   const pouvoir = etatPouvoir(moi, ecoule);
   const gel = Math.max(0, moi.delais.gel - ecoule);
   const suivi = Math.max(0, moi.accompagne - ecoule);
@@ -151,24 +165,26 @@ export function Accueil({
         </section>
       )}
 
-      <div className="villes">
-        {VILLES.map((v) => {
-          const distance = retour?.ville === v.id;
-          return (
-            <button key={v.id} className={`ville${distance ? ' a-distance' : ''}`} onClick={() => onOuvrir(v.ecran)}>
-              <b>{v.nom}</b>
-              <span>{v.lieu}</span>
-              {distance ? (
-                <span className="etat-ville">
-                  À distance <em className="temps">{formatChrono(retour.reste)}</em>
-                </span>
-              ) : (
-                moi.villesVisitees.includes(v.id) && <span className="etat-ville">Déjà visitée</span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+      <CaseCarte partieId={partie.id} version={version} position={position} evenements={surCarte}>
+        <div className="villes">
+          {VILLES.map((v) => {
+            const distance = retour?.ville === v.id;
+            return (
+              <button key={v.id} className={`ville${distance ? ' a-distance' : ''}`} onClick={() => onOuvrir(v.ecran)}>
+                <b>{v.nom}</b>
+                <span>{v.lieu}</span>
+                {distance ? (
+                  <span className="etat-ville">
+                    À distance <em className="temps">{formatChrono(retour.reste)}</em>
+                  </span>
+                ) : (
+                  moi.villesVisitees.includes(v.id) && <span className="etat-ville">Déjà visitée</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </CaseCarte>
 
       {!moi.examenFait && (
         <>

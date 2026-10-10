@@ -91,6 +91,11 @@ export function creerSuivi({ geo, envoyer, now = Date.now, onErreur }: SuiviOpti
       if (!courante || now() - courante.a > FRAICHEUR_MS) return null;
       return { lat: courante.lat, lng: courante.lng, precisionM: courante.precisionM };
     },
+    /** Dernière position GPS de moins de 2 min (RG-10.10) : celle que montre la carte de l'île, même immobile. */
+    derniere(): PositionInput | null {
+      if (!courante || now() - courante.a > 2 * BATTEMENT_MS) return null;
+      return { lat: courante.lat, lng: courante.lng, precisionM: courante.precisionM };
+    },
     /** Une intention (scan, achat, sort) a porté la position : elle compte comme envoyée. */
     marquerEnvoyee(p: PositionInput) {
       envoyee = { ...p, a: now() };

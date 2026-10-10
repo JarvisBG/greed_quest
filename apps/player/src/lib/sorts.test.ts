@@ -80,7 +80,7 @@ describe('sorts côté app (RG-10)', () => {
   it('résultats en clair pour le lanceur', () => {
     const nom = (id: string) => (id === 'a' ? 'Épée' : '?');
     expect(resumeSort({ sort: 'vol', resultat: 'reussi', recu: { itemId: 'x', nom: 'Couronne' } }, 'Kirua', nom)).toBe('Tu as volé Couronne à Kirua.');
-    expect(resumeSort({ sort: 'vol', resultat: 'bloque', protection: 'barriere' }, 'Kirua', nom)).toBe('Kirua était protégé : sort bloqué par sa Barrière.');
+    expect(resumeSort({ sort: 'vol', resultat: 'bloque', protection: 'barriere' }, 'Kirua', nom)).toBe('Kirua était protégé : sort bloqué par son Mur défensif.');
     expect(resumeSort({ sort: 'radar', resultat: 'reussi', zone: 'Forêt' }, 'Kirua', nom)).toBe('Dernière position connue de Kirua : zone Forêt.');
     expect(resumeSort({ sort: 'analyse', resultat: 'reussi', contrefacons: ['a'] }, null, nom)).toBe('Contrefaçon : Épée.');
     expect(resumeSort({ sort: 'duplication', resultat: 'reussi', copie: { itemId: 'c', carteId: 'x', contrefacon: true } }, null, nom)).toMatch(/contrefaçon/);
@@ -97,7 +97,7 @@ describe('sorts côté app (RG-10)', () => {
       { carteId: 'b', numero: 4, nom: 'Boussole', rang: 'A', n: 2, contrefacon: true },
     ];
     expect(resumeSort({ sort: 'regard', resultat: 'reussi', cartes }, 'Kirua', () => '')).toBe('Cartes de Kirua : Couronne, Boussole ×2 (contrefaçon).');
-    expect(texteSortRecu({ lanceur: null, sort: 'regard', resultat: 'reussi' })).toBe('Quelqu’un a consulté ton Livre.');
+    expect(texteSortRecu({ lanceur: null, sort: 'regard', resultat: 'reussi' })).toBe('Quelqu’un a consulté ton Book.');
     expect(corpsSort({ sort: 'regard', itemId: 'g', cibleId: 'k' }, { lat: 1, lng: 2, precisionM: 5 })).toEqual({ sort: 'regard', itemId: 'g', cibleId: 'k', position: { lat: 1, lng: 2, precisionM: 5 } });
     expect(etapes('regard')).toEqual(['cible']);
   });

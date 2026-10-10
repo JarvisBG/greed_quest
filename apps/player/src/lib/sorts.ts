@@ -5,7 +5,7 @@ import { SORTS } from './format';
 import { contenu, type EmplacementCarte, type LivreRecu } from './livre';
 
 /** Ordre d'affichage : offensifs, puis information, puis Livre. */
-const ORDRE: SpellType[] = ['vol', 'echange_force', 'gel', 'radar', 'revelation', 'duplication', 'analyse', 'barriere'];
+const ORDRE: SpellType[] = ['vol', 'pickpocket', 'echange_force', 'gel', 'accompagnement', 'radar', 'regard', 'clairvoyance', 'revelation', 'retour', 'duplication', 'analyse', 'barriere'];
 
 export interface SortDisponible {
   sort: SpellType;
@@ -40,8 +40,10 @@ export function pouvoirDispo(nen: NenType | null, delai: number | null, ecoule: 
 }
 
 /** Les sorts qui visent un joueur, et ceux qui ne visent que des joueurs à portée. */
-export const VISE_JOUEUR: readonly SpellType[] = ['vol', 'echange_force', 'gel', 'radar', 'regard'];
-export const OFFENSIF: readonly SpellType[] = ['vol', 'echange_force', 'gel'];
+export const VISE_JOUEUR: readonly SpellType[] = ['vol', 'pickpocket', 'echange_force', 'gel', 'radar', 'regard', 'clairvoyance', 'accompagnement'];
+export const OFFENSIF: readonly SpellType[] = ['vol', 'pickpocket', 'echange_force', 'gel', 'accompagnement'];
+/** Amendements 2026-10-09 / 2026-10-10 : cibles parmi les joueurs déjà croisés (`croises` de GET /a-portee). */
+export const CIBLE_CROISEE: readonly SpellType[] = ['regard', 'clairvoyance', 'accompagnement'];
 
 /** Réponse de `POST /sort` (champs privés selon le sort). */
 export interface ReponseSort {
@@ -56,7 +58,7 @@ export interface ReponseSort {
   cartes?: { carteId: string; numero: number; nom: string; rang: string; n: number; contrefacon: boolean }[];
 }
 
-const PROTECTION = { barriere: 'sa Barrière', renforcement: 'son Renforcement' } as const;
+const PROTECTION = { barriere: 'son Mur défensif', renforcement: 'son Renforcement' } as const;
 
 /** Phrase de résultat pour le lanceur. `cible` : pseudo visé ; `noms` : nom des cartes par itemId (Analyse). */
 export function resumeSort(r: ReponseSort, cible: string | null, noms: (itemId: string) => string): string {
@@ -83,7 +85,14 @@ export function resumeSort(r: ReponseSort, cible: string | null, noms: (itemId: 
     }
     case 'barriere':
       return SORTS.barriere.effet;
-    case 'regard': {
+    case 'pickpocket':
+      return r.resultat === 'reussi' ? `Tu as pris ${r.recu?.nom ?? 'une carte'} à ${qui}.` : `${qui} n’avait rien dans ses emplacements libres.`;
+    case 'accompagnement':
+      return `${qui} est gelé 3 min : suis sa position.`;
+    case 'retour':
+      return 'Visite à distance ouverte pour 10 min.';
+    case 'regard':
+    case 'clairvoyance': {
       const l = r.cartes ?? [];
       if (l.length === 0) return `${qui} n’a aucune carte.`;
       return `Cartes de ${qui} : ${l.map((x) => `${x.nom}${x.n > 1 ? ` ×${x.n}` : ''}${x.contrefacon ? ' (contrefaçon)' : ''}`).join(', ')}.`;
@@ -95,7 +104,7 @@ export function resumeSort(r: ReponseSort, cible: string | null, noms: (itemId: 
 export function texteSortRecu(d: { lanceur: string | null; sort: SpellType; resultat: ReponseSort['resultat'] }): string {
   const nom = SORTS[d.sort]?.nom ?? d.sort;
   // Regard est anonyme : la cible sait seulement qu'on a consulté son Livre.
-  if (d.sort === 'regard' || d.lanceur === null) return 'Quelqu’un a consulté ton Livre.';
+  if (d.sort === 'regard' || d.sort === 'clairvoyance' || d.lanceur === null) return 'Quelqu’un a consulté ton Book.';
   if (d.resultat === 'bloque') return `${d.lanceur} t’a lancé ${nom}, mais ta protection l’a bloqué.`;
   if (d.resultat === 'sans_effet') return `${d.lanceur} t’a lancé ${nom}, sans effet.`;
   switch (d.sort) {
@@ -106,7 +115,11 @@ export function texteSortRecu(d: { lanceur: string | null; sort: SpellType; resu
     case 'gel':
       return `${d.lanceur} t’a gelé : plus de scan pendant 3 min.`;
     case 'radar':
-      return `${d.lanceur} a utilisé Radar sur toi : il connaît ta zone.`;
+      return `${d.lanceur} a utilisé Trace sur toi : il connaît ta zone.`;
+    case 'pickpocket':
+      return `${d.lanceur} t’a pris une carte dans tes emplacements libres !`;
+    case 'accompagnement':
+      return `${d.lanceur} utilise Accompagnement sur toi : tu es gelé 3 min et il voit où tu es.`;
     default:
       return `${d.lanceur} t’a lancé ${nom}.`;
   }
@@ -121,6 +134,8 @@ export interface ChoixSort {
   emission?: boolean;
   carteItemId?: string;
   page?: number;
+  /** Retour : ville déjà visitée. */
+  ville?: 'masadora' | 'antokiba';
 }
 
 /** Corps de `POST /sort` (schéma SortIntent de @gq/shared) : uniquement l'intention (P1). */
@@ -134,7 +149,13 @@ export function corpsSort(c: ChoixSort, position: PositionInput): Record<string,
       return { sort: c.sort, source, cibleId: c.cibleId, carteDonneeId: c.carteItemId, ...(c.emission ? { emission: true } : {}), position };
     case 'radar':
     case 'regard':
+    case 'clairvoyance':
+    case 'accompagnement':
       return { sort: c.sort, itemId: c.itemId, cibleId: c.cibleId, position };
+    case 'pickpocket':
+      return { sort: c.sort, itemId: c.itemId, cibleId: c.cibleId, ...(c.emission ? { emission: true } : {}), position };
+    case 'retour':
+      return { sort: c.sort, itemId: c.itemId, ville: c.ville, position };
     case 'duplication':
       return { sort: c.sort, itemId: c.itemId, carteItemId: c.carteItemId, position };
     case 'analyse':

@@ -54,6 +54,8 @@ const EVENEMENTS: Record<EvenementJoueur, string> = {
   clear_refuse: 'Clear refusé',
   classement_final: 'Classement final',
   raid: 'Raid : le boss perd des PV',
+  arene: 'Arène de Soufrabi',
+  accompagnement: 'Accompagnement : position de ta cible',
 };
 
 export function libelleEvenement(nom: EvenementJoueur): string {
@@ -64,7 +66,7 @@ export function libelleEvenement(nom: EvenementJoueur): string {
 /** Amendement 2026-10-10 : pouvoirs de Spécialisation (recharge 40 min). */
 export const POUVOIRS_SPE: Record<PouvoirSpe, { nom: string; effet: string }> = {
   alchimie: { nom: 'Alchimie', effet: 'Change un doublon en une carte de ton choix, du même rang ou du rang au-dessus (jamais la SS)' },
-  bandit: { nom: 'Bandit', effet: 'Un Vol sans carte de sort, sur la carte de ton choix (jamais la SS)' },
+  bandit: { nom: 'L’épée du vol', effet: 'Un Vol sans carte de sort, sur la carte de ton choix (jamais la SS)' },
   zetsu: { nom: 'Zetsu', effet: 'Invisible 10 min : personne ne peut te viser ni te voir dans les listes' },
   fortune: { nom: 'Fortune', effet: 'Ton prochain scan donne un gain de plus' },
 };
@@ -72,23 +74,28 @@ export const POUVOIRS_SPE: Record<PouvoirSpe, { nom: string; effet: string }> = 
 /** Amendement 2026-10-10 : cartes objets. */
 export const OBJETS: Record<ObjetType, { nom: string; effet: string }> = {
   pepite: { nom: 'Pépite d’or', effet: 'Se revend 30 J à Masadora' },
-  ticket: { nom: 'Ticket de la Fortune', effet: 'À gratter : 0, 10, 30 ou 100 J' },
+  ticket: { nom: 'Loterie', effet: 'À gratter : 0, 10, 30 ou 100 J' },
   boussole: { nom: 'Boussole du chercheur', effet: 'Indique la direction d’une balise active que tu n’as jamais scannée' },
   souffle: { nom: 'Second souffle', effet: 'Rescanne une balise sans faire la boucle des autres balises' },
-  voile: { nom: 'Voile d’ombre', effet: 'Bloque le prochain Radar ou Regard lancé sur toi' },
-  coffre: { nom: 'Coffre scellé', effet: 'Une carte de ton choix ne peut être ni volée ni prise pendant 20 min' },
+  voile: { nom: 'Rideau noir', effet: 'Bloque la prochaine Trace, Voyance ou Clairvoyance lancée sur toi' },
+  coffre: { nom: 'Solidité', effet: 'Une carte de ton choix ne peut être ni volée ni prise pendant 20 min' },
 };
 
 export const SORTS: Record<SpellType, { nom: string; effet: string }> = {
-  vol: { nom: 'Vol', effet: 'Prend 1 carte au hasard à un joueur proche' },
-  echange_force: { nom: 'Échange forcé', effet: 'Donne 1 carte choisie à un joueur proche et lui en prend 1 au hasard' },
+  // Noms de l'anime (traduction française), amendements 2026-10-10.
+  vol: { nom: 'Vol', effet: 'Prend 1 carte au hasard dans les emplacements fixes d’un joueur proche' },
+  pickpocket: { nom: 'Pickpocket', effet: 'Prend 1 carte au hasard dans les emplacements libres d’un joueur proche' },
+  echange_force: { nom: 'Échange', effet: 'Donne 1 carte choisie à un joueur proche et lui en prend 1 au hasard' },
   gel: { nom: 'Gel', effet: 'Un joueur proche ne peut plus scanner pendant 3 min' },
-  barriere: { nom: 'Barrière', effet: 'Annule le prochain sort offensif reçu' },
-  radar: { nom: 'Radar', effet: 'Montre la zone de la dernière position d’un joueur' },
-  revelation: { nom: 'Révélation', effet: 'Montre la zone d’une balise rare active' },
-  duplication: { nom: 'Duplication', effet: 'Copie une carte de ton Livre (contrefaçon si la limite est atteinte)' },
-  analyse: { nom: 'Analyse', effet: 'Révèle les contrefaçons d’une page de ton Livre' },
-  regard: { nom: 'Regard', effet: 'Montre les cartes d’un joueur que tu as déjà croisé' },
+  barriere: { nom: 'Mur défensif', effet: 'Annule le prochain sort offensif reçu' },
+  radar: { nom: 'Trace', effet: 'Montre la zone de la dernière position d’un joueur' },
+  revelation: { nom: 'Guide', effet: 'Montre la zone d’une balise rare active' },
+  duplication: { nom: 'Mimétisme', effet: 'Copie une carte de ton Book (contrefaçon si la limite est atteinte)' },
+  analyse: { nom: 'Pénétration', effet: 'Rend leur vraie apparence aux cartes modifiées d’une page de ton Book' },
+  regard: { nom: 'Voyance', effet: 'Montre les emplacements libres d’un joueur déjà croisé' },
+  clairvoyance: { nom: 'Clairvoyance', effet: 'Montre les emplacements fixes d’un joueur déjà croisé' },
+  accompagnement: { nom: 'Accompagnement', effet: 'Montre la position d’un joueur déjà croisé pendant 3 min et le gèle 3 min' },
+  retour: { nom: 'Retour', effet: 'Utilise à distance une ville déjà visitée pendant 10 min' },
 };
 
 /** RG-5.4 : type de Nen et son passif. */

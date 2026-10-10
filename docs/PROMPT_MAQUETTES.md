@@ -1,6 +1,6 @@
-# Prompt de maquettes — Greed Quest (à coller dans un outil de génération d'interfaces)
+# Prompt de maquettes — Greed Quest (à coller dans Claude, claude.ai)
 
-> Mode d'emploi : coller d'abord le **bloc 0** (contexte et style), puis **un seul bloc d'écrans à la fois** (1 : joueur, 2 : PNJ, 3 : GM, 4 : écran géant). Joindre à chaque fois 3 à 6 **captures de l'anime** (pages du Book, cartes, licence, annonces du jeu) : le style doit s'y caler. Les données affichées sont des exemples de démonstration. Rapporter ensuite les captures des maquettes dans Claude Code pour qu'il ajuste l'implémentation.
+> Mode d'emploi : **une conversation Claude par bloc d'écrans**. Dans chaque conversation, coller le **bloc 0** suivi d'**un seul** bloc d'écrans (1a, 1b, 1c : joueur ; 2 : PNJ ; 3 : GM ; 4 : écran géant). Une conversation par bloc évite que Claude manque de place et garde le style constant : si un premier bloc réussit, joindre sa capture aux suivants comme référence. Joindre à chaque fois 3 à 6 **captures de l'anime** (pages du Book, cartes, licence, annonces du jeu) : le style doit s'y caler. Les données affichées sont des exemples de démonstration. Rapporter ensuite les captures des maquettes dans Claude Code pour qu'il ajuste l'implémentation.
 
 ---
 
@@ -24,6 +24,14 @@ Tu dessines les maquettes haute fidélité d'une application web mobile appelée
 - Interdits : emojis, dégradés violet-bleu, effet verre dépoli, textes publicitaires (« Libère ton potentiel ! »), grilles de cartes génériques « icône + titre + deux lignes ».
 - Les joueurs ne voient **jamais** la position des autres joueurs ni l'emplacement des balises.
 
+**Format attendu (Claude)**
+- Un **seul artifact React** (un fichier), qui affiche tous les écrans du bloc demandé.
+- Un menu de démonstration à gauche (hors du cadre) liste les écrans par numéro et nom ; cliquer affiche l'écran. Pour les écrans de téléphone, un cadre de téléphone de 390 × 844 ; pour la console GM, 1440 × 900 ; pour l'écran géant, 1920 × 1080 mis à l'échelle.
+- Pas d'image externe. Les **illustrations des cartes** sont des emplacements dessinés en SVG simple (silhouette de l'objet ou motif), au bon format et au bon endroit : de vraies illustrations les remplaceront.
+- Polices : Google Fonts autorisées. L'écriture Hunter en décor peut être simulée par un motif, la vraie police sera ajoutée ensuite.
+- Animations utiles seulement (page du Book qui se tourne, carte qui vole dans sa pochette, bandeau d'annonce qui entre), au clic dans la maquette.
+- Termine par la liste des écrans produits et de ce que tu n'as pas pu faire.
+
 **Données de démonstration**
 - Partie « Greed Quest — Parc de la Villette », 120 min, 24 joueurs, il reste 47 min.
 - Joueurs : Gon, Kirua, Kurapika, Leolio, Biscuit, Hisoka, Genthru, Tsezguerra.
@@ -34,10 +42,12 @@ Tu dessines les maquettes haute fidélité d'une application web mobile appelée
 
 ---
 
-## Bloc 1 — Application joueur (téléphone, 390 × 844)
+## Blocs 1a, 1b, 1c — Application joueur (téléphone, 390 × 844)
 
-Navigation du bas : Accueil · Scanner · Book · Sorts · Échanges.
-En haut, en permanence : temps restant (rouge dans les 30 dernières minutes, « Pause » si la partie est en pause), jenny, pastille de connexion.
+Coller **en tête de chacun des trois blocs** ce rappel :
+> Navigation du bas : Accueil · Scanner · Book · Sorts · Échanges. En haut, en permanence : temps restant (rouge dans les 30 dernières minutes, « Pause » si la partie est en pause), jenny, pastille de connexion.
+
+### Bloc 1a — Entrée, accueil, scanner, Book (écrans 1 à 24)
 
 **Entrée et inscription**
 1. Rejoindre une partie : saisie du code de partie (ou arrivée par un QR d'accueil).
@@ -71,6 +81,8 @@ En haut, en permanence : temps restant (rouge dans les 30 dernières minutes, «
 23. Book complet : bouton « Demander le Clear ».
 24. Book gelé après la demande : « Va voir le Game Master ». Refus possible : « Une contrefaçon se cache en page 2 ».
 
+### Bloc 1b — Sorts, échanges (écrans 25 à 36)
+
 **Sorts**
 25. Liste des sorts du Book regroupés (Vol ×2, Gel, Radar…), Barrière marquée « Passif », délai entre deux sorts offensifs (« Prochain sort offensif dans 1 min 12 »).
 26. Choix d'une cible parmi les joueurs à portée (pseudos seulement), puis confirmation « Lancer Vol sur Kirua ».
@@ -86,6 +98,8 @@ En haut, en permanence : temps restant (rouge dans les 30 dernières minutes, «
 34. Invitation reçue : « Leolio te propose un échange » (Accepter / Refuser).
 35. Composition : ma part (cartes cochées + jenny) et la part de l'autre en direct, « ✓ validé » de chaque côté, double validation.
 36. Fin : conclu, refusé, annulé, expiré.
+
+### Bloc 1c — Villes et fin de partie (écrans 37 à 43)
 
 **Villes**
 37. Masadora : scan du QR de la boutique, achat d'un paquet de 3 sorts (50 J), revente d'une carte (prix par rang, SS invendable), Krach -50 %.

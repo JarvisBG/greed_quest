@@ -1,0 +1,316 @@
+<meta charset="utf-8">
+<title>Invocation du Book</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Atkinson+Hyperlegible+Next:wght@400;600;800&display=swap">
+<style>
+/* L'app est une planche de manga claire ; l'invocation la fait basculer un instant dans la nuit,
+   un cercle d'or s'ouvre, le Book se dessine en lumière puis prend sa matière, s'ouvre et feuillette. */
+:root {
+  color-scheme: light;
+  --papier: #eeefe9;
+  --case: #fbfbf7;
+  --encre: #111111;
+  --encre-2: #3b3d40;
+  --trame: rgba(17, 17, 17, 0.16);
+  --rouge: #c0272d;
+  --cuir: #5a1a1e;
+  --or: #d7b25a;
+  --or-vif: #ffd98a;
+  --or-fonce: #8a6a12;
+  --nuit: #07060a;
+  --f-titre: 'Dela Gothic One', 'Arial Black', sans-serif;
+  --f-texte: 'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif;
+  --sortie: cubic-bezier(0.16, 1, 0.3, 1);
+}
+html, body { height: 100%; }
+body { margin: 0; background: var(--papier); color: var(--encre); font: 400 16px/1.4 var(--f-texte); overflow: hidden; }
+
+/* Faux écran de l'app derrière la cinématique */
+.app { position: relative; height: 100%; max-width: 480px; margin: 0 auto; display: grid; grid-template-rows: auto auto 1fr; gap: 10px; padding: 0 16px 16px; }
+.proto { display: flex; gap: 8px; align-items: center; padding: 10px 0 0; flex-wrap: wrap; }
+.proto button { min-height: 36px; padding: 0 12px; border: 2px solid var(--encre); background: var(--case); font: 700 13px var(--f-texte); cursor: pointer; }
+.proto button[aria-pressed='true'] { background: var(--encre); color: var(--case); }
+.proto span { font: 600 13px var(--f-texte); color: var(--encre-2); }
+.case { background: var(--case); border: 3px solid var(--encre); padding: 16px; display: grid; gap: 12px; justify-items: center; min-height: 0; }
+.case h1 { margin: 0; justify-self: start; font: 400 22px/1 var(--f-titre); }
+.btn-book { width: 100%; min-height: 56px; border: 0; background: var(--encre); color: var(--case); font: 400 22px/1 var(--f-titre); cursor: pointer; }
+.btn-book:focus-visible { outline: 3px solid var(--or-fonce); outline-offset: 3px; }
+
+/* ---------- Le Book (DOM 3D) ---------- */
+.livre {
+  --l: min(56vw, 210px);
+  position: relative; width: var(--l); aspect-ratio: 0.74;
+  transform-style: preserve-3d;
+}
+.livre .page {
+  position: absolute; inset: 4px 0 4px 3px; border-radius: 0 4px 4px 0;
+  background: var(--case);
+  box-shadow: inset 0 0 0 1.5px var(--encre);
+  display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); gap: 5%; padding: 9% 8%;
+}
+.livre .page::after { content: ''; position: absolute; top: 1px; bottom: 1px; right: -6px; width: 7px; border-radius: 0 3px 3px 0; background: repeating-linear-gradient(90deg, #f4f2ea 0 2px, #b9b6ab 2px 3px); box-shadow: inset 0 0 0 1.5px var(--encre); }
+.poche { border: 1.5px solid var(--trame); border-radius: 2px; background: rgba(17,17,17,0.03); position: relative; }
+.poche.pleine { border: 0; background: linear-gradient(160deg, #fff 0 30%, #f1e7da 100%); box-shadow: inset 0 0 0 2px var(--rouge), inset 0 0 0 3.5px #fff, inset 0 0 0 4.5px var(--rouge); }
+.poche.pleine::before { content: attr(data-n); position: absolute; left: 4px; top: 3px; font: 800 7px/1 var(--f-texte); color: var(--rouge); }
+.poche.pleine::after { content: attr(data-r); position: absolute; right: 3px; top: 3px; font: 400 7px/1 var(--f-titre); color: var(--encre); }
+.livre .feuille {
+  position: absolute; inset: 4px 0 4px 3px; border-radius: 0 4px 4px 0;
+  transform-origin: left center; backface-visibility: visible;
+  background: linear-gradient(90deg, #e9e6dc, var(--case) 18%);
+  box-shadow: inset 0 0 0 1.5px var(--encre);
+}
+.livre .couv { position: absolute; inset: 0; transform-origin: left center; transform-style: preserve-3d; }
+.couv .face, .couv .dos {
+  position: absolute; inset: 0; border-radius: 3px 8px 8px 3px; backface-visibility: hidden;
+}
+.couv .face {
+  background-color: var(--cuir);
+  background-image: radial-gradient(rgba(255,255,255,.07) .8px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,.45) 0, rgba(0,0,0,0) 22px, rgba(255,255,255,.08) 26px, rgba(0,0,0,0) 40px);
+  background-size: 3px 3px, 100% 100%;
+  box-shadow: inset 0 0 0 2px #2b0a0d, inset 0 0 0 9px var(--cuir), inset 0 0 0 11px var(--or-fonce), inset 0 0 0 14px var(--cuir), inset 0 0 0 15px var(--or-fonce);
+  display: grid; place-items: center; align-content: center; gap: 14px; color: var(--or);
+}
+.couv .face svg { width: 46%; height: auto; }
+.couv .face strong { font: 400 calc(var(--l) * 0.13)/1 var(--f-titre); letter-spacing: .32em; margin-right: -.32em; text-shadow: 0 1px 0 #2b0a0d, 0 -1px 0 rgba(255,236,170,.35); }
+.couv .dos { transform: rotateY(180deg); background: #3d1013; box-shadow: inset 0 0 0 2px #2b0a0d, inset 0 0 0 10px #4a1418, inset 0 0 0 11px var(--or-fonce); }
+/* Silhouette de lumière (le Book se dessine en or avant de prendre sa matière) */
+.contour { position: absolute; inset: -2px; width: calc(100% + 4px); height: calc(100% + 4px); overflow: visible; pointer-events: none; }
+.contour path { fill: none; stroke: var(--or-vif); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 0 4px var(--or-vif)) drop-shadow(0 0 12px #ffb340); }
+
+/* ---------- Cinématique ---------- */
+.invocation { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; overflow: hidden; pointer-events: none; }
+.invocation.joue { pointer-events: auto; cursor: pointer; }
+.invocation .nuit { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 46%, #2a1c0c 0, #120c08 38%, var(--nuit) 80%); opacity: 0; }
+.invocation canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.invocation .lignes { position: absolute; inset: -30%; opacity: 0; }
+.invocation .lignes svg { width: 100%; height: 100%; }
+.invocation .cercle { position: absolute; width: min(118vw, 520px); aspect-ratio: 1; opacity: 0; overflow: visible; }
+.cercle * { fill: none; stroke: var(--or-vif); vector-effect: non-scaling-stroke; }
+.cercle .anneau { transform-box: fill-box; transform-origin: center; }
+.invocation .onomatopee {
+  position: absolute; top: 12%; left: 50%; translate: -50% 0;
+  font: 400 min(22vw, 104px)/1 var(--f-titre); color: #fffaf0; white-space: nowrap;
+  -webkit-text-stroke: min(1.4vw, 6px) var(--encre); paint-order: stroke fill;
+  text-shadow: 0 0 24px rgba(255, 190, 80, 0.9); opacity: 0;
+}
+.invocation .scene-livre { position: relative; perspective: 1300px; }
+.invocation .livre { --l: min(62vw, 250px); }
+.invocation .flash { position: absolute; inset: 0; background: #fff8e8; opacity: 0; }
+.invocation .passer { position: absolute; bottom: max(16px, env(safe-area-inset-bottom, 0px)); left: 50%; translate: -50% 0; font: 600 13px var(--f-texte); color: rgba(255, 240, 210, 0.75); opacity: 0; letter-spacing: 0.02em; }
+.invocation.joue .passer { opacity: 1; transition: opacity 0.4s 0.6s; }
+
+/* État final (dans l'app : la page ⑦ prend le relais) */
+.ouvert-final { display: grid; place-items: center; perspective: 1300px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+</style>
+
+<div class="app">
+  <div class="proto" role="group" aria-label="Version de la cinématique">
+    <button id="v-longue" aria-pressed="true">Grande (1re fois)</button>
+    <button id="v-courte" aria-pressed="false">Courte (ensuite)</button>
+    <span>Touche l'écran pour passer.</span>
+  </div>
+  <section class="case">
+    <h1>Book</h1>
+    <div id="emplacement" class="ouvert-final"></div>
+    <button class="btn-book" id="btn">Book !</button>
+  </section>
+</div>
+
+<div class="invocation" id="inv" aria-hidden="true">
+  <div class="nuit"></div>
+  <div class="lignes" id="lignes"></div>
+  <canvas id="c"></canvas>
+  <svg class="cercle" id="cercle" viewBox="-100 -100 200 200"></svg>
+  <div class="scene-livre" id="scene-livre"></div>
+  <div class="onomatopee">BOOK !</div>
+  <div class="flash"></div>
+  <span class="passer">Touche pour passer</span>
+</div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const calme = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const EMBLEME = '<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><circle cx="50" cy="50" r="44"/><circle cx="50" cy="50" r="36" stroke-width="1.5"/><path d="M50 6v14M50 80v14M6 50h14M80 50h14"/><path d="M42 33c-8 2-12 9-12 17 0 10 7 17 16 17 5 0 9-2 11-5V51H47" stroke-width="5"/><path d="M62 31v38" stroke-width="5"/></svg>';
+const CARTES = [['000', 'SS'], ['003', 'B'], null, ['008', 'A'], null, ['011', 'D'], null, ['013', 'B'], null];
+
+function livreHTML(contour) {
+  const poches = CARTES.map((c) => (c ? `<span class="poche pleine" data-n="${c[0]}" data-r="${c[1]}"></span>` : '<span class="poche"></span>')).join('');
+  const feuilles = [1, 2, 3, 4, 5].map((i) => `<div class="feuille f${i}"></div>`).join('');
+  return `<div class="livre">
+    <div class="page">${poches}</div>
+    ${feuilles}
+    <div class="couv"><div class="face">${EMBLEME}<strong>BOOK</strong></div><div class="dos"></div></div>
+    ${contour ? '<svg class="contour" viewBox="0 0 100 135" preserveAspectRatio="none"><path pathLength="1" d="M3 2H92Q98 2 98 8V127Q98 133 92 133H3Z"/><path pathLength="1" d="M10 9H90V126H10Z" stroke-width="1.2"/><circle pathLength="1" cx="50" cy="52" r="20" fill="none"/></svg>' : ''}
+  </div>`;
+}
+
+// Lignes de vitesse (manga), tirées une fois.
+(function () {
+  let s = 11; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  let d = '';
+  for (let i = 0; i < 130; i++) {
+    const a = r() * Math.PI * 2, r0 = 40 + r() * 26, w = 0.004 + r() * 0.016;
+    const p = (ang, rad) => `${(Math.cos(ang) * rad).toFixed(1)} ${(Math.sin(ang) * rad).toFixed(1)}`;
+    d += `M${p(a, r0)}L${p(a - w, 170)}L${p(a + w, 170)}Z`;
+  }
+  $('#lignes').innerHTML = `<svg viewBox="-100 -100 200 200" preserveAspectRatio="xMidYMid slice"><path d="${d}" fill="#fff4dc"/></svg>`;
+})();
+
+// Cercle d'invocation : anneaux, graduations, petits losanges.
+(function () {
+  const g = [];
+  g.push('<g class="anneau a1"><circle r="92" stroke-width="1.6"/><circle r="86" stroke-width="0.8"/>');
+  for (let i = 0; i < 72; i++) { const a = (i / 72) * Math.PI * 2, l = i % 6 === 0 ? 7 : 3; g.push(`<path d="M${Math.cos(a) * 86} ${Math.sin(a) * 86}L${Math.cos(a) * (86 - l)} ${Math.sin(a) * (86 - l)}" stroke-width="0.8"/>`); }
+  g.push('</g><g class="anneau a2"><circle r="68" stroke-width="1.2" stroke-dasharray="2 4"/>');
+  for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2, x = Math.cos(a) * 68, y = Math.sin(a) * 68; g.push(`<path d="M${x} ${y - 6}L${x + 4} ${y}L${x} ${y + 6}L${x - 4} ${y}Z" stroke-width="1"/>`); }
+  g.push('</g><g class="anneau a3"><path d="M0 -58L50.2 29L-50.2 29Z" stroke-width="0.9"/><path d="M0 58L50.2 -29L-50.2 -29Z" stroke-width="0.9"/><circle r="58" stroke-width="0.7"/></g>');
+  $('#cercle').innerHTML = g.join('');
+})();
+
+// ---------- Particules d'or (canvas) ----------
+const cv = $('#c'), ctx = cv.getContext('2d');
+let parts = [], mode = 'repos', image = 0, dpr = 1;
+function taille() { dpr = Math.min(2, devicePixelRatio || 1); cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; }
+addEventListener('resize', taille); taille();
+const lueur = (() => { const s = document.createElement('canvas'); s.width = s.height = 48; const g = s.getContext('2d'); const r = g.createRadialGradient(24, 24, 0, 24, 24, 24); r.addColorStop(0, 'rgba(255,240,200,1)'); r.addColorStop(0.3, 'rgba(255,200,90,.7)'); r.addColorStop(1, 'rgba(255,160,40,0)'); g.fillStyle = r; g.fillRect(0, 0, 48, 48); return s; })();
+function spirale(n) {
+  const cx = innerWidth / 2, cy = innerHeight * 0.48, R = Math.max(innerWidth, innerHeight) * 0.6;
+  for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, r = R * (0.5 + Math.random() * 0.5); parts.push({ a, r, v: 0.9 + Math.random() * 0.8, t: 3 + Math.random() * 7, cx, cy, type: 's', vie: 0 }); }
+}
+function eclat(n) {
+  const cx = innerWidth / 2, cy = innerHeight * 0.48;
+  for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, v = 120 + Math.random() * 420; parts.push({ x: cx, y: cy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 2 + Math.random() * 6, type: 'e', vie: 0, max: 0.6 + Math.random() * 0.8 }); }
+}
+let dernier = performance.now();
+function boucle(now) {
+  const dt = Math.min(0.05, (now - dernier) / 1000); dernier = now;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, innerWidth, innerHeight);
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i]; p.vie += dt;
+    let x, y, a;
+    if (p.type === 's') {
+      p.r *= Math.pow(0.18, dt * p.v); p.a += dt * (2.2 + 140 / (p.r + 20));
+      x = p.cx + Math.cos(p.a) * p.r; y = p.cy + Math.sin(p.a) * p.r * 0.9;
+      a = Math.min(1, p.vie * 3) * Math.min(1, p.r / 30);
+      if (p.r < 4) { parts.splice(i, 1); continue; }
+    } else {
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.94; p.vy = p.vy * 0.94 + 30 * dt;
+      x = p.x; y = p.y; a = 1 - p.vie / p.max;
+      if (a <= 0) { parts.splice(i, 1); continue; }
+    }
+    ctx.globalAlpha = a;
+    ctx.drawImage(lueur, x - p.t * 2, y - p.t * 2, p.t * 4, p.t * 4);
+  }
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  if (parts.length || mode === 'joue') image = requestAnimationFrame(boucle); else image = 0;
+}
+const lancerBoucle = () => { if (!image) { dernier = performance.now(); image = requestAnimationFrame(boucle); } };
+
+// ---------- Séquence ----------
+const inv = $('#inv');
+let longue = true, minuteurs = [], anims = [];
+const A = (el, k, o) => { const a = el.animate(k, { fill: 'forwards', easing: 'cubic-bezier(.16,1,.3,1)', ...o }); anims.push(a); return a; };
+const plus = (ms, f) => minuteurs.push(setTimeout(f, ms));
+
+function poserFinal() {
+  $('#emplacement').innerHTML = livreHTML(false);
+  const l = $('#emplacement .livre');
+  l.style.transform = 'translateX(calc(var(--l) * 0.5))';
+  $('.couv', l).style.transform = 'rotateY(-180deg)';
+  l.querySelectorAll('.feuille').forEach((f, i) => (f.style.transform = `rotateY(${-178 + i * 1.5}deg)`));
+  $('#emplacement').style.paddingRight = 'calc(min(56vw, 210px) * 0.5)';
+}
+function finir() {
+  minuteurs.forEach(clearTimeout); minuteurs = [];
+  anims.forEach((a) => a.cancel()); anims = [];
+  parts = []; mode = 'repos';
+  inv.classList.remove('joue');
+  [...inv.children].forEach((c) => (c.style.opacity = ''));
+  $('#scene-livre').innerHTML = '';
+  poserFinal();
+  $('#btn').textContent = 'Fermer le Book';
+}
+function fermer() { $('#emplacement').innerHTML = ''; $('#emplacement').style.paddingRight = ''; $('#btn').textContent = 'Book !'; }
+
+function invoquer() {
+  if (calme) return finir();
+  fermer();
+  $('#emplacement').innerHTML = '';
+  inv.classList.add('joue');
+  mode = 'joue'; lancerBoucle();
+  navigator.vibrate?.(longue ? [20, 60, 30] : 25);
+  const sl = $('#scene-livre');
+  sl.innerHTML = livreHTML(true);
+  const livre = $('.livre', sl), couv = $('.couv', sl), face = $('.face', couv), page = $('.page', sl), contour = $('.contour', sl);
+  const feuilles = [...sl.querySelectorAll('.feuille')];
+  const T = longue ? 1 : 0.42; // échelle de temps
+  const ms = (x) => x * T;
+
+  // 1. La nuit tombe, lignes de vitesse, cri « BOOK ! »
+  A($('.nuit', inv), [{ opacity: 0 }, { opacity: 1 }], { duration: ms(380), easing: 'ease-out' });
+  // Easing linéaire sur l'ensemble, courbes par étape (sinon l'easing global écrase les étapes).
+  A($('.lignes', inv), [{ opacity: 0, transform: 'scale(1.3)', easing: 'cubic-bezier(.16,1,.3,1)' }, { opacity: 0.85, transform: 'scale(1)', offset: 0.3, easing: 'ease-in' }, { opacity: 0, transform: 'scale(.95)' }], { duration: ms(1100), easing: 'linear' });
+  A($('.onomatopee', inv), [
+    { opacity: 0, transform: 'rotate(-8deg) scale(.3)', filter: 'blur(6px)', easing: 'cubic-bezier(.16,1,.3,1)' },
+    { opacity: 1, transform: 'rotate(-8deg) scale(1.08)', filter: 'blur(0)', offset: 0.22, easing: 'ease-out' },
+    { opacity: 1, transform: 'rotate(-8deg) scale(1)', offset: 0.7, easing: 'ease-in' },
+    { opacity: 0, transform: 'rotate(-8deg) scale(1.05) translateY(-20px)' },
+  ], { duration: ms(1300), easing: 'linear' });
+
+  // 2. Cercle d'or et spirale de lumière
+  if (longue) {
+    spirale(260);
+    A($('#cercle'), [{ opacity: 0, transform: 'scale(.4) rotate(-40deg)', easing: 'cubic-bezier(.16,1,.3,1)' }, { opacity: 1, transform: 'scale(1) rotate(0deg)', offset: 0.45 }, { opacity: 0.9, transform: 'scale(1.04) rotate(18deg)', offset: 0.85, easing: 'ease-in' }, { opacity: 0, transform: 'scale(1.25) rotate(26deg)' }], { duration: 2100, delay: 150, easing: 'linear' });
+    $('#cercle').querySelectorAll('.anneau').forEach((g, i) => A(g, [{ transform: 'rotate(0deg)' }, { transform: `rotate(${(i % 2 ? -1 : 1) * (60 + i * 40)}deg)` }], { duration: 2400, easing: 'linear' }));
+  } else {
+    eclat(70);
+  }
+
+  // 3. Le Book se dessine en lumière, puis prend sa matière (flash)
+  livre.style.opacity = '0';
+  const apparition = longue ? 950 : 120;
+  plus(apparition, () => {
+    livre.style.opacity = '';
+    A(livre, [{ transform: 'translateY(30px) scale(.85) rotateX(16deg)' }, { transform: 'translateY(0) scale(1) rotateX(6deg)' }], { duration: ms(900) });
+    if (longue) {
+      [face, page, ...feuilles].forEach((el) => A(el, [{ opacity: 0 }, { opacity: 0 }], { duration: 650 }));
+      contour.querySelectorAll('path, circle').forEach((p, i) => A(p, [{ strokeDasharray: '1', strokeDashoffset: 1 }, { strokeDasharray: '1', strokeDashoffset: 0 }], { duration: 620, delay: i * 90, easing: 'ease-in-out' }));
+    } else contour.style.display = 'none';
+  });
+  const matiere = longue ? 1650 : 260;
+  plus(matiere, () => {
+    if (longue) {
+      A($('.flash', inv), [{ opacity: 0.85 }, { opacity: 0 }], { duration: 420, easing: 'ease-out' });
+      [face, page, ...feuilles].forEach((el) => A(el, [{ opacity: 0, filter: 'brightness(2.4) sepia(1)' }, { opacity: 1, filter: 'brightness(1) sepia(0)' }], { duration: 520, easing: 'ease-out' }));
+      A(contour, [{ opacity: 1 }, { opacity: 0 }], { duration: 700, easing: 'ease-out' });
+      eclat(140);
+    }
+    A(livre, [{ transform: 'translateY(0) scale(1) rotateX(6deg)' }, { transform: 'translateY(-10px) scale(1.02) rotateX(4deg)' }, { transform: 'translateY(0) scale(1) rotateX(5deg)' }], { duration: ms(900), easing: 'ease-in-out', composite: 'replace' });
+  });
+
+  // 4. La couverture s'ouvre, les pages défilent, le Book se pose ouvert
+  const ouverture = longue ? 2150 : 420;
+  plus(ouverture, () => {
+    A(livre, [{ transform: 'translateX(0) rotateX(5deg)' }, { transform: 'translateX(calc(var(--l) * 0.5)) rotateX(2deg)' }], { duration: ms(900) });
+    A(couv, [{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(-180deg)' }], { duration: ms(760), easing: 'cubic-bezier(.45,.05,.2,1)' });
+    feuilles.forEach((f, i) => A(f, [{ transform: 'rotateY(0deg)' }, { transform: `rotateY(${-178 + i * 1.5}deg)` }], { duration: ms(420), delay: ms(260 + i * 85), easing: 'cubic-bezier(.5,0,.3,1)' }));
+  });
+  const fin = longue ? 3250 : 1150;
+  plus(fin - 280, () => {
+    A($('.nuit', inv), [{ opacity: 1 }, { opacity: 0 }], { duration: 300, easing: 'ease-in' });
+  });
+  plus(fin, finir);
+}
+
+inv.addEventListener('click', () => { if (inv.classList.contains('joue')) finir(); });
+$('#btn').addEventListener('click', () => ($('#emplacement .livre') ? fermer() : invoquer()));
+const choisir = (l) => { longue = l; $('#v-longue').setAttribute('aria-pressed', String(l)); $('#v-courte').setAttribute('aria-pressed', String(!l)); fermer(); };
+$('#v-longue').addEventListener('click', () => choisir(true));
+$('#v-courte').addEventListener('click', () => choisir(false));
+</script>

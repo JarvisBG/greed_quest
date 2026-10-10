@@ -1,0 +1,149 @@
+# Prompt de maquettes — Greed Quest (à coller dans un outil de génération d'interfaces)
+
+> Mode d'emploi : coller d'abord le **bloc 0** (contexte et style), puis **un seul bloc d'écrans à la fois** (1 : joueur, 2 : PNJ, 3 : GM, 4 : écran géant). Joindre à chaque fois 3 à 6 **captures de l'anime** (pages du Book, cartes, licence, annonces du jeu) : le style doit s'y caler. Les données affichées sont des exemples de démonstration. Rapporter ensuite les captures des maquettes dans Claude Code pour qu'il ajuste l'implémentation.
+
+---
+
+## Bloc 0 — Contexte et style (toujours en premier)
+
+Tu dessines les maquettes haute fidélité d'une application web mobile appelée **Greed Quest** : une chasse au trésor sur le terrain qui reproduit le jeu **Greed Island** de l'anime *Hunter × Hunter* (version 2011). Les joueurs se déplacent dehors, en plein jour, et scannent des balises QR cachées pour obtenir des cartes numérotées qu'ils rangent dans leur **Book**. Ils se lancent des sorts quand ils sont proches (GPS), échangent des cartes, achètent des sorts, participent à des enchères et à une arène. Un Game Master pilote la partie depuis une console, des PNJ arbitrent sur le terrain, un écran géant affiche le direct.
+
+**Style : l'univers de Greed Island, pleinement assumé, au plus près de l'anime.**
+- Le **Book** est le cœur de l'application. Il doit ressembler exactement au Book de l'anime : un classeur qu'on fait apparaître (« Book ! »), qui flotte devant le joueur et qu'on **feuillette page par page** (tourner la page avec le doigt, effet de page qui se courbe). Chaque page contient une grille de **pochettes transparentes** numérotées. Les pages « désignées » réservent une pochette à chaque carte du catalogue (001, 002…) ; les pages « libres » reçoivent les doublons et les sorts. Une pochette vide montre son numéro.
+- Les **cartes** reproduisent le format des cartes de Greed Island : illustration centrale, numéro à trois chiffres, **lettre de rang** (SS, S, A, B, C, D), nom de la carte, cadre selon le rang. Une carte de sort a son propre cadre. Prévoir un dos de carte commun.
+- Les **annonces du jeu** (sort reçu, évènement, sanction) imitent la voix système de Greed Island : bandeau sobre, typographie « système », phrase courte (« Kirua a utilisé Vol sur toi. »).
+- La **licence de Hunter** reprend la carte de licence de l'anime, avec un QR code au centre qui change toutes les 30 s.
+- Le **Nen** : les six types en hexagone (Renforcement, Émission, Transformation, Matérialisation, Manipulation, Spécialisation), et la divination par le verre d'eau pour révéler le type.
+- Les villes de Greed Island : **Masadora** (boutique de sorts), **Antokiba** (enchères), **Soufrabi** (arène).
+- L'écriture Hunter (alphabet de l'anime) peut décorer les titres, toujours doublée en français.
+
+**Contraintes**
+- Tout en **français**, le joueur est tutoyé. L'équipe (PNJ, GM) lit des libellés neutres à l'infinitif (« Geler 5 min »).
+- **Lisible en plein soleil** : contrastes forts, chiffres clés gros (chrono, jenny, numéros de carte), cibles tactiles d'au moins 48 px, action principale à portée du pouce en bas de l'écran.
+- La lettre de rang doit rester lisible sans la couleur.
+- Interdits : emojis, dégradés violet-bleu, effet verre dépoli, textes publicitaires (« Libère ton potentiel ! »), grilles de cartes génériques « icône + titre + deux lignes ».
+- Les joueurs ne voient **jamais** la position des autres joueurs ni l'emplacement des balises.
+
+**Données de démonstration**
+- Partie « Greed Quest — Parc de la Villette », 120 min, 24 joueurs, il reste 47 min.
+- Joueurs : Gon, Kirua, Kurapika, Leolio, Biscuit, Hisoka, Genthru, Tsezguerra.
+- Catalogue de 14 cartes désignées : 001 Couronne du Roi-Dragon (SS), 002 Épée des Sept Vents (S), 003 Miroir des Âmes (S), 004 Boussole céleste (A), 005 Lanterne éternelle (A), 006 Grimoire interdit (A), 007 Masque du bouffon (B), 008 Bottes de sept lieues (B), 009 Fiole de jouvence (B), 010 Pomme d'or (C), 011 Cape de brume (C), 012 Gemme de feu (C), 013 Pain magique (D), 014 Galet chanceux (D).
+- Sorts : Vol, Échange forcé, Gel, Barrière, Radar, Révélation, Duplication, Analyse, Regard.
+- Objets : Pépite d'or, Ticket de la Fortune, Boussole du chercheur, Second souffle, Voile d'ombre, Coffre scellé.
+- Monnaie : jenny (J).
+
+---
+
+## Bloc 1 — Application joueur (téléphone, 390 × 844)
+
+Navigation du bas : Accueil · Scanner · Book · Sorts · Échanges.
+En haut, en permanence : temps restant (rouge dans les 30 dernières minutes, « Pause » si la partie est en pause), jenny, pastille de connexion.
+
+**Entrée et inscription**
+1. Rejoindre une partie : saisie du code de partie (ou arrivée par un QR d'accueil).
+2. Inscription : choix du pseudo, demande d'accès à la position ; refus « Ce pseudo est déjà pris ».
+3. Kit de départ : 50 J et un sort offert (carte de sort affichée).
+4. Examen Hunter : 3 questions, une par écran, puis résultat (2 / 3, +20 J) avec le corrigé ; bouton « Plus tard ».
+5. Test de Nen : 5 questions puis révélation du type par le verre d'eau, hexagone avec le type mis en valeur et son pouvoir.
+
+**Accueil**
+6. Accueil en partie : pseudo, type de Nen, jenny, nombre de cartes désignées (6 / 14), recharge du pouvoir de Nen, bouton « Ma licence », évènements en cours avec compte à rebours, accès « Boutique de Masadora » et « Enchères d'Antokiba ».
+7. Accueil pendant un **raid de la Brigade** : carte « Raid en cours » avec la barre de vie du boss.
+8. Accueil d'un joueur **gelé** (sanction ou sort Gel) : état visible avec le temps restant.
+9. Licence de Hunter en plein écran avec le QR et la jauge des 30 s.
+
+**Scanner**
+10. Caméra de scan de balise (viseur, saisie manuelle du code en secours).
+11. Gain : la carte tirée apparaît et vole dans le Book (ex. 004 Boussole céleste, rang A).
+12. Gain de jenny (+10 J) et d'un objet (Ticket de la Fortune).
+13. Refus en clair : « Boucle : scanne encore 2 balises différentes », « Attends encore 26 s », « Cette balise dort », « Plus rien ici, cherche ailleurs », « Ton Book est plein ».
+14. Après un refus de boucle : « Utiliser un Second souffle ? ».
+15. Hors ligne : « 1 scan en attente, il sera envoyé au retour du réseau ».
+
+**Book**
+16. Book fermé qui apparaît et flotte, puis s'ouvre.
+17. Page désignée 001 – 010 : pochettes pleines et vides, compteur 6 / 14.
+18. Pochette perdue : « Volée par Kirua à 14h05 ».
+19. Page libre : doublons et cartes de sort.
+20. Détail d'une carte : grande carte, provenance (« Balise », « Échange avec Leolio », « Arène de Soufrabi »), heure d'obtention ; badges éventuels : contrefaçon (pour son créateur), carte maudite, engagée dans un échange, protégée par un Coffre jusqu'à 15h20.
+21. Contrefaçon démasquée : « Contrefaçon de Miroir des Âmes », grisée.
+22. Section Objets (8 places) : Gratter un Ticket (résultat 30 J), Boussole (« La balise la plus proche est au nord-est »), Coffre scellé (choix de la carte à protéger).
+23. Book complet : bouton « Demander le Clear ».
+24. Book gelé après la demande : « Va voir le Game Master ». Refus possible : « Une contrefaçon se cache en page 2 ».
+
+**Sorts**
+25. Liste des sorts du Book regroupés (Vol ×2, Gel, Radar…), Barrière marquée « Passif », délai entre deux sorts offensifs (« Prochain sort offensif dans 1 min 12 »).
+26. Choix d'une cible parmi les joueurs à portée (pseudos seulement), puis confirmation « Lancer Vol sur Kirua ».
+27. Résultat : « Tu as volé Gemme de feu à Kirua » ; ou « Bloqué par sa Barrière ».
+28. Regard : choix parmi les joueurs déjà croisés, puis la liste de leurs cartes.
+29. Radar : « Hisoka était dans la zone Forêt il y a 3 min ».
+30. Pouvoir de Nen (ex. Transformation : Texture Surprise, choisir un doublon et l'apparence d'une carte de même rang).
+31. Pouvoir de Spécialisation : Alchimie (doublon → carte choisie), Bandit (Vol sans carte, carte visée), Zetsu (invisible 10 min, minuterie), Fortune (prochain scan doublé).
+32. Annonce reçue : « Kirua a utilisé Vol sur toi : tu as perdu Pomme d'or. » ; anonyme : « Quelqu'un a consulté ton Book. »
+
+**Échanges**
+33. Proposer un échange à un joueur à portée.
+34. Invitation reçue : « Leolio te propose un échange » (Accepter / Refuser).
+35. Composition : ma part (cartes cochées + jenny) et la part de l'autre en direct, « ✓ validé » de chaque côté, double validation.
+36. Fin : conclu, refusé, annulé, expiré.
+
+**Villes**
+37. Masadora : scan du QR de la boutique, achat d'un paquet de 3 sorts (50 J), revente d'une carte (prix par rang, SS invendable), Krach -50 %.
+38. Antokiba : enchères en cours avec compte à rebours, « Participer » (QR du lieu), surenchère.
+39. Arène de Soufrabi : défi en cours, victoire (carte A / S / SS gagnée) ou défaite (mise de 30 J perdue).
+40. Raid : une question à la fois, barre de vie du boss.
+
+**Fin**
+41. Clear confirmé : le gagnant choisit 3 cartes, qui deviennent ses lots réels.
+42. Partie terminée : classement final, sa place, podium des 3 premiers.
+43. Abandon (menu secondaire, confirmation en deux temps).
+
+---
+
+## Bloc 2 — Console PNJ (téléphone, 390 × 844)
+
+Le PNJ est debout sur le terrain, à un lieu précis (checkpoint, Antokiba, Soufrabi). Action principale toujours à un geste : **Scanner une licence**.
+Barre du haut : nom de la partie, état, chrono, nombre de joueurs actifs, compteur d'alertes, nom du PNJ.
+
+1. Connexion : code de la partie + code personnel.
+2. Scanner une licence (caméra) puis fiche du joueur : pseudo, statut, type de Nen, jenny, gel en cours ; actions proposées selon le lieu.
+3. Checkpoint : défi du checkpoint, stock de cartes ; réussite = choisir une carte du stock et/ou des jenny, confirmer ; mention « +1 tirage bonus (Matérialisation) ».
+4. Expertise à Antokiba : une page (10 J) ou tout le Book (25 J), résultat (« 1 contrefaçon trouvée en page 2 »).
+5. Arène de Soufrabi : entrée par licence (mise 30 J), défis en cours avec chrono, boutons Victoire / Défaite, annulation avec motif (mise remboursée) ; refus « Kirua a déjà tenté l'arène il y a 8 min ».
+6. Enchères : ouvrir une enchère (carte du catalogue, prix de départ, 3 min), suivre les offres en direct, clôturer.
+7. Missions secrètes en cours : joueur, objectif, récompense, temps restant, bouton « Valider ».
+8. Liste des joueurs avec recherche (pseudo, statut, Nen, jenny), jamais de position.
+9. Sanctions : Avertir, Geler 5 min, Annuler les gains d'une balise + gel ; motif obligatoire, confirmation en deux temps.
+10. Alertes anti-triche : « Vitesse anormale : Hisoka, 22 km/h », « Même balise scannée par Gon et Kirua à 300 m d'écart », « Genthru sans position depuis 10 min » ; raccourci vers la sanction adaptée.
+11. Journal : toutes les actions avec acteur, heure, résultat, motif ; filtres.
+
+---
+
+## Bloc 3 — Console Game Master (ordinateur portable, 1440 × 900 ; tablette 1024 × 768)
+
+Vue dense, plusieurs panneaux. Inspirée de la salle de contrôle des créateurs de Greed Island. Le GM a aussi tout ce que voit un PNJ.
+
+1. Créer une partie : nom, préréglage (Petit groupe, Standard, Grande foule), partie de démonstration, nom et code du premier GM ; ensuite les trois liens et QR (joueurs, console, écran géant).
+2. Tableau de bord en partie : état (Brouillon, Inscriptions, En cours, Pause, Phase finale, Terminée) et boutons d'action selon l'état ; chrono ; joueurs actifs ; balises actives / cible ; évènements en cours ; demandes de Clear ; dernières alertes ; fil du journal.
+3. Préparation (avant le démarrage), parcours en étapes avec ce qui manque pour démarrer : Zones (dessin sur la carte, type) → Balises → Catalogue (7 à 60 cartes, une seule SS, lot réel par carte, conseil « 14 cartes conseillées pour 120 min ») → Checkpoints → Paramètres → Équipe.
+4. Planche d'impression A4 : QR des balises avec leur libellé, QR des lieux, QR d'accueil.
+5. Carte en direct : zones, balises (dormante, active, épuisée, coupée ; standard, rare, fantôme ; stock), **positions exactes** des joueurs avec leur fraîcheur ; actions sur une balise (activer, couper, endormir, rotation forcée).
+6. Paramètres : pour chaque paramètre, valeur automatique, mode (Auto / Verrouillé / Multiplicateur) et valeur appliquée ; préréglages.
+7. Évènements : lancer Apparition, Double gain, Zone maudite (choix de la zone), Raid, Krach de Masadora, Carte maudite, Mission secrète (joueur, objectif, récompense) ; liste des évènements en cours avec « Annuler » ; propositions de l'agenda automatique (« Lancer » / « Ignorer »).
+8. Fiche joueur : son Book complet avec la vérité sur chaque carte (contrefaçons marquées), corrections (jenny ±, ajouter / retirer une carte), disqualification ; motif obligatoire.
+9. Clear : demande de Gon (Book gelé), scan de sa licence, « Confirmer le Clear » ou « Refuser » avec motif ; puis les 3 cartes choisies et les lots réels à remettre.
+10. Fin de partie : classement final, podium, gagnant du Clear.
+
+---
+
+## Bloc 4 — Écran géant (téléviseur 1920 × 1080, lu à 8 m, aucune interaction)
+
+Style « retransmission » du monde de Greed Island. Aucun texte plus petit que 24 px. Jamais de position nominative ni de balise localisée.
+
+1. Avant le démarrage : grand QR d'accueil et trois lignes de consigne.
+2. En partie : bandeau (nom, état, chrono géant), classement live (pseudo, cartes désignées / 14, points de rang, jenny), fil d'actualité (« Kirua a obtenu Épée des Sept Vents (S) », « Gon a utilisé Vol sur Hisoka : réussi », « Quelqu'un a utilisé Regard », « Biscuit a gagné une carte S à l'arène »), carte de chaleur anonyme décalée de 2 min, nombre de balises actives par zone.
+3. Bannière d'évènement : « Apparition dans la Forêt : 08:42 ».
+4. Raid de la Brigade : barre de vie géante du boss.
+5. Pause : écran figé avec « Pause » bien visible.
+6. Clear : plein écran avec le nom du gagnant.
+7. Fin : podium des 3 premiers puis classement final.

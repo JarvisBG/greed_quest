@@ -17,6 +17,8 @@ Ce qui ferait dire « raté » (Sivraj) : pas assez anime, appli générique, tr
 
 THESIS : l'app est une planche de Hunter × Hunter imprimée dans le Jump : encre pleine, trames, cases à bord épais ; le Book et les cartes de l'anime sont les seuls objets en couleur. Refuse l'appli de jeu en tuiles arrondies et le thème sombre plaqué.
 
+EXCEPTION (Sivraj, 2026-10-10) : la révélation du Nen (divination par l'eau puis hexagone) est une cinématique plein écran, sombre et en couleur (pièce de Wing, aura de la couleur du type) ; c'est le seul écran sombre de l'app.
+
 OWN-WORLD : papier journal froid presque blanc, encre noire pure, trames de points pour les ombres et les états, cases cernées 3 px avec gouttières blanches, une case inclinée par écran au plus ; lignes de vitesse pour les moments forts. Couleur réservée aux objets du jeu : cadre rouge (cartes désignées), bleu (sorts), jaune (objets), matières de rang SS → D. Annonces du jeu en boîte de dialogue de console (Joy Station) : aplat noir, double filet blanc, police pixel.
 
 STORY : le fan reconnaît le Book, la carte et la licence au premier regard ; il comprend son état (chrono, jenny, cartes) en marchant ; chaque gain est un évènement de planche.

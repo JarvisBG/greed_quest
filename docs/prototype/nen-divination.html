@@ -1,0 +1,670 @@
+<meta charset="utf-8">
+<title>Divination du Nen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=DotGothic16&family=Atkinson+Hyperlegible+Next:wght@400;600;800&display=swap">
+<style>
+/* Scène de cinéma 9:16 en un seul monde sombre et chaud (pièce de Wing, lumière de lampe) ; la couleur vient de l'aura du type. */
+:root {
+  color-scheme: dark;
+  --nuit: #0c0907;
+  --bois: #4a2f1c;
+  --lampe: #ffe2b0;
+  --blanc: #fbf7ef;
+  --gris: #b9b1a6;
+  --renforcement: #ff5a4a;
+  --emission: #ff9a3c;
+  --transformation: #b07cff;
+  --materialisation: #3fd3d8;
+  --manipulation: #5fe07a;
+  --specialisation: #ffd24a;
+  --type: var(--renforcement);
+  --f-titre: 'Dela Gothic One', 'Arial Black', sans-serif;
+  --f-jeu: 'DotGothic16', ui-monospace, monospace;
+  --f-texte: 'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif;
+  --sortie: cubic-bezier(0.16, 1, 0.3, 1);
+}
+html, body { height: 100%; }
+body { margin: 0; background: var(--nuit); color: var(--blanc); font: 400 15px/1.4 var(--f-texte); overflow: hidden; }
+.app { height: 100%; display: grid; grid-template-rows: auto 1fr; }
+
+/* Barre du prototype (hors de l'app) */
+.proto { display: flex; gap: 6px; padding: 8px 16px; overflow-x: auto; background: #050403; border-bottom: 1px solid #2a221b; scrollbar-width: none; }
+.proto button { flex: none; min-height: 36px; padding: 0 12px; border: 1.5px solid #4a3f35; background: transparent; color: var(--gris); font: 600 13px var(--f-texte); border-radius: 18px; cursor: pointer; }
+.proto button[aria-pressed='true'] { border-color: var(--c); color: var(--nuit); background: var(--c); }
+.proto .rejouer { margin-left: auto; color: var(--blanc); border-color: var(--blanc); }
+
+.cadre { position: relative; display: grid; place-items: center; min-height: 0; padding: 0; }
+.scene { position: relative; aspect-ratio: 9 / 16; height: 100%; max-width: 100%; overflow: hidden; background: var(--nuit); container-type: size; }
+@media (max-aspect-ratio: 9/16) { .scene { height: auto; width: 100%; } }
+canvas { position: absolute; inset: 0; width: 100%; height: 100%; transition: filter 0.9s var(--sortie); }
+.scene.hexa canvas { filter: blur(5px) brightness(0.42) saturate(1.2); }
+
+/* Récitatif d'avant le Ren */
+.consigne { position: absolute; left: 6cqw; right: 6cqw; top: 9cqh; text-align: center; font: 600 4.4cqw/1.35 var(--f-texte); color: var(--lampe); text-wrap: balance; transition: opacity 0.4s; }
+.btn-ren {
+  position: absolute; left: 50%; bottom: 7cqh; translate: -50% 0;
+  min-width: 46cqw; min-height: 13cqw; padding: 0 7cqw;
+  border: 0; border-radius: 0; background: var(--blanc); color: var(--nuit);
+  font: 400 7cqw/1 var(--f-titre); letter-spacing: 0.02em; cursor: pointer;
+  box-shadow: 0 0 0 0.6cqw var(--nuit), 0 0 0 1.2cqw var(--blanc), 0 1.6cqw 4cqw rgba(0,0,0,0.6);
+  transition: opacity 0.3s, scale 0.3s var(--sortie);
+}
+.btn-ren:active { scale: 0.95; }
+.btn-ren:focus-visible, .continuer:focus-visible { outline: 3px solid var(--type); outline-offset: 6px; }
+.cache { opacity: 0; pointer-events: none; }
+
+/* Cri du Ren */
+.cri { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; pointer-events: none; opacity: 0; }
+.cri b { font: 400 46cqw/0.9 var(--f-titre); color: var(--blanc); -webkit-text-stroke: 1.4cqw var(--nuit); paint-order: stroke fill; text-shadow: 0 0 6cqw var(--type); }
+.cri span { font: 400 10cqw/1 var(--f-titre); color: var(--type); -webkit-text-stroke: 0.8cqw var(--nuit); paint-order: stroke fill; letter-spacing: 0.04em; margin-top: -2cqw; }
+.cri.joue { animation: cri 1.15s var(--sortie) both; }
+@keyframes cri {
+  0% { opacity: 0; scale: 1.7; filter: blur(8px); }
+  18% { opacity: 1; scale: 1; filter: blur(0); }
+  70% { opacity: 1; scale: 1.04; }
+  100% { opacity: 0; scale: 1.12; filter: blur(4px); }
+}
+
+/* Carton du type */
+.carton { position: absolute; left: 0; right: 0; top: 6.5cqh; display: grid; justify-items: center; gap: 1cqw; pointer-events: none; opacity: 0; transition: top 0.9s var(--sortie); }
+.carton .kanji { font: 400 19cqw/1 var(--f-titre); color: var(--type); -webkit-text-stroke: 1.1cqw var(--nuit); paint-order: stroke fill; text-shadow: 0 0 5cqw color-mix(in srgb, var(--type) 70%, transparent); letter-spacing: 0.02em; }
+.carton .nom { font: 400 7.4cqw/1 var(--f-titre); color: var(--blanc); -webkit-text-stroke: 0.7cqw var(--nuit); paint-order: stroke fill; }
+.carton.joue { animation: carton 0.8s var(--sortie) both; }
+@keyframes carton { from { opacity: 0; scale: 1.5; filter: blur(10px); } to { opacity: 1; scale: 1; filter: blur(0); } }
+.scene.hexa .carton { top: 3cqh; }
+.scene.hexa .carton .kanji { font-size: 13cqw; }
+
+/* Boîte de dialogue du jeu (Joy Station) */
+.wing {
+  position: absolute; left: 5cqw; right: 5cqw; bottom: 5cqh;
+  background: #0b0b0d; color: var(--blanc);
+  box-shadow: inset 0 0 0 0.8cqw #0b0b0d, inset 0 0 0 1.3cqw var(--blanc), inset 0 0 0 2cqw #0b0b0d, inset 0 0 0 2.3cqw var(--blanc);
+  border-radius: 1.4cqw; padding: 5cqw 5.5cqw 5.5cqw; display: grid; gap: 2.4cqw;
+  opacity: 0; translate: 0 4cqw; transition: opacity 0.4s, translate 0.5s var(--sortie);
+}
+.wing.vu { opacity: 1; translate: 0 0; }
+.wing .qui { justify-self: start; background: var(--blanc); color: #0b0b0d; font: 400 3.8cqw/1 var(--f-jeu); padding: 1cqw 2cqw; }
+.wing p { margin: 0; font: 400 4.6cqw/1.45 var(--f-jeu); min-height: 2.9em; }
+
+/* Hexagone */
+.hexagone { position: absolute; left: 3cqw; right: 3cqw; top: 22cqh; width: 94cqw; height: auto; overflow: visible; opacity: 0; pointer-events: none; }
+.scene.hexa .hexagone { opacity: 1; transition: opacity 0.3s; }
+.hexagone .arete { fill: none; stroke-width: 3.2; stroke-linecap: round; stroke-dasharray: 140; stroke-dashoffset: 140; }
+.hexagone .rayon { stroke: var(--blanc); stroke-opacity: 0.16; stroke-width: 1.2; stroke-dasharray: 3 5; }
+.hexagone .fond { fill: url(#hex-fond); }
+.hexagone .nen-centre { font: 400 92px/1 var(--f-titre); fill: var(--blanc); fill-opacity: 0.07; }
+.hexagone .medaille { opacity: 0; transform-box: fill-box; transform-origin: center; }
+.hexagone .medaille circle.disque { stroke: rgba(255,255,255,0.75); stroke-width: 2; }
+.hexagone .medaille .k { font: 400 19px/1 var(--f-titre); fill: var(--blanc); stroke: rgba(0,0,0,0.55); stroke-width: 3px; paint-order: stroke fill; }
+.hexagone .medaille .k.long { font-size: 14.5px; }
+.hexagone .medaille .n { font: 800 12.5px/1 var(--f-texte); fill: var(--blanc); stroke: var(--nuit); stroke-width: 3.5px; paint-order: stroke fill; }
+.hexagone .onde { fill: none; stroke: var(--type); stroke-width: 3; opacity: 0; transform-box: fill-box; transform-origin: center; }
+.scene.hexa .arete { animation: trace 0.5s ease-out both; }
+.scene.hexa .medaille { animation: pop 0.55s var(--sortie) both; }
+.scene.hexa .medaille.autre { animation: pop 0.55s var(--sortie) both, eteint 0.6s ease-out 1.5s forwards; }
+.scene.hexa .medaille.moi { animation: pop-moi 0.7s var(--sortie) both; }
+.scene.hexa .medaille.moi .onde { animation: onde 1.1s ease-out 1.5s both; }
+.scene.hexa .medaille.moi .onde.o2 { animation-delay: 1.8s; }
+@keyframes trace { to { stroke-dashoffset: 0; } }
+@keyframes pop { from { opacity: 0; scale: 0.3; } to { opacity: 1; scale: 1; } }
+@keyframes pop-moi { from { opacity: 0; scale: 0.3; } 60% { opacity: 1; scale: 1.42; } to { opacity: 1; scale: 1.3; } }
+@keyframes eteint { to { opacity: 0.42; filter: saturate(0.4); } }
+@keyframes onde { from { opacity: 0.9; scale: 1; } to { opacity: 0; scale: 2.1; } }
+
+/* Pouvoir puis Continuer */
+.pouvoir { position: absolute; left: 5cqw; right: 5cqw; bottom: 17cqh; display: grid; gap: 1.6cqw; opacity: 0; translate: 0 3cqw; transition: opacity 0.5s 0.2s, translate 0.6s var(--sortie) 0.2s; }
+.pouvoir h2 { margin: 0; font: 400 5.2cqw/1.1 var(--f-titre); color: var(--type); }
+.pouvoir p { margin: 0; font: 600 4.3cqw/1.4 var(--f-texte); color: var(--blanc); text-wrap: pretty; }
+.continuer { position: absolute; left: 5cqw; right: 5cqw; bottom: 5cqh; min-height: 13cqw; border: 0; background: var(--type); color: var(--nuit); font: 400 5.6cqw/1 var(--f-titre); cursor: pointer; opacity: 0; transition: opacity 0.5s 0.5s; }
+.scene.fin .pouvoir { opacity: 1; translate: 0 0; }
+.scene.fin .continuer { opacity: 1; }
+.scene:not(.fin) .continuer { pointer-events: none; }
+.scene.hexa .wing { opacity: 0; translate: 0 4cqw; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0s !important; transition-duration: 0.01ms !important; transition-delay: 0s !important; }
+}
+</style>
+
+<div class="app">
+  <nav class="proto" aria-label="Choisir le type à jouer" id="choix"></nav>
+  <div class="cadre">
+    <section class="scene" id="scene" aria-label="Divination par l’eau">
+      <canvas id="c" aria-hidden="true"></canvas>
+      <p class="consigne" id="consigne">Pose tes mains autour du verre, sans le toucher, et libère ton aura.</p>
+      <div class="cri" id="cri" aria-hidden="true"><b>練</b><span>REN !</span></div>
+      <div class="carton" id="carton"><span class="kanji" id="kanji"></span><span class="nom" id="nom"></span></div>
+      <div class="wing" id="wing" role="status"><span class="qui">Wing</span><p id="replique"></p></div>
+      <svg class="hexagone" id="hex" viewBox="-180 -168 360 346" aria-hidden="true"></svg>
+      <div class="pouvoir"><h2 id="p-titre"></h2><p id="p-texte"></p></div>
+      <button class="btn-ren" id="ren">Ren !</button>
+      <button class="continuer" id="continuer">Commencer à jouer</button>
+    </section>
+  </div>
+</div>
+
+<script>
+// Types dans l'ordre de l'hexagone de l'anime : Renforcement en haut, puis sens des aiguilles d'une montre.
+const TYPES = {
+  renforcement: { nom: 'Renforcement', kanji: '強化系', court: '強化', signe: 'L’eau déborde du verre.', pouvoir: 'Annule le prochain sort offensif reçu. Se recharge en 30 min.' },
+  transformation: { nom: 'Transformation', kanji: '変化系', court: '変化', signe: 'Goûte-la : l’eau a changé de goût.', pouvoir: 'Texture Surprise : déguise un doublon en une autre carte de même rang, toutes les 20 min.' },
+  materialisation: { nom: 'Matérialisation', kanji: '具現化系', court: '具現化', signe: 'Des cristaux sont apparus dans l’eau.', pouvoir: 'Un tirage bonus (rang C au plus) à chaque checkpoint réussi, et un toutes les 40 min.' },
+  specialisation: { nom: 'Spécialisation', kanji: '特質系', court: '特質', signe: 'La feuille s’est flétrie, et l’eau scintille. Aucun des cinq autres signes.', pouvoir: 'Un pouvoir secret parmi quatre, qui se recharge en 40 min. Les autres joueurs ne savent pas lequel.' },
+  manipulation: { nom: 'Manipulation', kanji: '操作系', court: '操作', signe: 'La feuille tourne toute seule.', pouvoir: 'Un échange forcé gratuit. Se recharge en 40 min.' },
+  emission: { nom: 'Émission', kanji: '放出系', court: '放出', signe: 'L’eau a changé de couleur.', pouvoir: 'Lance un sort offensif hors de portée. Se recharge en 40 min.' },
+};
+const ORDRE = Object.keys(TYPES);
+const css = getComputedStyle(document.documentElement);
+const couleur = (t) => css.getPropertyValue('--' + t).trim();
+const calme = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const scene = document.getElementById('scene');
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+const W = 360, H = 640;
+let type = 'renforcement';
+
+// ---------- Utilitaires ----------
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const sortie = (t) => 1 - Math.pow(1 - clamp(t), 4);
+const doux = (t) => { t = clamp(t); return t * t * (3 - 2 * t); };
+const hex2rgb = (h) => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+const mix = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)].map(Math.round);
+let graine = 7;
+const alea = () => (graine = (graine * 16807) % 2147483647) / 2147483647;
+
+// ---------- Géométrie du verre ----------
+const CX = 180, BORD = 268, FOND = 452, R_HAUT = 66, R_BAS = 50, EP = 4.5;
+const rayon = (y) => lerp(R_HAUT, R_BAS, (y - BORD) / (FOND - BORD));
+const rayonInt = (y) => rayon(y) - EP;
+const FOND_INT = FOND - 14;
+const NIVEAU = 318;
+const TABLE = 448;
+
+// Sprite de lueur par couleur (aura), pré-rendu une fois.
+const sprites = {};
+function sprite(hex) {
+  if (sprites[hex]) return sprites[hex];
+  const s = document.createElement('canvas'); s.width = s.height = 64;
+  const g = s.getContext('2d'); const c = hex2rgb(hex);
+  const rg = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  rg.addColorStop(0, rgba(c, 0.9)); rg.addColorStop(0.35, rgba(c, 0.45)); rg.addColorStop(1, rgba(c, 0));
+  g.fillStyle = rg; g.fillRect(0, 0, 64, 64);
+  return (sprites[hex] = s);
+}
+
+// Grain du bois et lignes de vitesse, tirés une fois.
+const veines = Array.from({ length: 26 }, () => ({ y: TABLE + 8 + alea() * 190, a: 0.04 + alea() * 0.08, o: alea() * 6, f: 0.01 + alea() * 0.02 }));
+const lignes = Array.from({ length: 110 }, () => ({ a: alea() * Math.PI * 2, w: 0.004 + alea() * 0.014, r: 120 + alea() * 90 }));
+let cristaux = [], bulles = [], paillettes = [];
+
+function tirer() {
+  graine = 1234 + ORDRE.indexOf(type) * 97;
+  cristaux = Array.from({ length: 11 }, (_, i) => ({ x: CX + (alea() - 0.5) * 70, y: lerp(NIVEAU + 30, FOND_INT - 14, alea()), r: 5 + alea() * 9, rot: alea() * Math.PI, t0: 0.05 + i * 0.07, chute: 10 + alea() * 30 }));
+  bulles = Array.from({ length: 34 }, () => ({ x: CX + (alea() - 0.5) * 80, t0: alea() * 0.85, v: 0.5 + alea() * 0.6, r: 1.4 + alea() * 2.8, w: alea() * 6 }));
+  paillettes = Array.from({ length: 26 }, () => ({ x: CX + (alea() - 0.5) * 90, y: lerp(NIVEAU + 6, FOND_INT - 6, alea()), t0: alea(), p: 0.6 + alea() * 0.8 }));
+}
+
+// ---------- Particules d'aura ----------
+let aura = [];
+function emettre(dt, force) {
+  const n = Math.floor(force * dt * 85 + alea());
+  for (let i = 0; i < n; i++) {
+    const cote = alea() < 0.5 ? -1 : 1;
+    const y = lerp(BORD - 10, TABLE, alea());
+    aura.push({ x: CX + cote * (rayon(clamp(y, BORD, FOND)) + 6 + alea() * 26), y, vx: cote * (4 + alea() * 14), vy: -(40 + alea() * 70), vie: 0, max: 1 + alea() * 1.1, t: 8 + alea() * 15 });
+  }
+}
+
+// ---------- État de la séquence ----------
+let t0 = null; // instant du Ren
+let dernier = performance.now();
+const T_EFFET = 0.65, D_EFFET = 2.6, T_CARTON = 3.45, T_WING = 4.1, T_HEXA = 6.6, T_FIN = 8.0;
+
+// Vérification : window.figer(type, s) fige la scène à l'instant s (en secondes après le Ren).
+let fige = null;
+window.figer = (t, s) => { type = t; preparer(); fige = s; for (let i = 0; i < 90; i++) { emettre(1 / 60, 1); } };
+function etat(now) {
+  if (fige !== null) return { s: fige };
+  if (t0 === null) return { s: -1 };
+  return { s: (now - t0) / 1000 };
+}
+
+// ---------- Dessin ----------
+function dessiner(now) {
+  const dt = Math.min(0.05, (now - dernier) / 1000); dernier = now;
+  const { s } = etat(now);
+  const ren = s >= 0;
+  const e = ren ? clamp((s - T_EFFET) / D_EFFET) : 0; // avancement de l'effet
+  const ct = hex2rgb(couleur(type));
+  const force = ren ? clamp(s / 0.4) * (1 - 0.45 * clamp((s - 4) / 2)) : 0;
+
+  ctx.save();
+  // Secousse du Ren et lente avancée de la caméra
+  const choc = ren ? Math.max(0, 1 - s / 0.45) : 0;
+  const zoom = ren ? lerp(1.22, 1.3, sortie(s / 3)) : 1.22;
+  ctx.translate(W / 2 + (alea() - 0.5) * 9 * choc, 360 + (alea() - 0.5) * 9 * choc);
+  ctx.scale(zoom, zoom);
+  ctx.translate(-W / 2, -372);
+
+  // Fond : pièce sombre, lampe en haut à gauche
+  let g = ctx.createRadialGradient(110, 120, 10, 160, 260, 520);
+  g.addColorStop(0, '#4a3524'); g.addColorStop(0.45, '#1f1610'); g.addColorStop(1, '#0a0705');
+  ctx.fillStyle = g; ctx.fillRect(-40, -40, W + 80, H + 80);
+  // Lueur de l'aura derrière le verre
+  if (force > 0) {
+    g = ctx.createRadialGradient(CX, 340, 10, CX, 340, 260);
+    g.addColorStop(0, rgba(ct, 0.42 * force)); g.addColorStop(1, rgba(ct, 0));
+    ctx.fillStyle = g; ctx.fillRect(-40, -40, W + 80, H + 80);
+  }
+
+  // Table en bois
+  g = ctx.createLinearGradient(0, TABLE, 0, H);
+  g.addColorStop(0, '#6b4429'); g.addColorStop(0.25, '#4a2f1c'); g.addColorStop(1, '#1a100a');
+  ctx.fillStyle = g; ctx.fillRect(-40, TABLE, W + 80, H - TABLE + 40);
+  ctx.strokeStyle = 'rgba(255,220,170,0.28)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(-40, TABLE + 0.5); ctx.lineTo(W + 40, TABLE + 0.5); ctx.stroke();
+  for (const v of veines) {
+    ctx.strokeStyle = `rgba(20,10,4,${v.a})`; ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    for (let x = -40; x <= W + 40; x += 12) ctx.lineTo(x, v.y + Math.sin(x * v.f + v.o) * 3);
+    ctx.stroke();
+  }
+  if (force > 0) { // reflet de l'aura sur la table
+    g = ctx.createRadialGradient(CX, TABLE + 20, 4, CX, TABLE + 20, 170);
+    g.addColorStop(0, rgba(ct, 0.3 * force)); g.addColorStop(1, rgba(ct, 0));
+    ctx.fillStyle = g; ctx.fillRect(-40, TABLE, W + 80, 200);
+  }
+
+  // Couleur de l'eau (l'Émission la change)
+  const eauHaut0 = [168, 214, 240], eauBas0 = [52, 120, 178];
+  let tEau = 0;
+  if (type === 'emission') tEau = doux(e * 1.15);
+  const eauHaut = mix(eauHaut0, mix(ct, [255, 255, 255], 0.25), tEau);
+  const eauBas = mix(eauBas0, mix(ct, [60, 10, 0], 0.35), tEau);
+
+  // Niveau de l'eau (le Renforcement la fait monter puis déborder)
+  let niveau = NIVEAU;
+  let debord = 0;
+  if (type === 'renforcement') {
+    const m = sortie(e / 0.55);
+    niveau = lerp(NIVEAU, BORD - 12, m);
+    debord = clamp((e - 0.38) / 0.62);
+  }
+
+  // Ombre et caustique sous le verre
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.beginPath(); ctx.ellipse(CX + 26, FOND + 2, 74, 11, 0, 0, Math.PI * 2); ctx.fill();
+  g = ctx.createRadialGradient(CX + 34, FOND + 6, 2, CX + 34, FOND + 6, 60);
+  g.addColorStop(0, rgba(eauHaut, 0.55)); g.addColorStop(1, rgba(eauHaut, 0));
+  ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(CX + 34, FOND + 6, 60, 9, 0, 0, Math.PI * 2); ctx.fill();
+
+  // Flaque (Renforcement)
+  if (debord > 0) {
+    const rf = 30 + 120 * sortie(clamp((debord - 0.25) / 0.75));
+    if (debord > 0.25) {
+      g = ctx.createRadialGradient(CX, FOND + 4, 4, CX, FOND + 4, rf);
+      g.addColorStop(0, rgba(eauHaut, 0.5)); g.addColorStop(0.85, rgba(eauHaut, 0.32)); g.addColorStop(1, rgba(eauHaut, 0));
+      ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(CX, FOND + 4, rf, rf * 0.13, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.ellipse(CX, FOND + 4, rf * 0.92, rf * 0.11, 0, Math.PI * 1.05, Math.PI * 1.6); ctx.stroke();
+    }
+  }
+
+  // Paroi arrière du verre
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.ellipse(CX, BORD, R_HAUT, 9, 0, Math.PI, Math.PI * 2); ctx.stroke();
+
+  // ----- Eau, découpée dans l'intérieur du verre -----
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(CX - rayonInt(BORD), BORD);
+  ctx.lineTo(CX - rayonInt(FOND_INT), FOND_INT - 6);
+  ctx.quadraticCurveTo(CX - rayonInt(FOND_INT), FOND_INT + 2, CX - rayonInt(FOND_INT) + 10, FOND_INT + 3);
+  ctx.lineTo(CX + rayonInt(FOND_INT) - 10, FOND_INT + 3);
+  ctx.quadraticCurveTo(CX + rayonInt(FOND_INT), FOND_INT + 2, CX + rayonInt(FOND_INT), FOND_INT - 6);
+  ctx.lineTo(CX + rayonInt(BORD), BORD);
+  ctx.closePath();
+  ctx.clip();
+  const nv = Math.max(niveau, BORD);
+  g = ctx.createLinearGradient(0, nv, 0, FOND_INT);
+  g.addColorStop(0, rgba(eauHaut, 0.62)); g.addColorStop(1, rgba(eauBas, 0.86));
+  ctx.fillStyle = g; ctx.fillRect(CX - 80, nv, 160, FOND_INT - nv + 10);
+  // Nuage de couleur qui se diffuse (Émission)
+  if (type === 'emission' && e > 0) {
+    for (let i = 0; i < 5; i++) {
+      const p = sortie(e * 1.3 - i * 0.08);
+      if (p <= 0) continue;
+      const r = 8 + p * 90;
+      g = ctx.createRadialGradient(CX + Math.sin(i * 2.1) * 14 * p, nv + 18 + i * 22 * p, 0, CX, nv + 18 + i * 22 * p, r);
+      g.addColorStop(0, rgba(ct, 0.55 * (1 - p * 0.5))); g.addColorStop(1, rgba(ct, 0));
+      ctx.fillStyle = g; ctx.fillRect(CX - 90, nv - 10, 180, 220);
+    }
+  }
+  // Paillettes (Transformation : violettes ; Spécialisation : dorées)
+  if ((type === 'transformation' || type === 'specialisation') && e > 0) {
+    for (const p of paillettes) {
+      const v = Math.sin((now / 1000) * 6 * p.p + p.t0 * 20) * 0.5 + 0.5;
+      const a = clamp((e - p.t0 * 0.5) * 3) * v;
+      if (a <= 0.02) continue;
+      const c = type === 'transformation' ? mix(ct, [255, 255, 255], 0.4) : [255, 236, 160];
+      etoile(p.x, p.y, 2 + v * 3.5, rgba(c, a));
+    }
+  }
+  // Bulles qui montent (Transformation)
+  if (type === 'transformation' && e > 0) {
+    for (const b of bulles) {
+      let p = (e * 2.2 * b.v - b.t0) % 1;
+      if (e * 2.2 * b.v < b.t0) continue;
+      const y = lerp(FOND_INT - 4, nv + 3, p);
+      const x = b.x + Math.sin(p * 9 + b.w) * 3;
+      ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(x, y, b.r, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.beginPath(); ctx.arc(x - b.r * 0.35, y - b.r * 0.35, b.r * 0.3, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  // Cristaux qui naissent et descendent (Matérialisation)
+  if (type === 'materialisation' && e > 0) {
+    for (const k of cristaux) {
+      const p = sortie((e - k.t0) / 0.3);
+      if (p <= 0) continue;
+      const y = k.y + k.chute * doux((e - k.t0) / (1 - k.t0));
+      cristal(k.x, y, k.r * p, k.rot + e * 0.6, ct, p);
+    }
+  }
+  // Surface
+  if (niveau >= BORD - 0.5) {
+    surface(niveau, eauHaut, s, e);
+  }
+  ctx.restore();
+
+  // Bombé au-dessus du bord et coulures (Renforcement)
+  if (type === 'renforcement' && niveau < BORD) {
+    const h = BORD - niveau;
+    g = ctx.createLinearGradient(0, BORD - h, 0, BORD);
+    g.addColorStop(0, rgba(mix(eauHaut, [255, 255, 255], 0.3), 0.85)); g.addColorStop(1, rgba(eauHaut, 0.7));
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(CX, BORD, R_HAUT + 1.5, h + 8, 0, Math.PI, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.ellipse(CX, BORD, R_HAUT + 1.5, h + 8, 0, Math.PI * 1.15, Math.PI * 1.55); ctx.stroke();
+    for (const [cote, retard, larg] of [[-1, 0, 11], [1, 0.12, 13], [-1, 0.3, 7], [1, 0.42, 8]]) {
+      const p = sortie(clamp((debord - retard) / 0.5));
+      if (p <= 0) continue;
+      const bas = lerp(BORD, FOND + 2, p);
+      const decal = retard > 0.2 ? cote * -10 : 0;
+      ctx.fillStyle = rgba(mix(eauHaut, [255, 255, 255], 0.2), 0.88);
+      ctx.beginPath();
+      for (let y = BORD - 2; y <= bas; y += 4) ctx.lineTo(CX + cote * (rayon(y) + 1) + decal * 0.2, y);
+      for (let y = bas; y >= BORD - 2; y -= 4) {
+        const w = larg * (0.45 + 0.55 * Math.sin(((y - BORD) / (bas - BORD + 1)) * Math.PI * 0.9 + 0.3));
+        ctx.lineTo(CX + cote * (rayon(y) + 1 + w) + decal * 0.2, y);
+      }
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 1.2; ctx.stroke();
+      if (p < 1) { ctx.beginPath(); ctx.arc(CX + cote * (rayon(bas) + larg * 0.6), bas, larg * 0.75, 0, Math.PI * 2); ctx.fill(); }
+      else { // gouttes qui tombent du bord en continu
+        const k = ((now / 1000) * 1.4 + retard * 3) % 1;
+        ctx.beginPath(); ctx.ellipse(CX + cote * (rayon(BORD) + larg * 0.9), lerp(BORD + 6, FOND, k * k), 2.6, 3.6, 0, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(CX + cote * (rayon(BORD + 10) + larg * 0.7), BORD + 10); ctx.lineTo(CX + cote * (rayon(lerp(BORD, bas, 0.6)) + larg * 0.5), lerp(BORD, bas, 0.6)); ctx.stroke();
+    }
+  }
+
+  // Feuille
+  feuille(niveau, s, e);
+
+  // Verre, au premier plan : corps, reflets, bord, fond épais
+  g = ctx.createLinearGradient(CX - R_HAUT, 0, CX + R_HAUT, 0);
+  g.addColorStop(0, 'rgba(255,255,255,0.16)'); g.addColorStop(0.3, 'rgba(255,255,255,0.03)'); g.addColorStop(0.75, 'rgba(255,255,255,0.02)'); g.addColorStop(1, 'rgba(255,255,255,0.12)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.moveTo(CX - R_HAUT, BORD); ctx.lineTo(CX - R_BAS, FOND); ctx.lineTo(CX + R_BAS, FOND); ctx.lineTo(CX + R_HAUT, BORD); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(CX - R_HAUT, BORD); ctx.lineTo(CX - R_BAS, FOND - 6); ctx.moveTo(CX + R_HAUT, BORD); ctx.lineTo(CX + R_BAS, FOND - 6); ctx.stroke();
+  // fond épais
+  g = ctx.createLinearGradient(0, FOND_INT, 0, FOND);
+  g.addColorStop(0, 'rgba(255,255,255,0.32)'); g.addColorStop(1, 'rgba(255,255,255,0.1)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.ellipse(CX, FOND - 3, R_BAS, 7, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.ellipse(CX, FOND - 3, R_BAS, 7, 0, 0, Math.PI); ctx.stroke();
+  // reflets verticaux (lampe à gauche)
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 7;
+  ctx.beginPath(); ctx.moveTo(CX - R_HAUT + 15, BORD + 26); ctx.lineTo(CX - R_BAS + 12, FOND - 34); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 2.2;
+  ctx.beginPath(); ctx.moveTo(CX - R_HAUT + 27, BORD + 40); ctx.lineTo(CX - R_BAS + 23, BORD + 92); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,0.28)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(CX + R_HAUT - 11, BORD + 30); ctx.lineTo(CX + R_BAS - 9, FOND - 40); ctx.stroke();
+  ctx.lineCap = 'butt';
+  // bord avant
+  ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 2.2;
+  ctx.beginPath(); ctx.ellipse(CX, BORD, R_HAUT, 9, 0, 0, Math.PI); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.ellipse(CX, BORD, R_HAUT - EP, 7.5, 0, 0, Math.PI); ctx.stroke();
+
+  // Aura : particules additives autour du verre
+  if (ren) emettre(dt, force);
+  ctx.globalCompositeOperation = 'lighter';
+  const sp = sprite(couleur(type));
+  for (let i = aura.length - 1; i >= 0; i--) {
+    const p = aura[i];
+    p.vie += dt;
+    if (p.vie > p.max) { aura.splice(i, 1); continue; }
+    p.x += p.vx * dt + Math.sin(p.vie * 5 + p.t) * 0.4; p.y += p.vy * dt; p.vx *= 0.98;
+    const k = p.vie / p.max;
+    const a = Math.sin(k * Math.PI) * 0.5;
+    const taille = p.t * (0.6 + k * 0.9);
+    ctx.globalAlpha = a;
+    ctx.drawImage(sp, p.x - taille, p.y - taille, taille * 2, taille * 2);
+  }
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
+
+  // Lignes de vitesse et flash du Ren
+  if (ren && s < 0.9) {
+    const a = 1 - s / 0.9;
+    ctx.fillStyle = `rgba(255,248,235,${0.55 * a})`;
+    ctx.beginPath();
+    for (const l of lignes) {
+      const r0 = l.r - 30 * (1 - a);
+      const p = (ang, r) => [CX + Math.cos(ang) * r, 340 + Math.sin(ang) * r * 1.4];
+      const [x0, y0] = p(l.a, r0), [x1, y1] = p(l.a - l.w, 480), [x2, y2] = p(l.a + l.w, 480);
+      ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.lineTo(x2, y2); ctx.closePath();
+    }
+    ctx.fill();
+  }
+  ctx.restore();
+  if (ren && s < 0.25) { ctx.fillStyle = `rgba(255,250,240,${0.7 * (1 - s / 0.25)})`; ctx.fillRect(0, 0, W, H); }
+  // Vignette
+  g = ctx.createRadialGradient(W / 2, 330, 180, W / 2, 330, 470);
+  g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.6)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+}
+
+function surface(niveau, eauHaut, s, e) {
+  const rx = rayonInt(niveau), ry = 7;
+  let g = ctx.createLinearGradient(0, niveau - ry, 0, niveau + ry);
+  g.addColorStop(0, rgba(mix(eauHaut, [255, 255, 255], 0.55), 0.95)); g.addColorStop(1, rgba(eauHaut, 0.75));
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.ellipse(CX, niveau, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.ellipse(CX, niveau, rx, ry, 0, 0, Math.PI * 2); ctx.stroke();
+  // Ronds sur l'eau : la feuille qui tourne (Manipulation), le frémissement (Transformation)
+  const ronds = type === 'manipulation' ? 4 : type === 'transformation' ? 3 : 0;
+  for (let i = 0; i < ronds; i++) {
+    const p = (e * (type === 'manipulation' ? 3 : 4) - i / ronds) % 1;
+    if (e * 3 < i / ronds || e <= 0 || e >= 1) continue;
+    ctx.strokeStyle = `rgba(255,255,255,${0.8 * (1 - p)})`; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.ellipse(CX, niveau, 8 + p * (rx - 6), (8 + p * (rx - 6)) * 0.11, 0, 0, Math.PI * 2); ctx.stroke();
+  }
+}
+
+function feuille(niveau, s, e) {
+  let ang = -0.5, x = CX + 4, ech = 1, flet = 0;
+  const bob = Math.sin((performance.now() / 1000) * 1.6) * 0.8;
+  if (type === 'manipulation') {
+    const p = doux(e);
+    ang += p * Math.PI * 4.5;
+    x += Math.sin(p * Math.PI * 3) * 9;
+  }
+  if (type === 'specialisation') { flet = doux(e / 0.7); ech = lerp(1, 0.72, flet); ang += flet * 0.6; }
+  const y = Math.max(niveau, BORD - 14) - 1 + bob;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(1, 0.42);
+  ctx.rotate(ang);
+  ctx.scale(ech, ech * lerp(1, 0.55, flet));
+  // ombre portée sur l'eau
+  ctx.fillStyle = 'rgba(10,40,60,0.25)';
+  ctx.beginPath(); ctx.ellipse(3, 6, 27, 11, 0, 0, Math.PI * 2); ctx.fill();
+  const vert1 = mix([126, 206, 104], [150, 100, 40], flet), vert2 = mix([38, 120, 52], [70, 40, 18], flet);
+  const g = ctx.createLinearGradient(-26, -10, 26, 10);
+  g.addColorStop(0, rgba(vert1, 1)); g.addColorStop(1, rgba(vert2, 1));
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(-28, 0);
+  ctx.bezierCurveTo(-12, -17 + flet * 6, 14, -15 + flet * 5, 30, 0);
+  ctx.bezierCurveTo(14, 15 - flet * 5, -12, 17 - flet * 6, -28, 0);
+  ctx.fill();
+  ctx.strokeStyle = rgba(mix([20, 70, 30], [40, 22, 8], flet), 0.9); ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(-34, 1); ctx.lineTo(28, 0); ctx.stroke();
+  ctx.lineWidth = 1;
+  for (let i = -2; i <= 2; i++) {
+    if (!i) continue;
+    ctx.beginPath(); ctx.moveTo(i * 8, 0); ctx.lineTo(i * 8 + 8, -8); ctx.moveTo(i * 8, 0); ctx.lineTo(i * 8 + 8, 8); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function cristal(x, y, r, rot, ct, p) {
+  ctx.save();
+  ctx.translate(x, y); ctx.rotate(rot);
+  const g = ctx.createLinearGradient(-r, -r, r, r);
+  g.addColorStop(0, 'rgba(255,255,255,0.95)'); g.addColorStop(0.5, rgba(mix(ct, [255, 255, 255], 0.35), 0.9)); g.addColorStop(1, rgba(mix(ct, [0, 40, 60], 0.4), 0.95));
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(0, -r * 1.35); ctx.lineTo(r * 0.72, -r * 0.3); ctx.lineTo(r * 0.5, r); ctx.lineTo(-r * 0.5, r); ctx.lineTo(-r * 0.72, -r * 0.3); ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 0.9; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, -r * 1.35); ctx.lineTo(0, r); ctx.moveTo(-r * 0.72, -r * 0.3); ctx.lineTo(r * 0.72, -r * 0.3); ctx.stroke();
+  ctx.restore();
+  if (p > 0.6) etoile(x + r * 0.5, y - r, 2 + r * 0.35 * Math.abs(Math.sin(performance.now() / 300 + x)), 'rgba(255,255,255,0.9)');
+}
+
+function etoile(x, y, r, c) {
+  ctx.fillStyle = c;
+  ctx.beginPath();
+  ctx.moveTo(x, y - r); ctx.lineTo(x + r * 0.22, y - r * 0.22); ctx.lineTo(x + r, y); ctx.lineTo(x + r * 0.22, y + r * 0.22);
+  ctx.lineTo(x, y + r); ctx.lineTo(x - r * 0.22, y + r * 0.22); ctx.lineTo(x - r, y); ctx.lineTo(x - r * 0.22, y - r * 0.22);
+  ctx.closePath(); ctx.fill();
+}
+
+// ---------- Hexagone en couleur ----------
+function hexagone() {
+  const svg = document.getElementById('hex');
+  const R = 118;
+  const pt = (i) => { const a = -Math.PI / 2 + (i * Math.PI) / 3; return [Math.cos(a) * R, Math.sin(a) * R]; };
+  const ns = 'http://www.w3.org/2000/svg';
+  let defs = `<radialGradient id="hex-fond"><stop offset="0" stop-color="${couleur(type)}" stop-opacity="0.45"/><stop offset="1" stop-color="${couleur(type)}" stop-opacity="0.04"/></radialGradient>`;
+  let corps = '';
+  const sommets = ORDRE.map((_, i) => pt(i));
+  corps += `<path class="fond" d="M${sommets.map((p) => p.map((v) => v.toFixed(1)).join(' ')).join('L')}Z"/>`;
+  corps += `<text class="nen-centre" text-anchor="middle" y="32">念</text>`;
+  sommets.forEach(([x, y]) => { corps += `<line class="rayon" x1="0" y1="0" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`; });
+  ORDRE.forEach((t, i) => {
+    const j = (i + 1) % 6;
+    const [x1, y1] = sommets[i], [x2, y2] = sommets[j];
+    defs += `<linearGradient id="ar${i}" gradientUnits="userSpaceOnUse" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"><stop offset="0" stop-color="${couleur(t)}"/><stop offset="1" stop-color="${couleur(ORDRE[j])}"/></linearGradient>`;
+    corps += `<path class="arete" stroke="url(#ar${i})" d="M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}" style="animation-delay:${0.1 + i * 0.08}s"/>`;
+  });
+  ORDRE.forEach((t, i) => {
+    const [x, y] = sommets[i];
+    const moi = t === type;
+    const c = couleur(t);
+    defs += `<radialGradient id="md${i}" cx="0.38" cy="0.32" r="0.75"><stop offset="0" stop-color="#fff" stop-opacity="0.85"/><stop offset="0.28" stop-color="${c}"/><stop offset="1" stop-color="${c}" stop-opacity="0.55"/></radialGradient>`;
+    const T = TYPES[t];
+    const bas = y > 60;
+    corps += `<g class="medaille ${moi ? 'moi' : 'autre'}" style="animation-delay:${moi ? 0.85 : 0.35 + i * 0.07}s${moi ? '' : `,${1.5}s`}" transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">
+      ${moi ? `<circle class="onde" r="31"/><circle class="onde o2" r="31"/><circle r="40" fill="${c}" opacity="0.28" filter="url(#flou)"/>` : ''}
+      <circle class="disque" r="29" fill="url(#md${i})"/>
+      <text class="k${T.court.length > 2 ? ' long' : ''}" text-anchor="middle" y="6">${T.court}</text>
+      <text class="n" text-anchor="middle" y="${bas || i === 0 ? 46 : 46}">${T.nom}</text>
+    </g>`;
+  });
+  defs += `<filter id="flou" x="-1" y="-1" width="3" height="3"><feGaussianBlur stdDeviation="7"/></filter>`;
+  svg.innerHTML = `<defs>${defs}</defs>${corps}`;
+}
+
+// ---------- Séquence ----------
+const el = (id) => document.getElementById(id);
+let minuteurs = [];
+function plus_tard(s, f) { minuteurs.push(setTimeout(f, calme ? 0 : s * 1000)); }
+
+function preparer() {
+  minuteurs.forEach(clearTimeout); minuteurs = [];
+  t0 = null; aura = []; tirer();
+  document.documentElement.style.setProperty('--type', couleur(type));
+  scene.classList.remove('hexa', 'fin');
+  el('cri').classList.remove('joue');
+  el('carton').classList.remove('joue'); el('carton').style.opacity = '';
+  el('wing').classList.remove('vu'); el('replique').textContent = '';
+  el('consigne').classList.remove('cache'); el('ren').classList.remove('cache');
+  const T = TYPES[type];
+  el('kanji').textContent = T.kanji; el('nom').textContent = T.nom;
+  el('p-titre').textContent = type === 'specialisation' ? 'Ton pouvoir secret' : `Pouvoir de ${T.nom}`;
+  el('p-texte').textContent = T.pouvoir;
+  hexagone();
+  document.querySelectorAll('#choix button[data-t]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.t === type)));
+}
+
+function taper(texte) {
+  const p = el('replique'); p.textContent = '';
+  if (calme) { p.textContent = texte; return; }
+  let i = 0;
+  const pas = () => { p.textContent = texte.slice(0, ++i); if (i < texte.length) minuteurs.push(setTimeout(pas, 26)); };
+  pas();
+}
+
+function lancer() {
+  t0 = calme ? performance.now() - 7000 : performance.now();
+  el('consigne').classList.add('cache'); el('ren').classList.add('cache');
+  if (!calme) { void el('cri').offsetWidth; el('cri').classList.add('joue'); }
+  plus_tard(T_CARTON, () => el('carton').classList.add('joue'));
+  plus_tard(T_WING, () => { el('wing').classList.add('vu'); taper(`${TYPES[type].signe} Tu es du type ${TYPES[type].nom}.`); });
+  plus_tard(T_HEXA, () => scene.classList.add('hexa'));
+  plus_tard(T_FIN, () => scene.classList.add('fin'));
+}
+
+el('ren').addEventListener('click', lancer);
+el('continuer').addEventListener('click', () => preparer());
+
+// Barre du prototype
+const choix = el('choix');
+ORDRE.forEach((t) => {
+  const b = document.createElement('button');
+  b.dataset.t = t; b.textContent = TYPES[t].nom; b.style.setProperty('--c', couleur(t));
+  b.addEventListener('click', () => { type = t; preparer(); });
+  choix.appendChild(b);
+});
+const rej = document.createElement('button'); rej.className = 'rejouer'; rej.textContent = 'Rejouer';
+rej.addEventListener('click', () => { preparer(); });
+choix.appendChild(rej);
+
+// Taille du canvas (netteté sur écran Retina)
+function taille() {
+  const r = scene.getBoundingClientRect();
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+  ctx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0);
+}
+new ResizeObserver(taille).observe(scene);
+taille();
+preparer();
+function boucle(now) { ctx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0); dessiner(now); requestAnimationFrame(boucle); }
+requestAnimationFrame(boucle);
+</script>

@@ -99,14 +99,14 @@ export const SORTS: Record<SpellType, { numero?: number; nom: string; effet: str
   retour: { numero: 1009, nom: 'Retour', effet: 'Utilise à distance une ville déjà visitée pendant 10 min' },
 };
 
-/** RG-5.4 : type de Nen et son passif. */
-export const NENS: Record<NenType, { nom: string; passif: string }> = {
-  renforcement: { nom: 'Renforcement', passif: 'Annule le prochain sort offensif reçu (se recharge en 30 min)' },
-  emission: { nom: 'Émission', passif: 'Lance un sort offensif hors de portée (se recharge en 40 min)' },
-  transformation: { nom: 'Transformation', passif: 'Texture Surprise : déguise un doublon en une autre carte de même rang (toutes les 20 min)' },
-  materialisation: { nom: 'Matérialisation', passif: 'Un tirage bonus (rang C au plus) à chaque checkpoint réussi, et un toutes les 40 min' },
-  manipulation: { nom: 'Manipulation', passif: 'Un échange forcé gratuit (se recharge en 40 min)' },
-  specialisation: { nom: 'Spécialisation', passif: 'Type rare : un pouvoir secret parmi quatre, qui se recharge en 40 min' },
+/** RG-5.4 : type de Nen, son passif et ses kanji de l'anime (系 = « type » ; `court` pour l'hexagone). */
+export const NENS: Record<NenType, { nom: string; passif: string; kanji: string; court: string }> = {
+  renforcement: { nom: 'Renforcement', kanji: '強化系', court: '強化', passif: 'Annule le prochain sort offensif reçu (se recharge en 30 min)' },
+  emission: { nom: 'Émission', kanji: '放出系', court: '放出', passif: 'Lance un sort offensif hors de portée (se recharge en 40 min)' },
+  transformation: { nom: 'Transformation', kanji: '変化系', court: '変化', passif: 'Texture Surprise : déguise un doublon en une autre carte de même rang (toutes les 20 min)' },
+  materialisation: { nom: 'Matérialisation', kanji: '具現化系', court: '具現化', passif: 'Un tirage bonus (rang C au plus) à chaque checkpoint réussi, et un toutes les 40 min' },
+  manipulation: { nom: 'Manipulation', kanji: '操作系', court: '操作', passif: 'Un échange forcé gratuit (se recharge en 40 min)' },
+  specialisation: { nom: 'Spécialisation', kanji: '特質系', court: '特質', passif: 'Type rare : un pouvoir secret parmi quatre, qui se recharge en 40 min' },
 };
 
 /** RG-8.3 : un gain en une ligne. */

@@ -17,6 +17,15 @@
 @import '@fontsource/atkinson-hyperlegible-next/latin-ext-800.css';
 @import '@fontsource/atkinson-hyperlegible-mono/latin-500.css';
 @import '@fontsource/atkinson-hyperlegible-mono/latin-800.css';
+/* Kanji du Nen seulement (練, 念, six types), extraits de Dela Gothic One japonais : 3 Ko au lieu de 900. */
+@font-face {
+  font-family: 'Dela Gothic One';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./polices/dela-gothic-kanji-nen.woff2') format('woff2');
+  unicode-range: U+4F5C, U+5177, U+51FA, U+5316, U+5909, U+5F37, U+5FF5, U+64CD, U+653E, U+7279, U+73FE, U+7CFB, U+7DF4, U+8CEA;
+}
 
 :root {
   color-scheme: light;
@@ -35,6 +44,13 @@
   --succes: #17713a;
   --alerte: #b3161c;
   --nuit: #0c0c0e;        /* boîte de dialogue du jeu */
+  /* Couleurs d'aura des six types de Nen (divination, hexagone) : lues sur fond sombre */
+  --nen-renforcement: #ff5a4a;
+  --nen-emission: #ff9a3c;
+  --nen-transformation: #b07cff;
+  --nen-materialisation: #3fd3d8;
+  --nen-manipulation: #5fe07a;
+  --nen-specialisation: #ffd24a;
 
   --f-titre: 'Dela Gothic One', 'Arial Black', system-ui, sans-serif;
   --f-texte: 'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif;

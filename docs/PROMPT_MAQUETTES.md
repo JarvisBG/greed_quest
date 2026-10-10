@@ -1,4 +1,4 @@
-# Prompt de maquettes — Greed Quest (à coller dans Claude, claude.ai)
+# Prompt de maquettes — Greed Island (à coller dans Claude, claude.ai)
 
 > Mode d'emploi : **une conversation Claude par bloc d'écrans**. Dans chaque conversation, coller le **bloc 0** suivi d'**un seul** bloc d'écrans (1a, 1b, 1c : joueur ; 2 : PNJ ; 3 : GM ; 4 : écran géant). Une conversation par bloc évite que Claude manque de place et garde le style constant : si un premier bloc réussit, joindre sa capture aux suivants comme référence. Joindre à chaque fois 3 à 6 **captures de l'anime** (pages du Book, cartes, licence, annonces du jeu) : le style doit s'y caler. Les données affichées sont des exemples de démonstration. Rapporter ensuite les captures des maquettes dans Claude Code pour qu'il ajuste l'implémentation.
 
@@ -6,11 +6,11 @@
 
 ## Bloc 0 — Contexte et style (toujours en premier)
 
-Tu dessines les maquettes haute fidélité d'une application web mobile appelée **Greed Quest** : une chasse au trésor sur le terrain qui reproduit le jeu **Greed Island** de l'anime *Hunter × Hunter* (version 2011). Les joueurs se déplacent dehors, en plein jour, et scannent des balises QR cachées pour obtenir des cartes numérotées qu'ils rangent dans leur **Book**. Ils se lancent des sorts quand ils sont proches (GPS), échangent des cartes, achètent des sorts, participent à des enchères et à une arène. Un Game Master pilote la partie depuis une console, des PNJ arbitrent sur le terrain, un écran géant affiche le direct.
+Tu dessines les maquettes haute fidélité d'une application web mobile appelée **Greed Island** : une chasse au trésor sur le terrain qui reproduit le jeu **Greed Island** de l'anime *Hunter × Hunter* (version 2011). Les joueurs se déplacent dehors, en plein jour, et scannent des balises QR cachées pour obtenir des cartes numérotées qu'ils rangent dans leur **Book**. Ils se lancent des sorts quand ils sont proches (GPS), échangent des cartes, achètent des sorts, participent à des enchères et à une arène. Un Game Master pilote la partie depuis une console, des PNJ arbitrent sur le terrain, un écran géant affiche le direct.
 
 **Style : l'univers de Greed Island, pleinement assumé, au plus près de l'anime.**
 - **Immersion maximale** : le joueur doit se sentir *dans* Greed Island. Un fan de l'anime doit reconnaître chaque élément au premier coup d'œil. Les captures de l'anime jointes font foi : reproduis leurs formes, leurs couleurs et leur mise en page au plus près.
-- Le **Book** est le cœur de l'application et la pièce la plus soignée. C'est le classeur de l'anime : on l'invoque (« Book ! »), il **apparaît en 3D et flotte** devant le joueur (léger mouvement de lévitation, ombre portée), il s'ouvre, et on le **feuillette page par page** au doigt avec une vraie page qui se courbe et se tourne (perspective 3D, pas un simple glissement). Chaque page porte une grille de **pochettes transparentes** numérotées, avec le reflet du plastique. Les pages « désignées » réservent une pochette à chaque carte du catalogue, dans l'ordre des numéros ; les pages « libres » reçoivent les doublons et les sorts. Une pochette vide montre son numéro en creux. Quand une carte est gagnée, elle vole jusqu'à sa pochette et s'y glisse.
+- Le **Book** est le cœur de l'application et la pièce la plus soignée. C'est le classeur de l'anime : on l'invoque (« Book ! »), il **apparaît en 3D et flotte** devant le joueur (léger mouvement de lévitation, ombre portée), il s'ouvre, et on le **feuillette page par page** au doigt avec une vraie page qui se courbe et se tourne (perspective 3D, pas un simple glissement). Chaque page porte une grille de **pochettes transparentes** numérotées, avec le reflet du plastique. Comme dans l'anime, le Book a deux sortes d'emplacements : les **emplacements fixes** (une pochette réservée à chaque carte du catalogue, dans l'ordre des numéros) et les **emplacements libres** (15 pochettes pour les doublons, les sorts, et les cartes que le joueur choisit d'y **cacher**). Une pochette fixe vide montre son numéro en creux. Seules les cartes rangées dans leur emplacement fixe comptent pour gagner. Quand une carte est gagnée, elle vole jusqu'à sa pochette et s'y glisse.
 - Les **cartes** reproduisent exactement l'anatomie des cartes de Greed Island : **numéro à trois chiffres en haut à gauche**, **nom en haut au centre**, **rang-limite en haut à droite** (ex. « A-12 » : rang A, 12 exemplaires au plus dans la partie), **illustration au centre**, **texte d'ambiance en bas**. Couleur du cadre : **rouge** pour les cartes désignées, **bleu** pour les cartes de sort, **jaune** pour les objets. Dos de carte commun.
 - Les noms de cartes et de sorts sont **ceux de l'anime, en français** (traduction française officielle) (voir les données de démonstration).
 - Les **annonces du jeu** (sort reçu, évènement, sanction) imitent la voix système de Greed Island : bandeau sobre, typographie « système », phrase courte (« Kirua a utilisé Vol sur toi. »).
@@ -24,7 +24,7 @@ Tu dessines les maquettes haute fidélité d'une application web mobile appelée
 - **Lisible en plein soleil** : contrastes forts, chiffres clés gros (chrono, jenny, numéros de carte), cibles tactiles d'au moins 48 px, action principale à portée du pouce en bas de l'écran.
 - La lettre de rang doit rester lisible sans la couleur.
 - Interdits : emojis, dégradés violet-bleu, effet verre dépoli, textes publicitaires (« Libère ton potentiel ! »), grilles de cartes génériques « icône + titre + deux lignes ».
-- Les joueurs ne voient **jamais** la position des autres joueurs ni l'emplacement des balises.
+- Les joueurs ne voient **jamais** la position des autres joueurs ni l'emplacement des balises, sauf pendant les 3 minutes du sort Accompagnement (la position de sa cible, pour le lanceur seulement).
 
 **Format attendu (Claude)**
 - Un **seul artifact React** (un fichier), qui affiche tous les écrans du bloc demandé.
@@ -35,7 +35,7 @@ Tu dessines les maquettes haute fidélité d'une application web mobile appelée
 - Termine par la liste des écrans produits et de ce que tu n'as pas pu faire.
 
 **Données de démonstration**
-- Partie « Greed Quest — Parc de la Villette », 120 min, 24 joueurs, il reste 47 min.
+- Partie « Greed Island — Parc de la Villette », 120 min, 24 joueurs, il reste 47 min.
 - Joueurs : Gon, Kirua, Kurapika, Leolio, Biscuit, Hisoka, Genthru, Tsezguerra.
 - Catalogue de 14 cartes désignées (numéro de l'anime, nom, rang dans notre jeu, texte d'ambiance) :
   - 000 Le bonheur du détenteur (SS) : « Un château et sa ville de 10 000 habitants, qui vivent selon tes lois. »
@@ -52,7 +52,7 @@ Tu dessines les maquettes haute fidélité d'une application web mobile appelée
   - 084 Le collier du chevalier (D) : « Renvoie les malédictions et lève celles des cartes qu'il touche. »
   - 094 L'épée du vol (A) : « Chaque coup réussi vole une carte à la cible. »
   - 099 Maid panda (S) : « Soigneuse, bonne cuisinière, parfaite avec les enfants. »
-- Sorts (cadre bleu, nom de l'anime) : Vol (vole une carte au hasard), Échange (échange forcé d'une carte), Gel (empêche de scanner 3 min), Mur défensif (bloque le prochain sort d'attaque), Trace (zone où se trouve un joueur), Guide (zone d'une balise rare), Mimétisme (copie une carte), Pénétration (démasque les contrefaçons d'une page), Voyance (voir les cartes d'un joueur déjà croisé).
+- Sorts (cadre bleu, nom de l'anime) : Vol (vole une carte au hasard dans les emplacements fixes), Pickpocket (vole une carte au hasard dans les emplacements libres), Échange (échange forcé d'une carte), Gel (empêche de scanner 3 min), Mur défensif (bloque le prochain sort d'attaque), Trace (zone où se trouve un joueur), Guide (zone d'une balise rare), Mimétisme (copie une carte), Pénétration (rend leur vraie apparence aux cartes modifiées d'une page), Voyance (voir les emplacements libres d'un joueur déjà croisé), Clairvoyance (voir ses emplacements fixes), Accompagnement (position exacte d'un joueur déjà croisé pendant 3 min, et il est gelé 3 min), Retour (utiliser à distance une ville déjà visitée).
 - Objets (cadre jaune) : Pépite d'or, Loterie (ticket à gratter), Boussole, Second souffle, Rideau noir (bloque Trace et Voyance), Solidité (protège une carte du vol).
 - Monnaie : jenny (J).
 
@@ -68,7 +68,7 @@ Coller **en tête de chacun des trois blocs** ce rappel :
 **Entrée et inscription**
 1. Rejoindre une partie : saisie du code de partie (ou arrivée par un QR d'accueil).
 2. Inscription : choix du pseudo, demande d'accès à la position ; refus « Ce pseudo est déjà pris ».
-3. Kit de départ : 50 J et un sort offert (carte de sort affichée).
+3. Kit de départ : 50 J et un sort offert (carte de sort affichée). Pas de bonus pour les retardataires.
 4. Examen Hunter : 3 questions, une par écran, puis résultat (2 / 3, +20 J) avec le corrigé ; bouton « Plus tard ».
 5. Test de Nen : 5 questions puis révélation du type par le verre d'eau, hexagone avec le type mis en valeur et son pouvoir.
 
@@ -90,9 +90,10 @@ Coller **en tête de chacun des trois blocs** ce rappel :
 16. Book fermé qui apparaît et flotte, puis s'ouvre.
 17. Première page désignée : les 10 premières pochettes dans l'ordre des numéros (000, 011, 017, 021, 025, 046, 051, 073, 079, 082), pleines ou vides, compteur 6 / 14 ; la page suivante porte les 4 dernières.
 18. Pochette perdue : « Volée par Kirua à 14h05 ».
-19. Page libre : doublons et cartes de sort.
+19. Page des emplacements libres : doublons, cartes de sort, et une carte désignée **cachée** (marquée « Cachée : ne compte pas tant qu'elle n'est pas remise en place »).
 20. Détail d'une carte : grande carte, provenance (« Balise », « Échange avec Leolio », « Arène de Soufrabi »), heure d'obtention ; badges éventuels : contrefaçon (pour son créateur), carte maudite, engagée dans un échange, protégée par une carte Solidité jusqu'à 15h20.
 21. Contrefaçon démasquée : « Contrefaçon de Maid panda », grisée.
+21 bis. Cacher une carte : depuis le détail d'une carte rangée dans son emplacement fixe, « Cacher dans les emplacements libres » (elle glisse d'une page à l'autre) ; et l'inverse, « Remettre en place ».
 22. Section Objets (8 places) : Gratter une Loterie (résultat 30 J), Boussole (« La balise la plus proche est au nord-est »), Solidité (choix de la carte à protéger).
 23. Book complet : bouton « Demander le Clear ».
 24. Book gelé après la demande : « Va voir le Game Master ». Refus possible : « Une contrefaçon se cache en page 2 ».
@@ -101,9 +102,11 @@ Coller **en tête de chacun des trois blocs** ce rappel :
 
 **Sorts**
 25. Liste des sorts du Book regroupés (Vol ×2, Gel, Trace…), Mur défensif marqué « Passif », délai entre deux sorts offensifs (« Prochain sort offensif dans 1 min 12 »).
-26. Choix d'une cible parmi les joueurs à portée (pseudos seulement), puis confirmation « Lancer Vol sur Kirua ».
+26. Choix d'une cible parmi les joueurs à portée (pseudos seulement), puis confirmation « Lancer Vol sur Kirua » (Vol prend dans les emplacements fixes, Pickpocket dans les libres).
 27. Résultat : « Tu as volé l'épée de la vérité à Kirua » ; ou « Bloqué par son Mur défensif ».
-28. Voyance : choix parmi les joueurs déjà croisés, puis la liste de leurs cartes.
+28. Voyance et Clairvoyance : choix parmi les joueurs déjà croisés, puis leurs emplacements libres (Voyance) ou leurs emplacements fixes (Clairvoyance), présentés comme une page de Book.
+28 bis. Accompagnement : choix d'un joueur déjà croisé, puis **une carte du terrain avec sa position exacte en direct** et ta position, compte à rebours de 3 min (« Kurapika est gelé : 2:41 ») ; côté cible : « Gon utilise Accompagnement sur toi : tu es gelé 3 min ».
+28 ter. Retour : choix d'une ville déjà visitée (Masadora, Antokiba), puis son écran comme si tu y étais (acheter un paquet, revendre, rejoindre une enchère).
 29. Trace : « Hisoka était dans la zone Forêt il y a 3 min ».
 30. Pouvoir de Nen (ex. Transformation : Texture Surprise, choisir un doublon et l'apparence d'une carte de même rang).
 31. Pouvoir de Spécialisation : Alchimie (doublon → carte choisie), L'épée du vol (Vol sans carte, carte visée), Zetsu (invisible 10 min, minuterie), Fortune (prochain scan doublé).

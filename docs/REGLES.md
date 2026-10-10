@@ -1,4 +1,4 @@
-# Greed Quest — Règles de gestion (version condensée)
+# Greed Island (projet Greed Quest) — Règles de gestion (version condensée)
 
 Source de vérité : `Greed Quest - Règles de gestion.docx` (9 oct. 2026, Sivraj · loJIC Solutions).
 Ce fichier en est le résumé fidèle pour le code. **Une règle absente n'est pas codée.** Citer `RG-x.y` dans le code et les tests.
@@ -14,6 +14,16 @@ Si le .docx change, mettre ce fichier à jour.
 ## Entités (→ tables)
 Partie (état, horaires, paramètres, zone) · Joueur (pseudo, licence QR dynamique, type de Nen, jenny, dernière position, statut) · Livre (emplacements désignés + libres) · Carte/modèle (numéro, nom, rang, désignée, lot réel) · Exemplaire (carte, propriétaire, origine, date) · Sort (type, propriétaire, utilisé) · Balise (id, zone, type, état, stock) · Zone (Masadora, Antokiba, Soufrabi, zones sauvages ; type) · Checkpoint PNJ (arbitre, zone, défi, cartes) · Événement (type, cible, début, fin) · Journal (horodatage, acteur, action, résultat).
 **Joueur actif** = au moins une action dans les 15 dernières min. **Jenny (J)** = monnaie.
+
+> **Amendements 2026-10-10 (Sivraj, d'après la relecture d'une joueuse, fidélité à l'anime ; simulés dans SIMULATION.md « Propositions fidélité à l'anime »)** — *décidés, pas encore codés* (PLAN 4.0 quater) :
+> - **Nom du jeu : Greed Island.** Côté joueurs, le Livre s'appelle partout **Book** (messages de l'API compris).
+> - **RG-5.6** : plus de bonus de rattrapage par défaut (`rattrapageJParMin` = 0) ; un retardataire reçoit le kit normal. Simulation : le bonus ne rapportait que ≈ 0,3 carte.
+> - **RG-8.5 Emplacements fixes et libres** (vocabulaire de l'anime : « emplacements fixes » = désignés) : le joueur peut **déplacer** à tout moment une carte désignée de son emplacement fixe vers un emplacement libre (la **cacher**) et l'y remettre, s'il a une place libre ; gratuit, refusé si le Book est gelé ou la carte engagée dans un échange. **Seules les cartes rangées dans leur emplacement fixe comptent** pour le Clear et le classement (RG-13).
+> - **RG-10 Vol** : prend une carte au hasard **dans les emplacements fixes** de la cible (plus les doublons ni les cartes cachées). **Nouveau sort Pickpocket** : même règle que Vol (portée, immunité, délai, protections), mais dans les **emplacements libres** (cartes, pas les sorts).
+> - **RG-10 Regard remplacé par deux sorts** (joueur déjà croisé, anonymes, refusés sur un Book gelé, bloqués par Rideau noir) : **Voyance** montre ses **emplacements libres**, **Clairvoyance** ses **emplacements fixes**.
+> - **RG-10 Analyse** s'appelle **Pénétration** (effet inchangé : rend leur vraie apparence aux cartes modifiées d'une page de son Book).
+> - **Nouveau sort Accompagnement** (offensif : portée non requise, mais cible **déjà croisée** ; Mur défensif, Renforcement, immunité de 5 min et délai entre offensifs s'appliquent ; Zetsu protège) : le lanceur voit la **position exacte de la cible en direct pendant 3 min** (dérogation à RG-10.12 pour ce seul sort, ni l'écran ni les autres joueurs ne la voient), et la cible est **gelée 3 min** (ni scan, ni sort, ni échange) et prévenue (« X utilise Accompagnement sur toi »). Simulation à 1 sort tiré sur 10 : neutre sur le Clear.
+> - **Nouveau sort Retour** (sans cible) : une fois, utiliser **à distance** les services d'une ville déjà visitée (QR du lieu déjà scanné dans la partie) : acheter un paquet ou revendre à Masadora, s'inscrire à une enchère d'Antokiba.
 
 ## RG-3 Rôles
 | Espace | Acteur | Peut | Ne peut pas |
@@ -240,7 +250,7 @@ Sanctions : photo de balise → gains annulés + gel 5 min (PNJ/GM) · faux GPS 
 | Clear | confirmation/refus | push si confirmé | demande de validation | plein écran |
 
 ## Points ouverts (à trancher)
-- ~~Nom définitif / habillage~~ **Tranché le 2026-10-10 (Sivraj)** : habillage *Hunter × Hunter* / Greed Island pleinement assumé (voir `docs/PROMPT_INTERFACES.md` § 2.1). Nom de l'app : Greed Quest.
+- ~~Nom définitif / habillage~~ **Tranché le 2026-10-10 (Sivraj)** : habillage *Hunter × Hunter* / Greed Island pleinement assumé (voir `docs/PROMPT_INTERFACES.md` § 2.1). Nom affiché du jeu : **Greed Island** (le dépôt garde le nom greed_quest).
 - Le Clear termine-t-il la partie ou ouvre-t-il une phase finale pour le podium ?
 - Compte joueur persistant entre parties ou par partie ?
 - Contenu Examen Hunter et test de Nen.

@@ -124,7 +124,7 @@ Nos effets ne changent pas (règles RG-10) ; seuls les noms affichés changent. 
 
 | Notre sort (règle) | Nom français (anime) | Nom anglais | N° | Correspondance |
 |---|---|---|---|---|
-| Vol | **Vol** | Thief | 1007 | Vole une carte au hasard à la cible |
+| Vol | **Vol** | Thief | 1007 | Vole une carte au hasard dans les emplacements fixes de la cible |
 | Échange forcé | **Échange** | Trade | 1008 | Échange une de tes cartes contre une des siennes au hasard |
 | Gel | **Gel** (création) | — | — | Aucun équivalent : l'anime n'a aucun sort qui entrave un joueur |
 | Barrière | **Mur défensif** | Defensive Wall | 1003 | Pare une fois un sort offensif |
@@ -132,7 +132,16 @@ Nos effets ne changent pas (règles RG-10) ; seuls les noms affichés changent. 
 | Révélation | **Guide** | Guidepost | 1030 | Lieu d'un objet (chez nous : la zone d'une balise rare) |
 | Duplication | **Mimétisme** | Mimic | 1010 | Copie une carte ; échoue à la limite (chez nous : contrefaçon) |
 | Analyse | **Pénétration** | Dispel | 1024 | Rend leur forme originale aux cartes transformées (chez nous : une page) |
-| Regard | **Voyance** | Peek | 1001 | Voit les cartes d'un joueur déjà rencontré |
+| Regard | **Voyance** | Peek | 1001 | Voit les emplacements libres d'un joueur déjà rencontré |
+
+Sorts ajoutés par les amendements du 2026-10-10 (REGLES.md) :
+
+| Sort | Nom anglais | N° anime | Effet chez nous |
+|---|---|---|---|
+| **Pickpocket** | Pickpocket | 1006 | Vole une carte au hasard dans les emplacements libres |
+| **Clairvoyance** | Fluoroscopy | 1002 | Voit les emplacements fixes d'un joueur déjà croisé (Voyance : les libres) |
+| **Accompagnement** | Accompany | 1039 | Position exacte d'un joueur déjà croisé pendant 3 min, et il est gelé 3 min |
+| **Retour** | Return | 1009 | Utiliser à distance une ville déjà visitée |
 
 ## Autres correspondances
 

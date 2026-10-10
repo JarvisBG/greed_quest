@@ -27,11 +27,11 @@ Ce n'est pas un jeu de géolocalisation générique : c'est le jeu de l'anime re
 - Périmètre écran par écran : `docs/PROMPT_INTERFACES.md` § 4. Règles : `docs/REGLES.md`.
 - Langue : français uniquement ; le joueur est tutoyé ; l'équipe lit des libellés neutres à l'infinitif.
 - Les refus de l'API arrivent rédigés en français et s'affichent tels quels.
-- Positions exactes jamais montrées aux joueurs ni à l'écran géant (RG-10.12).
+- Positions exactes jamais montrées aux joueurs ni à l’écran géant (RG-10.12), sauf au lanceur du sort Accompagnement, 3 min (amendement du 2026-10-10).
 - Vocabulaire du jeu employé tel quel : Book, Clear, Hunter, Nen, Zetsu, jenny, rangs SS à D.
 
 ## Brand Commitments
-- Nom de l'app : **Greed Quest**.
+- Nom affiché du jeu : **Greed Island** (décision du 2026-10-10 ; le projet et le dépôt restent « Greed Quest »). Le classeur s'appelle **Book**.
 - Habillage **Hunter × Hunter / Greed Island pleinement assumé** (décision du 2026-10-10) : Book, cartes à rang, voix du jeu, licence de Hunter, hexagone du Nen, villes de Greed Island. Droits sur l'œuvre à la charge du client.
 - **Écriture Hunter** (police de fan) autorisée en décor seulement, toujours doublée en français.
 - Aucun « marqueur IA » (liste dans `docs/PROMPT_INTERFACES.md` § 2.2).

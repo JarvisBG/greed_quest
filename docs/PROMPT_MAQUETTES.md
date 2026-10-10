@@ -12,8 +12,8 @@ Tu dessines les maquettes haute fidélité d'une application web mobile appelée
 - **Immersion maximale** : le joueur doit se sentir *dans* Greed Island. Un fan de l'anime doit reconnaître chaque élément au premier coup d'œil. Les captures de l'anime jointes font foi : reproduis leurs formes, leurs couleurs et leur mise en page au plus près.
 - Le **Book** est le cœur de l'application et la pièce la plus soignée. C'est le classeur de l'anime : on l'invoque (« Book ! »), il **apparaît en 3D et flotte** devant le joueur (léger mouvement de lévitation, ombre portée), il s'ouvre, et on le **feuillette page par page** au doigt avec une vraie page qui se courbe et se tourne (perspective 3D, pas un simple glissement). Chaque page porte une grille de **pochettes transparentes** numérotées, avec le reflet du plastique. Les pages « désignées » réservent une pochette à chaque carte du catalogue, dans l'ordre des numéros ; les pages « libres » reçoivent les doublons et les sorts. Une pochette vide montre son numéro en creux. Quand une carte est gagnée, elle vole jusqu'à sa pochette et s'y glisse.
 - Les **cartes** reproduisent exactement l'anatomie des cartes de Greed Island : **numéro à trois chiffres en haut à gauche**, **nom en haut au centre**, **rang-limite en haut à droite** (ex. « A-12 » : rang A, 12 exemplaires au plus dans la partie), **illustration au centre**, **texte d'ambiance en bas**. Couleur du cadre : **rouge** pour les cartes désignées, **bleu** pour les cartes de sort, **jaune** pour les objets. Dos de carte commun.
-- Les noms de cartes et de sorts sont **ceux de l'anime, en français** (voir les données de démonstration).
-- Les **annonces du jeu** (sort reçu, évènement, sanction) imitent la voix système de Greed Island : bandeau sobre, typographie « système », phrase courte (« Kirua a utilisé Voleur sur toi. »).
+- Les noms de cartes et de sorts sont **ceux de l'anime, en français** (traduction française officielle) (voir les données de démonstration).
+- Les **annonces du jeu** (sort reçu, évènement, sanction) imitent la voix système de Greed Island : bandeau sobre, typographie « système », phrase courte (« Kirua a utilisé Vol sur toi. »).
 - La **licence de Hunter** reprend la carte de licence de l'anime, avec un QR code au centre qui change toutes les 30 s.
 - Le **Nen** : les six types en hexagone (Renforcement, Émission, Transformation, Matérialisation, Manipulation, Spécialisation), et la divination par le verre d'eau pour révéler le type.
 - Les villes de Greed Island : **Masadora** (boutique de sorts), **Antokiba** (enchères), **Soufrabi** (arène).
@@ -38,22 +38,22 @@ Tu dessines les maquettes haute fidélité d'une application web mobile appelée
 - Partie « Greed Quest — Parc de la Villette », 120 min, 24 joueurs, il reste 47 min.
 - Joueurs : Gon, Kirua, Kurapika, Leolio, Biscuit, Hisoka, Genthru, Tsezguerra.
 - Catalogue de 14 cartes désignées (numéro de l'anime, nom, rang dans notre jeu, texte d'ambiance) :
-  - 000 Bénédiction du Souverain (SS) : « Un château et sa ville de 10 000 habitants, qui vivent selon tes lois. »
-  - 011 Balance dorée (D) : « Face à deux choix, elle penche vers le meilleur pour ton avenir. »
-  - 017 Souffle de l'archange (S) : « Guérit une personne de toutes ses blessures et maladies. Une seule fois. »
-  - 021 Lunettes à rayons X (C) : « Voient à travers tout, sauf un paquet de sorts de Masadora. »
-  - 025 Dé du risque (D) : « Dix-neuf étoiles, une tête de mort. La tête de mort efface tout. »
-  - 046 Fille à la poudre d'or (B) : « Son bain quotidien laisse 500 g de poudre d'or. Très timide. »
-  - 051 Dragon miniature (A) : « Il t'obéit et finit par parler, si tu l'élèves avec amour. »
-  - 073 Jade des ténèbres (B) : « Béni par le Diable : il détourne le malheur sur un autre. »
-  - 079 Diamant arc-en-ciel (C) : « Demande en mariage avec lui : la réponse sera oui. »
-  - 082 Bâton du jugement (B) : « Nomme qui tu veux punir : le plus coupable des deux sera frappé. »
-  - 083 Épée de vérité (C) : « Tranche en deux tout ce qui ment. »
-  - 084 Collier du paladin (D) : « Renvoie les malédictions et lève celles des cartes qu'il touche. »
-  - 094 Lame du bandit (A) : « Chaque coup réussi vole une carte à la cible. »
-  - 099 Panda servante (S) : « Soigneuse, bonne cuisinière, parfaite avec les enfants. »
-- Sorts (cadre bleu, nom de l'anime) : Voleur (vole une carte au hasard), Troc (échange forcé d'une carte), Gel (empêche de scanner 3 min), Mur défensif (bloque le prochain sort d'attaque), Pistage (zone où se trouve un joueur), Panneau indicateur (zone d'une balise rare), Imitation (copie une carte), Dissipation (démasque les contrefaçons d'une page), Coup d'œil (voir les cartes d'un joueur déjà croisé).
-- Objets (cadre jaune) : Pépite d'or, Loterie (ticket à gratter), Boussole, Second souffle, Rideau occultant (bloque Pistage et Coup d'œil), Forteresse (protège une carte du vol).
+  - 000 Le bonheur du détenteur (SS) : « Un château et sa ville de 10 000 habitants, qui vivent selon tes lois. »
+  - 011 La balance d'or (D) : « Face à deux choix, elle penche vers le meilleur pour ton avenir. »
+  - 017 Le souffle du grand ange (S) : « Guérit une personne de toutes ses blessures et maladies. Une seule fois. »
+  - 021 Les lunettes squelettes (C) : « Voient à travers tout, sauf un paquet de sorts de Masadora. »
+  - 025 Le dé du risque (D) : « Dix-neuf étoiles, une tête de mort. La tête de mort efface tout. »
+  - 046 La jeune fille à la poudre d'or (B) : « Son bain quotidien laisse 500 g de poudre d'or. Très timide. »
+  - 051 Le dragon qui s'emballe (A) : « Il t'obéit et finit par parler, si tu l'élèves avec amour. »
+  - 073 Le jade des ténèbres (B) : « Béni par le Diable : il détourne le malheur sur un autre. »
+  - 079 Le diamant arc-en-ciel (C) : « Demande en mariage avec lui : la réponse sera oui. »
+  - 082 La canne du châtiment céleste (B) : « Nomme qui tu veux punir : le plus coupable des deux sera frappé. »
+  - 083 L'épée de la vérité (C) : « Tranche en deux tout ce qui ment. »
+  - 084 Le collier du chevalier (D) : « Renvoie les malédictions et lève celles des cartes qu'il touche. »
+  - 094 L'épée du vol (A) : « Chaque coup réussi vole une carte à la cible. »
+  - 099 Maid panda (S) : « Soigneuse, bonne cuisinière, parfaite avec les enfants. »
+- Sorts (cadre bleu, nom de l'anime) : Vol (vole une carte au hasard), Échange (échange forcé d'une carte), Gel (empêche de scanner 3 min), Mur défensif (bloque le prochain sort d'attaque), Trace (zone où se trouve un joueur), Guide (zone d'une balise rare), Mimétisme (copie une carte), Pénétration (démasque les contrefaçons d'une page), Voyance (voir les cartes d'un joueur déjà croisé).
+- Objets (cadre jaune) : Pépite d'or, Loterie (ticket à gratter), Boussole, Second souffle, Rideau noir (bloque Trace et Voyance), Solidité (protège une carte du vol).
 - Monnaie : jenny (J).
 
 ---
@@ -80,7 +80,7 @@ Coller **en tête de chacun des trois blocs** ce rappel :
 
 **Scanner**
 10. Caméra de scan de balise (viseur, saisie manuelle du code en secours).
-11. Gain : la carte tirée apparaît et vole dans le Book (ex. 051 Dragon miniature, rang A).
+11. Gain : la carte tirée apparaît et vole dans le Book (ex. 051 Le dragon qui s'emballe, rang A).
 12. Gain de jenny (+10 J) et d'un objet (Loterie).
 13. Refus en clair : « Boucle : scanne encore 2 balises différentes », « Attends encore 26 s », « Cette balise dort », « Plus rien ici, cherche ailleurs », « Ton Book est plein ».
 14. Après un refus de boucle : « Utiliser un Second souffle ? ».
@@ -91,23 +91,23 @@ Coller **en tête de chacun des trois blocs** ce rappel :
 17. Première page désignée : les 10 premières pochettes dans l'ordre des numéros (000, 011, 017, 021, 025, 046, 051, 073, 079, 082), pleines ou vides, compteur 6 / 14 ; la page suivante porte les 4 dernières.
 18. Pochette perdue : « Volée par Kirua à 14h05 ».
 19. Page libre : doublons et cartes de sort.
-20. Détail d'une carte : grande carte, provenance (« Balise », « Échange avec Leolio », « Arène de Soufrabi »), heure d'obtention ; badges éventuels : contrefaçon (pour son créateur), carte maudite, engagée dans un échange, protégée par une Forteresse jusqu'à 15h20.
-21. Contrefaçon démasquée : « Contrefaçon de Panda servante », grisée.
-22. Section Objets (8 places) : Gratter une Loterie (résultat 30 J), Boussole (« La balise la plus proche est au nord-est »), Forteresse (choix de la carte à protéger).
+20. Détail d'une carte : grande carte, provenance (« Balise », « Échange avec Leolio », « Arène de Soufrabi »), heure d'obtention ; badges éventuels : contrefaçon (pour son créateur), carte maudite, engagée dans un échange, protégée par une carte Solidité jusqu'à 15h20.
+21. Contrefaçon démasquée : « Contrefaçon de Maid panda », grisée.
+22. Section Objets (8 places) : Gratter une Loterie (résultat 30 J), Boussole (« La balise la plus proche est au nord-est »), Solidité (choix de la carte à protéger).
 23. Book complet : bouton « Demander le Clear ».
 24. Book gelé après la demande : « Va voir le Game Master ». Refus possible : « Une contrefaçon se cache en page 2 ».
 
 ### Bloc 1b — Sorts, échanges (écrans 25 à 36)
 
 **Sorts**
-25. Liste des sorts du Book regroupés (Voleur ×2, Gel, Pistage…), Mur défensif marqué « Passif », délai entre deux sorts offensifs (« Prochain sort offensif dans 1 min 12 »).
-26. Choix d'une cible parmi les joueurs à portée (pseudos seulement), puis confirmation « Lancer Voleur sur Kirua ».
-27. Résultat : « Tu as volé Épée de vérité à Kirua » ; ou « Bloqué par son Mur défensif ».
-28. Coup d'œil : choix parmi les joueurs déjà croisés, puis la liste de leurs cartes.
-29. Pistage : « Hisoka était dans la zone Forêt il y a 3 min ».
+25. Liste des sorts du Book regroupés (Vol ×2, Gel, Trace…), Mur défensif marqué « Passif », délai entre deux sorts offensifs (« Prochain sort offensif dans 1 min 12 »).
+26. Choix d'une cible parmi les joueurs à portée (pseudos seulement), puis confirmation « Lancer Vol sur Kirua ».
+27. Résultat : « Tu as volé l'épée de la vérité à Kirua » ; ou « Bloqué par son Mur défensif ».
+28. Voyance : choix parmi les joueurs déjà croisés, puis la liste de leurs cartes.
+29. Trace : « Hisoka était dans la zone Forêt il y a 3 min ».
 30. Pouvoir de Nen (ex. Transformation : Texture Surprise, choisir un doublon et l'apparence d'une carte de même rang).
-31. Pouvoir de Spécialisation : Alchimie (doublon → carte choisie), Lame du bandit (Voleur sans carte, carte visée), Zetsu (invisible 10 min, minuterie), Fortune (prochain scan doublé).
-32. Annonce reçue : « Kirua a utilisé Voleur sur toi : tu as perdu Diamant arc-en-ciel. » ; anonyme : « Quelqu'un a consulté ton Book. »
+31. Pouvoir de Spécialisation : Alchimie (doublon → carte choisie), L'épée du vol (Vol sans carte, carte visée), Zetsu (invisible 10 min, minuterie), Fortune (prochain scan doublé).
+32. Annonce reçue : « Kirua a utilisé Vol sur toi : tu as perdu le diamant arc-en-ciel. » ; anonyme : « Quelqu'un a consulté ton Book. »
 
 **Échanges**
 33. Proposer un échange à un joueur à portée.
@@ -171,7 +171,7 @@ Vue dense, plusieurs panneaux. Inspirée de la salle de contrôle des créateurs
 Style « retransmission » du monde de Greed Island. Aucun texte plus petit que 24 px. Jamais de position nominative ni de balise localisée.
 
 1. Avant le démarrage : grand QR d'accueil et trois lignes de consigne.
-2. En partie : bandeau (nom, état, chrono géant), classement live (pseudo, cartes désignées / 14, points de rang, jenny), fil d'actualité (« Kirua a obtenu Souffle de l'archange (S) », « Gon a utilisé Voleur sur Hisoka : réussi », « Quelqu'un a utilisé Coup d'œil », « Biscuit a gagné une carte S à l'arène »), carte de chaleur anonyme décalée de 2 min, nombre de balises actives par zone.
+2. En partie : bandeau (nom, état, chrono géant), classement live (pseudo, cartes désignées / 14, points de rang, jenny), fil d'actualité (« Kirua a obtenu le souffle du grand ange (S) », « Gon a utilisé Vol sur Hisoka : réussi », « Quelqu'un a utilisé Voyance », « Biscuit a gagné une carte S à l'arène »), carte de chaleur anonyme décalée de 2 min, nombre de balises actives par zone.
 3. Bannière d'évènement : « Apparition dans la Forêt : 08:42 ».
 4. Raid de la Brigade : barre de vie géante du boss.
 5. Pause : écran figé avec « Pause » bien visible.

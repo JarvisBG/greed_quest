@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { exemplaires, pertes } from '../db/schema.js';
+import { eq } from 'drizzle-orm';
+import { exemplaires, livres, pertes } from '../db/schema.js';
 import { newId } from '../ids.js';
 import { testApp } from '../test/helpers.js';
 
@@ -39,5 +40,31 @@ describe('RG-8.5 Livre du joueur', () => {
     expect(l.pages[0][0]).toMatchObject({ designe: true });
     expect(l.pages[3][0]).toMatchObject({ etat: 'plein', designe: false });
     expect(l.pages[4][4]).toEqual({ etat: 'vide', designe: false });
+  });
+});
+
+describe('RG-3.1 Livre d’un joueur pour le GM', () => {
+  it('RG-3.1 : le GM voit le Livre de Gon et la vérité de chaque carte ; un PNJ ou un joueur, non', async () => {
+    const gm = t.app.gq.tokens.issue({ role: 'gm', sub: 'gm1', partieId: t.partieId });
+    const pnj = t.app.gq.tokens.issue({ role: 'pnj', sub: 'pnj1', partieId: t.partieId });
+    const url = `/parties/${t.partieId}/joueurs/${gon.id}/livre`;
+    const l = (await t.app.inject({ url, headers: t.bearer(gm) })).json();
+    expect(l).toMatchObject({ ok: true, pseudo: 'Gon', cartesDesignees: 2, total: 30 });
+    expect(l.pages[0][5]).toMatchObject({ itemId: expect.any(String), verite: { contrefacon: 'copie', marque: 'creee', maudite: false } });
+    expect(l.pages[0][0]).toMatchObject({ verite: { contrefacon: null } });
+    expect((await t.app.inject({ url, headers: t.bearer(pnj) })).statusCode).toBe(403);
+    expect((await t.app.inject({ url, headers: t.bearer(kirua.token) })).statusCode).toBe(403);
+    // Le joueur ne reçoit jamais la vérité.
+    const propre = (await t.app.inject({ url: `/parties/${t.partieId}/livre`, headers: t.bearer(gon.token) })).json();
+    expect(propre.pages[0][5].verite).toBeUndefined();
+  });
+
+  it('RG-13.1 : un Livre gelé (Clear déclaré) apparaît dans la liste des joueurs de l’équipe', async () => {
+    const pnj = t.app.gq.tokens.issue({ role: 'pnj', sub: 'pnj1', partieId: t.partieId });
+    await t.db.update(livres).set({ gele: true, geleA: 0 }).where(eq(livres.joueurId, gon.id));
+    const js = (await t.app.inject({ url: `/parties/${t.partieId}/joueurs`, headers: t.bearer(pnj) })).json().joueurs;
+    expect(js.find((j: { pseudo: string }) => j.pseudo === 'Gon')).toMatchObject({ livreGele: true });
+    expect(js.find((j: { pseudo: string }) => j.pseudo === 'Kirua')).toMatchObject({ livreGele: false });
+    await t.db.update(livres).set({ gele: false, geleA: null }).where(eq(livres.joueurId, gon.id));
   });
 });

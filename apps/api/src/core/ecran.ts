@@ -53,7 +53,8 @@ export async function ecranSnapshot(c: ActionCtx) {
   const params = await paramsOf(c.tx, p);
   const termine = p.etat === 'terminee';
   const noms = await zoneNames(c);
-  const zs = await c.tx.select({ id: zones.id, nom: zones.nom, type: zones.type }).from(zones).where(eq(zones.partieId, p.id));
+  // Polygones publics : l'écran dessine les zones (les balises restent comptées par zone, RG-6.5).
+  const zs = await c.tx.select({ id: zones.id, nom: zones.nom, type: zones.type, polygone: zones.polygone }).from(zones).where(eq(zones.partieId, p.id));
   const evenements = [];
   for (const e of (await loadActiveEvents(c.tx, p.id)).filter((x) => isActive(x, c.now))) {
     if (announce(e, noms)?.ecran) evenements.push(await publicEvent(c, e));

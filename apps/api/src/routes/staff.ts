@@ -4,7 +4,7 @@ import { and, desc, eq, gt } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { STAFF, requireRole } from '../auth/guard.js';
 import { checkCode, hashCode } from '../auth/tokens.js';
-import { joueurs, journal, staff } from '../db/schema.js';
+import { joueurs, journal, livres, staff } from '../db/schema.js';
 import { Refus } from '../errors.js';
 import { newId } from '../ids.js';
 import { parse } from '../validation.js';
@@ -42,15 +42,26 @@ export async function staffRoutes(app: FastifyInstance) {
   });
 
   // Joueurs de la partie pour la console (sanction après une alerte, mission) : jamais de position (RG-10.12).
+  // `livreGele` (RG-13.1) : Clear déclaré, en attente du GM ; retrouvé ainsi par une console rechargée.
   app.get<P>('/parties/:partieId/joueurs', async (req) => {
     const { partieId } = req.params;
     requireRole(req, partieId, ...STAFF);
     const rows = await app.gq.db
-      .select({ id: joueurs.id, pseudo: joueurs.pseudo, statut: joueurs.statut, nen: joueurs.nen, pouvoirSpe: joueurs.pouvoirSpe, jenny: joueurs.jenny, geleJusqua: joueurs.geleJusqua })
+      .select({
+        id: joueurs.id,
+        pseudo: joueurs.pseudo,
+        statut: joueurs.statut,
+        nen: joueurs.nen,
+        pouvoirSpe: joueurs.pouvoirSpe,
+        jenny: joueurs.jenny,
+        geleJusqua: joueurs.geleJusqua,
+        livreGele: livres.gele,
+      })
       .from(joueurs)
+      .leftJoin(livres, eq(livres.joueurId, joueurs.id))
       .where(eq(joueurs.partieId, partieId))
       .orderBy(joueurs.pseudo);
-    return { ok: true, joueurs: rows };
+    return { ok: true, joueurs: rows.map((r) => ({ ...r, livreGele: r.livreGele ?? false })) };
   });
 
   // RG-15 : alertes anti-triche pour la console (le moteur alerte, l'équipe décide).

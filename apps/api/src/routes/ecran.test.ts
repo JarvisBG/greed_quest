@@ -32,6 +32,8 @@ describe('Écran géant : état à l’ouverture (GET /ecran, public)', () => {
     expect(res.statusCode).toBe(200);
     const e = res.json();
     expect(e.partie).toMatchObject({ etat: 'en_cours', zones: expect.any(Array) });
+    // Contours des zones, pour que l'écran les dessine.
+    expect(e.partie.zones[0]).toMatchObject({ nom: expect.any(String), polygone: expect.arrayContaining([expect.objectContaining({ lat: expect.any(Number) })]) });
     expect(e.classement.map((l: { pseudo: string }) => l.pseudo).sort()).toEqual(['Gon', 'Kirua']);
     expect(Object.values(e.balisesParZone as Record<string, number>).reduce((a, b) => a + b, 0)).toBeGreaterThan(0);
     expect(e.fil).toEqual([expect.objectContaining({ type: 'tirage', carte: 'Boussole céleste' })]);

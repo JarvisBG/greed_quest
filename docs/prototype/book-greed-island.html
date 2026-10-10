@@ -1,0 +1,1173 @@
+<title>Book de Greed Island</title>
+<meta name="description" content="Prototype des pièces maîtresses de l'app joueur Greed Island : Book, cartes, rangs, licence de Hunter, annonces du jeu.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@500;800&family=Atkinson+Hyperlegible+Next:wght@400;600;800&family=Dela+Gothic+One&family=DotGothic16&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+/* Planche de manga imprimée : papier journal froid, encre pure, cases cernées, trames.
+   La couleur est réservée aux objets du jeu (Book, cartes, rangs, licence). Thème clair unique : jeu au soleil. */
+:root {
+  color-scheme: light;
+  --papier: #eeefe9;      /* papier journal froid, fond de planche */
+  --case: #fbfbf7;        /* intérieur des cases */
+  --encre: #111111;       /* encre pleine */
+  --encre-2: #3b3d40;     /* texte secondaire, toujours >= 7:1 sur --case */
+  --trame: rgba(17,17,17,.16);
+  --rouge: #c0272d;       /* cadre des cartes désignées */
+  --bleu: #1f4a9c;        /* cadre des sorts */
+  --jaune: #d9a11a;       /* cadre des objets */
+  --cuir: #5a1a1e;        /* couverture du Book */
+  --or: #d7b25a;
+  --or-fonce: #8a6a12;
+  --succes: #17713a;
+  --alerte: #b3161c;
+
+  --f-titre: "Dela Gothic One", "Arial Black", system-ui, sans-serif;
+  --f-texte: "Atkinson Hyperlegible Next", "Segoe UI", system-ui, sans-serif;
+  --f-chiffre: "Atkinson Hyperlegible Mono", ui-monospace, "Cascadia Mono", monospace;
+  --f-jeu: "DotGothic16", ui-monospace, monospace;
+
+  --trait: 3px;
+  --gouttiere: 10px;
+  --sortie: cubic-bezier(.16, 1, .3, 1);
+}
+
+* { box-sizing: border-box; }
+html, body { overflow-x: clip; }
+body {
+  margin: 0;
+  background: var(--papier);
+  color: var(--encre);
+  font: 400 17px/1.45 var(--f-texte);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+::selection { background: var(--jaune); color: var(--encre); }
+:focus-visible { outline: 3px solid var(--bleu); outline-offset: 3px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+
+.planche > *, .case > *, .scene > * { min-width: 0; }
+.planche {
+  max-width: 440px;
+  margin: 0 auto;
+  padding-inline: 16px;
+  padding-block: 0 48px;
+  display: grid;
+  gap: var(--gouttiere);
+}
+
+/* ---------- Barre d'état ---------- */
+.etat {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 30;
+  margin-inline: -16px;
+  padding: 10px 16px;
+  background: var(--case);
+  border-bottom: var(--trait) solid var(--encre);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.chrono {
+  font: 800 34px/1 var(--f-chiffre);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.02em;
+}
+.chrono.fin { color: var(--alerte); }
+.jenny {
+  font: 800 22px/1 var(--f-chiffre);
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+.jenny small { font: 600 15px var(--f-texte); margin-left: 3px; }
+.liaison {
+  display: flex; align-items: center; gap: 6px;
+  font: 600 14px var(--f-texte);
+}
+.liaison i {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--succes);
+  border: 2px solid var(--encre);
+}
+
+/* ---------- Cases ---------- */
+.case {
+  position: relative;
+  background: var(--case);
+  border: var(--trait) solid var(--encre);
+  padding: 18px 16px 20px;
+  display: grid;
+  gap: 14px;
+}
+.case h2 {
+  margin: 0;
+  font: 400 24px/1.1 var(--f-titre);
+  letter-spacing: .01em;
+  text-wrap: balance;
+}
+.case > p { margin: 0; color: var(--encre-2); max-width: 60ch; }
+.titre-planche {
+  border: 0;
+  background: transparent;
+  padding: 26px 0 6px;
+}
+.titre-planche h1 {
+  margin: 0;
+  font: 400 clamp(40px, 13vw, 56px)/.95 var(--f-titre);
+  letter-spacing: -.01em;
+}
+.titre-planche p { margin: 8px 0 0; color: var(--encre-2); font-size: 16px; }
+
+.trame-fond {
+  background-color: var(--case);
+  background-image: radial-gradient(var(--trame) 1.1px, transparent 1.3px);
+  background-size: 6px 6px;
+}
+
+/* ---------- Boutons ---------- */
+.actions { display: grid; gap: 10px; }
+.btn-encre, .btn-trait {
+  min-height: 56px;
+  border: var(--trait) solid var(--encre);
+  padding: 10px 18px;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  transition: transform .12s var(--sortie), background-color .2s;
+}
+.btn-encre {
+  background: var(--encre);
+  color: var(--case);
+  font: 400 22px/1 var(--f-titre);
+  letter-spacing: .04em;
+}
+.btn-trait {
+  background: var(--case);
+  font: 800 17px/1.1 var(--f-texte);
+}
+.btn-encre:active, .btn-trait:active { transform: translateY(2px); }
+.btn-trait:hover { background: #ecece6; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ---------- Carte de Greed Island ---------- */
+.carte {
+  container-type: inline-size;
+  aspect-ratio: 63 / 88;
+  width: 100%;
+  max-width: 100%;
+  position: relative;
+}
+.c-cadre {
+  position: absolute; inset: 0;
+  border-radius: 4.5cqi;
+  padding: 5cqi;
+  background: var(--cadre, var(--rouge));
+  box-shadow: inset 0 0 0 .8cqi rgba(0,0,0,.35);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 3cqi;
+}
+.f-sort { --cadre: var(--bleu); }
+.f-objet { --cadre: var(--jaune); }
+.c-tete {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 3cqi;
+  background: var(--case);
+  border-radius: 2cqi;
+  padding: 2.5cqi 3cqi;
+  box-shadow: 0 0 0 .7cqi rgba(0,0,0,.55);
+}
+.c-num {
+  font: 800 9cqi/1 var(--f-chiffre);
+  font-variant-numeric: tabular-nums;
+}
+.c-nom {
+  font: 800 6.4cqi/1.1 var(--f-texte);
+  text-align: center;
+  text-wrap: balance;
+}
+.c-rang {
+  font: 400 7cqi/1 var(--f-titre);
+  padding: 1.6cqi 2.4cqi;
+  border-radius: 1.6cqi;
+  white-space: nowrap;
+  color: var(--encre);
+  background: var(--matiere, var(--case));
+  box-shadow: 0 0 0 .6cqi var(--encre);
+}
+.c-art {
+  border-radius: 2cqi;
+  background: #f4f2ea;
+  background-image: radial-gradient(var(--trame) .9px, transparent 1.1px);
+  background-size: 5px 5px;
+  box-shadow: 0 0 0 .7cqi rgba(0,0,0,.55);
+  display: grid; place-items: center;
+  overflow: hidden;
+  min-height: 0;
+}
+.c-art svg { width: 62%; height: auto; }
+.c-txt {
+  margin: 0;
+  background: var(--case);
+  border-radius: 2cqi;
+  padding: 3cqi 3.5cqi;
+  font: 400 5.6cqi/1.3 var(--f-texte);
+  box-shadow: 0 0 0 .7cqi rgba(0,0,0,.55);
+}
+
+/* Matières des rangs : la lettre fait toujours foi */
+.r-SS { --matiere: linear-gradient(125deg, #9c7a1c 0%, #f6dc85 28%, #c39a2c 50%, #fbe7a6 72%, #a8841f 100%); }
+.r-S  { --matiere: linear-gradient(125deg, #8d949b 0%, #f1f3f5 35%, #aab1b8 60%, #e9ecef 100%); }
+.r-A  { --matiere: linear-gradient(125deg, #c97a4a 0%, #f2b48a 45%, #d88a58 100%); }
+.r-B  { --matiere: linear-gradient(125deg, #6fb596 0%, #b6e0cc 50%, #82c2a6 100%); }
+.r-C  { --matiere: linear-gradient(125deg, #9eb0c4 0%, #d6dfea 50%, #aebfd1 100%); }
+.r-D  { --matiere: var(--case); }
+.r-sort, .r-objet { --matiere: var(--case); }
+
+/* Carte vue petite (dans une pochette) */
+@container (max-width: 130px) {
+  .c-nom, .c-txt { display: none; }
+  .c-tete { grid-template-columns: 1fr auto; padding: 4cqi 4cqi; }
+  .c-num { font-size: 17cqi; }
+  .c-rang { font-size: 13cqi; padding: 2.5cqi 4cqi; }
+  .c-rang .lim { display: none; }
+  .c-cadre { padding: 6cqi; gap: 5cqi; grid-template-rows: auto 1fr; }
+}
+
+/* Dos de carte commun */
+.dos .c-cadre {
+  background: #15233f;
+  box-shadow: inset 0 0 0 1.2cqi #15233f, inset 0 0 0 2.2cqi var(--or), inset 0 0 0 3.4cqi #15233f, inset 0 0 0 4cqi var(--or);
+  place-items: center;
+  grid-template-rows: 1fr;
+}
+.dos svg { width: 58%; height: auto; }
+
+/* ---------- Le Book ---------- */
+.scene {
+  padding: 22px 14px 26px;
+  overflow: visible;
+}
+.scene-hud {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 10px; flex-wrap: wrap;
+  font: 600 15px var(--f-texte);
+}
+.scene-hud b { font: 800 20px var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.livre-zone {
+  position: relative;
+  display: grid; place-items: center;
+  padding-block: 8px 30px;
+  perspective: 1700px;
+}
+.livre-ombre {
+  position: absolute;
+  bottom: 6px; left: 12%; right: 12%;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(0,0,0,.38), transparent);
+  transition: transform .5s var(--sortie), opacity .5s;
+}
+.livre {
+  position: relative;
+  width: min(100%, 372px);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.livre.flotte { animation: flotte 2.6s ease-in-out 3; }
+.flotte ~ .livre-ombre { animation: ombre 2.6s ease-in-out 3; }
+@keyframes flotte { 0%,100% { transform: translateY(0) rotateX(4deg); } 50% { transform: translateY(-12px) rotateX(2deg); } }
+@keyframes ombre { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(.82); opacity: .6; } }
+
+.feuillets {
+  position: relative;
+  transform-style: preserve-3d;
+}
+.page {
+  position: relative;
+  background: #e6e4dc;
+  border: var(--trait) solid var(--encre);
+  border-left-width: 14px;
+  border-radius: 2px 6px 6px 2px;
+  padding: 12px 12px 14px;
+  display: grid;
+  gap: 10px;
+  backface-visibility: hidden;
+}
+.page::before {
+  /* reliure : trous du classeur */
+  content: "";
+  position: absolute; left: -11px; top: 8%; bottom: 8%; width: 8px;
+  background: radial-gradient(circle, #e6e4dc 2.4px, transparent 2.8px) center / 8px 34px repeat-y;
+}
+.page-tete {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font: 400 15px/1 var(--f-titre);
+}
+.page-tete span:last-child { font: 800 14px var(--f-chiffre); color: var(--encre-2); }
+.poches {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.poche {
+  position: relative;
+  aspect-ratio: 63 / 88;
+  border-radius: 4px;
+  background: #d9d7ce;
+  box-shadow: inset 0 0 0 1.5px rgba(17,17,17,.55), inset 0 2px 5px rgba(0,0,0,.18);
+  padding: 3px;
+  display: grid;
+  border: 0;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+.poche::after {
+  /* reflet du plastique */
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(118deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 32%, rgba(255,255,255,0) 64%, rgba(255,255,255,.22) 78%, rgba(255,255,255,0) 90%);
+  pointer-events: none;
+}
+.poche .carte { width: 100%; }
+.poche-num {
+  align-self: center; justify-self: center;
+  display: grid; justify-items: center; gap: 4px;
+  font: 800 24px/1 var(--f-chiffre);
+  color: #b5b3aa;
+  text-shadow: 0 1px 0 rgba(255,255,255,.85), 0 -1px 0 rgba(0,0,0,.28);
+}
+.poche-num em {
+  font: 400 12px/1 var(--f-titre);
+  font-style: normal;
+  color: #b4b2a8;
+}
+.poche.perdue {
+  background-color: #cfcdc4;
+  background-image: repeating-linear-gradient(-45deg, rgba(17,17,17,.22) 0 1.5px, transparent 1.5px 6px);
+}
+.poche.perdue .poche-num { color: var(--encre); text-shadow: none; gap: 3px; }
+.poche.perdue .poche-num span { font: 800 13px/1.15 var(--f-texte); text-align: center; background: var(--case); padding: 2px 3px; box-shadow: 0 0 0 1.5px var(--encre); }
+.badge-cachee {
+  position: absolute; left: 2px; right: 2px; bottom: 4px; z-index: 2;
+  font: 800 10px/1 var(--f-texte);
+  text-align: center;
+  background: var(--encre); color: var(--case);
+  padding: 3px 0;
+}
+.page-folio {
+  display: grid; place-items: center;
+  font: 400 34px/1 var(--f-titre);
+  color: #c9c7be;
+}
+.poche.arrivee { animation: arrivee .7s var(--sortie); }
+@keyframes arrivee { 0% { transform: scale(1.12); filter: brightness(1.25); } 100% { transform: none; filter: none; } }
+
+.page.dessous { position: absolute; inset: 0; }
+.feuille-tournee {
+  position: absolute; inset: 0;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  z-index: 5;
+}
+.feuille-tournee .page { position: absolute; inset: 0; }
+.feuille-tournee .verso {
+  transform: rotateY(180deg);
+  background-color: #dedcd3;
+  background-image: radial-gradient(var(--trame) 1px, transparent 1.2px);
+  background-size: 6px 6px;
+}
+.ombre-page {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(0,0,0,0) 40%, rgba(0,0,0,.45) 100%);
+  opacity: 0;
+  z-index: 3;
+}
+.dessous .ombre-page { background: linear-gradient(90deg, rgba(0,0,0,.5) 0%, rgba(0,0,0,0) 45%); }
+
+/* Couverture */
+.couverture {
+  position: absolute; inset: 0;
+  z-index: 10;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  border-radius: 3px 8px 8px 3px;
+  cursor: pointer;
+  border: 0; padding: 0;
+  background: transparent;
+}
+.couverture-face {
+  position: absolute; inset: 0;
+  backface-visibility: hidden;
+  border-radius: inherit;
+  background-color: var(--cuir);
+  background-image:
+    radial-gradient(rgba(255,255,255,.07) .8px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,.45) 0, rgba(0,0,0,0) 22px, rgba(255,255,255,.08) 26px, rgba(0,0,0,0) 40px);
+  background-size: 3px 3px, 100% 100%;
+  box-shadow: inset 0 0 0 2px #2b0a0d, inset 0 0 0 10px var(--cuir), inset 0 0 0 12px var(--or-fonce), inset 0 0 0 15px var(--cuir), inset 0 0 0 16px var(--or-fonce);
+  display: grid; place-items: center; align-content: center; gap: 18px;
+  color: var(--or);
+}
+.couverture-face svg { width: 46%; height: auto; }
+.couverture-face strong {
+  font: 400 34px/1 var(--f-titre);
+  letter-spacing: .32em;
+  margin-right: -.32em;
+  color: var(--or);
+  text-shadow: 0 1px 0 #2b0a0d, 0 -1px 0 rgba(255,236,170,.35);
+}
+.couverture-dos {
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  transform: rotateY(180deg);
+  backface-visibility: hidden;
+  background: #3e1013;
+}
+.tranche {
+  position: absolute; top: 6px; bottom: 6px; right: -7px; width: 8px;
+  border-radius: 0 4px 4px 0;
+  background: repeating-linear-gradient(0deg, #f4f2ea 0 2px, #c9c6bb 2px 3px);
+  box-shadow: inset 0 0 0 1.5px var(--encre);
+}
+
+/* Lignes de concentration et onomatopée */
+.concentration {
+  position: absolute; inset: -30% -40%;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 0;
+}
+.concentration svg { width: 100%; height: 100%; }
+.onomatopee {
+  position: absolute; z-index: 20;
+  left: 50%; top: 4%;
+  font: 400 64px/1 var(--f-titre);
+  color: var(--case);
+  -webkit-text-stroke: 3px var(--encre);
+  paint-order: stroke fill;
+  transform: translate(-50%, 0) rotate(-8deg) scale(.4);
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ---------- Tirage (plein écran) ---------- */
+.tirage {
+  position: fixed; inset: 0; z-index: 50;
+  display: grid; place-items: center; align-content: center; gap: 18px;
+  background: rgba(251,251,247,.94);
+  padding: 24px 16px;
+}
+.tirage .concentration { inset: -20%; opacity: 1; z-index: 0; }
+.retourne {
+  position: relative; z-index: 1;
+  width: min(68vw, 270px);
+  aspect-ratio: 63 / 88;
+  transform-style: preserve-3d;
+}
+.retourne > .carte { position: absolute; inset: 0; backface-visibility: hidden; }
+.retourne > .dos { transform: rotateY(180deg); }
+.tirage-legende {
+  position: relative; z-index: 1;
+  text-align: center;
+  background: var(--case);
+  border: var(--trait) solid var(--encre);
+  padding: 10px 16px;
+  font: 600 17px/1.35 var(--f-texte);
+  max-width: 340px;
+}
+.tirage-legende b { font-family: var(--f-chiffre); }
+
+/* ---------- Défilé de cartes ---------- */
+.defile {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: min(62vw, 236px);
+  gap: 14px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 4px 2px 12px;
+  margin-inline: -4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--encre) transparent;
+}
+.defile > figure { margin: 0; scroll-snap-align: start; display: grid; gap: 8px; }
+.defile figcaption { font: 600 14px/1.3 var(--f-texte); color: var(--encre-2); }
+
+/* ---------- Rangs (case inclinée) ---------- */
+.case.penchee { transform: skewY(-2.5deg); margin-block: 8px; }
+.case.penchee > * { transform: skewY(2.5deg); }
+.rangs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.rang-tuile {
+  display: grid; justify-items: center; gap: 6px;
+  font: 600 14px/1.2 var(--f-texte);
+  text-align: center;
+  color: var(--encre-2);
+}
+.rang-tuile .c-rang {
+  font-size: 30px;
+  padding: 10px 0;
+  width: 100%;
+  text-align: center;
+  border-radius: 6px;
+  box-shadow: 0 0 0 var(--trait) var(--encre);
+}
+
+/* ---------- Licence de Hunter ---------- */
+.licence {
+  justify-self: center;
+  width: min(100%, 320px);
+  aspect-ratio: 54 / 85.6;
+  border-radius: 16px;
+  background-color: #121418;
+  background-image:
+    repeating-linear-gradient(135deg, rgba(255,255,255,.035) 0 2px, transparent 2px 9px);
+  box-shadow: inset 0 0 0 2px #2b2f36, inset 0 0 0 8px #121418, inset 0 0 0 9px #8e949c, 0 14px 26px -12px rgba(0,0,0,.55);
+  color: #eef0f2;
+  padding: 26px 22px 22px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  justify-items: center;
+  gap: 14px;
+}
+.licence-tete { display: flex; align-items: center; gap: 12px; }
+.licence-tete svg { width: 54px; height: 54px; }
+.licence-tete strong { font: 400 22px/1 var(--f-titre); letter-spacing: .14em; }
+.licence-tete span { display: block; font: 600 13px/1.2 var(--f-texte); color: #c3c8cf; margin-top: 4px; letter-spacing: .02em; }
+.qr-plaque {
+  align-self: center;
+  width: 100%;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 12px;
+  display: grid; gap: 10px;
+}
+.qr-plaque svg, .qr-plaque img { width: 100%; height: auto; display: block; }
+.jauge { height: 8px; background: #e2e4e7; border-radius: 4px; overflow: hidden; }
+.jauge i { display: block; height: 100%; background: var(--encre); transform-origin: left; }
+.licence-pied { width: 100%; display: flex; justify-content: space-between; align-items: end; gap: 10px; }
+.licence-pied b { font: 400 26px/1 var(--f-titre); }
+.licence-pied span { font: 600 14px/1.2 var(--f-texte); color: #c3c8cf; text-align: right; }
+.aura { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #e2492f; margin-right: 6px; vertical-align: 1px; box-shadow: 0 0 0 2px #eef0f2; }
+
+/* ---------- Annonces du jeu ---------- */
+.annonce {
+  position: fixed;
+  z-index: 40;
+  left: 50%;
+  top: calc(env(safe-area-inset-top, 0px) + 68px);
+  width: min(calc(100% - 24px), 420px);
+  transform: translate(-50%, calc(-100% - 120px));
+  visibility: hidden;
+  transition: transform .45s var(--sortie), visibility 0s .45s;
+  background: #0c0c0e;
+  color: #f6f6f2;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 3px #0c0c0e, inset 0 0 0 5px #f6f6f2, inset 0 0 0 8px #0c0c0e, inset 0 0 0 9px #f6f6f2, 0 16px 30px -14px rgba(0,0,0,.6);
+  padding: 22px 22px 20px;
+  border: 0;
+  text-align: left;
+  display: grid; gap: 8px;
+}
+.annonce.visible { transform: translate(-50%, 0); visibility: visible; transition: transform .45s var(--sortie), visibility 0s; }
+.annonce-qui {
+  justify-self: start;
+  font: 400 15px/1 var(--f-jeu);
+  background: #f6f6f2; color: #0c0c0e;
+  padding: 4px 8px;
+}
+.annonce.t-sort .annonce-qui { background: #8fb2ff; }
+.annonce.t-evenement .annonce-qui { background: #f2c84b; }
+.annonce.t-sanction .annonce-qui { background: #ff8c86; }
+.annonce-texte {
+  font: 400 21px/1.4 var(--f-jeu);
+  min-height: 2.8em;
+}
+.annonce-pied { font: 600 13px var(--f-texte); color: #b9bcc2; }
+
+.liste-annonces { display: grid; gap: 10px; }
+
+/* ---------- Fiche d'une carte ---------- */
+dialog.fiche {
+  border: 0;
+  padding: 0;
+  margin: auto auto 0;
+  width: min(100%, 460px);
+  max-height: 92dvh;
+  background: var(--case);
+  color: var(--encre);
+  border-top: var(--trait) solid var(--encre);
+  border-radius: 14px 14px 0 0;
+  overflow: auto;
+}
+dialog.fiche::backdrop { background: rgba(17,17,17,.55); }
+dialog.fiche[open] { animation: monte .35s var(--sortie); }
+@keyframes monte { from { transform: translateY(40%); } to { transform: none; } }
+.fiche-corps { padding: 20px 16px calc(20px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 14px; }
+.fiche-corps .carte { width: min(64vw, 240px); justify-self: center; }
+.fiche-info { display: grid; gap: 4px; }
+.fiche-info p { margin: 0; }
+.fiche-info .gros { font: 400 20px/1.2 var(--f-titre); }
+.fiche-info .doux { color: var(--encre-2); }
+.fiche-vide {
+  justify-self: center;
+  width: min(64vw, 240px);
+  aspect-ratio: 63/88;
+  border-radius: 10px;
+  background: #d9d7ce;
+  box-shadow: inset 0 0 0 2px var(--encre);
+  display: grid; place-items: center;
+  font: 800 54px/1 var(--f-chiffre);
+  color: #b9b7ae;
+  text-shadow: 0 1px 0 #fff, 0 -1px 0 rgba(0,0,0,.25);
+}
+
+.note-fin { margin: 0; font-size: 15px; color: var(--encre-2); }
+.note-fin b { color: var(--encre); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+</style>
+
+<main class="planche">
+  <header class="etat" aria-label="État de la partie">
+    <span class="chrono" id="chrono" aria-label="Temps restant">1:47:12</span>
+    <span class="liaison"><i aria-hidden="true"></i>En ligne</span>
+    <span class="jenny" id="jenny">320<small>J</small></span>
+  </header>
+
+  <section class="case titre-planche">
+    <h1>Greed Island</h1>
+    <p>Prototype des pièces maîtresses de l'app joueur. Données de démonstration, illustrations des cartes provisoires.</p>
+  </section>
+
+  <section class="case scene trame-fond" aria-labelledby="t-book">
+    <h2 id="t-book">Le Book</h2>
+    <div class="scene-hud">
+      <span>Désignées <b id="cpt-des">6 / 14</b></span>
+      <span>Libres <b id="cpt-lib">5 / 15</b></span>
+    </div>
+    <div class="livre-zone" id="livre-zone">
+      <div class="concentration" id="conc-livre" aria-hidden="true"></div>
+      <div class="onomatopee" id="ono" aria-hidden="true">BOOK !</div>
+      <div class="livre" id="livre">
+        <div class="feuillets" id="feuillets"></div>
+        <span class="tranche" aria-hidden="true"></span>
+        <button class="couverture" id="couverture" aria-label="Ouvrir le Book">
+          <span class="couverture-face" id="couv-face"><span id="couv-embleme"></span><strong>BOOK</strong></span>
+          <span class="couverture-dos"></span>
+        </button>
+      </div>
+      <div class="livre-ombre" aria-hidden="true"></div>
+    </div>
+    <div class="actions">
+      <button class="btn-encre" id="btn-book">Book</button>
+      <button class="btn-trait" id="btn-scan">Simuler un scan de balise</button>
+    </div>
+    <p>Dis « Book » pour l'invoquer. Tourne les pages au doigt, touche une pochette pour voir la carte.</p>
+  </section>
+
+  <section class="case" aria-labelledby="t-cartes">
+    <h2 id="t-cartes">Les cartes</h2>
+    <p>Numéro en haut à gauche, nom au centre, rang-limite à droite. Rouge pour les cartes désignées, bleu pour les sorts, jaune pour les objets.</p>
+    <div class="defile" id="defile" tabindex="0" aria-label="Exemples de cartes"></div>
+  </section>
+
+  <section class="case penchee" aria-labelledby="t-rangs">
+    <h2 id="t-rangs">Les rangs</h2>
+    <div class="rangs" id="rangs"></div>
+    <p>Chaque rang a sa matière, de l'or du SS au papier du D. La lettre reste lisible sans la couleur.</p>
+  </section>
+
+  <section class="case trame-fond" aria-labelledby="t-licence">
+    <h2 id="t-licence">La licence de Hunter</h2>
+    <div class="licence" role="img" aria-label="Licence de Hunter de Gon, Renforcement, avec son code QR">
+      <div class="licence-tete">
+        <span id="lic-embleme"></span>
+        <div><strong>HUNTER</strong><span>Licence de Hunter</span></div>
+      </div>
+      <div class="qr-plaque">
+        <div id="qr"></div>
+        <div class="jauge" aria-hidden="true"><i id="jauge"></i></div>
+      </div>
+      <div class="licence-pied">
+        <b>Gon</b>
+        <span><i class="aura" aria-hidden="true"></i>Renforcement</span>
+      </div>
+    </div>
+    <p>Le code change toutes les 30 secondes. Un PNJ le scanne pour un checkpoint, une enchère ou l'arène.</p>
+  </section>
+
+  <section class="case" aria-labelledby="t-annonces">
+    <h2 id="t-annonces">Les annonces du jeu</h2>
+    <p>La voix de Greed Island prévient le joueur, comme dans l'anime.</p>
+    <div class="liste-annonces">
+      <button class="btn-trait" data-annonce="sort">Recevoir un sort</button>
+      <button class="btn-trait" data-annonce="evenement">Évènement de la partie</button>
+      <button class="btn-trait" data-annonce="sanction">Sanction d'un PNJ</button>
+    </div>
+  </section>
+
+  <p class="note-fin"><b>Provisoire :</b> les illustrations au centre des cartes, l'emblème redessiné de la licence et la police de titrage. L'écriture Hunter sera ajoutée en décor quand on aura la police.</p>
+</main>
+
+<button class="annonce" id="annonce" aria-live="assertive" tabindex="-1">
+  <span class="annonce-qui" id="annonce-qui">Sort</span>
+  <span class="annonce-texte" id="annonce-texte"></span>
+  <span class="annonce-pied">Touche pour fermer</span>
+</button>
+
+<dialog class="fiche" id="fiche" aria-labelledby="fiche-titre">
+  <div class="fiche-corps" id="fiche-corps"></div>
+</dialog>
+
+<script>
+(() => {
+  const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = (s) => document.querySelector(s);
+  const pause = (ms) => new Promise((r) => setTimeout(r, reduit ? 0 : ms));
+
+  /* ---------- Motifs provisoires (encre, 100 × 100) ---------- */
+  const M = {
+    chateau: '<path d="M18 86V44l8-6 8 6v10h10V30l6-10 6 10v24h10V44l8-6 8 6v42zM44 86V70a6 6 0 0 1 12 0v16"/>',
+    balance: '<path d="M50 16v66M30 82h40M20 30h60M20 30 10 54h20zM80 30 70 54h20zM10 54a10 6 0 0 0 20 0M70 54a10 6 0 0 0 20 0"/>',
+    aile: '<path d="M50 80C30 70 16 52 14 24c12 10 22 12 34 12M50 80c20-10 34-28 36-56-12 10-22 12-34 12M50 36v44"/>',
+    lunettes: '<circle cx="30" cy="54" r="15"/><circle cx="70" cy="54" r="15"/><path d="M45 52c3-4 7-4 10 0M15 50 8 38M85 50l7-12"/>',
+    de: '<rect x="20" y="20" width="60" height="60" rx="8"/><circle cx="36" cy="36" r="4"/><circle cx="64" cy="64" r="4"/><circle cx="50" cy="50" r="4"/>',
+    etoile: '<path d="m50 14 10 24 26 2-20 17 7 25-23-14-23 14 7-25-20-17 26-2z"/>',
+    flamme: '<path d="M50 88c-18 0-28-12-28-28 0-18 16-26 18-44 10 8 12 18 10 26 6-4 8-10 8-16 10 10 20 22 20 34 0 16-10 28-28 28z"/>',
+    gemme: '<path d="M28 22h44l16 20-38 44-38-44zM12 42h76M38 22l-8 20 20 44 20-44-8-20"/>',
+    canne: '<path d="M64 18a14 14 0 1 1-14 14v56M50 32c0-8 6-14 14-14"/>',
+    collier: '<path d="M18 22c0 30 14 44 32 44s32-14 32-44"/><circle cx="50" cy="74" r="10"/>',
+    casque: '<path d="M18 64c0-22 14-40 32-40s32 18 32 40zM12 64h76M36 64v14h28V64"/>',
+    epee: '<path d="M70 14 82 18 78 30 38 70 30 62zM24 56l20 20M26 74l-10 10"/>',
+    coeur: '<path d="M50 84 18 52c-10-10-8-26 4-32 10-4 20 0 28 10 8-10 18-14 28-10 12 6 14 22 4 32z"/>',
+    main: '<path d="M30 86V44c0-5 8-5 8 0v-18c0-5 8-5 8 0v-4c0-5 8-5 8 0v4c0-5 8-5 8 0v26c0-5 8-5 8 0v18c0 10-6 16-14 16z"/>',
+    oeil: '<path d="M10 50c12-18 26-26 40-26s28 8 40 26c-12 18-26 26-40 26S22 68 10 50z"/><circle cx="50" cy="50" r="12"/>',
+    ticket: '<path d="M14 30h72v12a8 8 0 0 0 0 16v12H14V58a8 8 0 0 0 0-16zM62 30v40" stroke-dasharray="0"/><path d="M28 50h22"/>'
+  };
+  const motif = (k) => `<svg viewBox="0 0 100 100" fill="none" stroke="#111" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">${M[k] || M.etoile}</svg>`;
+
+  const emblemeLivre = `<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><circle cx="50" cy="50" r="44"/><circle cx="50" cy="50" r="36" stroke-width="1.5"/><path d="M50 10v80M10 50h80" stroke-width="1.2"/><path d="M36 38c0-6 4-10 10-10h8M36 38v24c0 6 4 10 10 10h8V52h-8" stroke-width="5"/><path d="M64 28v44" stroke-width="5"/></svg>`;
+  const emblemeHunter = `<svg viewBox="0 0 100 100" fill="none" aria-hidden="true"><path d="M50 4 92 28v44L50 96 8 72V28z" fill="#e7eaee"/><path d="M50 12 85 32v36L50 88 15 68V32z" fill="#121418"/><path d="M34 30v40M66 30v40M34 50h32" stroke="#e7eaee" stroke-width="8" stroke-linecap="square"/><path d="M50 22v8M50 70v8" stroke="#e7eaee" stroke-width="4"/></svg>`;
+  const emblemeDos = `<svg viewBox="0 0 100 100" fill="none" stroke="#d7b25a" aria-hidden="true"><circle cx="50" cy="50" r="42" stroke-width="2.5"/><circle cx="50" cy="50" r="34" stroke-width="1"/><path d="m50 8 8 34 34 8-34 8-8 34-8-34-34-8 34-8z" stroke-width="2"/><circle cx="50" cy="50" r="9" stroke-width="2.5"/></svg>`;
+
+  /* ---------- Données de démonstration ---------- */
+  const D = (n, nom, rang, lim, txt, m, etat, extra = {}) => ({ n, nom, rang, lim, txt, motif: m, type: 'designee', etat, ...extra });
+  const designees = [
+    D('000', 'Le bonheur du détenteur', 'SS', 1, 'Un château et sa ville de 10 000 habitants, qui vivent selon tes lois.', 'chateau', 'vide'),
+    D('011', "La balance d'or", 'D', 8, "Face à deux choix, elle penche vers le meilleur pour ton avenir.", 'balance', 'pleine', { prov: 'Balise', heure: '13h12' }),
+    D('017', 'Le souffle du grand ange', 'S', 2, 'Guérit une personne de toutes ses blessures et maladies. Une seule fois.', 'aile', 'pleine', { prov: 'Échange avec Leolio', heure: '13h40' }),
+    D('021', 'Les lunettes squelettes', 'C', 6, 'Voient à travers tout, sauf un paquet de sorts de Masadora.', 'lunettes', 'perdue', { par: 'Kirua', heure: '14h05' }),
+    D('025', 'Le dé du risque', 'D', 8, 'Dix-neuf étoiles, une tête de mort. La tête de mort efface tout.', 'de', 'pleine', { prov: 'Balise', heure: '13h05' }),
+    D('046', 'La jeune fille à la poudre d\'or', 'B', 4, 'Son bain quotidien laisse 500 g de poudre d\'or. Très timide.', 'etoile', 'pleine', { prov: 'Arène de Soufrabi', heure: '13h55' }),
+    D('051', "Le dragon qui s'emballe", 'A', 3, "Il t'obéit et finit par parler, si tu l'élèves avec amour.", 'flamme', 'vide'),
+    D('073', 'Le jade des ténèbres', 'B', 4, 'Béni par le Diable : il détourne le malheur sur un autre.', 'gemme', 'pleine', { prov: 'Balise', heure: '14h10' }),
+    D('079', 'Le diamant arc-en-ciel', 'C', 6, 'Demande en mariage avec lui : la réponse sera oui.', 'gemme', 'vide'),
+    D('082', 'La canne du châtiment céleste', 'B', 4, 'Nomme qui tu veux punir : le plus coupable des deux sera frappé.', 'canne', 'pleine', { prov: "Enchères d'Antokiba", heure: '14h20' }),
+    D('084', 'Le collier du chevalier', 'D', 8, 'Renvoie les malédictions et lève celles des cartes qu\'il touche.', 'collier', 'vide'),
+    D('090', 'Le casque de mémoire', 'C', 6, "Tu n'oublies rien de ce que tu vois ou entends.", 'casque', 'cachee'),
+    D('094', "L'épée du vol", 'A', 3, 'Chaque coup réussi vole une carte à la cible.', 'epee', 'vide'),
+    D('099', 'Maid panda', 'S', 2, 'Soigneuse, bonne cuisinière, parfaite avec les enfants.', 'coeur', 'vide')
+  ];
+  const sort = (n, nom, txt, m) => ({ n, nom, txt, motif: m, type: 'sort', rang: 'sort' });
+  const vol = sort('1007', 'Vol', 'Vole une carte au hasard dans les emplacements fixes de la cible.', 'main');
+  const voyance = sort('1001', 'Voyance', "Montre les emplacements libres d'un joueur déjà croisé.", 'oeil');
+  const loterie = { n: '1032', nom: 'Loterie', txt: 'Gratte le ticket : de 0 à 100 jenny.', motif: 'ticket', type: 'objet', rang: 'objet' };
+  const parN = (n) => designees.find((c) => c.n === n);
+  const libres = [
+    { carte: vol, prov: 'Kit de départ', heure: '13h00' },
+    { carte: vol, prov: 'Boutique de Masadora', heure: '13h48' },
+    { carte: voyance, prov: 'Balise', heure: '14h02' },
+    { carte: { ...parN('025'), etat: 'pleine' }, doublon: true, prov: 'Balise', heure: '14h14' },
+    { carte: parN('090'), cachee: true, prov: 'Balise', heure: '13h30' },
+    null, null, null, null, null, null, null, null, null, null
+  ];
+
+  /* ---------- Rendu d'une carte ---------- */
+  const rangTexte = (c) => c.type === 'sort' ? 'Sort' : c.type === 'objet' ? 'Objet' : `${c.rang}<span class="lim">-${c.lim}</span>`;
+  const carteHTML = (c) => `
+    <div class="carte f-${c.type}">
+      <div class="c-cadre">
+        <div class="c-tete"><span class="c-num">${c.n}</span><span class="c-nom">${c.nom}</span><span class="c-rang r-${c.rang}">${rangTexte(c)}</span></div>
+        <div class="c-art">${motif(c.motif)}</div>
+        <p class="c-txt">${c.txt}</p>
+      </div>
+    </div>`;
+  const dosHTML = () => `<div class="carte dos"><div class="c-cadre">${emblemeDos}</div></div>`;
+
+  /* ---------- Pages du Book ---------- */
+  const pages = [
+    { titre: 'Désignées', plage: () => '000 – 082', poches: () => designees.slice(0, 10).map((c, i) => ({ k: 'd', i })) },
+    { titre: 'Désignées', plage: () => '084 – 099', poches: () => designees.slice(10, 14).map((c, i) => ({ k: 'd', i: i + 10 })) },
+    { titre: 'Libres', plage: () => '1 / 2', poches: () => libres.slice(0, 10).map((c, i) => ({ k: 'l', i })) },
+    { titre: 'Libres', plage: () => '2 / 2', poches: () => libres.slice(10, 15).map((c, i) => ({ k: 'l', i: i + 10 })) }
+  ];
+
+  const pocheHTML = ({ k, i }) => {
+    if (k === 'd') {
+      const c = designees[i];
+      const id = `data-k="d" data-i="${i}"`;
+      if (c.etat === 'pleine') return `<button class="poche" ${id} aria-label="${c.n} ${c.nom}, rang ${c.rang}">${carteHTML(c)}</button>`;
+      if (c.etat === 'perdue') return `<button class="poche perdue" ${id} aria-label="${c.n} volée par ${c.par} à ${c.heure}"><span class="poche-num">${c.n}<span>Volée<br>${c.par}<br>${c.heure}</span></span></button>`;
+      const etiquette = c.etat === 'cachee' ? 'cachée dans les libres' : 'pas encore trouvée';
+      return `<button class="poche" ${id} aria-label="${c.n} ${c.nom}, ${etiquette}"><span class="poche-num">${c.n}<em>${c.rang}</em></span></button>`;
+    }
+    const l = libres[i];
+    if (!l) return `<span class="poche" aria-hidden="true"></span>`;
+    return `<button class="poche" data-k="l" data-i="${i}" aria-label="${l.carte.n} ${l.carte.nom}${l.cachee ? ', cachée' : ''}">${carteHTML(l.carte)}${l.cachee ? '<span class="badge-cachee">Cachée</span>' : ''}</button>`;
+  };
+  const pageHTML = (p) => {
+    const pg = pages[p];
+    const poches = pg.poches();
+    const restes = (3 - poches.length % 3) % 3;
+    const folio = restes > 0 ? `<span class="page-folio" style="grid-column: span ${restes}" aria-hidden="true">${p + 1}</span>` : '';
+    return `<div class="page-tete"><span>${pg.titre}</span><span>${pg.plage()}</span></div><div class="poches">${poches.map(pocheHTML).join('')}${folio}</div>`;
+  };
+
+  const feuillets = $('#feuillets');
+  const base = document.createElement('div');
+  base.className = 'page';
+  feuillets.append(base);
+  let courante = 0;
+  const rendre = () => { base.innerHTML = pageHTML(courante); compter(); };
+  const compter = () => {
+    $('#cpt-des').textContent = `${designees.filter((c) => c.etat === 'pleine').length} / 14`;
+    $('#cpt-lib').textContent = `${libres.filter(Boolean).length} / 15`;
+  };
+
+  /* ---------- Tourner une page (3D, au doigt) ---------- */
+  let tour = null;
+  const commencerTour = (sens) => {
+    const cible = courante + sens;
+    if (cible < 0 || cible >= pages.length) return null;
+    const dessous = document.createElement('div');
+    dessous.className = 'page dessous';
+    dessous.innerHTML = pageHTML(sens > 0 ? cible : courante) + '<span class="ombre-page"></span>';
+    const feuille = document.createElement('div');
+    feuille.className = 'feuille-tournee';
+    feuille.innerHTML = `<div class="page recto">${pageHTML(sens > 0 ? courante : cible)}<span class="ombre-page"></span></div><div class="page verso"></div>`;
+    feuillets.append(dessous, feuille);
+    base.style.visibility = 'hidden';
+    return { sens, cible, dessous, feuille, p: 0 };
+  };
+  const poserTour = (t, p) => {
+    t.p = Math.max(0, Math.min(1, p));
+    const prog = t.sens > 0 ? t.p : 1 - t.p;          // 0 = à plat à droite, 1 = tournée à gauche
+    const angle = -180 * prog;
+    const s = Math.sin(prog * Math.PI);
+    t.feuille.style.transform = `rotateY(${angle}deg) skewY(${-s * 3.5}deg)`;
+    t.feuille.querySelector('.ombre-page').style.opacity = (s * .9).toFixed(3);
+    t.dessous.querySelector('.ombre-page').style.opacity = ((1 - prog) * s * 1.1).toFixed(3);
+  };
+  const finirTour = (t, garder) => new Promise((resolve) => {
+    const fin = garder ? 1 : 0;
+    const depart = t.p;
+    const duree = reduit ? 1 : 460 * Math.max(.35, Math.abs(fin - depart));
+    const t0 = performance.now();
+    const ease = (x) => 1 - Math.pow(1 - x, 3);
+    const pas = (now) => {
+      const x = Math.min(1, (now - t0) / duree);
+      poserTour(t, depart + (fin - depart) * ease(x));
+      if (x < 1) return requestAnimationFrame(pas);
+      if (garder) courante = t.cible;
+      t.dessous.remove(); t.feuille.remove();
+      base.style.visibility = '';
+      rendre();
+      resolve();
+    };
+    requestAnimationFrame(pas);
+  });
+  const tourner = async (sens) => {
+    if (tour) return;
+    const t = commencerTour(sens);
+    if (!t) return;
+    tour = t;
+    await finirTour(t, true);
+    tour = null;
+  };
+
+  let appui = null;
+  feuillets.addEventListener('pointerdown', (e) => {
+    if (!ouvert || tour) return;
+    appui = { x: e.clientX, y: e.clientY, id: e.pointerId, actif: false, cible: e.target.closest('.poche[data-k]') };
+  });
+  feuillets.addEventListener('pointermove', (e) => {
+    if (!appui || e.pointerId !== appui.id) return;
+    const dx = e.clientX - appui.x, dy = e.clientY - appui.y;
+    if (!appui.actif) {
+      if (Math.abs(dx) < 8 || Math.abs(dx) < Math.abs(dy)) return;
+      const t = commencerTour(dx < 0 ? 1 : -1);
+      if (!t) { appui = null; return; }
+      tour = t; appui.actif = true;
+      feuillets.setPointerCapture(e.pointerId);
+    }
+    const w = feuillets.getBoundingClientRect().width;
+    poserTour(tour, Math.abs(dx) / w);
+  });
+  const lacher = async (e) => {
+    if (!appui || e.pointerId !== appui.id) return;
+    const a = appui; appui = null;
+    if (!a.actif) {
+      if (a.cible && e.type === 'pointerup') ouvrirFiche(a.cible.dataset.k, +a.cible.dataset.i);
+      return;
+    }
+    await finirTour(tour, tour.p > .3);
+    tour = null;
+  };
+  feuillets.addEventListener('pointerup', lacher);
+  feuillets.addEventListener('pointercancel', lacher);
+  feuillets.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight') tourner(1);
+    if (e.key === 'ArrowLeft') tourner(-1);
+    const p = e.target.closest('.poche[data-k]');
+    if (p && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); ouvrirFiche(p.dataset.k, +p.dataset.i); }
+  });
+
+  /* ---------- Lignes de concentration ---------- */
+  const concentration = (seed) => {
+    let s = seed;
+    const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    let d = '';
+    for (let i = 0; i < 120; i++) {
+      const a = r() * Math.PI * 2;
+      const r0 = 46 + r() * 22, w = .004 + r() * .02;
+      const x0 = Math.cos(a) * r0, y0 = Math.sin(a) * r0;
+      const x1 = Math.cos(a - w) * 160, y1 = Math.sin(a - w) * 160;
+      const x2 = Math.cos(a + w) * 160, y2 = Math.sin(a + w) * 160;
+      d += `M${x0.toFixed(1)} ${y0.toFixed(1)}L${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}Z`;
+    }
+    return `<svg viewBox="-100 -100 200 200" preserveAspectRatio="xMidYMid slice"><path d="${d}" fill="#111"/></svg>`;
+  };
+  $('#conc-livre').innerHTML = concentration(7);
+  $('#couv-embleme').innerHTML = emblemeLivre;
+  $('#lic-embleme').innerHTML = emblemeHunter;
+
+  /* ---------- Invoquer / fermer le Book ---------- */
+  const livre = $('#livre'), couv = $('#couverture'), btnBook = $('#btn-book');
+  let ouvert = false, occupe = false;
+  const anim = (el, k, o) => reduit ? Promise.resolve() : el.animate(k, { fill: 'forwards', ...o }).finished;
+
+  const invoquer = async () => {
+    if (occupe) return;
+    occupe = true;
+    const ono = $('#ono'), conc = $('#conc-livre');
+    if (navigator.vibrate) navigator.vibrate(30);
+    await Promise.all([
+      anim(conc, [{ opacity: 0, transform: 'scale(1.25)' }, { opacity: .9, transform: 'scale(1)', offset: .3 }, { opacity: 0, transform: 'scale(.96)' }], { duration: 900, easing: 'ease-out' }),
+      anim(ono, [{ opacity: 0, transform: 'translate(-50%,0) rotate(-8deg) scale(.4)' }, { opacity: 1, transform: 'translate(-50%,0) rotate(-8deg) scale(1.06)', offset: .25 }, { opacity: 1, transform: 'translate(-50%,0) rotate(-8deg) scale(1)', offset: .75 }, { opacity: 0, transform: 'translate(-50%,-14px) rotate(-8deg) scale(1)' }], { duration: 1000, easing: 'cubic-bezier(.16,1,.3,1)' }),
+      anim(livre, [{ transform: 'translateY(30px) scale(.82) rotateX(18deg)', filter: 'blur(3px)', opacity: .2 }, { transform: 'translateY(-8px) scale(1.02) rotateX(6deg)', filter: 'blur(0)', opacity: 1, offset: .6 }, { transform: 'translateY(0) scale(1) rotateX(4deg)', filter: 'blur(0)', opacity: 1 }], { duration: 760, easing: 'cubic-bezier(.16,1,.3,1)' })
+    ]);
+    livre.getAnimations().forEach((a) => a.cancel());
+    await anim(couv, [{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(-172deg)' }], { duration: 820, easing: 'cubic-bezier(.45,.05,.2,1)' });
+    couv.hidden = true;
+    couv.getAnimations().forEach((a) => a.cancel());
+    ouvert = true;
+    btnBook.textContent = 'Fermer le Book';
+    livre.classList.remove('flotte'); void livre.offsetWidth;
+    if (!reduit) livre.classList.add('flotte');
+    feuillets.querySelector('.poche[data-k]')?.setAttribute('tabindex', '0');
+    occupe = false;
+  };
+  const fermer = async () => {
+    if (occupe) return;
+    occupe = true;
+    livre.classList.remove('flotte');
+    couv.hidden = false;
+    await anim(couv, [{ transform: 'rotateY(-172deg)' }, { transform: 'rotateY(0deg)' }], { duration: 620, easing: 'cubic-bezier(.45,.05,.2,1)' });
+    couv.getAnimations().forEach((a) => a.cancel());
+    ouvert = false;
+    btnBook.textContent = 'Book';
+    occupe = false;
+  };
+  btnBook.addEventListener('click', () => (ouvert ? fermer() : invoquer()));
+  couv.addEventListener('click', invoquer);
+
+  /* ---------- Tirage : la carte se retourne puis vole dans sa pochette ---------- */
+  const tirages = ['051', '079', '094', '099', '084', '000'];
+  const btnScan = $('#btn-scan');
+  const heureJeu = () => { const d = new Date(); return `${d.getHours()}h${String(d.getMinutes()).padStart(2, '0')}`; };
+
+  btnScan.addEventListener('click', async () => {
+    if (occupe || tour) return;
+    const n = tirages.shift();
+    if (!n) { annoncer('evenement', 'Plus rien ici, cherche ailleurs.', 'Refus'); btnScan.disabled = true; return; }
+    occupe = true;
+    if (!ouvert) { occupe = false; await invoquer(); occupe = true; }
+    const idx = designees.findIndex((c) => c.n === n);
+    const c = designees[idx];
+    const pageCible = idx < 10 ? 0 : 1;
+
+    const voile = document.createElement('div');
+    voile.className = 'tirage';
+    voile.setAttribute('role', 'status');
+    voile.innerHTML = `<div class="concentration">${concentration(31 + idx)}</div>
+      <div class="retourne">${carteHTML(c)}${dosHTML()}</div>
+      <div class="tirage-legende">Tu as obtenu <b>${c.n}</b> ${c.nom}, rang ${c.rang}.</div>`;
+    document.body.append(voile);
+    const ret = voile.querySelector('.retourne'), leg = voile.querySelector('.tirage-legende'), conc = voile.querySelector('.concentration');
+    if (navigator.vibrate) navigator.vibrate([20, 40, 60]);
+    leg.style.opacity = 0;
+    await Promise.all([
+      anim(conc, [{ opacity: 0, transform: 'scale(1.3)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 500, easing: 'ease-out' }),
+      anim(ret, [{ transform: 'rotateY(180deg) scale(.6)' }, { transform: 'rotateY(180deg) scale(1)', offset: .35 }, { transform: 'rotateY(0deg) scale(1)' }], { duration: 1100, easing: 'cubic-bezier(.3,.7,.2,1)' })
+    ]);
+    leg.style.opacity = 1;
+    await pause(1300);
+
+    if (courante !== pageCible) {
+      anim(leg, [{ opacity: 1 }, { opacity: 0 }], { duration: 200 });
+      await tourner(pageCible - courante > 0 ? 1 : -1);
+      if (courante !== pageCible) await tourner(pageCible - courante > 0 ? 1 : -1);
+    }
+    const poche = feuillets.querySelector(`.poche[data-k="d"][data-i="${idx}"]`);
+    poche.scrollIntoView({ block: 'center', behavior: reduit ? 'auto' : 'smooth' });
+    await pause(380);
+    const a = ret.getBoundingClientRect(), b = poche.getBoundingClientRect();
+    const dx = b.left + b.width / 2 - (a.left + a.width / 2), dy = b.top + b.height / 2 - (a.top + a.height / 2);
+    const k = b.width / a.width;
+    await Promise.all([
+      anim(ret, [{ transform: 'none' }, { transform: `translate(${dx}px, ${dy}px) rotate(-6deg) scale(${k * 1.15})`, offset: .8 }, { transform: `translate(${dx}px, ${dy}px) scale(${k})` }], { duration: 720, easing: 'cubic-bezier(.55,0,.25,1)' }),
+      anim(voile, [{ backgroundColor: 'rgba(251,251,247,.94)' }, { backgroundColor: 'rgba(251,251,247,0)' }], { duration: 600 }),
+      anim(conc, [{ opacity: 1 }, { opacity: 0 }], { duration: 300 }),
+      anim(leg, [{ opacity: 1 }, { opacity: 0 }], { duration: 200 })
+    ]);
+    c.etat = 'pleine'; c.prov = 'Balise'; c.heure = heureJeu();
+    rendre();
+    voile.remove();
+    const nouvelle = feuillets.querySelector(`.poche[data-k="d"][data-i="${idx}"]`);
+    nouvelle.classList.add('arrivee');
+    $('#jenny').innerHTML = `${320 + (6 - tirages.length) * 10}<small>J</small>`;
+    occupe = false;
+  });
+
+  /* ---------- Fiche d'une carte ---------- */
+  const fiche = $('#fiche'), ficheCorps = $('#fiche-corps');
+  const ouvrirFiche = (k, i) => {
+    let html = '';
+    if (k === 'd') {
+      const c = designees[i];
+      if (c.etat === 'pleine') {
+        html = `${carteHTML(c)}<div class="fiche-info"><p class="gros" id="fiche-titre">${c.n} ${c.nom}</p><p class="doux">${c.prov} · ${c.heure}</p></div>
+          <div class="actions"><button class="btn-trait" data-cacher="${i}">Cacher dans les emplacements libres</button><button class="btn-encre" data-fermer>Fermer</button></div>`;
+      } else if (c.etat === 'perdue') {
+        html = `<div class="fiche-vide">${c.n}</div><div class="fiche-info"><p class="gros" id="fiche-titre">${c.n} ${c.nom}</p><p>Volée par ${c.par} à ${c.heure}.</p></div><div class="actions"><button class="btn-encre" data-fermer>Fermer</button></div>`;
+      } else {
+        const msg = c.etat === 'cachee' ? 'Cachée dans tes emplacements libres : elle ne compte pas tant qu\'elle n\'est pas remise en place.' : 'Pas encore trouvée.';
+        html = `<div class="fiche-vide">${c.n}</div><div class="fiche-info"><p class="gros" id="fiche-titre">${c.n} ${c.nom}</p><p class="doux">Rang ${c.rang}. ${msg}</p></div><div class="actions"><button class="btn-encre" data-fermer>Fermer</button></div>`;
+      }
+    } else {
+      const l = libres[i];
+      const c = l.carte;
+      const statut = l.cachee ? 'Cachée : ne compte pas tant qu\'elle n\'est pas remise en place.' : l.doublon ? 'Doublon.' : c.type === 'sort' ? c.txt : '';
+      html = `${carteHTML(c)}<div class="fiche-info"><p class="gros" id="fiche-titre">${c.n} ${c.nom}</p><p class="doux">${l.prov} · ${l.heure}</p>${statut ? `<p>${statut}</p>` : ''}</div>
+        <div class="actions">${l.cachee ? `<button class="btn-trait" data-remettre="${i}">Remettre en place</button>` : ''}<button class="btn-encre" data-fermer>Fermer</button></div>`;
+    }
+    ficheCorps.innerHTML = html;
+    fiche.showModal();
+  };
+  fiche.addEventListener('click', (e) => {
+    if (e.target === fiche || e.target.closest('[data-fermer]')) return fiche.close();
+    const cacher = e.target.closest('[data-cacher]');
+    if (cacher) {
+      const c = designees[+cacher.dataset.cacher];
+      const place = libres.findIndex((l) => !l);
+      if (place < 0) return;
+      libres[place] = { carte: { ...c }, cachee: true, prov: c.prov, heure: c.heure, source: c.n };
+      c.etat = 'cachee';
+      fiche.close(); rendre();
+    }
+    const remettre = e.target.closest('[data-remettre]');
+    if (remettre) {
+      const i = +remettre.dataset.remettre;
+      const l = libres[i];
+      const c = parN(l.carte.n);
+      c.etat = 'pleine'; c.prov = l.prov; c.heure = l.heure;
+      libres[i] = null;
+      fiche.close(); rendre();
+    }
+  });
+
+  /* ---------- Défilé de cartes et rangs ---------- */
+  $('#defile').innerHTML = [
+    [parN('051'), 'Carte désignée, rang A'],
+    [vol, 'Carte de sort'],
+    [loterie, "Carte d'objet"],
+    [parN('000'), "L'unique SS"],
+    [null, 'Dos commun']
+  ].map(([c, l]) => `<figure>${c ? carteHTML(c) : dosHTML()}<figcaption>${l}</figcaption></figure>`).join('');
+
+  const matieres = { SS: 'Or', S: 'Argent', A: 'Cuivre', B: 'Jade', C: 'Acier', D: 'Papier' };
+  $('#rangs').innerHTML = Object.entries(matieres).map(([r, m]) => `<div class="rang-tuile"><span class="c-rang r-${r}">${r}</span>${m}</div>`).join('');
+
+  /* ---------- Licence : QR tournant toutes les 30 s ---------- */
+  const jauge = $('#jauge');
+  const dessinerQr = () => {
+    const fenetre = Math.floor(Date.now() / 30000);
+    const el = $('#qr');
+    if (window.qrcode) {
+      const q = qrcode(0, 'M');
+      q.addData(`GQL1.exemple-gon.${fenetre}.demonstration`);
+      q.make();
+      el.innerHTML = q.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
+    } else {
+      el.innerHTML = '<p style="margin:0;color:#111;font-weight:600;text-align:center">Code QR indisponible hors ligne dans ce prototype.</p>';
+    }
+    const reste = 30000 - (Date.now() % 30000);
+    jauge.getAnimations().forEach((a) => a.cancel());
+    jauge.animate([{ transform: `scaleX(${reste / 30000})` }, { transform: 'scaleX(0)' }], { duration: reste, easing: 'linear', fill: 'forwards' });
+    setTimeout(dessinerQr, reste + 30);
+  };
+  dessinerQr();
+
+  /* ---------- Annonces du jeu ---------- */
+  const annonce = $('#annonce'), annTexte = $('#annonce-texte'), annQui = $('#annonce-qui');
+  let minuteur = null, frappe = null;
+  const annoncer = (type, texte, qui) => {
+    clearTimeout(minuteur); clearInterval(frappe);
+    annonce.className = `annonce t-${type}`;
+    annQui.textContent = qui;
+    annTexte.textContent = '';
+    annTexte.setAttribute('aria-label', texte);
+    requestAnimationFrame(() => annonce.classList.add('visible'));
+    if (navigator.vibrate) navigator.vibrate(type === 'sort' ? [80, 60, 80] : 60);
+    if (reduit) annTexte.textContent = texte;
+    else {
+      let i = 0;
+      frappe = setInterval(() => { annTexte.textContent = texte.slice(0, ++i); if (i >= texte.length) clearInterval(frappe); }, 22);
+    }
+    minuteur = setTimeout(() => annonce.classList.remove('visible'), 6500);
+  };
+  annonce.addEventListener('click', () => { clearTimeout(minuteur); annonce.classList.remove('visible'); });
+  const exemples = {
+    sort: ['Sort', 'Kirua a utilisé Vol sur toi. Tu as perdu 046 La jeune fille à la poudre d\'or.'],
+    evenement: ['Évènement', 'La Brigade attaque Soufrabi. Raid ouvert pendant 10 min.'],
+    sanction: ['Sanction', 'Un PNJ t\'a gelé 5 min : tu ne peux plus scanner.']
+  };
+  document.querySelectorAll('[data-annonce]').forEach((b) => b.addEventListener('click', () => {
+    const [qui, t] = exemples[b.dataset.annonce];
+    annoncer(b.dataset.annonce, t, qui);
+  }));
+
+  /* ---------- Chrono de démonstration ---------- */
+  let reste = 1 * 3600 + 47 * 60 + 12;
+  const chrono = $('#chrono');
+  setInterval(() => {
+    reste = Math.max(0, reste - 1);
+    const h = Math.floor(reste / 3600), m = Math.floor(reste / 60) % 60, s = reste % 60;
+    chrono.textContent = `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    chrono.classList.toggle('fin', reste <= 1800);
+  }, 1000);
+
+  rendre();
+})();
+</script>

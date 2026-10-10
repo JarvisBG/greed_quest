@@ -82,7 +82,7 @@ describe('RG-7 vérifications de scan', () => {
     expect(code({ player: { dernierTirageA: NOW - 30_000 } })).toBe('ok');
   });
 
-  it('6. Livre plein (RG-8.5)', () => {
+  it('6. Book plein (RG-8.5)', () => {
     expect(code({ player: { livrePlein: true } })).toBe('livre_plein');
   });
 

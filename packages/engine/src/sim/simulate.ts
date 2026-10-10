@@ -15,7 +15,7 @@
 import { NEN_TYPES, RANKS, type NenType, type Rank } from '@gq/shared';
 import { consumeDraw, fillToTarget, rechargeBeacons, replaceExhausted, rotate, ROTATION_INTERVAL_MS, type Beacon } from '../beacons.js';
 import { arenaReward, enterArena } from '../arena.js';
-import { addItem, emptyBook, isBookFull, layoutBook, removeItem, type Book, type CardItem } from '../book.js';
+import { addItem, deplacerCarte, emptyBook, isBookFull, layoutBook, removeItem, type Book, type CardItem } from '../book.js';
 import { countInCirculation } from '../counterfeits.js';
 import { draw, type CatalogCard } from '../draw.js';
 import { endApparition, expireEvents, startApparition, type GameEvent } from '../events.js';
@@ -138,7 +138,7 @@ export interface SimConfig {
   retardMin: [number, number];
   /** RG-5.6 : bonus de rattrapage, en jenny par minute de retard (0 = sans bonus). */
   rattrapageJParMin: number;
-  /** Vol (carte de sort) : `tout` = n'importe quelle carte de la cible ; `fixes` = seulement ses cartes rangées dans les emplacements fixes (anime). */
+  /** Vol (carte de sort) : `tout` = n'importe quelle carte de la cible (règle d'avant) ; `fixes` = emplacements fixes seulement (moteur, amendement 2026-10-10). */
   volCible: 'tout' | 'fixes';
   /** Cacher : chaque joueur range ses cartes désignées de ces rangs dans ses emplacements libres (s'il y a de la place). */
   cacheRangs: Rank[];
@@ -286,8 +286,6 @@ interface SimPlayer {
   fortune: boolean;
   /** Minute d'arrivée (0 = à l'heure). */
   arriveeMin: number;
-  /** Cartes désignées rangées dans les emplacements libres (cachées). */
-  caches: Set<string>;
   accompagnements: number;
   rencontres: Set<string>;
 }
@@ -355,7 +353,6 @@ export function simulate(cfg: SimConfig): SimResult {
     speA: null,
     fortune: false,
     arriveeMin: 0,
-    caches: new Set<string>(),
     accompagnements: 0,
     rencontres: new Set<string>(),
   }));
@@ -435,34 +432,43 @@ export function simulate(cfg: SimConfig): SimResult {
 
   const missing = (p: SimPlayer) => {
     const l = layoutBook(p.book, designees);
-    return new Set(l.designes.filter((d) => d.slot.etat !== 'plein').map((d) => d.cardId));
+    // Une carte cachée ne manque pas : le joueur sait qu'il l'a.
+    const cachees = new Set(p.book.items.flatMap((i) => (i.kind === 'carte' && i.cachee ? [i.cardId] : [])));
+    return new Set(l.designes.filter((d) => d.slot.etat !== 'plein' && !cachees.has(d.cardId)).map((d) => d.cardId));
   };
   /** Doublons : cartes hors emplacement désigné. */
   const duplicates = (p: SimPlayer): CardItem[] => {
     const l = layoutBook(p.book, designees);
-    return l.libres.flatMap((s) => (s.etat === 'plein' && s.item.kind === 'carte' ? [s.item] : []));
+    // Une carte cachée n'est pas un doublon : le joueur la garde (ni échange, ni revente).
+    return l.libres.flatMap((s) => (s.etat === 'plein' && s.item.kind === 'carte' && !s.item.cachee ? [s.item] : []));
   };
-  /** Emplacements libres occupés, cartes cachées comprises. */
-  const libresDe = (p: SimPlayer) => layoutBook(p.book, designees).libresUtilises + p.caches.size;
+  /** Emplacements libres occupés (cartes cachées comprises, RG-8.5 amendé). */
+  const libresDe = (p: SimPlayer) => layoutBook(p.book, designees).libresUtilises;
   const pleinDe = (p: SimPlayer) => libresDe(p) >= 15;
-  /** Cacher : ranger dans les emplacements libres les cartes désignées des rangs choisis, tant qu'il reste 2 places. */
+  /** Cacher (moteur deplacerCarte) : les cartes désignées des rangs choisis, tant qu'il reste 2 places libres. */
   const cacher = (p: SimPlayer) => {
-    const ids = new Set(p.book.items.map((i) => i.id));
-    for (const id of [...p.caches]) if (!ids.has(id)) p.caches.delete(id);
     if (cfg.cacheRangs.length === 0) return;
     for (const d of layoutBook(p.book, designees).designes) {
-      if (d.slot.etat !== 'plein' || p.caches.has(d.slot.item.id) || !cfg.cacheRangs.includes(rangDe(d.cardId))) continue;
+      if (d.slot.etat !== 'plein' || !cfg.cacheRangs.includes(rangDe(d.cardId))) continue;
       if (libresDe(p) >= 13) break;
-      p.caches.add(d.slot.item.id);
+      const r = deplacerCarte(p.book, designees, d.slot.item.id, true);
+      if (r.ok) p.book = r.book;
     }
   };
-  /** Vol « emplacements fixes » : cartes rangées dans les emplacements désignés et non cachées. */
-  const volables = (x: SimPlayer): Set<string> => {
-    const l = layoutBook(x.book, designees);
-    return new Set(l.designes.flatMap((d) => (d.slot.etat === 'plein' && !x.caches.has(d.slot.item.id) ? [d.slot.item.id] : [])));
+  /** Le Clear et le classement ne comptent que les cartes en place : les cartes cachées sont remises à la fin. */
+  const remettre = (p: SimPlayer) => {
+    for (const i of p.book.items) {
+      if (i.kind !== 'carte' || !i.cachee) continue;
+      const r = deplacerCarte(p.book, designees, i.id, false);
+      if (r.ok) p.book = r.book;
+    }
   };
   const checkClearOf = (p: SimPlayer, now: number) => {
-    if (clearA === null && checkClear(p.book, designees).etat === 'complet') {
+    if (clearA !== null) return;
+    const b = p.book;
+    remettre(p);
+    if (checkClear(p.book, designees).etat !== 'complet') p.book = b;
+    if (checkClear(p.book, designees).etat === 'complet') {
       clearA = now;
       clearPar = p.spe ?? p.nen;
     }
@@ -550,17 +556,12 @@ export function simulate(cfg: SimConfig): SimResult {
     voulue?: CardItem,
   ): boolean {
     // Carte choisie (Bandit) : le Vol ne voit que cette carte ; les autres sont remises ensuite.
-    const permis = !voulue && sort === 'vol' && cfg.volCible === 'fixes' ? volables(autre) : null;
-    const cachees = voulue
-      ? autre.book.items.filter((i) => i.kind === 'carte' && i.id !== voulue.id)
-      : permis
-        ? autre.book.items.filter((i) => i.kind === 'carte' && !permis.has(i.id))
-        : [];
+    const cachees = voulue ? autre.book.items.filter((i) => i.kind === 'carte' && i.id !== voulue.id) : [];
     const cibleBook = cachees.length > 0 ? { ...autre.book, items: autre.book.items.filter((i) => !cachees.includes(i)) } : autre.book;
     const pos: Position = { lat: 48.85, lng: 2.35, precisionM: 0, a: now };
     const loin: Position = { lat: 48.9, lng: 2.35, precisionM: 0, a: now };
     const r = castOffensive(
-      { now, gameState: 'en_cours', portee: { porteeM: 30, margeMaxM: 20 }, rangDe, newId, rechargeNenMs },
+      { now, gameState: 'en_cours', portee: { porteeM: 30, margeMaxM: 20 }, rangDe, newId, rechargeNenMs, ...(cfg.volCible === 'fixes' ? { designees } : {}) },
       {
         sort,
         source,
@@ -757,7 +758,8 @@ export function simulate(cfg: SimConfig): SimResult {
     checkClearOf(g, a.fin);
   }
 
-  const score = (p: SimPlayer) => layoutBook(p.book, designees).designes.filter((d) => d.slot.etat === 'plein').length;
+  // Avancement réel : cartes désignées distinctes, en place ou cachées.
+  const score = (p: SimPlayer) => designees.length - missing(p).size;
 
   /**
    * Cession (RG-11, échange) : p cherche une carte d'un rang cessible qui lui manque chez un joueur distancé
@@ -1054,7 +1056,9 @@ export function simulate(cfg: SimConfig): SimResult {
     p.prochaineAction = now + marche(rng, cfg.marcheMin);
   }
 
-  // Bilan : vraies cartes désignées (RG-13.7, classement final).
+  // Bilan : vraies cartes désignées (RG-13.7, classement final), cartes cachées remises en place.
+  const cacheesFin = players.reduce((a, p) => a + p.book.items.filter((i) => i.kind === 'carte' && i.cachee).length, 0) / players.length;
+  for (const p of players) remettre(p);
   const scores = players.map((p) => layoutBook(p.book, designees).designes.filter((d) => d.slot.etat === 'plein').length);
   const iBest = scores.indexOf(Math.max(...scores));
   const manques: SimResult['manquesDuMeilleur'] = {};
@@ -1113,6 +1117,6 @@ export function simulate(cfg: SimConfig): SimResult {
     aLHeure: { somme: players.reduce((a, p, i) => a + (p.arriveeMin === 0 ? scores[i]! : 0), 0), n: players.filter((p) => p.arriveeMin === 0).length },
     accompagnements: accStats.n,
     offensifsApresAccompagnement: accStats.ok,
-    cachees: players.reduce((a, p) => a + p.caches.size, 0) / players.length,
+    cachees: cacheesFin,
   };
 }

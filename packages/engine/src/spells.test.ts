@@ -80,7 +80,7 @@ describe('RG-10 sorts offensifs : refus (rien n’est consommé)', () => {
     expect(code(castOffensive(world(), sansGps, rng()))).toBe('gps_invalide');
   });
 
-  it('sort absent du Livre', () => {
+  it('sort absent du Book', () => {
     expect(code(castOffensive(world(), offensive({ sort: 'vol' }), rng()))).toBe('sort_absent');
   });
 
@@ -106,7 +106,7 @@ describe('RG-10 sorts offensifs : refus (rien n’est consommé)', () => {
     expect(code(castOffensive(world(), offensive({ cible }), rng()))).toBe('cible_immunisee');
   });
 
-  it('RG-13.1 Livre gelé après Clear provisoire', () => {
+  it('RG-13.1 Book gelé après Clear provisoire', () => {
     expect(code(castOffensive(world(), offensive({ cible: player('B', { position: pos(10), livreGele: true }) }), rng()))).toBe(
       'cible_livre_gele',
     );
@@ -300,7 +300,7 @@ describe('Sorts non offensifs', () => {
     expect(r.ok && r.lanceur.book.items).toEqual([]);
   });
 
-  it('Regard : refus sans rencontre, sur soi-même, sur un Livre gelé (RG-13.1) ; le sort n’est pas consommé', () => {
+  it('Regard : refus sans rencontre, sur soi-même, sur un Book gelé (RG-13.1) ; le sort n’est pas consommé', () => {
     const lanceur = player('A', { book: book(mkSort('g', 'regard')) });
     const cible = { id: 'B', book: emptyBook(), livreGele: false };
     expect(castRegard(world(), { lanceur, itemId: 'g', cible, rencontre: false })).toMatchObject({
@@ -340,7 +340,7 @@ describe('Sorts non offensifs', () => {
     expect(r.ok && r.resultat.copie.faux).toEqual({ nature: 'copie' });
   });
 
-  it('RG-10.8 Analyse : révèle les contrefaçons d’une page de son Livre', () => {
+  it('RG-10.8 Analyse : révèle les contrefaçons d’une page de son Book', () => {
     const designees = ['001', '002'];
     const lanceur = player('A', {
       book: book(mkSort('an', 'analyse'), carte('vrai', '001'), carte('faux', '002', 1, { faux: { nature: 'copie' } })),

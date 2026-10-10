@@ -147,7 +147,7 @@ export function transform(t: TransformInput): TransformResult {
     isCard(item) &&
     !item.faux &&
     t.book.items.some((i) => i.id !== item.id && isCard(i) && i.cardId === item.cardId);
-  if (!estDoublon || !isCard(item)) return { ok: false, code: 'pas_un_doublon', message: 'Choisis un doublon de ton Livre' };
+  if (!estDoublon || !isCard(item)) return { ok: false, code: 'pas_un_doublon', message: 'Choisis un doublon de ton Book' };
 
   const rang = t.rangDe(item.cardId);
   const rangCible = t.rangDe(t.cibleCardId);

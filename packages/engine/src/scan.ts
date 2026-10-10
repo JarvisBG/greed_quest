@@ -119,7 +119,7 @@ export function checkScan(c: ScanContext): ScanCheck {
   }
 
   // 6. Place dans le Livre (RG-8.5).
-  if (player.livrePlein) return refuse('livre_plein', 'Livre plein : revends ou utilise quelque chose');
+  if (player.livrePlein) return refuse('livre_plein', 'Book plein : revends ou utilise quelque chose');
 
   // 7. Stock de la balise.
   if (c.beacon.stock <= 0) return refuse('stock_vide', 'Plus rien ici, cherche ailleurs');

@@ -118,7 +118,7 @@ export function validateRewards(
   if (itemIds.length !== 3) return { ok: false, message: 'Choisis exactement 3 cartes' };
   const items = itemIds.map((id) => book.items.find((i) => i.id === id));
   if (!items.every((i): i is CardItem => i?.kind === 'carte' && !i.faux && designees.includes(i.cardId))) {
-    return { ok: false, message: 'Choisis 3 cartes désignées de ton Livre' };
+    return { ok: false, message: 'Choisis 3 cartes désignées de ton Book' };
   }
   const cardIds = items.map((i) => i.cardId);
   if (new Set(cardIds).size !== 3) return { ok: false, message: 'Choisis 3 cartes différentes' };

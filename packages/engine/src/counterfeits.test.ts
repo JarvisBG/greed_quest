@@ -100,7 +100,7 @@ describe('RG-8.8 expertise PNJ à Antokiba', () => {
     expect(r).toMatchObject({ ok: true, cout: 10, contrefacons: ['f'] });
   });
 
-  it('le Livre entier : 25 J, trouve aussi les contrefaçons hors page', () => {
+  it('le Book entier : 25 J, trouve aussi les contrefaçons hors page', () => {
     const r = expertise(b, designees, 'livre', 50);
     expect(r).toMatchObject({ ok: true, cout: 25, contrefacons: ['f', 'd'] });
     if (r.ok) expect(r.book.items.find((i) => i.id === 'd')).toMatchObject({ cardId: '003' });

@@ -26,7 +26,7 @@ const book = (...items: BookItem[]): Book => ({ ...emptyBook(), items });
 const code = (r: { ok: boolean; code?: string }) => (r.ok ? 'ok' : r.code);
 
 describe('Amendement 2026-10-10 : cartes objets', () => {
-  it('section à part : les objets ne prennent pas les places libres du Livre (RG-8.5)', () => {
+  it('section à part : les objets ne prennent pas les places libres du Book (RG-8.5)', () => {
     const b = book(...Array.from({ length: 15 }, (_, i) => objet(`o${i}`, 'pepite')), carte('c1', '001'));
     const l = layoutBook(b, ['001']);
     expect(l.libresUtilises).toBe(0);

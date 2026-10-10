@@ -48,8 +48,13 @@ export const SPELL_TYPES = [
   'revelation',
   'duplication',
   'analyse',
-  /** Amendement 2026-10-09 : voir les cartes d'un joueur déjà rencontré (« Peek » de Greed Island). */
+  /** Voyance (« Peek » de Greed Island, amendements 2026-10-09 et 2026-10-10) : les emplacements libres d'un joueur déjà rencontré. */
   'regard',
+  /** Amendements 2026-10-10 (fidélité à l'anime) : Pickpocket (vol dans les emplacements libres), Clairvoyance (emplacements fixes d'un joueur rencontré), Accompagnement, Retour. */
+  'pickpocket',
+  'clairvoyance',
+  'accompagnement',
+  'retour',
 ] as const;
 export type SpellType = (typeof SPELL_TYPES)[number];
 
@@ -64,8 +69,8 @@ export type ObjetType = (typeof OBJET_TYPES)[number];
 export const POUVOIRS_SPE = ['alchimie', 'bandit', 'zetsu', 'fortune'] as const;
 export type PouvoirSpe = (typeof POUVOIRS_SPE)[number];
 
-/** Sorts offensifs soumis à portée, immunité et délai (RG-10.1 à 10.3). */
-export const OFFENSIVE_SPELLS: readonly SpellType[] = ['vol', 'echange_force', 'gel'];
+/** Sorts offensifs soumis à immunité, délai et protections (RG-10.1 à 10.4) ; Accompagnement vise un joueur déjà croisé, sans portée. */
+export const OFFENSIVE_SPELLS: readonly SpellType[] = ['vol', 'echange_force', 'gel', 'pickpocket', 'accompagnement'];
 
 /** RG-8.3 : nature d'un gain. */
 export type DrawKind = 'carte' | 'sort' | 'jenny';

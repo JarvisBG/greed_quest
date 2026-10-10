@@ -83,7 +83,8 @@ export const AUTO_FORMULAS: Record<ParamKey, (c: ParamContext) => number> = {
   bonusExamenJ: () => 10,
   specialisationPct: () => 5,
   /** RG-5.6 : 0 = rattrapage désactivé. */
-  rattrapageJParMin: () => 2,
+  // Amendement 2026-10-10 : plus de bonus de rattrapage par défaut (simulation : ≈ 0,3 carte seulement).
+  rattrapageJParMin: () => 0,
   /** RG-12.3 : agenda automatique, une proposition d'événement au GM toutes les N min ; 0 = désactivé (défaut). */
   agendaIntervalleMin: () => 0,
   /** Arène de Soufrabi (amendement 2026-10-09) : mise d'entrée et délai entre deux tentatives d'un joueur. */

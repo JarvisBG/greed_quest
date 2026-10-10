@@ -39,6 +39,11 @@ export interface CardItem {
   maudite?: true;
   /** Coffre scellé (objet, amendement 2026-10-10) : ni volable ni prenable par échange forcé jusqu'à cette heure. */
   coffreJusqua?: number;
+  /**
+   * RG-8.5 amendé (2026-10-10) : carte désignée que son détenteur a rangée dans un emplacement libre (« cachée »).
+   * Elle n'occupe pas son emplacement fixe, ne compte ni pour le Clear ni pour le classement. Oubli au changement de main.
+   */
+  cachee?: true;
 }
 
 /** RG-8.7 : copie ratée de Duplication, ou doublon déguisé par Transformation. */
@@ -112,7 +117,7 @@ export function layoutBook(book: Book, designees: readonly string[]): BookLayout
     if (item.kind === 'objet') continue; // section des objets, à part (objets.ts)
     // RG-8.9 : une copie démasquée (grisée) libère l'emplacement désigné.
     const grisee = item.kind === 'carte' && item.faux?.nature === 'copie' && item.marque === 'demasquee';
-    if (item.kind === 'carte' && !grisee && designees.includes(item.cardId) && !occupant.has(item.cardId)) {
+    if (item.kind === 'carte' && !grisee && !item.cachee && designees.includes(item.cardId) && !occupant.has(item.cardId)) {
       occupant.set(item.cardId, item);
     } else {
       libresItems.push(item);
@@ -168,7 +173,7 @@ export function addItem(book: Book, item: BookItem): Book {
  */
 export function removeItem(book: Book, itemId: string, perte?: Omit<Perte, 'cardId'>): Book {
   const item = book.items.find((i) => i.id === itemId);
-  if (!item) throw new Error(`Élément ${itemId} absent du Livre`);
+  if (!item) throw new Error(`Élément ${itemId} absent du Book`);
   const items = book.items.filter((i) => i.id !== itemId);
   if (item.kind === 'carte' && perte) return { items, pertes: [...book.pertes, { ...perte, cardId: item.cardId }] };
   return { ...book, items };
@@ -186,15 +191,55 @@ export function transferItem(
   t: { now: number; origine: Origine; perte: Omit<Perte, 'cardId' | 'a'> },
 ): { from: Book; to: Book; item: BookItem } {
   const item = from.items.find((i) => i.id === itemId);
-  if (!item) throw new Error(`Élément ${itemId} absent du Livre`);
+  if (!item) throw new Error(`Élément ${itemId} absent du Book`);
   let recu: BookItem;
   if (item.kind === 'carte') {
-    const { marque: _oubliee, coffreJusqua: _ouvert, ...reste } = item;
+    const { marque: _oubliee, coffreJusqua: _ouvert, cachee: _sortie, ...reste } = item;
     recu = { ...reste, origine: t.origine, obtenuA: t.now };
   } else {
     recu = { ...item, obtenuA: t.now };
   }
   return { from: removeItem(from, itemId, { ...t.perte, a: t.now }), to: addItem(to, recu), item: recu };
+}
+
+/** RG-8.5 amendé : cartes rangées dans les emplacements fixes (Vol, Clairvoyance) et cartes des emplacements libres (Pickpocket, Voyance). */
+export function cartesParEmplacement(book: Book, designees: readonly string[]): { fixes: CardItem[]; libres: CardItem[] } {
+  const l = layoutBook(book, designees);
+  const cartes = (slots: Slot[]) => slots.flatMap((x) => (x.etat === 'plein' && x.item.kind === 'carte' ? [x.item] : []));
+  return { fixes: cartes(l.designes.map((d) => d.slot)), libres: cartes(l.libres) };
+}
+
+export type DeplacementRefus = { ok: false; code: 'carte_absente' | 'pas_en_place' | 'pas_cachee' | 'place_libre' | 'emplacement_occupe'; message: string };
+
+/**
+ * RG-8.5 amendé (2026-10-10) : cacher une carte désignée dans les emplacements libres, ou la remettre à sa place.
+ * Cacher : la carte doit occuper son emplacement fixe, et il faut une place libre (un doublon de la même carte reprend
+ * l'emplacement fixe). Remettre : l'emplacement fixe doit être vide. Gratuit ; l'appelant vérifie Book gelé et échange.
+ */
+export function deplacerCarte(book: Book, designees: readonly string[], itemId: string, cacher: boolean): { ok: true; book: Book } | DeplacementRefus {
+  const item = book.items.find((i) => i.id === itemId);
+  if (item?.kind !== 'carte') return { ok: false, code: 'carte_absente', message: 'Cette carte n’est pas dans ton Book' };
+  const avant = layoutBook(book, designees);
+  const set = (cachee: boolean): Book => ({
+    ...book,
+    items: book.items.map((i) => {
+      if (i.id !== itemId || i.kind !== 'carte') return i;
+      if (cachee) return { ...i, cachee: true as const };
+      const { cachee: _remise, ...reste } = i;
+      return reste;
+    }),
+  });
+  if (cacher) {
+    const enPlace = avant.designes.some((d) => d.slot.etat === 'plein' && d.slot.item.id === itemId);
+    if (!enPlace) return { ok: false, code: 'pas_en_place', message: 'Seule une carte rangée dans son emplacement fixe peut être cachée' };
+    const apres = set(true);
+    if (layoutBook(apres, designees).libresUtilises > FREE_SLOTS) return { ok: false, code: 'place_libre', message: 'Plus de place libre pour cacher cette carte' };
+    return { ok: true, book: apres };
+  }
+  if (!item.cachee) return { ok: false, code: 'pas_cachee', message: 'Cette carte n’est pas cachée' };
+  const occupe = avant.designes.some((d) => d.cardId === item.cardId && d.slot.etat === 'plein');
+  if (occupe) return { ok: false, code: 'emplacement_occupe', message: 'Son emplacement fixe est déjà occupé par un autre exemplaire' };
+  return { ok: true, book: set(false) };
 }
 
 /** Message affiché sur un emplacement perdu, ex. « Volée par Kevin à 14h05 ». */

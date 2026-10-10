@@ -14,7 +14,7 @@ export const EXAMEN: readonly (QuizQuestion & { bonne: number })[] = [
   { id: 'e1', texte: 'Combien de temps faut-il attendre entre deux scans ?', choix: ['10 secondes', '30 secondes', '2 minutes'], bonne: 1 },
   {
     id: 'e2',
-    texte: 'Que fait une Barrière gardée dans ton Livre ?',
+    texte: 'Que fait un Mur défensif gardé dans ton Book ?',
     choix: ['Elle annule le prochain sort offensif reçu', 'Elle double tes gains', 'Elle gèle un joueur proche'],
     bonne: 0,
   },
@@ -79,7 +79,8 @@ export function nenFromAnswers(reponses: readonly number[], specialisationPct: n
 /** RG-5.5 : sort du kit, « de rareté commune » ; rareté des sorts non définie → uniforme. */
 export function kitSpell(rng: Rng): SpellType {
   // Regard est un sort rare : jamais dans le kit.
-  return pick(rng, SPELL_TYPES.filter((s) => s !== 'regard'));
+  // Kit : jamais Voyance, Clairvoyance ni Accompagnement (sorts rares ou trop forts au départ, amendement 2026-10-10).
+  return pick(rng, SPELL_TYPES.filter((s) => s !== 'regard' && s !== 'clairvoyance' && s !== 'accompagnement'));
 }
 
 /** RG-5.6 : bonus de rattrapage proportionnel au temps de jeu écoulé (0 si désactivé). */

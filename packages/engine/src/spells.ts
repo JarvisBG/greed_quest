@@ -1,7 +1,7 @@
 // Sorts (RG-10) et pouvoirs de Nen liés (RG-5.4). Un refus ne consomme rien ;
 // un sort accepté est consommé même s'il est bloqué ou sans effet.
 import type { GameState, NenType, PlayerStatus, PouvoirSpe, Rank, SpellType } from '@gq/shared';
-import { addItem, removeItem, transferItem, type Book, type BookItem, type CardItem } from './book.js';
+import { addItem, cartesParEmplacement, removeItem, transferItem, type Book, type BookItem, type CardItem } from './book.js';
 import { counterfeitsOnPage, revealItems } from './counterfeits.js';
 import { isInRange, isTargetable, isValidPosition, zoneOf, type Polygon, type Position, type RangeSettings } from './geo.js';
 import { pick, type Rng } from './rng.js';
@@ -11,8 +11,10 @@ export const IMMUNITY_MS = 5 * 60_000; // RG-10.2
 export const CASTER_DELAY_MS = 2 * 60_000; // RG-10.3
 export const GEL_MS = 3 * 60_000; // RG-10 Gel
 export const SS_THEFT_IMMUNITY_MS = 10 * 60_000; // RG-8.11
+/** Amendement 2026-10-10 : Accompagnement, gel de la cible et position montrée au lanceur. */
+export const ACCOMPAGNEMENT_MS = 3 * 60_000;
 
-export type OffensiveSpell = 'vol' | 'echange_force' | 'gel';
+export type OffensiveSpell = 'vol' | 'echange_force' | 'gel' | 'pickpocket' | 'accompagnement';
 /** Pouvoirs de Nen liés aux sorts : une fois par partie (document), rechargeables (amendement 2026-10-10). */
 export type NenPower = 'renforcement' | 'emission' | 'manipulation';
 
@@ -33,6 +35,8 @@ export interface SpellPlayer {
   pouvoirSpe?: PouvoirSpe | null;
   speA?: number | null;
   zetsuJusqua?: number | null;
+  /** Amendement 2026-10-10 : sous Accompagnement (ni scan, ni sort, ni échange) jusqu'à cette heure. */
+  accompagneJusqua?: number | null;
 }
 
 export interface SpellWorld {
@@ -48,6 +52,11 @@ export interface SpellWorld {
   rechargeNenMs?: Partial<Record<NenPower, number>>;
   /** Recharge des pouvoirs de Spécialisation (Bandit), en ms. */
   rechargeSpeMs?: number;
+  /**
+   * RG-8.5 amendé : cartes désignées, dans l'ordre du catalogue. Vol ne prend que dans les emplacements fixes,
+   * Pickpocket que dans les libres ; sans elles, Vol prend n'importe quelle carte (règle d'avant l'amendement).
+   */
+  designees?: readonly string[];
 }
 
 export type SpellRefusalCode =
@@ -65,7 +74,8 @@ export type SpellRefusalCode =
   | 'cible_immunisee'
   | 'carte_absente'
   | 'page_invalide'
-  | 'cible_non_rencontree';
+  | 'cible_non_rencontree'
+  | 'ville_inconnue';
 
 export interface SpellRefusal {
   ok: false;
@@ -95,6 +105,9 @@ function checkCaster(w: SpellWorld, p: SpellPlayer): SpellRefusal | null {
   }
   if (p.status === 'disqualifie' || p.status === 'abandon' || p.status === 'gele') {
     return refuse('lanceur_bloque', 'Tu ne peux pas lancer de sort maintenant');
+  }
+  if (p.accompagneJusqua != null && p.accompagneJusqua > w.now) {
+    return refuse('lanceur_bloque', `Tu es sous Accompagnement : attends encore ${secondes(p.accompagneJusqua - w.now)} s`);
   }
   if (!isValidPosition(p.position, w.now)) return refuse('gps_invalide', 'Position GPS introuvable : active ta localisation'); // RG-7.6
   return null;
@@ -154,6 +167,8 @@ export interface OffensiveInput {
   carteDonneeId?: string;
   /** Bandit (Spécialisation) : carte du catalogue visée ; prise si la cible en a un exemplaire prenable, jamais la SS. */
   carteVoulueId?: string;
+  /** Accompagnement : le lanceur a déjà croisé la cible (comme Regard). */
+  rencontre?: boolean;
 }
 
 export interface OffensiveSuccess {
@@ -197,10 +212,12 @@ export function castOffensive(w: SpellWorld, input: OffensiveInput, rng: Rng): O
   if (cible.id === lanceur.id || cible.status === 'disqualifie' || cible.status === 'abandon') {
     return refuse('cible_invalide', 'Cible invalide');
   }
-  if (cible.livreGele) return refuse('cible_livre_gele', 'Ce joueur a complété son Livre : il ne peut plus être visé');
+  if (cible.livreGele) return refuse('cible_livre_gele', 'Ce joueur a complété son Book : il ne peut plus être visé');
   if (!isTargetable(cible.position, w.now, w.portee) || estInvisible(cible, w.now)) return refuse('cible_hors_radar', 'Ce joueur est hors radar'); // RG-10.10 amendé, Zetsu
+  // Accompagnement (amendement 2026-10-10) : pas de portée, mais un joueur déjà croisé.
+  if (sort === 'accompagnement' && !input.rencontre) return refuse('cible_non_rencontree', 'Tu n’as encore jamais croisé ce joueur');
   let viaEmission = false;
-  if (!isInRange(lanceur.position!, cible.position, w.portee)) {
+  if (sort !== 'accompagnement' && !isInRange(lanceur.position!, cible.position, w.portee)) {
     if (!input.emission || !hasPower(w, lanceur, 'emission')) return refuse('cible_hors_portee', 'Ce joueur est hors de portée');
     viaEmission = true; // RG-10.1
   }
@@ -210,7 +227,7 @@ export function castOffensive(w: SpellWorld, input: OffensiveInput, rng: Rng): O
   let carteDonnee: CardItem | undefined;
   if (sort === 'echange_force') {
     const item = lanceur.book.items.find((i) => i.id === input.carteDonneeId);
-    if (item?.kind !== 'carte') return refuse('carte_absente', 'Choisis une carte de ton Livre à donner');
+    if (item?.kind !== 'carte') return refuse('carte_absente', 'Choisis une carte de ton Book à donner');
     carteDonnee = item;
   }
 
@@ -256,12 +273,23 @@ export function castOffensive(w: SpellWorld, input: OffensiveInput, rng: Rng): O
       cible = { ...cible, geleJusqua: fin };
       return reussi();
     }
-    case 'vol': {
+    case 'accompagnement': {
+      // Gelée 3 min (ni scan, ni sort, ni échange) ; sa position est montrée au lanceur pendant ce temps (API).
+      const fin = w.now + ACCOMPAGNEMENT_MS;
+      cible = { ...cible, geleJusqua: Math.max(cible.geleJusqua ?? 0, fin), accompagneJusqua: fin };
+      return reussi();
+    }
+    case 'vol':
+    case 'pickpocket': {
       const prenables = takeableCards(cible.book, w.now, w.rangDe);
-      if (prenables.length === 0) return { ok: true, resultat: 'sans_effet', lanceur, cible, notice: notice('sans_effet') };
-      // Bandit : la carte visée si la cible en a un exemplaire prenable (jamais la SS), sinon au hasard.
+      // RG-10 amendé : Vol prend dans les emplacements fixes, Pickpocket dans les libres.
+      const emplacements = w.designees ? cartesParEmplacement(cible.book, w.designees) : null;
+      const zone = emplacements ? new Set((sort === 'vol' ? emplacements.fixes : emplacements.libres).map((c) => c.id)) : null;
+      const auHasard = zone ? prenables.filter((c) => zone.has(c.id)) : prenables;
+      // Bandit : la carte visée si la cible en a un exemplaire prenable (jamais la SS), où qu'elle soit ; sinon au hasard.
       const visee = bandit && input.carteVoulueId ? prenables.find((c) => c.cardId === input.carteVoulueId && w.rangDe(c.cardId) !== 'SS') : undefined;
-      const t = transferItem(cible.book, lanceur.book, (visee ?? pick(rng, prenables)).id, {
+      if (!visee && auHasard.length === 0) return { ok: true, resultat: 'sans_effet', lanceur, cible, notice: notice('sans_effet') };
+      const t = transferItem(cible.book, lanceur.book, (visee ?? pick(rng, auHasard)).id, {
         now: w.now,
         origine: { type: 'vol', sur: cible.id },
         perte: { cause: 'vol', par: lanceur.id },
@@ -327,7 +355,7 @@ function consumeSimple(w: SpellWorld, lanceur: SpellPlayer, itemId: string, sort
 const isRefusal = (x: SpellPlayer | SpellRefusal): x is SpellRefusal => 'ok' in x;
 
 export function castBarrier(): SpellRefusal {
-  return refuse('sort_passif', 'La Barrière agit toute seule : garde-la dans ton Livre');
+  return refuse('sort_passif', 'Le Mur défensif agit tout seul : garde-le dans ton Book');
 }
 
 /** Radar : zone de la dernière position connue d'un joueur choisi. La cible est prévenue (RG-10.5). */
@@ -371,18 +399,28 @@ export interface CarteVue {
  */
 export function castRegard(
   w: SpellWorld,
-  input: { lanceur: SpellPlayer; itemId: string; cible: { id: string; book: Book; livreGele: boolean; zetsuJusqua?: number | null }; rencontre: boolean },
+  input: {
+    lanceur: SpellPlayer;
+    itemId: string;
+    cible: { id: string; book: Book; livreGele: boolean; zetsuJusqua?: number | null };
+    rencontre: boolean;
+    /** Amendement 2026-10-10 : `regard` (Voyance) montre les emplacements libres, `clairvoyance` les emplacements fixes. */
+    sort?: 'regard' | 'clairvoyance';
+  },
 ): SimpleSuccess<{ cartes: CarteVue[] }> | SpellRefusal {
+  const sort = input.sort ?? 'regard';
   if (input.cible.id === input.lanceur.id) return refuse('cible_invalide', 'Cible invalide');
   if (estInvisible(input.cible, w.now)) return refuse('cible_hors_radar', 'Ce joueur est hors radar'); // Zetsu
   if (!input.rencontre) return refuse('cible_non_rencontree', 'Tu n’as encore jamais croisé ce joueur');
-  if (input.cible.livreGele) return refuse('cible_livre_gele', 'Ce Livre est protégé');
-  const lanceur = consumeSimple(w, input.lanceur, input.itemId, 'regard');
+  if (input.cible.livreGele) return refuse('cible_livre_gele', 'Ce Book est protégé');
+  const lanceur = consumeSimple(w, input.lanceur, input.itemId, sort);
   if (isRefusal(lanceur)) return lanceur;
-  const voile = voileBloque<{ cartes: CarteVue[] }>(lanceur, input.cible, 'regard', { cartes: [] });
+  const voile = voileBloque<{ cartes: CarteVue[] }>(lanceur, input.cible, sort, { cartes: [] });
   if (voile) return voile;
+  const emplacements = w.designees ? cartesParEmplacement(input.cible.book, w.designees) : null;
+  const montrees = emplacements ? (sort === 'clairvoyance' ? emplacements.fixes : emplacements.libres) : input.cible.book.items;
   const vues = new Map<string, CarteVue>();
-  for (const i of input.cible.book.items) {
+  for (const i of montrees) {
     if (i.kind !== 'carte') continue;
     const contrefacon = !!i.faux && i.marque === 'demasquee';
     const cle = `${i.cardId}:${contrefacon}`;
@@ -394,8 +432,27 @@ export function castRegard(
     ok: true,
     lanceur,
     resultat: { cartes: [...vues.values()] },
-    notice: { lanceur: lanceur.id, cible: input.cible.id, sort: 'regard', resultat: 'reussi' },
+    notice: { lanceur: lanceur.id, cible: input.cible.id, sort, resultat: 'reussi' },
   };
+}
+
+/** Villes de Greed Island dont les services s'utilisent à distance avec Retour. */
+export type VilleRetour = 'masadora' | 'antokiba';
+
+/**
+ * Amendement 2026-10-10 : Retour. Consomme la carte et ouvre une visite à distance d'une ville déjà visitée
+ * (son QR scanné dans la partie) ; l'API fixe la durée de la visite.
+ */
+export function castRetour(
+  w: SpellWorld,
+  input: { lanceur: SpellPlayer; itemId: string; ville: VilleRetour; visitees: readonly string[] },
+): SimpleSuccess<{ ville: VilleRetour }> | SpellRefusal {
+  if (!input.visitees.includes(input.ville)) {
+    return refuse('ville_inconnue', `Tu n’es encore jamais allé à ${input.ville === 'masadora' ? 'Masadora' : 'Antokiba'}`);
+  }
+  const lanceur = consumeSimple(w, input.lanceur, input.itemId, 'retour');
+  if (isRefusal(lanceur)) return lanceur;
+  return { ok: true, lanceur, resultat: { ville: input.ville }, notice: { lanceur: lanceur.id, cible: null, sort: 'retour', resultat: 'reussi' } };
 }
 
 /** Révélation : zone d'une balise rare active, au hasard. */
@@ -424,7 +481,7 @@ export function castDuplication(
   input: { lanceur: SpellPlayer; itemId: string; carteItemId: string; sousLimite: (cardId: string) => boolean },
 ): SimpleSuccess<{ copie: CardItem }> | SpellRefusal {
   const modele = input.lanceur.book.items.find((i) => i.id === input.carteItemId);
-  if (modele?.kind !== 'carte') return refuse('carte_absente', 'Choisis une carte de ton Livre');
+  if (modele?.kind !== 'carte') return refuse('carte_absente', 'Choisis une carte de ton Book');
   let lanceur = consumeSimple(w, input.lanceur, input.itemId, 'duplication');
   if (isRefusal(lanceur)) return lanceur;
 

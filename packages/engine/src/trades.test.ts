@@ -127,7 +127,7 @@ describe('RG-11.6 contrefaçons', () => {
 });
 
 describe('états des joueurs et de la partie', () => {
-  it('refus : pause, joueur gelé ou exclu, Livre gelé, soi-même', () => {
+  it('refus : pause, joueur gelé ou exclu, Book gelé, soi-même', () => {
     expect(code(trade(input({ gameState: 'pause' }), rangDe))).toBe('partie_fermee');
     expect(code(trade(input({ b: party('B', { status: 'gele', book: book(carte('b1')) }) }), rangDe))).toBe('joueur_bloque');
     expect(code(trade(input({ b: party('B', { livreGele: true, book: book(carte('b1')) }) }), rangDe))).toBe('livre_gele');

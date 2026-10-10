@@ -26,8 +26,8 @@ const sort = (obtenuA = seq): SpellItem => ({ kind: 'sort', id: `sp${seq++}`, sp
 
 const withItems = (...items: (CardItem | SpellItem)[]): Book => items.reduce(addItem, emptyBook());
 
-describe('RG-8.5 Livre', () => {
-  it('Livre vide : 3 pages désignées (N = 30) puis 2 pages libres (10 + 5)', () => {
+describe('RG-8.5 Book', () => {
+  it('Book vide : 3 pages désignées (N = 30) puis 2 pages libres (10 + 5)', () => {
     const l = layoutBook(emptyBook(), designees);
     expect(l.pages.map((p) => p.length)).toEqual([10, 10, 10, 10, 5]);
     expect(l.libresUtilises).toBe(0);
@@ -47,7 +47,7 @@ describe('RG-8.5 Livre', () => {
     expect(l.libresUtilises).toBe(2);
   });
 
-  it('Livre plein à 15 emplacements libres utilisés', () => {
+  it('Book plein à 15 emplacements libres utilisés', () => {
     const items = Array.from({ length: FREE_SLOTS - 1 }, () => sort());
     let book = withItems(...items);
     expect(isBookFull(book, designees)).toBe(false);

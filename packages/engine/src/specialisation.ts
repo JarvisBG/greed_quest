@@ -78,7 +78,7 @@ export function alchimie(
   const r = verifier(c, j, 'alchimie');
   if (r) return r;
   const doublon = layoutBook(j.book, c.designees).libres.flatMap((s) => (s.etat === 'plein' && s.item.kind === 'carte' ? [s.item] : [])).find((i) => i.id === doublonItemId);
-  if (!doublon) return refuse('carte_absente', 'Choisis un doublon de ton Livre');
+  if (!doublon) return refuse('carte_absente', 'Choisis un doublon de ton Book');
   if (!c.designees.includes(carteVoulueId)) return refuse('carte_invalide', 'Cette carte n’est pas au catalogue');
   const de = c.rangDe(doublon.cardId);
   const vers = c.rangDe(carteVoulueId);

@@ -26,7 +26,7 @@ export const DEFAULT_SHOP_CONFIG: ShopConfig = {
   revente: { D: 5, C: 10, B: 20, A: 40, S: 80, SS: null },
   reventeContrefacon: 1,
   maxPaquetsParJoueurParVague: 2,
-  sorts: { vol: 1, echange_force: 1, gel: 1, barriere: 1, radar: 1, revelation: 1, duplication: 1, analyse: 1, regard: 0.5 },
+  sorts: { vol: 1, echange_force: 1, gel: 1, barriere: 1, radar: 1, revelation: 1, duplication: 1, analyse: 1, regard: 0.5, pickpocket: 1, clairvoyance: 0.5, accompagnement: 1, retour: 1 },
 };
 
 // --- Vagues (RG-9.3) ---
@@ -119,7 +119,7 @@ export function buyPack(
   const prix = Math.ceil(config.prixPaquet * (c.multiplicateurPrix ?? 1));
   if (player.jenny < prix) return refuse('jenny_insuffisants', `Il te faut ${prix} J`);
   if (layoutBook(player.book, c.designees).libresUtilises + SPELLS_PER_PACK > FREE_SLOTS) {
-    return refuse('livre_plein', `Il te faut ${SPELLS_PER_PACK} emplacements libres dans ton Livre`);
+    return refuse('livre_plein', `Il te faut ${SPELLS_PER_PACK} emplacements libres dans ton Book`);
   }
 
   const sorts: SpellItem[] = [];
@@ -161,7 +161,7 @@ export function sellCard(c: ShopContext, player: ShopPlayer, itemId: string, ran
   const bloque = checkShopper(c, player);
   if (bloque) return bloque;
   const item = player.book.items.find((i) => i.id === itemId);
-  if (item?.kind !== 'carte') return refuse('carte_absente', 'Choisis une carte de ton Livre');
+  if (item?.kind !== 'carte') return refuse('carte_absente', 'Choisis une carte de ton Book');
 
   let prix: number;
   let contrefacon: SellResult['contrefacon'] = null;
@@ -206,7 +206,7 @@ export function sellObjet(
   const bloque = checkShopper(c, player);
   if (bloque) return bloque;
   const item = player.book.items.find((i) => i.id === itemId);
-  if (item?.kind !== 'objet') return refuse('carte_absente', 'Choisis un objet de ton Livre');
+  if (item?.kind !== 'objet') return refuse('carte_absente', 'Choisis un objet de ton Book');
   const prix = config.revente[item.objet];
   if (prix === null) return refuse('revente_interdite', 'Le Ticket de la Fortune ne se revend pas : gratte-le');
   return { ok: true, player: { ...player, jenny: player.jenny + prix, book: removeItem(player.book, itemId) }, prix, objet: item.objet };

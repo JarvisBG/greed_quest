@@ -31,7 +31,7 @@ export const DEFAULT_DRAW_CONFIG: DrawConfig = {
     fantome: { SS: 50, S: 50 },
   },
   // Regard (sort d'information puissant) : deux fois plus rare que les autres.
-  sorts: { ...(Object.fromEntries(SPELL_TYPES.map((s) => [s, 1])) as Record<SpellType, number>), regard: 0.5 },
+  sorts: { ...(Object.fromEntries(SPELL_TYPES.map((s) => [s, 1])) as Record<SpellType, number>), regard: 0.5, clairvoyance: 0.5 },
   jenny: 10,
 };
 

@@ -211,7 +211,7 @@ describe('Mission secrète', () => {
 describe('RG-8.12 retour en jeu des SS', () => {
   const b = book(carte('s', 'SS1'), carte('c', '001'), carte('f', 'SS2', { faux: { nature: 'copie' } }));
 
-  it('inactif depuis 20 min : ses vraies SS quittent son Livre', () => {
+  it('inactif depuis 20 min : ses vraies SS quittent son Book', () => {
     const r = reclaimSS({ status: 'inactif', derniereActionA: NOW - SS_RETURN_INACTIVITY_MS, book: b }, NOW, rangDe);
     expect(r.rendues.map((i) => i.id)).toEqual(['s']);
     expect(r.book.pertes).toEqual([{ cardId: 'SS1', cause: 'retour_en_jeu', a: NOW }]);

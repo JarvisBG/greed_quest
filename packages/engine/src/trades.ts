@@ -84,7 +84,7 @@ export function trade(t: TradeInput, rangDe: (cardId: string) => Rank): TradeRes
     if (p.status === 'disqualifie' || p.status === 'abandon' || p.status === 'gele') {
       return refuse('joueur_bloque', 'Un des joueurs ne peut pas échanger maintenant');
     }
-    if (p.livreGele) return refuse('livre_gele', 'Un Livre complet ne peut plus échanger');
+    if (p.livreGele) return refuse('livre_gele', 'Un Book complet ne peut plus échanger');
   }
   if (isEmpty(t.donneA) || isEmpty(t.donneB)) return refuse('don_pur', 'Chacun doit donner au moins 1 carte ou 1 jenny'); // RG-11.2
   if (t.donneA.jenny < 0 || t.donneB.jenny < 0 || !Number.isInteger(t.donneA.jenny) || !Number.isInteger(t.donneB.jenny)) {
@@ -173,7 +173,7 @@ export function proposeTrade(p: ProposeInput): SessionResult {
     if (x.status === 'disqualifie' || x.status === 'abandon' || x.status === 'gele') {
       return sessionRefuse('joueur_bloque', 'Ce joueur ne peut pas échanger maintenant');
     }
-    if (x.livreGele) return sessionRefuse('livre_gele', 'Un Livre complet ne peut plus échanger');
+    if (x.livreGele) return sessionRefuse('livre_gele', 'Un Book complet ne peut plus échanger');
   }
   if (!isValidPosition(p.a.position, p.now)) return sessionRefuse('gps_invalide', 'Position GPS introuvable : active ta localisation');
   if (!isValidPosition(p.b.position, p.now) || !isInRange(p.a.position, p.b.position, p.portee)) {

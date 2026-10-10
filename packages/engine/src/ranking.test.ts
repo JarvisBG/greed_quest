@@ -105,7 +105,7 @@ describe('RG-13.1 Clear', () => {
     expect(checkClear(b, many)).toEqual({ etat: 'contrefacon', page: 2 });
   });
 
-  it('une copie démasquée laisse l’emplacement vide : Livre incomplet', () => {
+  it('une copie démasquée laisse l’emplacement vide : Book incomplet', () => {
     const b = tous((i) => (i === 0 ? { faux: { nature: 'copie' }, marque: 'demasquee' } : {}));
     expect(checkClear(b, designees)).toEqual({ etat: 'incomplet', manquantes: 1 });
   });

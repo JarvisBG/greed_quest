@@ -126,7 +126,7 @@ export function utiliserCoffre(
   const item = prendre(c.gameState, p, itemId, 'coffre');
   if (estRefus(item)) return item;
   const carte = p.book.items.find((i) => i.id === carteItemId);
-  if (carte?.kind !== 'carte') return refuse('carte_absente', 'Choisis une carte de ton Livre');
+  if (carte?.kind !== 'carte') return refuse('carte_absente', 'Choisis une carte de ton Book');
   const jusqua = c.now + c.dureeMs;
   const book = removeItem(p.book, item.id);
   return { ok: true, book: { ...book, items: book.items.map((i) => (i.id === carteItemId && i.kind === 'carte' ? { ...i, coffreJusqua: jusqua } : i)) }, jusqua };

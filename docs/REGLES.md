@@ -81,6 +81,7 @@ Seul le GM avance l'état, sauf passage auto en phase finale et fin du temps. Un
 - 6.3 Stock 0 → épuisée → dormante après recharge (15 min). Le moteur active aussitôt une dormante d'une autre zone pour garder la cible.
 - 6.4 Rotation toutes les 20 min : 30 % des actives remplacées, priorité aux zones moins visitées. GM peut forcer.
 - 6.5 Joueur ne voit jamais l'emplacement ; écran géant = nb actives par zone.
+> **Amendement 2026-10-10 (Sivraj) — carte de l'île** : l'app joueur montre, sur l'accueil, la carte des zones avec le **nombre de balises actives par zone** (trame + chiffre, comme l'écran géant), jamais lesquelles ni où (`GET /parties/:id/carte` : contours des zones + `balisesParZone`, ni heatmap ni position). Le joueur y voit sa propre position (RG-10.12 inchangée pour les autres) et les évènements de zone.
 
 États → réponse au scan : Dormante « Cette balise dort » · Active → tirage · Épuisée « Plus rien ici, cherche ailleurs » · Coupée (GM) refus sans motif.
 Types : **Standard** rangs D–A, stock normal, rotation auto · **Rare** C–S poids relevés, stock ½, peu nombreuses · **Fantôme** S/SS, stock 1–2, seulement pendant événement GM.

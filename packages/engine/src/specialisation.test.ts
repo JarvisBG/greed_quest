@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { emptyBook, type Book, type BookItem, type CardItem } from './book.js';
 import type { Position } from './geo.js';
 import { seededRng } from './rng.js';
-import { activerFortune, activerZetsu, alchimie, estInvisible, speDisponibleDans, tirerPouvoirSpe } from './specialisation.js';
+import { activerFortune, activerZetsu, alchimie, estInvisible, pouvoirSpeDepuisReponse, QUESTION_SPE, speDisponibleDans, tirerPouvoirSpe } from './specialisation.js';
 import { castOffensive, castRadar, castRegard, type SpellPlayer, type SpellWorld } from './spells.js';
 
 const NOW = 100 * 60_000;
@@ -114,5 +114,19 @@ describe('Amendement 2026-10-10 : pouvoirs de Spécialisation (RG-5.4)', () => {
     const attaquant = { ...lanceur, zetsuJusqua: NOW + 5 * MIN };
     const r = castOffensive(w(), { sort: 'vol', source: { type: 'carte', itemId: 'v' }, lanceur: attaquant, cible: joueur('C', { book: book(carte('c', 'C1')) }) }, seededRng(1));
     expect(r.ok && r.lanceur.zetsuJusqua).toBeNull();
+  });
+});
+
+describe('RG-5.4 amendé le 2026-10-10 : question secrète de Wing', () => {
+  it('RG-5.4 : chaque réponse donne un pouvoir différent, les quatre sont couverts', () => {
+    const donnes = QUESTION_SPE.choix.map((_, i) => pouvoirSpeDepuisReponse(i));
+    expect(donnes).toEqual(['alchimie', 'bandit', 'zetsu', 'fortune']);
+    expect(new Set(donnes).size).toBe(4);
+  });
+
+  it('RG-5.4 : une réponse hors de la liste ne donne rien', () => {
+    expect(pouvoirSpeDepuisReponse(4)).toBeNull();
+    expect(pouvoirSpeDepuisReponse(-1)).toBeNull();
+    expect(pouvoirSpeDepuisReponse(1.5)).toBeNull();
   });
 });

@@ -13,11 +13,25 @@ interface Resultat {
   pouvoirSpe: PouvoirSpe | null;
 }
 
-export function Nen({ partieId, questions, onFini }: { partieId: string; questions: readonly Question[]; onFini: () => void }) {
+export function Nen({
+  partieId,
+  nenConnu,
+  questions,
+  secrete,
+  onFini,
+}: {
+  partieId: string;
+  /** Type déjà connu du serveur : seul un Spécialiste sans pouvoir revient ici, pour la question secrète. */
+  nenConnu: NenType | null;
+  questions: readonly Question[];
+  secrete: Question;
+  onFini: () => void;
+}) {
   const [commence, setCommence] = useState(false);
   const [resultat, setResultat] = useState<Resultat | null>(null);
 
-  if (resultat) return <Divination nen={resultat.nen} pouvoirSpe={resultat.pouvoirSpe} onFini={onFini} />;
+  if (resultat) return <Divination partieId={partieId} nen={resultat.nen} pouvoirSpe={resultat.pouvoirSpe} question={secrete} onFini={onFini} />;
+  if (nenConnu) return <Divination partieId={partieId} nen={nenConnu} pouvoirSpe={null} question={secrete} reprise onFini={onFini} />;
 
   if (!commence) {
     return (

@@ -9,7 +9,8 @@ import {
   kitSpell,
   nenFromAnswers,
   speDisponibleDans,
-  tirerPouvoirSpe,
+  pouvoirSpeDepuisReponse,
+  QUESTION_SPE,
   pouvoirDisponibleDans,
   rechargesNenMs,
   reserveMaterialisationDans,
@@ -17,7 +18,7 @@ import {
   scoreExamen,
   validQuizAnswers,
 } from '@gq/engine';
-import { Inscription, LicenceScan, Reconnexion, ReponsesQuiz } from '@gq/shared';
+import { Inscription, LicenceScan, Reconnexion, ReponseSecrete, ReponsesQuiz } from '@gq/shared';
 import { and, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { STAFF, requireRole } from '../auth/guard.js';
@@ -118,6 +119,7 @@ export async function joueursRoutes(app: FastifyInstance) {
     ok: true,
     examen: EXAMEN.map(sansReponse),
     nen: NEN_TEST,
+    specialisation: { id: QUESTION_SPE.id, texte: QUESTION_SPE.texte, choix: QUESTION_SPE.choix },
   }));
 
   app.post<P>('/parties/:partieId/examen', async (req, reply) => {
@@ -148,11 +150,29 @@ export async function joueursRoutes(app: FastifyInstance) {
       if (j.nen !== null) return refus('deja_fait', 'Ton type de Nen est déjà connu');
       if (!validQuizAnswers(NEN_TEST, reponses)) return refus('reponses_invalides', 'Réponds aux 5 questions');
       const nen = nenFromAnswers(reponses, (await paramsOf(c.tx, c.partie)).specialisationPct, c.rng); // RG-5.4
-      // Amendement 2026-10-10 : un Spécialiste reçoit un pouvoir au hasard, secret pour les autres joueurs.
-      const pouvoirSpe = nen === 'specialisation' ? tirerPouvoirSpe(c.rng) : null;
-      await c.tx.update(joueurs).set({ nen, pouvoirSpe }).where(eq(joueurs.id, j.id));
-      await c.log({ action: 'test_nen', resultat: 'ok', details: { nen, pouvoirSpe } });
-      return { ok: true as const, nen, pouvoirSpe };
+      // Amendement 2026-10-10 : le Spécialiste choisira son pouvoir par la question secrète de Wing (route suivante).
+      await c.tx.update(joueurs).set({ nen, pouvoirSpe: null }).where(eq(joueurs.id, j.id));
+      await c.log({ action: 'test_nen', resultat: 'ok', details: { nen } });
+      return { ok: true as const, nen, pouvoirSpe: null };
+    });
+    return send(reply, r);
+  });
+
+  // RG-5.4, amendement 2026-10-10 : question secrète de Wing, une seule fois, pour le seul Spécialiste.
+  app.post<P>('/parties/:partieId/nen/secret', async (req, reply) => {
+    const { partieId } = req.params;
+    const s = requireRole(req, partieId, 'joueur');
+    const { reponse } = parse(ReponseSecrete, req.body);
+    const r = await runner.run(partieId, { type: 'joueur', id: s.sub }, async (c) => {
+      const [j] = await c.tx.select().from(joueurs).where(eq(joueurs.id, s.sub));
+      if (!j) throw introuvable('Joueur');
+      if (j.nen !== 'specialisation') return refus('pas_specialiste', 'Cette question est réservée aux Spécialistes');
+      if (j.pouvoirSpe !== null) return refus('deja_fait', 'Ton pouvoir secret est déjà connu');
+      const pouvoirSpe = pouvoirSpeDepuisReponse(reponse);
+      if (!pouvoirSpe) return refus('reponse_invalide', 'Choisis l’une des quatre réponses');
+      await c.tx.update(joueurs).set({ pouvoirSpe }).where(eq(joueurs.id, j.id));
+      await c.log({ action: 'pouvoir_spe', resultat: 'ok', details: { pouvoirSpe } });
+      return { ok: true as const, pouvoirSpe };
     });
     return send(reply, r);
   });

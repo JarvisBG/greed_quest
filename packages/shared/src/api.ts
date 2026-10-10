@@ -40,6 +40,8 @@ export type Inscription = z.infer<typeof Inscription>;
 export const Reconnexion = z.object({ appareilId: z.string().min(16).max(100) });
 
 export const ReponsesQuiz = z.object({ reponses: z.array(z.number().int().min(0)).max(10) });
+/** RG-5.4 : réponse du Spécialiste à la question secrète de Wing. */
+export const ReponseSecrete = z.object({ reponse: z.number().int().min(0).max(10) });
 
 /** RG-5.2 : licence scannée par un PNJ ou le GM. */
 export const LicenceScan = z.object({ qr: z.string().min(10).max(200) });

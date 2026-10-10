@@ -28,6 +28,8 @@ const retourActif = (m: Moi, ville: 'masadora' | 'antokiba') => m.retour?.ville 
 interface Questionnaires {
   examen: Question[];
   nen: Question[];
+  /** RG-5.4 : question secrète de Wing pour le Spécialiste. */
+  specialisation: Question;
 }
 
 type Onglet = 'accueil' | 'scan' | 'livre' | 'sorts' | 'echanges';
@@ -74,7 +76,8 @@ export function App() {
   if (jeu.phase === 'en_jeu' && moi) {
     if (kit) ecran = 'kit';
     else if (!moi.examenFait && (examenOuvert || !session.examenReporte(moi.id))) ecran = 'examen';
-    else if (moi.nen === null) ecran = 'nen';
+    // Un Spécialiste sans pouvoir (page rechargée avant la question secrète) y revient.
+    else if (moi.nen === null || (moi.nen === 'specialisation' && moi.pouvoirSpe === null)) ecran = 'nen';
   }
   useEffect(() => {
     if (ecran !== 'accueil' || !baliseLien) return;
@@ -185,7 +188,7 @@ export function App() {
                 onFini={finEtape}
               />
             )}
-            {ecran === 'nen' && quiz && <Nen partieId={partie.id} questions={quiz.nen} onFini={finEtape} />}
+            {ecran === 'nen' && quiz && <Nen partieId={partie.id} nenConnu={moi.nen} questions={quiz.nen} secrete={quiz.specialisation} onFini={finEtape} />}
             {(ecran === 'examen' || ecran === 'nen') && !quiz && (
               <div className="planche">
                 <p className="doux">Chargement…</p>

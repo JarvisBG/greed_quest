@@ -34,14 +34,21 @@ async function carte(joueurId: string, numero: number, obtenuA = 0) {
 }
 
 describe('Amendement 2026-10-10 : pouvoirs de Spécialisation', () => {
-  it('test de Nen : un Spécialiste reçoit un pouvoir secret ; l’équipe le voit, pas les autres joueurs', async () => {
+  it('RG-5.4 : le Spécialiste choisit son pouvoir par la question secrète de Wing ; l’équipe le voit, pas les autres joueurs', async () => {
     await t.app.inject({ method: 'PUT', url: `/parties/${t.partieId}/parametres`, headers: t.bearer(gm), payload: { cle: 'specialisationPct', reglage: { mode: 'verrouille', value: 100 } } });
     const r = await post(leorio, 'nen', { reponses: [0, 0, 0, 0, 0] });
-    expect(r.json()).toMatchObject({ ok: true, nen: 'specialisation' });
-    expect(['alchimie', 'bandit', 'zetsu', 'fortune']).toContain(r.json().pouvoirSpe);
-    expect((await moi(leorio)).joueur.pouvoirSpe).toBe(r.json().pouvoirSpe);
+    expect(r.json()).toMatchObject({ ok: true, nen: 'specialisation', pouvoirSpe: null });
+    expect((await moi(leorio)).joueur.pouvoirSpe).toBeNull();
+    const q = (await t.app.inject({ url: `/parties/${t.partieId}/questionnaires` })).json();
+    expect(q.specialisation.choix).toHaveLength(4);
+    expect(JSON.stringify(q.specialisation)).not.toContain('pouvoirs');
+    expect((await post(leorio, 'nen/secret', { reponse: 9 })).json()).toMatchObject({ ok: false, code: 'reponse_invalide' });
+    expect((await post(leorio, 'nen/secret', { reponse: 2 })).json()).toMatchObject({ ok: true, pouvoirSpe: 'zetsu' });
+    expect((await post(leorio, 'nen/secret', { reponse: 0 })).json()).toMatchObject({ ok: false, code: 'deja_fait' });
+    expect((await post(gon, 'nen/secret', { reponse: 0 })).json()).toMatchObject({ ok: false, code: 'pas_specialiste' });
+    expect((await moi(leorio)).joueur.pouvoirSpe).toBe('zetsu');
     const equipe = (await t.app.inject({ url: `/parties/${t.partieId}/joueurs`, headers: t.bearer(gm) })).json();
-    expect(equipe.joueurs.find((x: { id: string }) => x.id === leorio.id).pouvoirSpe).toBe(r.json().pouvoirSpe);
+    expect(equipe.joueurs.find((x: { id: string }) => x.id === leorio.id).pouvoirSpe).toBe('zetsu');
     // Les listes de cibles ne montrent que des pseudos.
     const portee = (await t.app.inject({ url: `/parties/${t.partieId}/a-portee`, headers: t.bearer(gon.token) })).json();
     expect(JSON.stringify(portee)).not.toContain('pouvoirSpe');

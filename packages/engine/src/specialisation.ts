@@ -1,11 +1,35 @@
-// Pouvoirs de Spécialisation (RG-5.4, « liste à définir » ; amendement 2026-10-10, Sivraj). Le Spécialiste reçoit
-// un pouvoir au hasard, secret pour les autres joueurs, qui se recharge `rechargeSpeMin` (40 min) après usage.
+// Pouvoirs de Spécialisation (RG-5.4, « liste à définir » ; amendements 2026-10-10, Sivraj). Le Spécialiste choisit
+// son pouvoir en répondant à la question secrète de Wing (`QUESTION_SPE`) ; secret pour les autres joueurs, il se
+// recharge `rechargeSpeMin` (40 min) après usage.
 // Bandit passe par les sorts (castOffensive) ; Fortune par le scan ; Zetsu par les listes de cibles.
 import { POUVOIRS_SPE, RANKS, type GameState, type PlayerStatus, type PouvoirSpe, type Rank } from '@gq/shared';
 import { addItem, layoutBook, removeItem, type Book, type CardItem } from './book.js';
+import type { QuizQuestion } from './registration.js';
 import { pick, type Rng } from './rng.js';
 
+/** Tirage au hasard : gardé pour le simulateur (joueurs simulés). */
 export const tirerPouvoirSpe = (rng: Rng): PouvoirSpe => pick(rng, POUVOIRS_SPE);
+
+/**
+ * RG-5.4, amendement 2026-10-10 (Sivraj) : question secrète de Wing, posée au seul Spécialiste après la divination.
+ * Chaque réponse donne un pouvoir, dans l'ordre de `pouvoirs`.
+ */
+export const QUESTION_SPE: QuizQuestion & { pouvoirs: readonly PouvoirSpe[] } = {
+  id: 'spe',
+  texte: 'Ton aura ne ressemble à aucune autre. Qu’est-ce qui te ressemble le plus ?',
+  choix: [
+    'Faire de l’or avec ce que les autres laissent',
+    'Prendre exactement ce que je veux',
+    'Passer sans que personne ne me voie',
+    'Avoir la chance avec moi',
+  ],
+  pouvoirs: ['alchimie', 'bandit', 'zetsu', 'fortune'],
+};
+
+/** RG-5.4 : pouvoir donné par la réponse à la question secrète, null si la réponse n'existe pas. */
+export function pouvoirSpeDepuisReponse(reponse: number): PouvoirSpe | null {
+  return Number.isInteger(reponse) ? (QUESTION_SPE.pouvoirs[reponse] ?? null) : null;
+}
 
 export interface SpeJoueur {
   pouvoirSpe: PouvoirSpe | null;

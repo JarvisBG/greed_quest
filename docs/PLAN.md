@@ -45,11 +45,16 @@ Chaque tâche = un commit (ou quelques-uns), tests verts avant de cocher.
 - [x] 3.6 Échanges (liste à portée, proposition, double validation), boutique, enchères, raid
 
 ## Phase 4 — Console PNJ / GM (`apps/staff`)
-- [ ] 4.1 Console PNJ : scan licence, checkpoint, photo-preuve, enchère, avertir/geler
-- [ ] 4.2 Console GM : cycle de vie, paramètres (J, auto, mode, appliqué), balises, carte des positions, événements, journal, alertes, Clear
+Périmètre exact et direction artistique : `docs/PROMPT_INTERFACES.md` (§ 4.1). Maquette validée avec le skill impeccable avant tout code.
+- [ ] 4.0 Système visuel commun `packages/ui` (tokens, Carte, Rang, Chrono, Bandeau, LecteurQr, libellés) + manques API du § 6 (Livre d'un joueur pour le GM, demandes de Clear, polygones de zones à l'écran) après accord
+- [ ] 4.1 Console PNJ : scan licence, checkpoint, expertise, arène, enchère, missions, joueurs, avertir / geler / annuler les gains, alertes, journal
+- [ ] 4.2 Console GM : création de partie, tableau de bord et cycle de vie, préparation (zones, balises, catalogue avec conseils, checkpoints, équipe), planche d'impression des QR, paramètres et préréglages, carte (balises + positions exactes), évènements et agenda, Clear et lots, corrections et disqualification, fin de partie
 
 ## Phase 5 — Écran géant (`apps/tracker`)
-- [ ] 5.1 Fil d'actualité, classement live, balises par zone, heatmap décalée, bannières d'événements, raid, Clear plein écran
+- [ ] 5.1 Fil d'actualité, classement live, balises par zone, heatmap décalée, bannières d'événements, raid, QR d'accueil avant le démarrage, Clear plein écran, podium et classement final (`docs/PROMPT_INTERFACES.md` § 4.2)
+
+## Phase 5 bis — Refonte de l'app joueur (`apps/player`)
+- [ ] 5.2 Présentation refaite avec `@gq/ui` (logique et tests inchangés) + écrans manquants : objets, recharge du Nen, Spécialisation, Regard, Texture Surprise SS, arène, Clear, abandon, fin de partie, sanctions (`docs/PROMPT_INTERFACES.md` § 4.3)
 
 ## Phase 6 — Terrain
 - [ ] 6.1 Déploiement (hébergement api + PostgreSQL)

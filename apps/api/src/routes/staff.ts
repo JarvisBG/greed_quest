@@ -46,7 +46,7 @@ export async function staffRoutes(app: FastifyInstance) {
     const { partieId } = req.params;
     requireRole(req, partieId, ...STAFF);
     const rows = await app.gq.db
-      .select({ id: joueurs.id, pseudo: joueurs.pseudo, statut: joueurs.statut, nen: joueurs.nen, jenny: joueurs.jenny, geleJusqua: joueurs.geleJusqua })
+      .select({ id: joueurs.id, pseudo: joueurs.pseudo, statut: joueurs.statut, nen: joueurs.nen, pouvoirSpe: joueurs.pouvoirSpe, jenny: joueurs.jenny, geleJusqua: joueurs.geleJusqua })
       .from(joueurs)
       .where(eq(joueurs.partieId, partieId))
       .orderBy(joueurs.pseudo);

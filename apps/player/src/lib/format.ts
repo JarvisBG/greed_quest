@@ -1,5 +1,5 @@
 // Libellés et formats affichés au joueur (français).
-import type { GameState, NenType, ObjetType, SpellType } from '@gq/shared';
+import type { GameState, NenType, ObjetType, PouvoirSpe, SpellType } from '@gq/shared';
 import type { EvenementJoueur } from './realtime';
 import type { Gain, IssueScan } from './scan';
 
@@ -61,6 +61,14 @@ export function libelleEvenement(nom: EvenementJoueur): string {
 }
 
 /** RG-10 */
+/** Amendement 2026-10-10 : pouvoirs de Spécialisation (recharge 40 min). */
+export const POUVOIRS_SPE: Record<PouvoirSpe, { nom: string; effet: string }> = {
+  alchimie: { nom: 'Alchimie', effet: 'Change un doublon en une carte de ton choix, du même rang ou du rang au-dessus (jamais la SS)' },
+  bandit: { nom: 'Bandit', effet: 'Un Vol sans carte de sort, sur la carte de ton choix (jamais la SS)' },
+  zetsu: { nom: 'Zetsu', effet: 'Invisible 10 min : personne ne peut te viser ni te voir dans les listes' },
+  fortune: { nom: 'Fortune', effet: 'Ton prochain scan donne un gain de plus' },
+};
+
 /** Amendement 2026-10-10 : cartes objets. */
 export const OBJETS: Record<ObjetType, { nom: string; effet: string }> = {
   pepite: { nom: 'Pépite d’or', effet: 'Se revend 30 J à Masadora' },
@@ -90,7 +98,7 @@ export const NENS: Record<NenType, { nom: string; passif: string }> = {
   transformation: { nom: 'Transformation', passif: 'Texture Surprise : déguise un doublon en une autre carte de même rang (toutes les 20 min)' },
   materialisation: { nom: 'Matérialisation', passif: 'Un tirage bonus (rang C au plus) à chaque checkpoint réussi, et un toutes les 40 min' },
   manipulation: { nom: 'Manipulation', passif: 'Un échange forcé gratuit (se recharge en 40 min)' },
-  specialisation: { nom: 'Spécialisation', passif: 'Type rare : un pouvoir unique et secret, révélé par l’organisation' },
+  specialisation: { nom: 'Spécialisation', passif: 'Type rare : un pouvoir secret parmi quatre, qui se recharge en 40 min' },
 };
 
 /** RG-8.3 : un gain en une ligne. */

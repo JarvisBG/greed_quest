@@ -7,6 +7,7 @@ import {
   castRadar,
   castRegard,
   castRevelation,
+  estInvisible,
   playersInRange,
   rechargesNenMs,
   transform,
@@ -59,6 +60,9 @@ async function spellPlayer(c: ActionCtx, j: JoueurRow, book: Book): Promise<Spel
     book,
     nen: (j.nen ?? 'aucun') as NenType,
     pouvoirsA: j.pouvoirsA,
+    pouvoirSpe: j.pouvoirSpe,
+    speA: j.speA,
+    zetsuJusqua: j.zetsuJusqua,
     immuniteJusqua: j.immuniteJusqua,
     dernierOffensifA: j.dernierOffensifA,
     geleJusqua: j.geleJusqua,
@@ -71,6 +75,8 @@ const playerPatch = (p: SpellPlayer) => ({
   immuniteJusqua: p.immuniteJusqua,
   dernierOffensifA: p.dernierOffensifA,
   geleJusqua: p.geleJusqua,
+  speA: p.speA ?? null,
+  zetsuJusqua: p.zetsuJusqua ?? null,
 });
 
 export const rangeOf = (p: { porteeSortsM: number; margeGpsMaxM: number; ciblableMin: number }) => ({
@@ -90,7 +96,8 @@ export async function sortsRoutes(app: FastifyInstance) {
       const moi = await loadJoueur(c.tx, s.sub);
       if (!moi) throw introuvable('Joueur');
       const p = await paramsOf(c.tx, c.partie);
-      const autres = (await loadJoueurs(c.tx, partieId, [moi.id])).filter((j) => !EXCLUS.has(j.statut));
+      // Zetsu (Spécialisation) : un joueur invisible n'apparaît dans aucune liste.
+      const autres = (await loadJoueurs(c.tx, partieId, [moi.id])).filter((j) => !EXCLUS.has(j.statut) && !estInvisible(j, c.now));
       const proches = playersInRange(moi, autres, c.now, rangeOf(p));
       // `tous` : cibles du Radar (RG-10, « liste joueurs ») et de l'Émission (hors portée, RG-10.1) ; pseudos seulement.
       const tous = autres.map((j) => ({ id: j.id, pseudo: j.pseudo })).sort((a, b) => a.pseudo.localeCompare(b.pseudo, 'fr'));
@@ -129,7 +136,15 @@ export async function sortsRoutes(app: FastifyInstance) {
       const lanceur = await spellPlayer(c, j, books.get(j.id)!);
       const cible = cibleRow ? await spellPlayer(c, cibleRow, books.get(cibleRow.id)!) : null;
       // Amendement 2026-10-10 : pouvoirs de Nen rechargeables (RG-14).
-      const w = { now: c.now, gameState: c.partie.etat, portee: rangeOf(p), rangDe: cat.rangDe, newId, rechargeNenMs: rechargesNenMs(p) };
+      const w = {
+        now: c.now,
+        gameState: c.partie.etat,
+        portee: rangeOf(p),
+        rangDe: cat.rangDe,
+        newId,
+        rechargeNenMs: rechargesNenMs(p),
+        rechargeSpeMs: p.rechargeSpeMin * 60_000, // Bandit
+      };
 
       let res:
         | { ok: true; lanceur: SpellPlayer; cible?: SpellPlayer; notice: SpellNotice; prive: Record<string, unknown> }
@@ -147,6 +162,7 @@ export async function sortsRoutes(app: FastifyInstance) {
               cible: cible!,
               ...(input.emission ? { emission: true } : {}),
               ...(input.sort === 'echange_force' ? { carteDonneeId: input.carteDonneeId } : {}),
+              ...(input.sort === 'vol' && input.carteVoulueId ? { carteVoulueId: input.carteVoulueId } : {}),
             },
             c.rng,
           );
@@ -170,7 +186,7 @@ export async function sortsRoutes(app: FastifyInstance) {
           const o = castRadar(w, {
             lanceur,
             itemId: input.itemId,
-            cible: { id: cible!.id, position: cible!.position, book: cible!.book },
+            cible: { id: cible!.id, position: cible!.position, book: cible!.book, zetsuJusqua: cible!.zetsuJusqua ?? null },
             zones: zs.map((z) => ({ id: z.id, polygon: z.polygone })),
           });
           res = o.ok
@@ -189,7 +205,7 @@ export async function sortsRoutes(app: FastifyInstance) {
           const o = castRegard(w, {
             lanceur,
             itemId: input.itemId,
-            cible: { id: cible!.id, book: cible!.book, livreGele: cible!.livreGele },
+            cible: { id: cible!.id, book: cible!.book, livreGele: cible!.livreGele, zetsuJusqua: cible!.zetsuJusqua ?? null },
             rencontre: await seSontRencontres(c.tx, j.id, cible!.id),
           });
           res = o.ok

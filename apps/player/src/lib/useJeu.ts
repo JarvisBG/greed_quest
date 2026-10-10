@@ -1,6 +1,6 @@
 // État de l'app joueur : partie visée, session, profil, connexion temps réel, fil des évènements,
 // suivi de position (RG-10.9) et scans, y compris la file hors ligne (RG-7.5).
-import type { NenType, PositionInput } from '@gq/shared';
+import type { NenType, PositionInput, PouvoirSpe } from '@gq/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError } from './api';
 import { api, API_URL, file, session } from './client';
@@ -27,6 +27,8 @@ export interface Moi {
   pseudo: string;
   jenny: number;
   nen: NenType | null;
+  /** Spécialisation : pouvoir secret (amendement 2026-10-10). */
+  pouvoirSpe: PouvoirSpe | null;
   statut: string;
   examenFait: boolean;
   /**
@@ -34,7 +36,9 @@ export interface Moi {
    * `pouvoir` = recharge du pouvoir de Nen (0 = disponible, null = aucun), `reserve` = tirage de Matérialisation
    * (amendement 2026-10-10).
    */
-  delais: { offensif: number; transformation: number; gel: number; pouvoir: number | null; reserve: number | null };
+  delais: { offensif: number; transformation: number; gel: number; pouvoir: number | null; reserve: number | null; specialisation: number | null };
+  /** Zetsu restant (ms) et Fortune armée. */
+  specialisation: { zetsu: number; fortuneArmee: boolean };
   recuA: number;
 }
 
@@ -100,8 +104,10 @@ export function useJeu() {
           throw e;
         }
       }
-      const m = await api.get<{ joueur: Omit<Moi, 'delais' | 'recuA'>; licenceSecret: string } & Pick<Moi, 'delais'>>(`/parties/${partieId}/moi`);
-      setMoi({ ...m.joueur, delais: m.delais, recuA: Date.now() });
+      const m = await api.get<{ joueur: Omit<Moi, 'delais' | 'recuA' | 'specialisation'>; licenceSecret: string } & Pick<Moi, 'delais' | 'specialisation'>>(
+        `/parties/${partieId}/moi`,
+      );
+      setMoi({ ...m.joueur, delais: m.delais, specialisation: m.specialisation, recuA: Date.now() });
       setLicenceSecret(m.licenceSecret);
       setPhase('en_jeu');
     } catch (e) {

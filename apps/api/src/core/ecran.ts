@@ -31,8 +31,11 @@ export async function heatmapPoints(c: ActionCtx): Promise<{ lat: number; lng: n
     .orderBy(journal.id);
   const derniere = new Map<string, { lat: number; lng: number }>();
   for (const r of rows) {
-    const d = r.details as { lat: number; lng: number } | null;
-    if (r.acteurId && d) derniere.set(r.acteurId, d);
+    const d = r.details as { lat: number; lng: number; zetsu?: boolean } | null;
+    if (!r.acteurId || !d) continue;
+    // Zetsu (Spécialisation) : le joueur disparaît de la carte de chaleur.
+    if (d.zetsu) derniere.delete(r.acteurId);
+    else derniere.set(r.acteurId, d);
   }
   return [...derniere.values()].map((d) => ({ lat: Number(d.lat.toFixed(4)), lng: Number(d.lng.toFixed(4)) }));
 }

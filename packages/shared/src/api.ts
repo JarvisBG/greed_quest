@@ -57,7 +57,7 @@ export type ScanIntent = z.infer<typeof ScanIntent>;
 /** RG-10 : lancement d'un sort. `itemId` = la carte de sort du Livre ; la position accompagne chaque sort (RG-10.9). */
 const SourceSort = z.union([
   z.object({ type: z.literal('carte'), itemId: z.string() }),
-  /** Manipulation : 1 échange forcé gratuit par partie (RG-5.4). */
+  /** Manipulation (échange forcé) ou Bandit (Vol) : sans carte de sort (RG-5.4 amendé). */
   z.object({ type: z.literal('pouvoir') }),
 ]);
 export const SortIntent = z.discriminatedUnion('sort', [
@@ -67,6 +67,8 @@ export const SortIntent = z.discriminatedUnion('sort', [
     cibleId: z.string(),
     /** Émission : viser une fois hors de portée (RG-10.1). */
     emission: z.boolean().optional(),
+    /** Bandit (Spécialisation, Vol avec source « pouvoir ») : carte du catalogue visée. */
+    carteVoulueId: z.string().optional(),
     position: PositionInput,
   }),
   z.object({
@@ -96,6 +98,14 @@ export const ObjetIntent = z.discriminatedUnion('objet', [
   z.object({ objet: z.literal('coffre'), itemId: z.string(), carteItemId: z.string() }),
 ]);
 export type ObjetIntent = z.infer<typeof ObjetIntent>;
+
+/** Amendement 2026-10-10 : pouvoir de Spécialisation (Bandit passe par POST /sort, Vol avec source « pouvoir »). */
+export const SpecialisationIntent = z.discriminatedUnion('pouvoir', [
+  z.object({ pouvoir: z.literal('zetsu') }),
+  z.object({ pouvoir: z.literal('fortune') }),
+  z.object({ pouvoir: z.literal('alchimie'), doublonItemId: z.string(), carteVoulueId: z.string() }),
+]);
+export type SpecialisationIntent = z.infer<typeof SpecialisationIntent>;
 
 /** RG-5.4 Transformation : Texture Surprise. */
 export const TransformationIntent = z.object({ itemId: z.string(), cibleCarteId: z.string() });

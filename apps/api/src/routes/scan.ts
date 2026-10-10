@@ -12,6 +12,7 @@ import {
   gainsPerDraw,
   isBookFull,
   isSharedPhotoSuspect,
+  estInvisible,
   isValidPosition,
   layoutBook,
   objetDeRepli,
@@ -93,7 +94,8 @@ export async function scanRoutes(app: FastifyInstance) {
       const j = await loadJoueur(c.tx, s.sub);
       if (!j) throw introuvable('Joueur');
       const pos = await recordPosition(c, j, input);
-      await c.log({ action: 'position', resultat: 'ok', details: { ...pos } });
+      // Zetsu : la position est notée mais ne s'affiche pas sur la carte de chaleur (core/ecran.ts).
+      await c.log({ action: 'position', resultat: 'ok', details: { ...pos, ...(estInvisible(j, c.now) ? { zetsu: true } : {}) } });
       return { ok: true as const };
     });
   });
@@ -165,7 +167,9 @@ export async function scanRoutes(app: FastifyInstance) {
       const gains: DrawResult[] = [];
       const recus: BookItem[] = [];
       const objetsRecus: string[] = [];
-      for (let n = 0; n < gainsPerDraw(events, beacon.zoneId, c.now); n++) {
+      // Fortune (Spécialisation, amendement 2026-10-10) : un gain de plus, une fois.
+      const nbGains = gainsPerDraw(events, beacon.zoneId, c.now) + (j.fortuneArmee ? 1 : 0);
+      for (let n = 0; n < nbGains; n++) {
         const g = draw({ beaconType: beacon.type ?? 'standard', tiragesPrecedents, catalogue, limites }, c.rng);
         gains.push(g);
         if (g.kind === 'carte') {
@@ -196,6 +200,7 @@ export async function scanRoutes(app: FastifyInstance) {
         jenny,
         historiqueTirages: [...j.historiqueTirages, beacon.id],
         dernierTirageA: c.now,
+        fortuneArmee: false,
       });
 
       // RG-6.2 / 6.3 : stock décrémenté ; épuisée → une dormante d'une autre zone prend le relais.

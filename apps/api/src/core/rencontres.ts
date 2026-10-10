@@ -1,6 +1,6 @@
 // Rencontres entre joueurs (amendement 2026-10-09, sort Regard) : deux joueurs se sont « croisés » quand ils ont
 // été à portée l'un de l'autre (même rayon que les sorts et les échanges), ou quand l'un a visé l'autre par un sort.
-import { isInRange, isValidPosition, type Position, type RangeSettings } from '@gq/engine';
+import { estInvisible, isInRange, isValidPosition, type Position, type RangeSettings } from '@gq/engine';
 import { and, eq, or } from 'drizzle-orm';
 import { rencontres } from '../db/schema.js';
 import type { DbOrTx } from '../db/client.js';
@@ -18,7 +18,7 @@ export async function noterRencontre(c: ActionCtx, x: string, y: string): Promis
 export async function noterRencontresProches(c: ActionCtx, joueurId: string, pos: Position, portee: RangeSettings): Promise<void> {
   const autres = await loadJoueurs(c.tx, c.partie.id, [joueurId]);
   for (const o of autres) {
-    if (o.statut === 'disqualifie' || o.statut === 'abandon') continue;
+    if (o.statut === 'disqualifie' || o.statut === 'abandon' || estInvisible(o, c.now)) continue; // Zetsu : personne ne le croise
     if (isValidPosition(o.position, c.now) && isInRange(pos, o.position, portee)) await noterRencontre(c, joueurId, o.id);
   }
 }

@@ -1,6 +1,6 @@
 // Schéma de la base (entités de docs/REGLES.md « Entités »).
 // Heures « de jeu » : ms d'horloge de jeu (gameClock, integer). Heures réelles : ms epoch (bigint) ou timestamptz.
-import type { GameState, NenType, ObjetType, PlayerStatus, Rank, SpellType, BeaconState, BeaconType } from '@gq/shared';
+import type { GameState, NenType, ObjetType, PlayerStatus, PouvoirSpe, Rank, SpellType, BeaconState, BeaconType } from '@gq/shared';
 import type { Bid, RankingEntry, EventData, GameEvent, JState, ShopConfig, ShopWave, TradeSessionState, TradeSide, Origine, Faux, ParamKey, ParamSetting, ParamSettings, Perte, Position, Polygon } from '@gq/engine';
 import { bigint, boolean, index, integer, jsonb, pgTable, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 
@@ -110,6 +110,11 @@ export const joueurs = pgTable(
     pouvoirsA: jsonb('pouvoirs_a').$type<Partial<Record<'renforcement' | 'emission' | 'manipulation', number>>>().notNull().default({}),
     /** Matérialisation : dernier tirage bonus de réserve (amendement 2026-10-10). */
     derniereReserveA: heureJeu('derniere_reserve_a'),
+    /** Spécialisation (amendement 2026-10-10) : pouvoir secret, dernier usage, fin du Zetsu, Fortune armée. */
+    pouvoirSpe: text('pouvoir_spe').$type<PouvoirSpe>(),
+    speA: heureJeu('spe_a'),
+    zetsuJusqua: heureJeu('zetsu_jusqua'),
+    fortuneArmee: boolean('fortune_armee').notNull().default(false),
     transformationDispoA: heureJeu('transformation_dispo_a'),
     /** RG-7.1 / 7.2 : balises des tirages réussis, du plus ancien au plus récent. */
     historiqueTirages: jsonb('historique_tirages').$type<string[]>().notNull().default([]),

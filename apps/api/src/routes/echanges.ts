@@ -4,6 +4,7 @@ import {
   cancelTrade,
   concludeTrade,
   confirmTrade,
+  estInvisible,
   proposeTrade,
   setTradeOffer,
   isRepeatedUnbalanced,
@@ -103,6 +104,7 @@ export async function echangesRoutes(app: FastifyInstance) {
         return refus(code, message);
       };
       if (!b || b.partieId !== partieId) return deny('cible_invalide', 'Joueur introuvable');
+      if (estInvisible(b, c.now)) return deny('hors_portee', 'Ce joueur est hors de portée'); // Zetsu
       // Une seule session active par joueur.
       if (await activeSession(c.tx, partieId, a.id, c.now)) return deny('session_en_cours', 'Termine d’abord ton échange en cours');
       if (await activeSession(c.tx, partieId, b.id, c.now)) return deny('session_en_cours', 'Ce joueur est déjà en train d’échanger');
@@ -117,7 +119,8 @@ export async function echangesRoutes(app: FastifyInstance) {
         dernierEchangePaireA: await lastPairTrade(c.tx, partieId, a.id, b.id),
       });
       if (!res.ok) return deny(res.code, res.message);
-      await updateJoueur(c.tx, a.id, actionPatch(a, c.now));
+      // Zetsu : se montrer pour échanger rompt l'invisibilité.
+      await updateJoueur(c.tx, a.id, { ...actionPatch(a, c.now), ...(estInvisible(a, c.now) ? { zetsuJusqua: null } : {}) });
       await c.log({ action: 'echange_proposition', resultat: 'ok', details: { sessionId: res.session.id, avec: b.id } });
       const cat = await loadCatalogue(c.tx, partieId);
       await publish(c, res.session, { s: res.session, a, b, books, cat, pseudos: { [a.id]: a.pseudo, [b.id]: b.pseudo } });

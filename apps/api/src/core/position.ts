@@ -1,6 +1,6 @@
 // Positions des joueurs (RG-10.9 à 10.12) : enregistrées à chaque envoi et à chaque scan / achat / sort.
 // Jamais renvoyées aux joueurs ni à l'écran géant (RG-10.12) : seul le GM les reçoit.
-import { isImpossibleMove, speedKmh, type Position } from '@gq/engine';
+import { estInvisible, isImpossibleMove, speedKmh, type Position } from '@gq/engine';
 import type { PositionInput } from '@gq/shared';
 import { alerte } from './alertes.js';
 import { paramsOf } from './params.js';
@@ -24,7 +24,7 @@ export async function recordPosition(c: ActionCtx, j: JoueurRow, input: Position
   j.position = pos;
   // Amendement 2026-10-09 (Regard) : joueurs croisés à portée.
   const p = await paramsOf(c.tx, c.partie);
-  await noterRencontresProches(c, j.id, pos, { porteeM: p.porteeSortsM, margeMaxM: p.margeGpsMaxM });
+  if (!estInvisible(j, c.now)) await noterRencontresProches(c, j.id, pos, { porteeM: p.porteeSortsM, margeMaxM: p.margeGpsMaxM });
   c.emit({ type: 'gm' }, 'position', { joueurId: j.id, ...pos });
   return pos;
 }

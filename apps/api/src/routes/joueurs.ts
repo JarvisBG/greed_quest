@@ -8,6 +8,8 @@ import {
   gameClock,
   kitSpell,
   nenFromAnswers,
+  speDisponibleDans,
+  tirerPouvoirSpe,
   pouvoirDisponibleDans,
   rechargesNenMs,
   reserveMaterialisationDans,
@@ -146,9 +148,11 @@ export async function joueursRoutes(app: FastifyInstance) {
       if (j.nen !== null) return refus('deja_fait', 'Ton type de Nen est déjà connu');
       if (!validQuizAnswers(NEN_TEST, reponses)) return refus('reponses_invalides', 'Réponds aux 5 questions');
       const nen = nenFromAnswers(reponses, (await paramsOf(c.tx, c.partie)).specialisationPct, c.rng); // RG-5.4
-      await c.tx.update(joueurs).set({ nen }).where(eq(joueurs.id, j.id));
-      await c.log({ action: 'test_nen', resultat: 'ok', details: { nen } });
-      return { ok: true as const, nen };
+      // Amendement 2026-10-10 : un Spécialiste reçoit un pouvoir au hasard, secret pour les autres joueurs.
+      const pouvoirSpe = nen === 'specialisation' ? tirerPouvoirSpe(c.rng) : null;
+      await c.tx.update(joueurs).set({ nen, pouvoirSpe }).where(eq(joueurs.id, j.id));
+      await c.log({ action: 'test_nen', resultat: 'ok', details: { nen, pouvoirSpe } });
+      return { ok: true as const, nen, pouvoirSpe };
     });
     return send(reply, r);
   });
@@ -166,11 +170,14 @@ export async function joueursRoutes(app: FastifyInstance) {
     const pouvoir = power && p ? pouvoirDisponibleDans(j, power, now, rechargesNenMs(p)[power]) : null;
     return {
       ok: true,
-      joueur: { id: j.id, pseudo: j.pseudo, jenny: j.jenny, nen: j.nen, statut: j.statut, examenFait: j.examenScore !== null },
+      joueur: { id: j.id, pseudo: j.pseudo, jenny: j.jenny, nen: j.nen, pouvoirSpe: j.pouvoirSpe, statut: j.statut, examenFait: j.examenScore !== null },
+      // Spécialisation : Zetsu en cours, Fortune armée (amendement 2026-10-10).
+      specialisation: { zetsu: Math.max(0, (j.zetsuJusqua ?? 0) - now), fortuneArmee: j.fortuneArmee },
       // Pour l'écran des sorts : délais restants, en ms ; `pouvoir` = recharge du pouvoir de Nen, `reserve` = Matérialisation.
       delais: {
         pouvoir,
         reserve: p ? reserveMaterialisationDans(j, now, p.reserveMaterialisationMin * 60_000) : null,
+        specialisation: j.pouvoirSpe && p ? speDisponibleDans(j, j.pouvoirSpe, now, p.rechargeSpeMin * 60_000) : null,
         offensif: Math.max(0, (j.dernierOffensifA ?? -Infinity) + CASTER_DELAY_MS - now), // RG-10.3
         transformation: Math.max(0, (j.transformationDispoA ?? 0) - now), // RG-5.4
         gel: Math.max(0, (j.geleJusqua ?? 0) - now),

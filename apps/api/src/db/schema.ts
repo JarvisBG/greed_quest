@@ -1,6 +1,6 @@
 // Schéma de la base (entités de docs/REGLES.md « Entités »).
 // Heures « de jeu » : ms d'horloge de jeu (gameClock, integer). Heures réelles : ms epoch (bigint) ou timestamptz.
-import type { GameState, NenType, PlayerStatus, Rank, SpellType, BeaconState, BeaconType } from '@gq/shared';
+import type { GameState, NenType, ObjetType, PlayerStatus, Rank, SpellType, BeaconState, BeaconType } from '@gq/shared';
 import type { Bid, RankingEntry, EventData, GameEvent, JState, ShopConfig, ShopWave, TradeSessionState, TradeSide, Origine, Faux, ParamKey, ParamSetting, ParamSettings, Perte, Position, Polygon } from '@gq/engine';
 import { bigint, boolean, index, integer, jsonb, pgTable, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 
@@ -142,6 +142,8 @@ export const exemplaires = pgTable(
     faux: jsonb('faux').$type<Faux>(),
     marque: text('marque').$type<'creee' | 'demasquee'>(),
     maudite: boolean('maudite').notNull().default(false),
+    /** Coffre scellé (objet) : protégée du Vol et de l'Échange forcé jusqu'à cette heure. */
+    coffreJusqua: heureJeu('coffre_jusqua'),
   },
   (t) => [index('exemplaires_joueur').on(t.joueurId), index('exemplaires_partie').on(t.partieId)],
 );
@@ -159,6 +161,21 @@ export const sorts = pgTable(
     utiliseA: heureJeu('utilise_a'),
   },
   (t) => [index('sorts_joueur').on(t.joueurId)],
+);
+
+/** Carte objet (amendement 2026-10-10) : type, propriétaire, utilisée. */
+export const objets = pgTable(
+  'objets',
+  {
+    id: text('id').primaryKey(),
+    partieId: text('partie_id').notNull().references(() => parties.id, { onDelete: 'cascade' }),
+    joueurId: text('joueur_id').notNull().references(() => joueurs.id, { onDelete: 'cascade' }),
+    type: text('type').$type<ObjetType>().notNull(),
+    obtenuA: heureJeu('obtenu_a').notNull(),
+    utilise: boolean('utilise').notNull().default(false),
+    utiliseA: heureJeu('utilise_a'),
+  },
+  (t) => [index('objets_joueur').on(t.joueurId)],
 );
 
 /** RG-8.13 : traces des cartes perdues. */
@@ -268,7 +285,7 @@ export const encheres = pgTable('encheres', {
 });
 
 /** Gain d'une victoire à l'arène (tirage A / S / SS, ou repli en jenny). */
-export type GainArene = { kind: 'carte'; carteId: string; rang: Rank } | { kind: 'jenny'; montant: number };
+export type GainArene = { kind: 'carte'; carteId: string; rang: Rank } | { kind: 'jenny'; montant: number; objet?: ObjetType };
 
 /** Tentative à l'arène de Soufrabi (amendement 2026-10-09) : mise payée à l'entrée, issue donnée par le PNJ. */
 export const arene = pgTable(

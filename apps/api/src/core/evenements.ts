@@ -36,7 +36,7 @@ export async function finishEvent(c: ActionCtx, e: GameEvent, annule: boolean): 
       const appliquer = !annule && !(await isLivreGele(c.tx, ex.joueurId)); // Livre gelé épargné
       const r = triggerCurse(book, d.itemId, c.now, cat.rangDe, c.rng, appliquer);
       await saveBooks(c.tx, c.partie.id, c.now, [{ joueurId: ex.joueurId, before: book, after: r.book }]);
-      const perdues = r.perdues.map((i) => (i.kind === 'carte' ? cat.nomDe(i.cardId) : i.spell));
+      const perdues = r.perdues.map((i) => (i.kind === 'carte' ? cat.nomDe(i.cardId) : i.kind === 'sort' ? i.spell : i.objet));
       await c.log({ action: 'malediction', resultat: appliquer ? 'appliquee' : 'levee', details: { porteur: ex.joueurId, perdues } });
       c.emit({ type: 'joueur', id: ex.joueurId }, 'malediction', { perdues });
     }

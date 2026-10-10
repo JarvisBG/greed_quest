@@ -4,6 +4,7 @@ import {
   buyPack,
   currentWave,
   sellCard,
+  sellObjet,
   shopPriceMultiplier,
   type ShopConfig,
   type ShopPlayer,
@@ -113,6 +114,22 @@ export async function boutiqueRoutes(app: FastifyInstance) {
       if ((await engagedItems(c.tx, partieId, j.id, c.now)).has(input.itemId)) return refus(ENGAGEE.code, ENGAGEE.message);
       // RG-13.1 : un Livre gelé (Clear provisoire) ne change plus.
       if (await isLivreGele(c.tx, j.id)) return refus('livre_gele', 'Ton Livre est gelé : va voir le Game Master');
+      // Amendement 2026-10-10 : revente d'un objet (Pépite d'or 30 J, autres 10 J).
+      if (book.items.find((i) => i.id === input.itemId)?.kind === 'objet') {
+        const o = sellObjet(
+          { now: c.now, gameState: c.partie.etat, qrBoutiqueScanne: await isPlaceQr(c.tx, partieId, input.qr, 'masadora'), designees: cat.designees },
+          shopper(j, book),
+          input.itemId,
+        );
+        if (!o.ok) {
+          await c.log({ action: 'revente', resultat: 'refus', details: { code: o.code } });
+          return refus(o.code, o.message);
+        }
+        await saveBooks(c.tx, partieId, c.now, [{ joueurId: j.id, before: book, after: o.player.book }]);
+        await updateJoueur(c.tx, j.id, { ...actionPatch(j, c.now), jenny: o.player.jenny });
+        await c.log({ action: 'revente', resultat: 'ok', details: { itemId: input.itemId, objet: o.objet, prix: o.prix } });
+        return { ok: true as const, prix: o.prix, contrefacon: null, jenny: o.player.jenny };
+      }
       const res = sellCard(
         {
           now: c.now,

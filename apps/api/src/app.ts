@@ -11,6 +11,7 @@ import { Refus } from './errors.js';
 import { attachRealtime } from './realtime.js';
 import { adminRoutes } from './routes/admin.js';
 import { areneRoutes } from './routes/arene.js';
+import { objetsRoutes } from './routes/objets.js';
 import { boutiqueRoutes } from './routes/boutique.js';
 import { clearRoutes } from './routes/clear.js';
 import { echangesRoutes } from './routes/echanges.js';
@@ -103,6 +104,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(echangesRoutes);
   await app.register(encheresRoutes);
   await app.register(areneRoutes);
+  await app.register(objetsRoutes);
   await app.register(gmRoutes);
   await app.register(evenementsRoutes);
   await app.register(pnjRoutes);

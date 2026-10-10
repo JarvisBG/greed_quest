@@ -165,8 +165,22 @@ export async function sortsRoutes(app: FastifyInstance) {
         }
         case 'radar': {
           const zs = await c.tx.select().from(zones).where(eq(zones.partieId, partieId));
-          const o = castRadar(w, { lanceur, itemId: input.itemId, cible: { id: cible!.id, position: cible!.position }, zones: zs.map((z) => ({ id: z.id, polygon: z.polygone })) });
-          res = o.ok ? { ok: true, lanceur: o.lanceur, notice: o.notice, prive: { zone: zs.find((z) => z.id === o.resultat.zoneId)?.nom ?? null } } : o;
+          const o = castRadar(w, {
+            lanceur,
+            itemId: input.itemId,
+            cible: { id: cible!.id, position: cible!.position, book: cible!.book },
+            zones: zs.map((z) => ({ id: z.id, polygon: z.polygone })),
+          });
+          res = o.ok
+            ? {
+                ok: true,
+                lanceur: o.lanceur,
+                // Voile d'ombre de la cible consommé (objet, amendement 2026-10-10).
+                ...(o.voile ? { cible: { ...cible!, book: o.voile.cibleBook } } : {}),
+                notice: o.notice,
+                prive: { zone: zs.find((z) => z.id === o.resultat.zoneId)?.nom ?? null, protection: o.voile ? 'voile' : null },
+              }
+            : o;
           break;
         }
         case 'regard': {
@@ -180,8 +194,10 @@ export async function sortsRoutes(app: FastifyInstance) {
             ? {
                 ok: true,
                 lanceur: o.lanceur,
+                ...(o.voile ? { cible: { ...cible!, book: o.voile.cibleBook } } : {}),
                 notice: o.notice,
                 prive: {
+                  protection: o.voile ? 'voile' : null,
                   cartes: o.resultat.cartes
                     .map((x) => ({ carteId: x.cardId, numero: cat.numeroDe(x.cardId), nom: cat.nomDe(x.cardId), rang: cat.rangDe(x.cardId), n: x.n, contrefacon: x.contrefacon }))
                     .sort((x, y) => x.numero - y.numero),

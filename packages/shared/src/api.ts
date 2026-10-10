@@ -49,6 +49,8 @@ export const ScanIntent = z.object({
   baliseId: z.string().min(1).max(100),
   position: PositionInput,
   scanneA: z.number().int().positive().optional(),
+  /** Second souffle (objet, amendement 2026-10-10) : utilisé seulement si la boucle (RG-7.1) refuserait ce scan. */
+  secondSouffle: z.boolean().optional(),
 });
 export type ScanIntent = z.infer<typeof ScanIntent>;
 
@@ -83,6 +85,17 @@ export const SortIntent = z.discriminatedUnion('sort', [
   z.object({ sort: z.literal('barriere'), itemId: z.string(), position: PositionInput }),
 ]);
 export type SortIntent = z.infer<typeof SortIntent>;
+
+/**
+ * Amendement 2026-10-10 : utiliser un objet. La Pépite d'or se revend à Masadora, le Second souffle s'utilise au scan,
+ * le Voile d'ombre agit seul.
+ */
+export const ObjetIntent = z.discriminatedUnion('objet', [
+  z.object({ objet: z.literal('ticket'), itemId: z.string() }),
+  z.object({ objet: z.literal('boussole'), itemId: z.string(), position: PositionInput }),
+  z.object({ objet: z.literal('coffre'), itemId: z.string(), carteItemId: z.string() }),
+]);
+export type ObjetIntent = z.infer<typeof ObjetIntent>;
 
 /** RG-5.4 Transformation : Texture Surprise. */
 export const TransformationIntent = z.object({ itemId: z.string(), cibleCarteId: z.string() });

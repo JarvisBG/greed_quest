@@ -1,6 +1,6 @@
 // Livre du joueur (RG-8.5) : pages de 10, provenance (RG-8.14), emplacements perdus (RG-8.13),
 // contrefaçons vues selon ce que le joueur sait (RG-8.9). Un joueur ne voit que son propre Livre (RG-3).
-import { describeLoss, layoutBook, viewCard, type Origine, type Slot } from '@gq/engine';
+import { PLACES_OBJETS, describeLoss, layoutBook, objetsDe, viewCard, type Origine, type Slot } from '@gq/engine';
 import type { FastifyInstance } from 'fastify';
 import { requireRole } from '../auth/guard.js';
 import { engagedItems } from '../core/echanges.js';
@@ -60,6 +60,7 @@ export async function livreRoutes(app: FastifyInstance) {
         }
         const i = x.item;
         if (i.kind === 'sort') return { etat: 'plein' as const, designe: false, kind: 'sort' as const, itemId: i.id, sort: i.spell };
+        if (i.kind === 'objet') return { etat: 'vide' as const, designe: false }; // jamais : les objets ont leur section
         const v = viewCard(i, true);
         return {
           etat: 'plein' as const,
@@ -73,6 +74,8 @@ export async function livreRoutes(app: FastifyInstance) {
           provenance: provenance(i.origine),
           obtenue: heureAffichee(i.obtenuA, c.now, c.realNow),
           engagee: engagees.has(i.id),
+          // Coffre scellé (objet) : heure de fin de la protection.
+          coffreJusqua: i.coffreJusqua !== undefined && i.coffreJusqua > c.now ? heureAffichee(i.coffreJusqua, c.now, c.realNow) : null,
         };
       };
       const layout = layoutBook(book, cat.designees);
@@ -86,6 +89,11 @@ export async function livreRoutes(app: FastifyInstance) {
         total: cat.designees.length,
         libresUtilises: layout.libresUtilises,
         pages: layout.pages.map(page),
+        // Amendement 2026-10-10 : section des objets, à part.
+        objets: objetsDe(book)
+          .sort((a, b) => a.obtenuA - b.obtenuA)
+          .map((o) => ({ itemId: o.id, objet: o.objet, obtenu: heureAffichee(o.obtenuA, c.now, c.realNow), engage: engagees.has(o.id) })),
+        placesObjets: PLACES_OBJETS,
       };
     });
   });

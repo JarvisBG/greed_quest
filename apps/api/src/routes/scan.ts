@@ -14,6 +14,8 @@ import {
   isSharedPhotoSuspect,
   isValidPosition,
   layoutBook,
+  objetDeRepli,
+  objetDuType,
   previousDrawsOn,
   replaceExhausted,
   type BeaconChange,
@@ -129,7 +131,7 @@ export async function scanRoutes(app: FastifyInstance) {
         loadActiveEvents(c.tx, partieId),
         loadBook(c.tx, j.id),
       ]);
-      const check = checkScan({
+      const scanCtx = {
         now: c.now,
         gameState: c.partie.etat,
         player: {
@@ -144,17 +146,25 @@ export async function scanRoutes(app: FastifyInstance) {
         beacon: { id: beacon.id, state: beacon.state, zoneId: beacon.zoneId, stock: beacon.stock },
         zonesFermees: closedZones(events, c.now),
         k: p.kBoucle,
-      });
+      };
+      let check = checkScan(scanCtx);
+      // Second souffle (objet, amendement 2026-10-10) : consommé seulement si la boucle refuserait ce scan.
+      let souffle = input.secondSouffle && !check.ok && check.code === 'boucle' ? objetDuType(book, 'souffle') : undefined;
+      if (souffle) {
+        check = checkScan({ ...scanCtx, ignorerBoucle: true });
+        if (!check.ok) souffle = undefined;
+      }
       if (!check.ok) return deny(check.code, check.message, { zoneId: beacon.zoneId });
 
       // RG-8.3 : tirage ; Double gain (RG-12) = 2 gains, le stock ne baisse qu'une fois.
       const catalogue = await catalogForDraw(c.tx, cat, partieId);
       const limites = limitesOf(p);
       const tiragesPrecedents = previousDrawsOn(j.historiqueTirages, beacon.id);
-      let after = book;
+      let after = souffle ? { ...book, items: book.items.filter((i) => i.id !== souffle!.id) } : book;
       let jenny = j.jenny;
       const gains: DrawResult[] = [];
       const recus: BookItem[] = [];
+      const objetsRecus: string[] = [];
       for (let n = 0; n < gainsPerDraw(events, beacon.zoneId, c.now); n++) {
         const g = draw({ beaconType: beacon.type ?? 'standard', tiragesPrecedents, catalogue, limites }, c.rng);
         gains.push(g);
@@ -170,6 +180,14 @@ export async function scanRoutes(app: FastifyInstance) {
           recus.push(item);
         } else {
           jenny += g.amount;
+          // Amendement 2026-10-10 : une partie des replis « carte épuisée » donne un objet en plus des jenny.
+          const o = g.repli ? objetDeRepli(after, p.objetsReplisPct, c.rng) : null;
+          if (o) {
+            const item: BookItem = { kind: 'objet', id: newId(), objet: o, obtenuA: c.now };
+            after = addItem(after, item);
+            recus.push(item);
+            objetsRecus.push(o);
+          }
         }
       }
       await saveBooks(c.tx, partieId, c.now, [{ joueurId: j.id, before: book, after }]);
@@ -204,12 +222,17 @@ export async function scanRoutes(app: FastifyInstance) {
             ? { kind: 'sort' as const, sort: g.spell }
             : { kind: 'jenny' as const, montant: g.amount },
       );
-      await c.log({ action: 'scan', resultat: 'ok', details: { baliseId: beacon.id, zoneId: beacon.zoneId, type: beacon.type, position, gains: vue } });
+      const vueObjets = objetsRecus.map((o) => ({ kind: 'objet' as const, objet: o }));
+      await c.log({
+        action: 'scan',
+        resultat: 'ok',
+        details: { baliseId: beacon.id, zoneId: beacon.zoneId, type: beacon.type, position, gains: vue, objets: vueObjets, secondSouffle: !!souffle },
+      });
       await emitBeaconChanges(c, changes);
       await checkScanRate(c, j.id, j.pseudo);
 
       // Diffusion (REGLES.md) : détail au joueur ; fil de l'écran si rang ≥ A ; progression.
-      c.emit({ type: 'joueur', id: j.id }, 'tirage', { gains: vue, jenny });
+      c.emit({ type: 'joueur', id: j.id }, 'tirage', { gains: [...vue, ...vueObjets], jenny });
       for (const g of vue) {
         if (g.kind === 'carte' && RANK_POINTS[g.rang] >= RANK_POINTS.A) {
           c.emit({ type: 'tracker' }, 'fil', { type: 'tirage', pseudo: j.pseudo, carte: g.nom, rang: g.rang, heureJeu: c.now });
@@ -218,7 +241,7 @@ export async function scanRoutes(app: FastifyInstance) {
       const distinctes = layoutBook(after, cat.designees).designes.filter((d) => d.slot.etat === 'plein').length;
       c.emit({ type: 'tracker' }, 'progression', { joueurId: j.id, pseudo: j.pseudo, cartes: distinctes });
 
-      return { ok: true as const, gains: vue, jenny, items: recus.map((i) => i.id) };
+      return { ok: true as const, gains: [...vue, ...vueObjets], jenny, items: recus.map((i) => i.id), secondSouffle: !!souffle };
     });
     return send(reply, r);
   });

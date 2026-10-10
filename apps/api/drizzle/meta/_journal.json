@@ -64,6 +64,13 @@
       "when": 1791583598947,
       "tag": "0008_rencontres",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791610819616,
+      "tag": "0009_objets",
+      "breakpoints": true
     }
   ]
 }

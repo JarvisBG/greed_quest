@@ -1,7 +1,7 @@
 // Arène de Soufrabi (amendement 2026-10-09, Sivraj) : le PNJ scanne la licence du joueur, qui paie la mise ;
 // il arbitre le défi puis donne l'issue. Victoire = tirage A / S / SS (limites RG-8.2), défaite = mise perdue.
 // Livre plein : la carte gagnée déborde, comme pour un checkpoint (décision validée, PROGRESS.md).
-import { addItem, arenaReward, enterArena, layoutBook } from '@gq/engine';
+import { addItem, arenaReward, enterArena, layoutBook, objetDeRepli } from '@gq/engine';
 import { AreneAnnulation, AreneEntree, AreneIssue, RANK_POINTS } from '@gq/shared';
 import { and, desc, eq } from 'drizzle-orm';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
@@ -85,7 +85,7 @@ export async function areneRoutes(app: FastifyInstance) {
       const p = await paramsOf(c.tx, c.partie);
       const g = arenaReward(await catalogForDraw(c.tx, cat, c.partie.id), limitesOf(p), c.rng);
       let gain: GainArene;
-      let vue: { kind: 'carte'; nom: string; rang: string } | { kind: 'jenny'; montant: number };
+      let vue: { kind: 'carte'; nom: string; rang: string } | { kind: 'jenny'; montant: number; objet?: string };
       const before = await loadBook(c.tx, j.id);
       if (g.kind === 'carte') {
         const after = addItem(before, { kind: 'carte', id: newId(), cardId: g.cardId, origine: { type: 'arene', tentativeId: t.id }, obtenuA: c.now });
@@ -101,6 +101,13 @@ export async function areneRoutes(app: FastifyInstance) {
         await updateJoueur(c.tx, j.id, { jenny: j.jenny + montant });
         gain = { kind: 'jenny', montant };
         vue = gain;
+        // Amendement 2026-10-10 : objet possible en plus des jenny.
+        const o = g.kind === 'jenny' && g.repli ? objetDeRepli(before, p.objetsReplisPct, c.rng) : null;
+        if (o) {
+          await saveBooks(c.tx, c.partie.id, c.now, [{ joueurId: j.id, before, after: addItem(before, { kind: 'objet', id: newId(), objet: o, obtenuA: c.now }) }]);
+          gain = { kind: 'jenny', montant, objet: o };
+          vue = gain;
+        }
       }
       await c.tx.update(arene).set({ etat: 'gagnee', gain, finA: c.now }).where(eq(arene.id, t.id));
       await c.log({ action: 'arene_issue', resultat: 'gagnee', details: { tentativeId: t.id, joueurId: j.id, gain } });

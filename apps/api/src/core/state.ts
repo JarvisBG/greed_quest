@@ -8,13 +8,14 @@ import {
   type CardItem,
   type CatalogCard,
   type GameEvent,
+  type ObjetItem,
   type Perte,
   type SpellItem,
 } from '@gq/engine';
 import type { Rank } from '@gq/shared';
 import { and, eq, inArray, notInArray } from 'drizzle-orm';
 import type { DbOrTx } from '../db/client.js';
-import { balises, cartes, evenements, exemplaires, joueurs, livres, pertes, sorts } from '../db/schema.js';
+import { balises, cartes, evenements, exemplaires, joueurs, livres, objets, pertes, sorts } from '../db/schema.js';
 
 export type JoueurRow = typeof joueurs.$inferSelect;
 type ExemplaireRow = typeof exemplaires.$inferSelect;
@@ -31,10 +32,11 @@ export function cardItemOf(r: ExemplaireRow): CardItem {
     ...(r.faux ? { faux: r.faux } : {}),
     ...(r.marque ? { marque: r.marque } : {}),
     ...(r.maudite ? { maudite: true as const } : {}),
+    ...(r.coffreJusqua !== null ? { coffreJusqua: r.coffreJusqua } : {}),
   };
 }
 
-/** Livres de plusieurs joueurs (sorts non utilisés seulement), indexés par joueur. */
+/** Livres de plusieurs joueurs (sorts et objets non utilisés seulement), indexés par joueur. */
 export async function loadBooks(db: DbOrTx, joueurIds: readonly string[]): Promise<Map<string, Book>> {
   const books = new Map<string, { items: BookItem[]; pertes: Perte[] }>(joueurIds.map((id) => [id, { items: [], pertes: [] }]));
   if (joueurIds.length === 0) return books;
@@ -48,6 +50,10 @@ export async function loadBooks(db: DbOrTx, joueurIds: readonly string[]): Promi
     .where(and(inArray(sorts.joueurId, ids), eq(sorts.utilise, false)));
   for (const r of spells) {
     const item: SpellItem = { kind: 'sort', id: r.id, spell: r.type, obtenuA: r.obtenuA };
+    books.get(r.joueurId)!.items.push(item);
+  }
+  for (const r of await db.select().from(objets).where(and(inArray(objets.joueurId, ids), eq(objets.utilise, false)))) {
+    const item: ObjetItem = { kind: 'objet', id: r.id, objet: r.type, obtenuA: r.obtenuA };
     books.get(r.joueurId)!.items.push(item);
   }
   for (const r of await db.select().from(pertes).where(inArray(pertes.joueurId, ids)).orderBy(pertes.id)) {
@@ -97,8 +103,13 @@ export async function saveBooks(db: DbOrTx, partieId: string, now: number, chang
         faux: item.faux ?? null,
         marque: item.marque ?? null,
         maudite: item.maudite ?? false,
+        coffreJusqua: item.coffreJusqua ?? null,
       };
       await db.insert(exemplaires).values(row).onConflictDoUpdate({ target: exemplaires.id, set: row });
+    } else if (item.kind === 'objet') {
+      // Un objet peut changer de main (échange).
+      const row = { id, partieId, joueurId, type: item.objet, obtenuA: item.obtenuA };
+      await db.insert(objets).values(row).onConflictDoUpdate({ target: objets.id, set: row });
     } else if (!old) {
       await db.insert(sorts).values({ id, partieId, joueurId, type: item.spell, obtenuA: item.obtenuA });
     }
@@ -109,6 +120,8 @@ export async function saveBooks(db: DbOrTx, partieId: string, now: number, chang
   const sortsUtilises = sortis.filter((i) => i.kind === 'sort').map((i) => i.id);
   if (cartesSorties.length > 0) await db.delete(exemplaires).where(inArray(exemplaires.id, cartesSorties));
   if (sortsUtilises.length > 0) await db.update(sorts).set({ utilise: true, utiliseA: now }).where(inArray(sorts.id, sortsUtilises));
+  const objetsUtilises = sortis.filter((i) => i.kind === 'objet').map((i) => i.id);
+  if (objetsUtilises.length > 0) await db.update(objets).set({ utilise: true, utiliseA: now }).where(inArray(objets.id, objetsUtilises));
 
   for (const c of changes) {
     const nouvelles = c.after.pertes.slice(c.before.pertes.length);

@@ -10,6 +10,7 @@ import { connectRealtime, type EtatConnexion } from './realtime';
 import { rejouerFile, scanner, type IssueScan } from './scan';
 import { messageFin, termine, type EvenementEchange, type VueEchange } from './echanges';
 import { texteSortRecu } from './sorts';
+import type { SuiviCible } from './accompagnement';
 import { partieFromUrl, type Session } from './session';
 import { creerSuivi, type Suivi } from './suivi';
 
@@ -39,6 +40,10 @@ export interface Moi {
   delais: { offensif: number; transformation: number; gel: number; pouvoir: number | null; reserve: number | null; specialisation: number | null };
   /** Zetsu restant (ms) et Fortune armée. */
   specialisation: { zetsu: number; fortuneArmee: boolean };
+  /** Amendements 2026-10-10 : villes déjà visitées (Retour), visite à distance en cours, Accompagnement subi (ms restantes). */
+  villesVisitees: string[];
+  retour: { ville: 'masadora' | 'antokiba'; resteMs: number } | null;
+  accompagne: number;
   recuA: number;
 }
 
@@ -67,6 +72,8 @@ export function useJeu() {
   const echangeRef = useRef<VueEchange | null>(null);
   echangeRef.current = echange;
   const [moi, setMoi] = useState<Moi | null>(null);
+  /** Accompagnement lancé par ce joueur : position de sa cible pendant 3 min (amendement 2026-10-10). */
+  const [suiviCible, setSuiviCible] = useState<SuiviCible | null>(null);
   const [licenceSecret, setLicenceSecret] = useState<string | null>(null);
   /** Incrémenté à chaque évènement reçu : les écrans (Livre…) se rechargent. */
   const [version, setVersion] = useState(0);
@@ -104,10 +111,17 @@ export function useJeu() {
           throw e;
         }
       }
-      const m = await api.get<{ joueur: Omit<Moi, 'delais' | 'recuA' | 'specialisation'>; licenceSecret: string } & Pick<Moi, 'delais' | 'specialisation'>>(
-        `/parties/${partieId}/moi`,
-      );
-      setMoi({ ...m.joueur, delais: m.delais, specialisation: m.specialisation, recuA: Date.now() });
+      type Recu = Pick<Moi, 'delais' | 'specialisation' | 'villesVisitees' | 'retour' | 'accompagne'>;
+      const m = await api.get<{ joueur: Omit<Moi, keyof Recu | 'recuA'>; licenceSecret: string } & Recu>(`/parties/${partieId}/moi`);
+      setMoi({
+        ...m.joueur,
+        delais: m.delais,
+        specialisation: m.specialisation,
+        villesVisitees: m.villesVisitees ?? [],
+        retour: m.retour ?? null,
+        accompagne: m.accompagne ?? 0,
+        recuA: Date.now(),
+      });
       setLicenceSecret(m.licenceSecret);
       setPhase('en_jeu');
     } catch (e) {
@@ -183,6 +197,12 @@ export function useJeu() {
           void rafraichir();
           return;
         }
+        if (nom === 'accompagnement') {
+          // Position de la cible, à chaque déplacement : pas de notification.
+          const d = data as Omit<SuiviCible, 'recuA' | 'resteMs'> & { jusqua?: number | null };
+          setSuiviCible((prev) => ({ cibleId: d.cibleId, pseudo: d.pseudo, position: d.position, resteMs: prev?.cibleId === d.cibleId ? prev.resteMs - (Date.now() - prev.recuA) : 3 * 60_000, recuA: Date.now() }));
+          return;
+        }
         // Mises à jour fréquentes (surenchères, PV du raid) : l'écran se met à jour, sans notification.
         if (nom === 'enchere' || nom === 'raid') return;
         const texte = (data as { texte?: unknown } | null)?.texte;
@@ -205,6 +225,15 @@ export function useJeu() {
     if (!sess) return;
     api.get<{ echange: VueEchange | null }>(`/parties/${sess.partieId}/echanges/courant`).then(
       (r) => setEchange(r.echange),
+      () => undefined,
+    );
+  }, [sess]);
+
+  // Accompagnement en cours (app rechargée) : position de la cible et temps restant.
+  useEffect(() => {
+    if (!sess) return;
+    api.get<{ accompagnement: (Omit<SuiviCible, 'recuA'>) | null }>(`/parties/${sess.partieId}/accompagnement`).then(
+      (r) => setSuiviCible(r.accompagnement ? { ...r.accompagnement, recuA: Date.now() } : null),
       () => undefined,
     );
   }, [sess]);
@@ -310,6 +339,11 @@ export function useJeu() {
     positionAction,
     apresAction,
     moi,
+    suiviCible,
+    /** Après un Accompagnement réussi : la réponse de POST /sort ouvre le suivi. */
+    ouvrirSuivi: (s: Omit<SuiviCible, 'recuA'>) => setSuiviCible({ ...s, recuA: Date.now() }),
+    /** Dernière position GPS connue de ce téléphone (pour la direction de l'Accompagnement). */
+    positionConnue: () => suivi.current?.fraiche() ?? null,
     licenceSecret,
     version,
     connexion,

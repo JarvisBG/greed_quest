@@ -1,13 +1,15 @@
-// RG-10 : sorts du Livre. Cibles calculées par le serveur (RG-10.1 « à portée », pseudos seulement,
+// RG-10 : sorts du Book. Cibles calculées par le serveur (RG-10.1 « à portée », pseudos seulement,
 // RG-10.12) ; Radar et Émission visent n'importe quel joueur. RG-5.4 : pouvoirs de Nen
 // (Émission, Manipulation, Texture Surprise). Chaque intention porte la position (RG-10.9).
 import type { PositionInput, Rank } from '@gq/shared';
 import { useEffect, useState } from 'react';
 import { api } from '../lib/client';
-import { formatDuree, NENS, numeroCarte, SORTS, titrePage } from '../lib/format';
-import { contenu, type EmplacementCarte, type LivreRecu } from '../lib/livre';
+import { reperage, resteSuivi, type SuiviCible } from '../lib/accompagnement';
+import { formatChrono, formatDuree, NENS, numeroCarte, SORTS } from '../lib/format';
+import { contenu, titreDePage, type EmplacementCarte, type LivreRecu } from '../lib/livre';
 import { useLivre } from '../lib/useLivre';
 import {
+  CIBLE_CROISEE,
   cartesUtilisables,
   corpsSort,
   doublons,
@@ -27,7 +29,13 @@ interface Props {
   version: number;
   positionAction: (envoyer?: boolean) => Promise<PositionInput>;
   apresAction: () => void;
+  /** Accompagnement (amendement 2026-10-10) : suivi de la cible, ouvert après un lancer réussi. */
+  suiviCible: SuiviCible | null;
+  ouvrirSuivi: (s: Omit<SuiviCible, 'recuA'>) => void;
+  positionConnue: () => { lat: number; lng: number } | null;
 }
+
+const VILLES = { masadora: 'Masadora', antokiba: 'Antokiba' } as const;
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -48,6 +56,7 @@ export function Sorts(p: Props) {
   const [transfo, setTransfo] = useState(false);
   const [resultat, setResultat] = useState<string | null>(null);
   const offensifDans = useRestant(p.moi.delais.offensif, p.moi.recuA);
+  const suiviDans = useRestant(p.suiviCible?.resteMs ?? 0, p.suiviCible?.recuA ?? 0);
   const transfoDans = useRestant(p.moi.delais.transformation, p.moi.recuA);
 
   if (!livre) return <p className="info">{erreur ?? 'Chargement…'}</p>;
@@ -75,9 +84,15 @@ export function Sorts(p: Props) {
           </button>
         </div>
       )}
+      {p.suiviCible && suiviDans > 0 && (
+        <div className="carte suivi">
+          <strong>Accompagnement</strong> <span className="info">{formatChrono(resteSuivi(p.suiviCible, Date.now()))}</span>
+          <p>{reperage(p.positionConnue(), p.suiviCible)}</p>
+        </div>
+      )}
       {offensifDans > 0 && <p className="info">Prochain sort offensif possible dans {formatDuree(offensifDans)} (RG-10.3).</p>}
       {emission && <p className="info">Émission : tu peux viser une fois un joueur hors de portée avec un sort offensif.</p>}
-      {dispo.length === 0 && !manipulation && <p className="info">Aucun sort dans ton Livre. Les balises en donnent parfois.</p>}
+      {dispo.length === 0 && !manipulation && <p className="info">Aucun sort dans ton Book. Les balises en donnent parfois.</p>}
       <ul className="liste-sorts">
         {dispo.map((d) => (
           <li key={d.sort} className="carte">
@@ -127,15 +142,20 @@ function Lancement({
   livre,
   choix: depart,
   positionAction,
+  ouvrirSuivi,
   onAnnuler,
   onFini,
 }: Props & { livre: LivreRecu; choix: ChoixSort; onAnnuler: () => void; onFini: (texte: string) => void }) {
   const [choix, setChoix] = useState(depart);
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
-  const [cibles, setCibles] = useState<{ joueurs: Cible[]; tous: Cible[] } | null>(null);
+  const [cibles, setCibles] = useState<{ joueurs: Cible[]; tous: Cible[]; croises: Cible[] } | null>(null);
   const sort = SORTS[choix.sort];
-  const reste = etapes(choix.sort).find((e) => (e === 'carte' ? !choix.carteItemId : e === 'page' ? !choix.page : !choix.cibleId));
+  const reste = etapes(choix.sort).find((e) =>
+    e === 'carte' ? !choix.carteItemId : e === 'page' ? !choix.page : e === 'ville' ? !choix.ville : !choix.cibleId,
+  );
+  const croisee = CIBLE_CROISEE.includes(choix.sort);
+  const villes = moi.villesVisitees.filter((v): v is keyof typeof VILLES => v in VILLES);
   const emissionPossible = OFFENSIF.includes(choix.sort) && pouvoirDispo(moi.nen, moi.delais.pouvoir, Date.now() - moi.recuA, 'emission');
 
   // Liste des cibles : la position est d'abord envoyée pour que le serveur calcule la portée à jour.
@@ -144,7 +164,7 @@ function Lancement({
     setCibles(null);
     try {
       await positionAction(true);
-      setCibles(await api.get<{ joueurs: Cible[]; tous: Cible[] }>(`/parties/${partieId}/a-portee`));
+      setCibles(await api.get<{ joueurs: Cible[]; tous: Cible[]; croises: Cible[] }>(`/parties/${partieId}/a-portee`));
     } catch (e) {
       setErreur(message(e));
     }
@@ -159,6 +179,7 @@ function Lancement({
     try {
       const r = await api.post<ReponseSort>(`/parties/${partieId}/sort`, corpsSort(choix, await positionAction()));
       const noms = new Map(contenu(livre).map((e) => [e.itemId, e.kind === 'carte' ? e.nom : SORTS[e.sort].nom]));
+      if (r.accompagnement && r.resultat === 'reussi') ouvrirSuivi({ ...r.accompagnement, resteMs: 3 * 60_000 });
       onFini(resumeSort(r, nomCible, (id) => noms.get(id) ?? 'une carte'));
     } catch (e) {
       setErreur(message(e));
@@ -181,11 +202,24 @@ function Lancement({
       )}
       {reste === 'page' && (
         <>
-          <p>Page à analyser :</p>
+          <p>Page à examiner :</p>
           <div className="choix">
             {livre.pages.map((_, i) => (
               <button key={i} className="secondaire" onClick={() => setChoix({ ...choix, page: i + 1 })}>
-                {titrePage(i, livre.total)}
+                {titreDePage(livre, i)}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {reste === 'ville' && (
+        <>
+          <p>Ville déjà visitée :</p>
+          {villes.length === 0 && <p className="info">Scanne d’abord le QR de Masadora ou d’Antokiba, sur place.</p>}
+          <div className="choix">
+            {villes.map((v) => (
+              <button key={v} className="secondaire" onClick={() => setChoix({ ...choix, ville: v })}>
+                {VILLES[v]}
               </button>
             ))}
           </div>
@@ -200,8 +234,10 @@ function Lancement({
             </label>
           )}
           <ChoixCible
-            cibles={cibles ? (choix.sort === 'radar' || choix.emission ? cibles.tous : cibles.joueurs) : null}
-            vide={choix.sort === 'radar' ? 'Aucun autre joueur.' : 'Personne à portée (30 m environ). Rapproche-toi.'}
+            cibles={cibles ? (croisee ? cibles.croises : choix.sort === 'radar' || choix.emission ? cibles.tous : cibles.joueurs) : null}
+            vide={
+              croisee ? 'Tu n’as encore croisé personne.' : choix.sort === 'radar' ? 'Aucun autre joueur.' : 'Personne à portée (30 m environ). Rapproche-toi.'
+            }
             onChoix={(id) => setChoix({ ...choix, cibleId: id })}
             onActualiser={() => void chargerCibles()}
           />
@@ -209,7 +245,7 @@ function Lancement({
       )}
       {!reste && (
         <button disabled={envoi} onClick={() => void lancer()}>
-          {envoi ? 'Lancement…' : `Lancer ${titre}${nomCible ? ` sur ${nomCible}` : ''}`}
+          {envoi ? 'Lancement…' : `Lancer ${titre}${nomCible ? ` sur ${nomCible}` : choix.ville ? ` vers ${VILLES[choix.ville]}` : ''}`}
         </button>
       )}
       {erreur && <p className="erreur">{erreur}</p>}

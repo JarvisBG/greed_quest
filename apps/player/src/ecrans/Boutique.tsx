@@ -1,6 +1,7 @@
 // RG-9 : boutique de Masadora. Le QR du lieu est scanné sur place (RG-9.2) puis gardé le temps de la
 // visite. Paquet de 3 sorts (stock par vague de 20 min, max par joueur, RG-9.3) ; revente de toute carte
-// sauf SS (RG-9.4). Prix et refus : serveur (Krach de Masadora compris).
+// sauf SS (RG-9.4). Prix et refus : serveur (Krach de Masadora compris). Amendement 2026-10-10 : avec le sort
+// Retour, la boutique s'utilise à distance, sans QR.
 import type { PositionInput, Rank, SpellType } from '@gq/shared';
 import { useEffect, useState } from 'react';
 import { api } from '../lib/client';
@@ -27,6 +28,7 @@ export function Boutique({
   positionAction,
   apresAction,
   onRetour,
+  aDistance = false,
 }: {
   partieId: string;
   jenny: number;
@@ -34,6 +36,8 @@ export function Boutique({
   positionAction: (envoyer?: boolean) => Promise<PositionInput>;
   apresAction: () => void;
   onRetour: () => void;
+  /** Visite à distance ouverte par Retour. */
+  aDistance?: boolean;
 }) {
   const [etat, setEtat] = useState<EtatBoutique | null>(null);
   const [qr, setQr] = useState<string | null>(null);
@@ -43,6 +47,8 @@ export function Boutique({
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
   const { livre } = useLivre(partieId, version);
+  const present = qr !== null || aDistance;
+  const lieu = qr ? { qr } : {};
 
   useEffect(() => {
     api.get<EtatBoutique>(`/parties/${partieId}/boutique`).then(setEtat, (e: unknown) => setErreur(message(e)));
@@ -64,12 +70,12 @@ export function Boutique({
 
   const acheter = () =>
     agir(async (position) => {
-      const r = await api.post<{ prix: number; sorts: { itemId: string; sort: SpellType }[] }>(`/parties/${partieId}/boutique/achat`, { qr, position });
+      const r = await api.post<{ prix: number; sorts: { itemId: string; sort: SpellType }[] }>(`/parties/${partieId}/boutique/achat`, { ...lieu, position });
       return `Paquet acheté ${r.prix} J : ${r.sorts.map((s) => SORTS[s.sort].nom).join(', ')}.`;
     });
   const revendre = (c: EmplacementCarte) =>
     agir(async (position) => {
-      const r = await api.post<{ prix: number; contrefacon: boolean }>(`/parties/${partieId}/boutique/revente`, { qr, itemId: c.itemId, position });
+      const r = await api.post<{ prix: number; contrefacon: boolean }>(`/parties/${partieId}/boutique/revente`, { ...lieu, itemId: c.itemId, position });
       setVente(null);
       return r.contrefacon
         ? `Masadora a reconnu une contrefaçon : ${c.nom} reprise pour ${r.prix} J.`
@@ -92,7 +98,8 @@ export function Boutique({
             achats {etat.mesAchats}/{etat.maxParVague}
           </p>
         )}
-        {!qr && !scan && (
+        {aDistance && !qr && <p className="info">Visite à distance (Retour).</p>}
+        {!present && !scan && (
           <>
             <p className="info">Sur place, scanne le QR de la boutique pour acheter ou revendre.</p>
             <button onClick={() => setScan(true)}>Scanner le QR de Masadora</button>
@@ -109,7 +116,7 @@ export function Boutique({
             saisie="Ou saisis le code de la boutique"
           />
         )}
-        {qr && etat && (
+        {present && etat && (
           <button disabled={envoi || etat.paquetsRestants === 0 || etat.mesAchats >= etat.maxParVague || jenny < etat.prixPaquet} onClick={() => void acheter()}>
             Acheter un paquet ({etat.prixPaquet} J)
           </button>
@@ -117,7 +124,7 @@ export function Boutique({
         {resultat && <p className="ok">{resultat}</p>}
         {erreur && <p className="erreur">{erreur}</p>}
       </div>
-      {qr && etat && (
+      {present && etat && (
         <section>
           <h2>Revendre une carte</h2>
           {cartes.length === 0 && <p className="info">Aucune carte à revendre.</p>}

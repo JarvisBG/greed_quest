@@ -54,7 +54,11 @@ export interface ReponseSort {
   zone?: string | null;
   copie?: { itemId: string; carteId: string; contrefacon: boolean };
   contrefacons?: string[];
-  /** Regard : cartes du joueur regardé, telles qu'elles paraissent. */
+  /** Retour : ville ouverte à distance. */
+  ville?: 'masadora' | 'antokiba';
+  /** Accompagnement : position de la cible (au seul lanceur). */
+  accompagnement?: { cibleId: string; pseudo: string; position: { lat: number; lng: number; precisionM: number } | null };
+  /** Voyance, Clairvoyance : cartes du joueur regardé, telles qu'elles paraissent. */
   cartes?: { carteId: string; numero: number; nom: string; rang: string; n: number; contrefacon: boolean }[];
 }
 
@@ -90,7 +94,7 @@ export function resumeSort(r: ReponseSort, cible: string | null, noms: (itemId: 
     case 'accompagnement':
       return `${qui} est gelé 3 min : suis sa position.`;
     case 'retour':
-      return 'Visite à distance ouverte pour 10 min.';
+      return `Tu es à ${r.ville === 'antokiba' ? 'Antokiba' : 'Masadora'} à distance pendant 10 min.`;
     case 'regard':
     case 'clairvoyance': {
       const l = r.cartes ?? [];
@@ -166,7 +170,8 @@ export function corpsSort(c: ChoixSort, position: PositionInput): Record<string,
 }
 
 /** Étapes du lancement : carte à choisir, page, cible, puis confirmation. */
-export function etapes(sort: SpellType): ('carte' | 'page' | 'cible')[] {
+export function etapes(sort: SpellType): ('carte' | 'page' | 'cible' | 'ville')[] {
+  if (sort === 'retour') return ['ville'];
   if (sort === 'echange_force') return ['carte', 'cible'];
   if (sort === 'duplication') return ['carte'];
   if (sort === 'analyse') return ['page'];

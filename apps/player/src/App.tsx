@@ -17,7 +17,10 @@ import { api, session } from './lib/client';
 import { creerEveil, eveilDisponible, preferenceEveil } from './lib/eveil';
 import { baliseDepuisUrl } from './lib/qr';
 import type { Question } from './lib/quiz';
-import { useJeu } from './lib/useJeu';
+import { useJeu, type Moi } from './lib/useJeu';
+
+/** Amendement 2026-10-10 : visite à distance (sort Retour) encore ouverte pour cette ville. */
+const retourActif = (m: Moi, ville: 'masadora' | 'antokiba') => m.retour?.ville === ville && m.retour.resteMs - (Date.now() - m.recuA) > 0;
 
 interface Questionnaires {
   examen: Question[];
@@ -28,7 +31,7 @@ type Onglet = 'accueil' | 'scan' | 'livre' | 'sorts' | 'echanges';
 const ONGLETS: { id: Onglet; nom: string }[] = [
   { id: 'accueil', nom: 'Accueil' },
   { id: 'scan', nom: 'Scanner' },
-  { id: 'livre', nom: 'Livre' },
+  { id: 'livre', nom: 'Book' },
   { id: 'sorts', nom: 'Sorts' },
   { id: 'echanges', nom: 'Échanges' },
 ];
@@ -154,9 +157,18 @@ export function App() {
                 key={baliseLien ?? 'camera'}
               />
             )}
-            {ecran === 'accueil' && onglet === 'livre' && <Livre partieId={partie.id} version={jeu.version} />}
+            {ecran === 'accueil' && onglet === 'livre' && <Livre partieId={partie.id} version={jeu.version} apresAction={jeu.apresAction} />}
             {ecran === 'accueil' && onglet === 'sorts' && (
-              <Sorts partieId={partie.id} moi={moi} version={jeu.version} positionAction={jeu.positionAction} apresAction={jeu.apresAction} />
+              <Sorts
+                partieId={partie.id}
+                moi={moi}
+                version={jeu.version}
+                positionAction={jeu.positionAction}
+                apresAction={jeu.apresAction}
+                suiviCible={jeu.suiviCible}
+                ouvrirSuivi={jeu.ouvrirSuivi}
+                positionConnue={jeu.positionConnue}
+              />
             )}
             {ecran === 'accueil' && onglet === 'echanges' && (
               <Echanges
@@ -186,10 +198,18 @@ export function App() {
                 positionAction={jeu.positionAction}
                 apresAction={jeu.apresAction}
                 onRetour={() => setSous(null)}
+                aDistance={retourActif(moi, 'masadora')}
               />
             )}
             {ecran === 'accueil' && onglet === 'accueil' && sous === 'encheres' && (
-              <Encheres partieId={partie.id} jenny={moi.jenny} version={jeu.version} positionAction={jeu.positionAction} onRetour={() => setSous(null)} />
+              <Encheres
+                partieId={partie.id}
+                jenny={moi.jenny}
+                version={jeu.version}
+                positionAction={jeu.positionAction}
+                onRetour={() => setSous(null)}
+                aDistance={retourActif(moi, 'antokiba')}
+              />
             )}
             {ecran === 'accueil' && onglet === 'accueil' && sous === 'raid' && (
               <Raid

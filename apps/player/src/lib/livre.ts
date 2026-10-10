@@ -23,6 +23,8 @@ export type Emplacement =
       provenance: string;
       obtenue: string;
       engagee: boolean;
+      /** RG-8.5 amendé : carte désignée cachée dans les emplacements libres. */
+      cachee?: boolean;
     } & Carte);
 
 export interface LivreRecu {
@@ -42,4 +44,25 @@ export type EmplacementSort = Extract<Emplacement, { kind: 'sort' }>;
 /** Tous les emplacements occupés, toutes pages confondues. */
 export function contenu(l: LivreRecu): (EmplacementCarte | EmplacementSort)[] {
   return l.pages.flat().filter((e): e is EmplacementCarte | EmplacementSort => e.etat === 'plein');
+}
+
+/** Numéro de l'emplacement fixe (numéro de l'anime, RG-8.1 amendé), null pour un emplacement libre. */
+function numeroFixe(e: Emplacement): number | null {
+  if (!e.designe) return null;
+  if (e.etat === 'plein') return e.kind === 'carte' ? e.numero : null;
+  return e.carte.numero;
+}
+
+/** Titre d'une page : « 000 – 082 » pour les emplacements fixes (numéros de l'anime), « Libres 1 » ensuite. */
+export function titreDePage(l: LivreRecu, i: number): string {
+  const num = (n: number) => String(n).padStart(3, '0');
+  const nums = (l.pages[i] ?? []).map(numeroFixe).filter((n): n is number => n !== null);
+  if (nums.length > 0) return nums.length === 1 ? num(nums[0]!) : `${num(nums[0]!)} – ${num(nums.at(-1)!)}`;
+  const fixes = l.pages.filter((p) => p.some((e) => numeroFixe(e) !== null)).length;
+  return `Libres ${i - fixes + 1}`;
+}
+
+/** RG-8.5 amendé : cartes désignées rangées à leur place (que l'on peut cacher) et cartes cachées (à remettre). */
+export function cartesACacher(l: LivreRecu): EmplacementCarte[] {
+  return contenu(l).filter((e): e is EmplacementCarte => e.kind === 'carte' && e.designe && !e.engagee && !l.gele);
 }

@@ -26,12 +26,15 @@ export function Encheres({
   version,
   positionAction,
   onRetour,
+  aDistance = false,
 }: {
   partieId: string;
   jenny: number;
   version: number;
   positionAction: (envoyer?: boolean) => Promise<PositionInput>;
   onRetour: () => void;
+  /** Amendement 2026-10-10 : visite à distance d'Antokiba ouverte par Retour (pas de QR). */
+  aDistance?: boolean;
 }) {
   const [liste, setListe] = useState<{ encheres: Enchere[]; recuA: number } | null>(null);
   const [qr, setQr] = useState<string | null>(null);
@@ -52,11 +55,11 @@ export function Encheres({
     return () => clearInterval(t);
   }, []);
 
-  const rejoindre = async (id: string, code: string) => {
+  const rejoindre = async (id: string, code: string | null) => {
     setErreur(null);
     try {
-      await api.post(`/parties/${partieId}/encheres/${id}/rejoindre`, { qr: code, position: await positionAction() });
-      setQr(code);
+      await api.post(`/parties/${partieId}/encheres/${id}/rejoindre`, { ...(code ? { qr: code } : {}), position: await positionAction() });
+      if (code) setQr(code);
       await charger();
     } catch (e) {
       setErreur(message(e));
@@ -95,7 +98,7 @@ export function Encheres({
               saisie="Ou saisis le code d’Antokiba"
             />
           ) : (
-            <button className="secondaire" onClick={() => (qr ? void rejoindre(e.id, qr) : setScan(e.id))}>
+            <button className="secondaire" onClick={() => (qr || aDistance ? void rejoindre(e.id, qr) : setScan(e.id))}>
               Participer
             </button>
           )}

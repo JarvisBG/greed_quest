@@ -1,10 +1,11 @@
 // Sorts (RG-10) et pouvoirs de Nen liés (RG-5.4). Un refus ne consomme rien ;
 // un sort accepté est consommé même s'il est bloqué ou sans effet.
-import type { GameState, NenType, PlayerStatus, Rank, SpellType } from '@gq/shared';
+import type { GameState, NenType, PlayerStatus, PouvoirSpe, Rank, SpellType } from '@gq/shared';
 import { addItem, removeItem, transferItem, type Book, type BookItem, type CardItem } from './book.js';
 import { counterfeitsOnPage, revealItems } from './counterfeits.js';
 import { isInRange, isTargetable, isValidPosition, zoneOf, type Polygon, type Position, type RangeSettings } from './geo.js';
 import { pick, type Rng } from './rng.js';
+import { estInvisible, speDisponibleDans } from './specialisation.js';
 
 export const IMMUNITY_MS = 5 * 60_000; // RG-10.2
 export const CASTER_DELAY_MS = 2 * 60_000; // RG-10.3
@@ -28,6 +29,10 @@ export interface SpellPlayer {
   geleJusqua: number | null;
   /** RG-13.1 : Livre gelé après un Clear provisoire, plus aucun sort ne peut le viser. */
   livreGele: boolean;
+  /** Spécialisation (amendement 2026-10-10) : pouvoir, dernier usage, fin du Zetsu. */
+  pouvoirSpe?: PouvoirSpe | null;
+  speA?: number | null;
+  zetsuJusqua?: number | null;
 }
 
 export interface SpellWorld {
@@ -41,6 +46,8 @@ export interface SpellWorld {
    * Par défaut du jeu : Renforcement 30 min, Émission et Manipulation 40 min (`rechargesNenMs`).
    */
   rechargeNenMs?: Partial<Record<NenPower, number>>;
+  /** Recharge des pouvoirs de Spécialisation (Bandit), en ms. */
+  rechargeSpeMs?: number;
 }
 
 export type SpellRefusalCode =
@@ -145,6 +152,8 @@ export interface OffensiveInput {
   emission?: boolean;
   /** Échange forcé : carte choisie par le lanceur. */
   carteDonneeId?: string;
+  /** Bandit (Spécialisation) : carte du catalogue visée ; prise si la cible en a un exemplaire prenable, jamais la SS. */
+  carteVoulueId?: string;
 }
 
 export interface OffensiveSuccess {
@@ -167,11 +176,13 @@ export function castOffensive(w: SpellWorld, input: OffensiveInput, rng: Rng): O
   const bloque = checkCaster(w, lanceur);
   if (bloque) return bloque;
 
-  // Source : carte de sort, ou pouvoir de Manipulation (1 échange forcé gratuit).
+  // Source : carte de sort, pouvoir de Manipulation (échange forcé gratuit) ou de Bandit (Vol gratuit, Spécialisation).
+  const bandit = source.type === 'pouvoir' && sort === 'vol';
   if (source.type === 'pouvoir') {
-    if (sort !== 'echange_force' || !hasPower(w, lanceur, 'manipulation')) {
-      return refuse('pouvoir_indisponible', 'Pouvoir indisponible');
-    }
+    const ok = bandit
+      ? speDisponibleDans({ pouvoirSpe: lanceur.pouvoirSpe ?? null, speA: lanceur.speA ?? null }, 'bandit', w.now, w.rechargeSpeMs ?? Infinity) === 0
+      : sort === 'echange_force' && hasPower(w, lanceur, 'manipulation');
+    if (!ok) return refuse('pouvoir_indisponible', 'Pouvoir indisponible');
   } else if (!findSpellCard(lanceur.book, source.itemId, sort)) {
     return refuse('sort_absent', "Tu n'as pas ce sort");
   }
@@ -187,7 +198,7 @@ export function castOffensive(w: SpellWorld, input: OffensiveInput, rng: Rng): O
     return refuse('cible_invalide', 'Cible invalide');
   }
   if (cible.livreGele) return refuse('cible_livre_gele', 'Ce joueur a complété son Livre : il ne peut plus être visé');
-  if (!isTargetable(cible.position, w.now, w.portee)) return refuse('cible_hors_radar', 'Ce joueur est hors radar'); // RG-10.10 amendé
+  if (!isTargetable(cible.position, w.now, w.portee) || estInvisible(cible, w.now)) return refuse('cible_hors_radar', 'Ce joueur est hors radar'); // RG-10.10 amendé, Zetsu
   let viaEmission = false;
   if (!isInRange(lanceur.position!, cible.position, w.portee)) {
     if (!input.emission || !hasPower(w, lanceur, 'emission')) return refuse('cible_hors_portee', 'Ce joueur est hors de portée');
@@ -207,7 +218,11 @@ export function castOffensive(w: SpellWorld, input: OffensiveInput, rng: Rng): O
   lanceur =
     source.type === 'carte'
       ? { ...lanceur, book: removeItem(lanceur.book, source.itemId) }
-      : usePower(w, lanceur, 'manipulation');
+      : bandit
+        ? { ...lanceur, speA: w.now }
+        : usePower(w, lanceur, 'manipulation');
+  // Zetsu : attaquer rompt l'invisibilité.
+  if (estInvisible(lanceur, w.now)) lanceur = { ...lanceur, zetsuJusqua: null };
   if (viaEmission) lanceur = usePower(w, lanceur, 'emission');
   lanceur = { ...lanceur, dernierOffensifA: w.now };
 
@@ -244,7 +259,9 @@ export function castOffensive(w: SpellWorld, input: OffensiveInput, rng: Rng): O
     case 'vol': {
       const prenables = takeableCards(cible.book, w.now, w.rangDe);
       if (prenables.length === 0) return { ok: true, resultat: 'sans_effet', lanceur, cible, notice: notice('sans_effet') };
-      const t = transferItem(cible.book, lanceur.book, pick(rng, prenables).id, {
+      // Bandit : la carte visée si la cible en a un exemplaire prenable (jamais la SS), sinon au hasard.
+      const visee = bandit && input.carteVoulueId ? prenables.find((c) => c.cardId === input.carteVoulueId && w.rangDe(c.cardId) !== 'SS') : undefined;
+      const t = transferItem(cible.book, lanceur.book, (visee ?? pick(rng, prenables)).id, {
         now: w.now,
         origine: { type: 'vol', sur: cible.id },
         perte: { cause: 'vol', par: lanceur.id },
@@ -320,11 +337,12 @@ export function castRadar(
     lanceur: SpellPlayer;
     itemId: string;
     /** `book` : pour le Voile d'ombre de la cible. */
-    cible: { id: string; position: Position | null; book?: Book };
+    cible: { id: string; position: Position | null; book?: Book; zetsuJusqua?: number | null };
     zones: readonly { id: string; polygon: Polygon }[];
   },
 ): SimpleSuccess<{ zoneId: string | null }> | SpellRefusal {
   if (input.cible.id === input.lanceur.id) return refuse('cible_invalide', 'Cible invalide');
+  if (estInvisible(input.cible, w.now)) return refuse('cible_hors_radar', 'Ce joueur est hors radar'); // Zetsu
   const lanceur = consumeSimple(w, input.lanceur, input.itemId, 'radar');
   if (isRefusal(lanceur)) return lanceur;
   const voile = voileBloque(lanceur, input.cible, 'radar', { zoneId: null });
@@ -353,9 +371,10 @@ export interface CarteVue {
  */
 export function castRegard(
   w: SpellWorld,
-  input: { lanceur: SpellPlayer; itemId: string; cible: { id: string; book: Book; livreGele: boolean }; rencontre: boolean },
+  input: { lanceur: SpellPlayer; itemId: string; cible: { id: string; book: Book; livreGele: boolean; zetsuJusqua?: number | null }; rencontre: boolean },
 ): SimpleSuccess<{ cartes: CarteVue[] }> | SpellRefusal {
   if (input.cible.id === input.lanceur.id) return refuse('cible_invalide', 'Cible invalide');
+  if (estInvisible(input.cible, w.now)) return refuse('cible_hors_radar', 'Ce joueur est hors radar'); // Zetsu
   if (!input.rencontre) return refuse('cible_non_rencontree', 'Tu n’as encore jamais croisé ce joueur');
   if (input.cible.livreGele) return refuse('cible_livre_gele', 'Ce Livre est protégé');
   const lanceur = consumeSimple(w, input.lanceur, input.itemId, 'regard');

@@ -14,6 +14,8 @@ export type Origine =
   | { type: 'arene'; tentativeId: string }
   /** Réserve de Matérialisation (amendement 2026-10-10). */
   | { type: 'materialisation' }
+  /** Alchimie, pouvoir de Spécialisation (amendement 2026-10-10). */
+  | { type: 'alchimie' }
   | { type: 'duplication' }
   | { type: 'kit' }
   | { type: 'correction_gm'; par: string };

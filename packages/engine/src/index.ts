@@ -20,3 +20,4 @@ export * from './conseils.js';
 export * from './arena.js';
 export * from './objets.js';
 export * from './nen.js';
+export * from './specialisation.js';

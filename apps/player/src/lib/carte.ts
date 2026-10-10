@@ -124,28 +124,50 @@ export function construirePlan(
   return { largeur: LARGEUR, hauteur, zones: zs, moi };
 }
 
-/** Zoom du plein écran : cadre de vue borné au plan (de 1/5 du plan au plan entier). */
+/**
+ * Vue de la carte agrandie : le point regardé (cx, cy, en unités du plan) et le zoom z (1 = carte entière, jusqu'à 5).
+ * À z = 1, la feuille de parchemin serre la carte ; dès qu'on zoome, elle se déplie jusqu'aux bords de la scène
+ * (les rouleaux s'écartent) à échelle constante : on voit plus de carte au lieu d'un saut de zoom (validé le 2026-10-10).
+ */
 export interface Vue {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
+  cx: number;
+  cy: number;
+  z: number;
 }
 
-export function bornerVue(v: Vue, largeur: number, hauteur: number): Vue {
-  const w = Math.min(largeur, Math.max(largeur / 5, v.w));
-  const h = w * (hauteur / largeur);
-  return {
-    w,
-    h,
-    x: Math.min(largeur - w, Math.max(0, v.x)),
-    y: Math.min(hauteur - h, Math.max(0, v.y)),
-  };
+export const ZOOM_MAX = 5;
+/** Place laissée autour de la feuille dans la scène (rouleaux à gauche et à droite, bords déchirés en haut et en bas). */
+export const GOUTTIERE = { x: 84, y: 36 };
+
+export interface Cadrage {
+  vue: Vue;
+  /** Taille de la feuille en pixels. */
+  feuille: { w: number; h: number };
+  /** viewBox du dessin. */
+  vb: { x: number; y: number; w: number; h: number };
+  /** Pixels par unité du plan. */
+  echelle: number;
 }
 
-/** Zoom d'un facteur `f` autour du point (ux, uy) du plan, qui reste sous le doigt. */
-export function zoomerVue(v: Vue, f: number, ux: number, uy: number, largeur: number, hauteur: number): Vue {
-  const w = Math.min(largeur, Math.max(largeur / 5, v.w * f));
-  const k = w / v.w;
-  return bornerVue({ x: ux - (ux - v.x) * k, y: uy - (uy - v.y) * k, w, h: 0 }, largeur, hauteur);
+export function cadrer(v: Vue, scene: { w: number; h: number }, largeur: number, hauteur: number): Cadrage {
+  const z = Math.min(ZOOM_MAX, Math.max(1, v.z));
+  const aw = Math.max(1, scene.w - GOUTTIERE.x);
+  const ah = Math.max(1, scene.h - GOUTTIERE.y);
+  const fw0 = Math.min(aw, ah * (largeur / hauteur));
+  const deplie = z > 1.01;
+  const feuille = deplie ? { w: aw, h: ah } : { w: fw0, h: fw0 * (hauteur / largeur) };
+  const echelle = (fw0 / largeur) * z;
+  const w = feuille.w / echelle;
+  const h = feuille.h / echelle;
+  // Plus grande que la carte dans un sens : la carte reste centrée dans ce sens.
+  const cx = w >= largeur ? largeur / 2 : Math.min(largeur - w / 2, Math.max(w / 2, v.cx));
+  const cy = h >= hauteur ? hauteur / 2 : Math.min(hauteur - h / 2, Math.max(h / 2, v.cy));
+  return { vue: { cx, cy, z }, feuille, vb: { x: cx - w / 2, y: cy - h / 2, w, h }, echelle };
+}
+
+/** Zoom d'un facteur `f` (> 1 = rapprocher) autour du point (ux, uy) du plan, qui reste sous le doigt. */
+export function zoomerVue(v: Vue, f: number, ux: number, uy: number): Vue {
+  const z = Math.min(ZOOM_MAX, Math.max(1, v.z * f));
+  const k = v.z / z;
+  return { cx: ux + (v.cx - ux) * k, cy: uy + (v.cy - uy) * k, z };
 }

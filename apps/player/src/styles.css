@@ -392,7 +392,7 @@ p { margin: 0; }
 .moi-halo { fill: rgba(31, 74, 156, 0.16); stroke: rgba(31, 74, 156, 0.5); stroke-width: 1; }
 .moi-point { fill: var(--bleu); stroke: #fff; stroke-width: 3; }
 .moi-nom { font: 800 12px/1 var(--f-texte); fill: var(--bleu); paint-order: stroke; stroke: var(--parchemin); stroke-width: 4px; }
-.rose { position: absolute; left: 42px; bottom: 18px; width: 22px; height: 44px; overflow: visible; pointer-events: none; }
+.rose { position: absolute; left: 24px; bottom: 14px; width: 22px; height: 44px; overflow: visible; pointer-events: none; }
 .rose-plein { fill: var(--encre-carte); }
 .rose-vide { fill: var(--parchemin); stroke: var(--encre-carte); stroke-width: 1; }
 .rose text { font: 400 10px var(--f-titre); fill: var(--encre-carte); }
@@ -402,25 +402,28 @@ p { margin: 0; }
 .plein-tete { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; background: var(--case); border-bottom: var(--trait) solid var(--encre); }
 .plein-tete .retour svg { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: square; }
 .plein-scene { position: relative; overflow: hidden; background: #2a2318; }
-.parchemin { position: absolute; inset: 10px; background: var(--parchemin); box-shadow: inset 0 0 0 2px var(--parchemin-bord), inset 0 0 40px rgba(120, 85, 30, 0.35), 0 10px 24px -10px rgba(0, 0, 0, 0.7); overflow: hidden; touch-action: none; }
+/* La feuille serre la carte entière, et se déplie jusqu'aux bords de la scène quand on zoome (taille posée par le composant). */
+.feuille { position: absolute; left: 50%; top: 50%; translate: -50% -50%; filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.55)); }
+.feuille.anime { transition: width 0.42s var(--sortie), height 0.42s var(--sortie); }
+.parchemin { position: absolute; inset: 0; background: var(--parchemin); box-shadow: inset 0 0 0 2px var(--parchemin-bord), inset 0 0 40px rgba(120, 85, 30, 0.35); overflow: hidden; touch-action: none; }
 .parchemin > svg { display: block; width: 100%; height: 100%; cursor: grab; }
 .parchemin > svg:active { cursor: grabbing; }
-.rouleau { position: absolute; top: 2px; bottom: 2px; width: 26px; margin-left: -13px; border-radius: 13px; background: linear-gradient(90deg, #8a6a34, #e9d6a6 35%, #f6ead0 50%, #c8a86b 75%, #6e5226); box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5); opacity: 0; pointer-events: none; }
-.rouleau::before, .rouleau::after { content: ''; position: absolute; left: 50%; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: #3a2a14; }
-.rouleau::before { top: -8px; }
-.rouleau::after { bottom: -8px; }
-.enroule { position: absolute; top: 6px; bottom: 6px; width: 22px; pointer-events: none; }
-.enroule::before { content: ''; position: absolute; inset: 0; border-radius: 11px / 7px; }
-.enroule.gauche { left: 2px; transform-origin: left; }
-.enroule.droite { right: 2px; transform-origin: right; }
-/* Le papier s'enroule vers l'arrière : face claire sur le dessus du rouleau, pli sombre côté carte, ombre portée sur la carte */
-.enroule.gauche::before { background: linear-gradient(90deg, #8f7140 0%, #d9c08a 18%, #f7ecd2 42%, #ead7a9 62%, #b8975a 84%, #6f5428 100%); box-shadow: 6px 0 10px -3px rgba(60, 38, 8, 0.55); }
-.enroule.droite::before { background: linear-gradient(270deg, #8f7140 0%, #d9c08a 18%, #f7ecd2 42%, #ead7a9 62%, #b8975a 84%, #6f5428 100%); box-shadow: -6px 0 10px -3px rgba(60, 38, 8, 0.55); }
-/* Bout du rouleau : la spirale du papier vue de dessus et de dessous */
-.enroule::after, .enroule > i { content: ''; position: absolute; left: 2px; right: 2px; height: 10px; border-radius: 50%; background: radial-gradient(ellipse at 50% 55%, #4a3616 0 22%, #c9ad74 24% 38%, #8a6b36 40% 50%, #e6d3a3 52% 100%); }
-.enroule::after { top: -3px; }
-.enroule > i { bottom: -3px; }
-.zoom { position: absolute; right: 18px; top: 18px; display: grid; gap: 8px; }
+.rouleau { position: absolute; width: 40px; margin-left: -20px; border-radius: 20px; background: linear-gradient(90deg, #8a6a34, #e9d6a6 35%, #f6ead0 50%, #c8a86b 75%, #6e5226); box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5); opacity: 0; pointer-events: none; }
+.rouleau::before, .rouleau::after { content: ''; position: absolute; left: 50%; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; background: #3a2a14; }
+.rouleau::before { top: -10px; }
+.rouleau::after { bottom: -10px; }
+/* Bords restés enroulés, épais, aux bouts un peu déchirés ; ils chevauchent le bord de la feuille. */
+.enroule { position: absolute; top: -7px; bottom: -7px; width: 38px; pointer-events: none; }
+.enroule.gauche { left: -19px; transform-origin: left; }
+.enroule.droite { right: -19px; transform-origin: right; }
+.enroule::before { content: ''; position: absolute; inset: 0; clip-path: var(--dechire); }
+.enroule.gauche::before { background: linear-gradient(90deg, #6f5428 0%, #a88a52 10%, #dcc48f 26%, #f7ecd2 44%, #ecdab0 60%, #c3a368 78%, #8a6a36 92%, #5e461f 100%); }
+.enroule.droite::before { background: linear-gradient(270deg, #6f5428 0%, #a88a52 10%, #dcc48f 26%, #f7ecd2 44%, #ecdab0 60%, #c3a368 78%, #8a6a36 92%, #5e461f 100%); }
+/* Ombre du rouleau sur la carte */
+.enroule::after { content: ''; position: absolute; top: 8px; bottom: 8px; width: 14px; }
+.enroule.gauche::after { left: 100%; background: linear-gradient(90deg, rgba(60, 38, 8, 0.45), transparent); }
+.enroule.droite::after { right: 100%; background: linear-gradient(270deg, rgba(60, 38, 8, 0.45), transparent); }
+.zoom { position: absolute; right: 54px; top: 22px; display: grid; gap: 8px; }
 .zoom button { width: 48px; height: 48px; display: grid; place-items: center; padding: 0; border: var(--trait) solid var(--encre); background: var(--case); }
 .zoom svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: square; }
 .carte-pleine .passer { position: absolute; left: 50%; bottom: 18px; translate: -50% 0; font: 600 13px var(--f-texte); color: var(--encre-carte); background: var(--parchemin); padding: 4px 10px; white-space: nowrap; pointer-events: none; animation: passer-apparait 0.3s 0.4s both; }

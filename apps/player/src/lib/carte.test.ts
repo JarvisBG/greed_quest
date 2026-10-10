@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bornerVue, construirePlan, LARGEUR, niveauBalises, zoomerVue, type ZoneRecue } from './carte';
+import { cadrer, construirePlan, LARGEUR, niveauBalises, ZOOM_MAX, zoomerVue, type ZoneRecue } from './carte';
 
 const LAT = 48.85;
 const LNG = 2.35;
@@ -57,15 +57,24 @@ describe('carte de l’île', () => {
     expect(construirePlan([], {}, null).zones).toEqual([]);
   });
 
-  it('zoom borné au plan, le point visé reste sous le doigt', () => {
-    const v = zoomerVue({ x: 0, y: 0, w: 420, h: 300 }, 0.5, 210, 150, 420, 300);
-    expect(v).toEqual({ x: 105, y: 75, w: 210, h: 150 });
-    expect(zoomerVue(v, 0.01, 0, 0, 420, 300).w).toBe(84);
-    expect(bornerVue({ x: -50, y: 999, w: 9999, h: 0 }, 420, 300)).toEqual({
-      x: 0,
-      y: 0,
-      w: 420,
-      h: 300,
-    });
+  it('carte entière : la feuille serre la carte ; zoomée : elle se déplie à échelle constante', () => {
+    const scene = { w: 484, h: 636 };
+    const entiere = cadrer({ cx: 210, cy: 160, z: 1 }, scene, 420, 320);
+    expect(entiere.feuille.w).toBe(400);
+    expect(entiere.feuille.h).toBeCloseTo(400 * (320 / 420), 6);
+    expect(entiere.vb).toEqual({ x: 0, y: 0, w: 420, h: 320 });
+    const zoomee = cadrer({ cx: 100, cy: 160, z: 2 }, scene, 420, 320);
+    expect(zoomee.feuille).toEqual({ w: 400, h: 600 });
+    expect(zoomee.echelle).toBeCloseTo(entiere.echelle * 2, 6);
+    // Moins large que la carte : on reste dedans ; plus haute : la carte est centrée en hauteur.
+    expect(zoomee.vb.w).toBeCloseTo(210, 6);
+    expect(zoomee.vb.x).toBeCloseTo(0, 6);
+    expect(zoomee.vue.cy).toBe(160);
+  });
+
+  it('zoom borné (1 à 5), le point visé reste sous le doigt', () => {
+    expect(zoomerVue({ cx: 210, cy: 160, z: 1 }, 2, 100, 100)).toEqual({ cx: 155, cy: 130, z: 2 });
+    expect(zoomerVue({ cx: 210, cy: 160, z: 4 }, 10, 210, 160).z).toBe(ZOOM_MAX);
+    expect(zoomerVue({ cx: 210, cy: 160, z: 2 }, 0.1, 210, 160).z).toBe(1);
   });
 });

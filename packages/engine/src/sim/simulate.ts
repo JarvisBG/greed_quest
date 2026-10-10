@@ -7,7 +7,8 @@
 // - à Masadora : revente des doublons (hors SS) et achat de paquets de sorts ;
 // - le GM lance une Apparition à intervalle régulier ;
 // - options (calibrage du 2026-10-09) : arène de Soufrabi (mise, défi, tirage A / S / SS), enchères de SS à Antokiba,
-//   cession de cartes du Livre (SS, S) d'un joueur distancé au joueur qui en a besoin.
+//   cession de cartes du Livre (SS, S) d'un joueur distancé au joueur qui en a besoin ;
+// - option (2026-10-10) : cartes hors collection, données à la place d'une partie des replis en jenny.
 import { NEN_TYPES, RANKS, type NenType, type Rank } from '@gq/shared';
 import { consumeDraw, fillToTarget, rechargeBeacons, replaceExhausted, rotate, ROTATION_INTERVAL_MS, type Beacon } from '../beacons.js';
 import { arenaReward, enterArena } from '../arena.js';
@@ -25,6 +26,10 @@ import { castOffensive, type NenPower, type OffensiveSpell, type SpellPlayer } f
 import { closeAuction, joinAuction, openAuction, placeBid, trade, type Auction } from '../trades.js';
 
 const MIN = 60_000;
+
+/** Cartes hors collection (proposition du 2026-10-10) : ne comptent pas pour le Clear. */
+export type CarteHC = 'pepite' | 'ticket' | 'boussole' | 'souffle' | 'voile' | 'coffre';
+const CARTES_HC: CarteHC[] = ['pepite', 'ticket', 'boussole', 'souffle', 'voile', 'coffre'];
 
 export interface SimConfig {
   joueurs: number;
@@ -84,6 +89,21 @@ export interface SimConfig {
   limiteSSMin: number;
   /** Multiplicateur propre aux limites des rangs C et D (null = celui de multLimites). */
   multLimiteCD: number | null;
+  /**
+   * Cartes hors collection : part des replis en jenny (carte épuisée) qui donnent à la place une carte
+   * hors collection, tirée selon `poidsHC`. 0 = aucune. Section à part du Livre, `placesHC` places.
+   */
+  partReplisHC: number;
+  poidsHC: Record<CarteHC, number>;
+  placesHC: number;
+  /** true : la carte hors collection s'ajoute aux jenny du repli au lieu de les remplacer. */
+  hcEnPlus: boolean;
+  /** Pépite : revendue à Masadora. */
+  pepiteJ: number;
+  /** Ticket à gratter : gains possibles et leurs poids. */
+  ticketGains: [number, number][];
+  /** Voile, Coffre (défenses non modélisées) : revente du surplus à Masadora (1 de chaque gardé). */
+  reventeHCJ: number;
   /** Répartition du catalogue par rang (RG-8 : SS 2, S 3, A 5, B 6, C 7, D 7). */
   catalogue: Record<Rank, number>;
 }
@@ -118,6 +138,13 @@ export const DEFAULT_SIM: Omit<SimConfig, 'joueurs' | 'seed'> = {
   limiteSSMin: 3,
   multLimiteCD: null,
   catalogue: { SS: 2, S: 3, A: 5, B: 6, C: 7, D: 7 },
+  partReplisHC: 0,
+  poidsHC: { pepite: 3, ticket: 3, boussole: 2, souffle: 2, voile: 1, coffre: 1 },
+  placesHC: 8,
+  hcEnPlus: false,
+  pepiteJ: 30,
+  ticketGains: [[0, 40], [10, 35], [30, 20], [100, 5]],
+  reventeHCJ: 10,
 };
 
 export interface SimResult {
@@ -154,6 +181,12 @@ export interface SimResult {
   refus: Partial<Record<ScanRefusalCode, number>>;
   /** Cartes manquantes au meilleur joueur, par rang. */
   manquesDuMeilleur: Partial<Record<Rank, number>>;
+  /** Cartes hors collection obtenues, et utilisées (Boussole, Second souffle). */
+  hcObtenues: Partial<Record<CarteHC, number>>;
+  boussoles: number;
+  souffles: number;
+  /** Jenny rapportés par les Pépites, Tickets et reventes de cartes hors collection. */
+  jennyHC: number;
 }
 
 interface SimPlayer {
@@ -171,6 +204,7 @@ interface SimPlayer {
   geleJusqua: number | null;
   pouvoirsUtilises: NenPower[];
   derniereAreneA: number | null;
+  hc: CarteHC[];
 }
 
 function buildCatalogue(c: Record<Rank, number>): { ids: string[]; rang: Map<string, Rank> } {
@@ -229,6 +263,7 @@ export function simulate(cfg: SimConfig): SimResult {
     geleJusqua: null,
     pouvoirsUtilises: [],
     derniereAreneA: null,
+    hc: [],
   }));
 
   // Tous les joueurs restent actifs : J = nombre de joueurs.
@@ -251,6 +286,30 @@ export function simulate(cfg: SimConfig): SimResult {
   const cessions: Partial<Record<Rank, number>> = {};
   const stats = { arene: 0, areneVictoires: 0, areneSS: 0, encheresSS: 0, encheresSSVendues: 0, prixSS: 0, checkpoints: 0, tirages: 0, tiragesCarte: 0, replis: 0, echanges: 0, achatsCartes: 0, vols: 0, paquets: 0 };
   const refus: SimResult['refus'] = {};
+  const hcObtenues: SimResult['hcObtenues'] = {};
+  const statsHC = { boussoles: 0, souffles: 0, jenny: 0 };
+  const poidsHC = CARTES_HC.filter((h) => cfg.poidsHC[h] > 0).map((h) => [h, cfg.poidsHC[h]] as [CarteHC, number]);
+  /** Repli en jenny : une partie devient une carte hors collection (s'il reste une place). */
+  const repli = (p: SimPlayer, amount: number) => {
+    if (poidsHC.length > 0 && p.hc.length < cfg.placesHC && rng.next() < cfg.partReplisHC) {
+      const h = weightedPick(rng, poidsHC)!;
+      hcObtenues[h] = (hcObtenues[h] ?? 0) + 1;
+      if (h === 'ticket') {
+        const g = weightedPick(rng, cfg.ticketGains) ?? 0;
+        p.jenny += g;
+        statsHC.jenny += g;
+      } else p.hc.push(h);
+      if (cfg.hcEnPlus) p.jenny += amount;
+      return;
+    }
+    p.jenny += amount;
+  };
+  const prendreHC = (p: SimPlayer, h: CarteHC) => {
+    const i = p.hc.indexOf(h);
+    if (i < 0) return false;
+    p.hc.splice(i, 1);
+    return true;
+  };
 
   const limites = (): Record<Rank, number> => ({
     SS: params.limiteSS,
@@ -392,7 +451,10 @@ export function simulate(cfg: SimConfig): SimResult {
       p.book = addItem(p.book, { kind: 'carte', id: newId(), cardId: g.cardId, origine: { type: 'arene', tentativeId: 'sim' }, obtenuA: now });
       if (g.rank === 'SS') stats.areneSS++;
       checkClearOf(p, now);
-    } else if (g.kind === 'jenny') p.jenny += g.amount;
+    } else if (g.kind === 'jenny') {
+      if (g.repli) repli(p, g.amount);
+      else p.jenny += g.amount;
+    }
     return true;
   }
 
@@ -487,6 +549,18 @@ export function simulate(cfg: SimConfig): SimResult {
   }
 
   function masadora(p: SimPlayer, now: number) {
+    // Hors collection : Pépites revendues, surplus de Voile / Coffre revendu (1 de chaque gardé).
+    for (const h of [...p.hc]) {
+      if (h === 'pepite') {
+        prendreHC(p, h);
+        p.jenny += cfg.pepiteJ;
+        statsHC.jenny += cfg.pepiteJ;
+      } else if ((h === 'voile' || h === 'coffre') && p.hc.filter((x) => x === h).length > 1) {
+        prendreHC(p, h);
+        p.jenny += cfg.reventeHCJ;
+        statsHC.jenny += cfg.reventeHCJ;
+      }
+    }
     for (const d of duplicates(p)) {
       const prix = DEFAULT_SHOP_CONFIG.revente[rangDe(d.cardId)];
       if (prix === null) continue;
@@ -594,10 +668,18 @@ export function simulate(cfg: SimConfig): SimResult {
       if (clearA !== null) break;
     }
 
-    // Scan d'une balise au hasard.
-    const beacon = beacons[randomInt(rng, beacons.length)]!;
+    // Scan d'une balise au hasard ; avec une Boussole, une balise active jamais scannée par le joueur.
+    let beacon = beacons[randomInt(rng, beacons.length)]!;
+    if (p.hc.includes('boussole')) {
+      const vues = new Set(p.historique);
+      const cibles = beacons.filter((b) => b.state === 'active' && b.type !== 'fantome' && !vues.has(b.id));
+      if (cibles.length > 0 && prendreHC(p, 'boussole')) {
+        beacon = cibles[randomInt(rng, cibles.length)]!;
+        statsHC.boussoles++;
+      }
+    }
     visites.set(beacon.zoneId, (visites.get(beacon.zoneId) ?? 0) + 1);
-    const check = checkScan({
+    const scanCheck = (k: number) => checkScan({
       now,
       gameState: 'en_cours',
       player: {
@@ -610,8 +692,14 @@ export function simulate(cfg: SimConfig): SimResult {
       },
       beacon: { id: beacon.id, state: beacon.state, zoneId: beacon.zoneId, stock: beacon.stock },
       zonesFermees: new Set(),
-      k: params.kBoucle,
+      k,
     });
+    let check = scanCheck(params.kBoucle);
+    // Second souffle : retirer sur cette balise sans attendre la boucle (RG-7.1 ; le rendement décroissant RG-7.2 reste).
+    if (!check.ok && check.code === 'boucle' && prendreHC(p, 'souffle')) {
+      statsHC.souffles++;
+      check = scanCheck(0);
+    }
 
     if (!check.ok) {
       refus[check.code] = (refus[check.code] ?? 0) + 1;
@@ -632,13 +720,11 @@ export function simulate(cfg: SimConfig): SimResult {
           p.book = addItem(p.book, { kind: 'sort', id: newId(), spell: gain.spell, obtenuA: now });
           useNonOffensive(p);
         }
-      } else {
-        p.jenny += gain.amount;
-        if (gain.repli) {
-          stats.tiragesCarte++;
-          stats.replis++;
-        }
-      }
+      } else if (gain.repli) {
+        stats.tiragesCarte++;
+        stats.replis++;
+        repli(p, gain.amount);
+      } else p.jenny += gain.amount;
       p.historique.push(beacon.id);
       p.dernierTirageA = now;
 
@@ -686,5 +772,9 @@ export function simulate(cfg: SimConfig): SimResult {
     ssEnJeu: [...countInCirculation(players.map((x) => x.book))].filter(([id]) => rangDe(id) === 'SS').reduce((a, [, n]) => a + n, 0),
     refus,
     manquesDuMeilleur: manques,
+    hcObtenues,
+    boussoles: statsHC.boussoles,
+    souffles: statsHC.souffles,
+    jennyHC: statsHC.jenny,
   };
 }

@@ -106,6 +106,24 @@ Constats :
 2. **Relever les limites des cartes communes fait chuter les Clear** : moins de tirages changés en jenny, donc moins d'argent pour racheter des cartes, miser à l'arène, enchérir et acheter des sorts, et des Livres encombrés de doublons. Les jenny sont le carburant du jeu ; le « repli » d'environ une carte sur deux en jenny n'est pas une perte sèche (10 J par repli).
 3. Regard n'est pas modélisé : la cession du simulateur suppose déjà que l'acheteur sait qui détient la carte ; Regard rend cette hypothèse réaliste.
 
+## Cartes hors collection (2026-10-10, 40 graines, 120 min, 1 SS, animation active, SS 1 pour 10 au moins 4)
+Options : `partReplisHC` (part des replis « carte épuisée » qui donnent une carte hors collection), `hcEnPlus` (la carte s'ajoute aux 10 J du repli au lieu de les remplacer), `poidsHC=pepite:3,ticket:3,boussole:2,souffle:2,voile:1,coffre:1`, `placesHC` (8). Modèle : Pépite revendue 30 J à Masadora ; Ticket gratté aussitôt (0 / 10 / 30 / 100 J, poids 40 / 35 / 20 / 5) ; Boussole = le scan suivant vise une balise active jamais scannée ; Second souffle = passe outre la boucle (RG-7.1) une fois ; Voile et Coffre gardés (1 de chaque, surplus revendu 10 J), effets défensifs non modélisés. Clear sur 40 parties.
+
+| Scénario (N = 14 ; N = 16 pour la dernière colonne) | Clear 10 / 30 / 80 j. | Clear 80 j., N = 16 | Hors coll. / joueur |
+|---|---|---|---|
+| Sans | 17 / 16 / 28 | 22 | — |
+| 1 repli sur 3 **remplacé** par une carte (les 6) | 14 / 10 / 25 | 21 | ≈ 2,8 |
+| 1 repli sur 2 remplacé | 14 / 9 / 22 | 16 | — |
+| 1 sur 3 remplacé, Pépite + Ticket seulement | 17 / 9 / 29 | 18 | — |
+| 1 sur 3 remplacé, Boussole, Souffle, Voile, Coffre seulement | 16 / 8 / 18 | 12 | — |
+| **1 repli sur 3 donne une carte en plus des 10 J** (les 6) | **17 / 14 / 38** | **30** | ≈ 2,5 (Boussole 0,4 utilisée, Souffle 0,2) |
+| En plus, utilitaires seulement | 18 / 13 / 27 | 20 | ≈ 2,7 |
+
+Constats :
+1. **Remplacer les jenny coûte des Clear**, surtout avec les cartes sans valeur en jenny (Voile, Coffre) : c'est encore le carburant de l'économie.
+2. **Donner la carte en plus des 10 J est neutre à favorable** (+10 à +25 points à 80 joueurs, grâce aux Pépites, Tickets et Boussoles). ≈ 2,5 cartes hors collection par joueur et par partie : assez pour exister, pas assez pour encombrer.
+3. La Boussole et le Second souffle ont un effet mesurable mais modeste ; Voile et Coffre ne jouent que contre les sorts (non modélisés).
+
 ## Recommandations (validées le 2026-10-09, voir PROGRESS.md « Calibrage »)
 - Limites en mode Multiplicateur × 2 par défaut (ou formules RG-14 revues pour ~20 exemplaires par joueur).
 - Nombre de balises posées recommandé ≈ 0,75 × joueurs attendus (min 10).

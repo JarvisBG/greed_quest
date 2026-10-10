@@ -14,6 +14,10 @@ for (const a of args.filter((x) => x.includes('='))) {
   const [k, v] = a.split('=') as [string, string];
   if (k === 'cat') {
     overrides.catalogue = Object.fromEntries(v.split(',').map((x) => [x.replace(/\d+$/, ''), Number(x.match(/\d+$/)?.[0] ?? 0)])) as Record<Rank, number>;
+  } else if (k === 'poidsHC') {
+    // `poidsHC=pepite:3,ticket:3,boussole:2,souffle:2,voile:1,coffre:1` (absente = 0).
+    const poids = Object.fromEntries(v.split(',').map((x) => [x.split(':')[0], Number(x.split(':')[1])]));
+    overrides.poidsHC = Object.fromEntries(Object.keys(DEFAULT_SIM.poidsHC).map((h) => [h, poids[h] ?? 0])) as SimConfig['poidsHC'];
   } else if (k.startsWith('prixCession')) {
     prixCession[k.slice('prixCession'.length) as Rank] = Number(v);
   } else {
@@ -31,8 +35,8 @@ const median = (xs: number[]) => {
 const fmt = (x: number | null, d = 0) => (x === null ? '—' : x.toFixed(d));
 
 console.log(`Graines : ${graines} · Réglages : ${JSON.stringify({ ...DEFAULT_SIM, ...overrides })}\n`);
-console.log('| Joueurs | Clear | Clear médian (min) | Meilleur (médiane /N) | Moyenne /30 | Tirages / joueur | Repli jenny | Échanges / achats / vols | Manques du meilleur | SS du meilleur / en jeu | Arène tent. / vict. / SS | Enchères SS vendues / ouvertes (prix) | Cessions | Scans refusés |');
-console.log('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
+console.log('| Joueurs | Clear | Clear médian (min) | Meilleur (médiane /N) | Moyenne /30 | Tirages / joueur | Repli jenny | Échanges / achats / vols | Manques du meilleur | SS du meilleur / en jeu | Arène tent. / vict. / SS | Enchères SS vendues / ouvertes (prix) | Cessions | Hors coll. / joueur (Boussoles, Souffles, J) | Scans refusés |');
+console.log('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
 
 for (const joueurs of [10, 30, 80]) {
   const runs: SimResult[] = [];
@@ -58,7 +62,9 @@ for (const joueurs of [10, 30, 80]) {
   const prix = runs.flatMap((r) => (r.prixMoyenSS === null ? [] : [r.prixMoyenSS]));
   const arene = `${fmt(moy((r) => r.areneTentatives))} / ${fmt(moy((r) => r.areneVictoires))} / ${fmt(moy((r) => r.areneSS), 1)}`;
   const encheres = `${fmt(moy((r) => r.encheresSSVendues), 1)} / ${fmt(moy((r) => r.encheresSS), 1)} (${fmt(prix.length ? prix.reduce((a, b) => a + b, 0) / prix.length : null)} J)`;
+  const nbHC = moy((r) => Object.values(r.hcObtenues).reduce((a, b) => a + b, 0)) / joueurs;
+  const hc = `${fmt(nbHC, 1)} (${fmt(moy((r) => r.boussoles) / joueurs, 1)}, ${fmt(moy((r) => r.souffles) / joueurs, 1)}, ${fmt(moy((r) => r.jennyHC) / joueurs)} J)`;
   console.log(
-    `| ${joueurs} | ${clears.length}/${runs.length} | ${fmt(median(clears))} | ${fmt(median(runs.map((r) => r.meilleur)))} | ${fmt(moy((r) => r.moyenne), 1)} | ${fmt(moy((r) => r.tiragesParJoueur), 1)} | ${fmt(moy((r) => r.partRepliJenny) * 100)} % | ${fmt(moy((r) => r.echanges))} / ${fmt(moy((r) => r.achatsCartes))} / ${fmt(moy((r) => r.volsReussis))} | ${manquesTxt || '—'} | ${fmt(moy((r) => r.ssDuMeilleur), 1)} / ${fmt(moy((r) => r.ssEnJeu), 1)} | ${arene} | ${encheres} | ${cessionsTxt || '—'} | ${refusTxt} |`,
+    `| ${joueurs} | ${clears.length}/${runs.length} | ${fmt(median(clears))} | ${fmt(median(runs.map((r) => r.meilleur)))} | ${fmt(moy((r) => r.moyenne), 1)} | ${fmt(moy((r) => r.tiragesParJoueur), 1)} | ${fmt(moy((r) => r.partRepliJenny) * 100)} % | ${fmt(moy((r) => r.echanges))} / ${fmt(moy((r) => r.achatsCartes))} / ${fmt(moy((r) => r.volsReussis))} | ${manquesTxt || '—'} | ${fmt(moy((r) => r.ssDuMeilleur), 1)} / ${fmt(moy((r) => r.ssEnJeu), 1)} | ${arene} | ${encheres} | ${cessionsTxt || '—'} | ${hc} | ${refusTxt} |`,
   );
 }

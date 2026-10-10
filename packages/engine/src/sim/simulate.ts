@@ -25,7 +25,7 @@ import { checkClear } from '../ranking.js';
 import { randomInt, seededRng, weightedPick, type Rng } from '../rng.js';
 import { checkScan, previousDrawsOn, type ScanRefusalCode } from '../scan.js';
 import { DEFAULT_SHOP_CONFIG, buyPack, currentWave, type ShopWave } from '../shop.js';
-import { castOffensive, type NenPower, type OffensiveSpell, type SpellPlayer } from '../spells.js';
+import { castOffensive, pouvoirDisponibleDans, type NenPower, type OffensiveSpell, type SpellPlayer } from '../spells.js';
 import { closeAuction, joinAuction, openAuction, placeBid, trade, type Auction } from '../trades.js';
 
 const MIN = 60_000;
@@ -218,7 +218,6 @@ interface SimPlayer {
   immuniteJusqua: number | null;
   dernierOffensifA: number | null;
   geleJusqua: number | null;
-  pouvoirsUtilises: NenPower[];
   derniereAreneA: number | null;
   hc: CarteHC[];
   pouvoirsA: Partial<Record<NenPower, number>>;
@@ -279,7 +278,6 @@ export function simulate(cfg: SimConfig): SimResult {
     immuniteJusqua: null,
     dernierOffensifA: null,
     geleJusqua: null,
-    pouvoirsUtilises: [],
     derniereAreneA: null,
     hc: [],
     pouvoirsA: {},
@@ -365,7 +363,7 @@ export function simulate(cfg: SimConfig): SimResult {
     position: pos,
     book: p.book,
     nen: p.nen,
-    pouvoirsUtilises: p.pouvoirsUtilises,
+    pouvoirsA: p.pouvoirsA,
     immuniteJusqua: p.immuniteJusqua,
     dernierOffensifA: p.dernierOffensifA,
     geleJusqua: p.geleJusqua,
@@ -374,26 +372,20 @@ export function simulate(cfg: SimConfig): SimResult {
   const pouvoirs: SimResult['pouvoirs'] = {};
   let volsSS = 0;
   const fromSpellPlayer = (p: SimPlayer, s: SpellPlayer, now: number) => {
-    for (const pw of s.pouvoirsUtilises) {
-      if (p.pouvoirsUtilises.includes(pw)) continue;
-      p.pouvoirsA[pw] = now;
+    for (const pw of Object.keys(s.pouvoirsA) as NenPower[]) {
+      if (s.pouvoirsA[pw] === p.pouvoirsA[pw]) continue;
       pouvoirs[pw] = (pouvoirs[pw] ?? 0) + 1;
     }
+    void now;
     p.book = s.book;
-    p.pouvoirsUtilises = [...s.pouvoirsUtilises];
+    p.pouvoirsA = { ...s.pouvoirsA };
     p.immuniteJusqua = s.immuniteJusqua;
     p.dernierOffensifA = s.dernierOffensifA;
     p.geleJusqua = s.geleJusqua;
   };
 
-  const pouvoirDispo = (p: SimPlayer, pw: NenPower) => p.nen === pw && !p.pouvoirsUtilises.includes(pw);
-  /** Recharge des pouvoirs (option) : un pouvoir utilisé redevient disponible après le délai. */
-  const recharger = (p: SimPlayer, now: number) => {
-    p.pouvoirsUtilises = p.pouvoirsUtilises.filter((pw) => {
-      const m = cfg.rechargeNen[pw];
-      return m === undefined || now - (p.pouvoirsA[pw] ?? now) < m * MIN;
-    });
-  };
+  const rechargeNenMs = Object.fromEntries(Object.entries(cfg.rechargeNen).map(([pw, m]) => [pw, m * MIN])) as Partial<Record<NenPower, number>>;
+  const pouvoirDispo = (p: SimPlayer, pw: NenPower, now: number) => pouvoirDisponibleDans(p, pw, now, rechargeNenMs[pw]) === 0;
   /** Sort offensif choisi : Vol, sinon Échange forcé avec un doublon, sinon Gel ; Manipulation à défaut de carte. */
   function lancer(p: SimPlayer, autre: SimPlayer, now: number, horsPortee: boolean): boolean {
     const pos: Position = { lat: 48.85, lng: 2.35, precisionM: 0, a: now };
@@ -408,12 +400,12 @@ export function simulate(cfg: SimConfig): SimResult {
     if (choix) {
       sort = choix;
       source = { type: 'carte', itemId: sorts.find((i) => i.kind === 'sort' && i.spell === choix)!.id };
-    } else if (doublon && pouvoirDispo(p, 'manipulation')) {
+    } else if (doublon && pouvoirDispo(p, 'manipulation', now)) {
       sort = 'echange_force';
       source = { type: 'pouvoir' };
     } else return false;
     const r = castOffensive(
-      { now, gameState: 'en_cours', portee: { porteeM: 30, margeMaxM: 20 }, rangDe, newId },
+      { now, gameState: 'en_cours', portee: { porteeM: 30, margeMaxM: 20 }, rangDe, newId, rechargeNenMs },
       {
         sort,
         source,
@@ -688,7 +680,6 @@ export function simulate(cfg: SimConfig): SimResult {
     }
     if (clearA !== null) break;
 
-    recharger(p, now);
     // Matérialisation, réserve (option) : un tirage bonus toutes les X min.
     if (p.nen === 'materialisation' && cfg.reserveMaterialisationMin !== null && now - p.derniereReserveA >= cfg.reserveMaterialisationMin * MIN) {
       p.derniereReserveA = now;
@@ -696,7 +687,7 @@ export function simulate(cfg: SimConfig): SimResult {
       if (clearA !== null) break;
     }
     // Émission : un sort offensif sur un joueur au hasard, hors portée.
-    if (cfg.sorts && pouvoirDispo(p, 'emission') && rng.next() < cfg.probaEmission) {
+    if (cfg.sorts && pouvoirDispo(p, 'emission', now) && rng.next() < cfg.probaEmission) {
       const autre = players[randomInt(rng, players.length)]!;
       if (autre !== p) lancer(p, autre, now, true);
       if (clearA !== null) break;

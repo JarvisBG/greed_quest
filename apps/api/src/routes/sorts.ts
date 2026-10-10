@@ -8,6 +8,7 @@ import {
   castRegard,
   castRevelation,
   playersInRange,
+  rechargesNenMs,
   transform,
   type Book,
   type NenPower,
@@ -57,7 +58,7 @@ async function spellPlayer(c: ActionCtx, j: JoueurRow, book: Book): Promise<Spel
     position: j.position,
     book,
     nen: (j.nen ?? 'aucun') as NenType,
-    pouvoirsUtilises: j.pouvoirsUtilises,
+    pouvoirsA: j.pouvoirsA,
     immuniteJusqua: j.immuniteJusqua,
     dernierOffensifA: j.dernierOffensifA,
     geleJusqua: j.geleJusqua,
@@ -66,7 +67,7 @@ async function spellPlayer(c: ActionCtx, j: JoueurRow, book: Book): Promise<Spel
 }
 
 const playerPatch = (p: SpellPlayer) => ({
-  pouvoirsUtilises: [...p.pouvoirsUtilises] as NenPower[],
+  pouvoirsA: { ...p.pouvoirsA } as Partial<Record<NenPower, number>>,
   immuniteJusqua: p.immuniteJusqua,
   dernierOffensifA: p.dernierOffensifA,
   geleJusqua: p.geleJusqua,
@@ -127,7 +128,8 @@ export async function sortsRoutes(app: FastifyInstance) {
       const books = await loadBooks(c.tx, cibleRow ? [j.id, cibleRow.id] : [j.id]);
       const lanceur = await spellPlayer(c, j, books.get(j.id)!);
       const cible = cibleRow ? await spellPlayer(c, cibleRow, books.get(cibleRow.id)!) : null;
-      const w = { now: c.now, gameState: c.partie.etat, portee: rangeOf(p), rangDe: cat.rangDe, newId };
+      // Amendement 2026-10-10 : pouvoirs de Nen rechargeables (RG-14).
+      const w = { now: c.now, gameState: c.partie.etat, portee: rangeOf(p), rangDe: cat.rangDe, newId, rechargeNenMs: rechargesNenMs(p) };
 
       let res:
         | { ok: true; lanceur: SpellPlayer; cible?: SpellPlayer; notice: SpellNotice; prive: Record<string, unknown> }

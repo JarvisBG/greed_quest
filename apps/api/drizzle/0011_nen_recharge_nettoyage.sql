@@ -1,0 +1,1 @@
+ALTER TABLE "joueurs" DROP COLUMN "pouvoirs_utilises";

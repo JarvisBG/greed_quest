@@ -26,6 +26,10 @@ export const PARAM_KEYS = [
   'areneDelaiMin',
   'objetsReplisPct',
   'coffreMin',
+  'rechargeRenforcementMin',
+  'rechargeEmissionMin',
+  'rechargeManipulationMin',
+  'reserveMaterialisationMin',
 ] as const;
 export type ParamKey = (typeof PARAM_KEYS)[number];
 
@@ -86,6 +90,12 @@ export const AUTO_FORMULAS: Record<ParamKey, (c: ParamContext) => number> = {
   // Amendement 2026-10-10 : 1 repli « carte épuisée » sur 3 donne un objet en plus des jenny ; Coffre scellé 20 min.
   objetsReplisPct: () => 33,
   coffreMin: () => 20,
+  // Amendement 2026-10-10 : pouvoirs de Nen rechargeables (document : une fois par partie) ; Matérialisation
+  // reçoit en plus un tirage bonus de réserve toutes les 40 min.
+  rechargeRenforcementMin: () => 30,
+  rechargeEmissionMin: () => 40,
+  rechargeManipulationMin: () => 40,
+  reserveMaterialisationMin: () => 40,
 };
 
 /** Calibrage validé le 2026-10-09 (docs/SIMULATION.md) : limites d'exemplaires × 2 par défaut. */

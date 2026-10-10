@@ -1,6 +1,6 @@
 // Arbitres et GM (RG-3) : sanctions (RG-15, RG-15.1, 15.2), corrections du GM, checkpoints PNJ,
 // expertise d'Antokiba (RG-8.8). Motif obligatoire pour toute correction ou sanction (RG-3.1).
-import { DEFAULT_DRAW_CONFIG, addItem, draw, expertise, removeItem, type Book, type DrawConfig } from '@gq/engine';
+import { BONUS_MATERIALISATION, addItem, draw, expertise, removeItem, type Book } from '@gq/engine';
 import {
   AnnulationGainsIntent,
   AvertissementIntent,
@@ -31,8 +31,6 @@ type PI = { Params: { partieId: string; id: string } };
 
 export const SANCTION_GEL_MS = 5 * 60_000; // RG-3 : le PNJ peut geler 5 min
 
-/** RG-5.4 Matérialisation : tirage bonus plafonné au rang C. */
-const BONUS_MATERIALISATION: DrawConfig = { ...DEFAULT_DRAW_CONFIG, rangs: { ...DEFAULT_DRAW_CONFIG.rangs, standard: { C: 25, D: 40 } } };
 
 export async function pnjRoutes(app: FastifyInstance) {
   const { runner } = app.gq;

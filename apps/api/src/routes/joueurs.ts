@@ -8,6 +8,10 @@ import {
   gameClock,
   kitSpell,
   nenFromAnswers,
+  pouvoirDisponibleDans,
+  rechargesNenMs,
+  reserveMaterialisationDans,
+  type NenPower,
   scoreExamen,
   validQuizAnswers,
 } from '@gq/engine';
@@ -156,12 +160,17 @@ export async function joueursRoutes(app: FastifyInstance) {
     if (!j) throw introuvable('Joueur');
     const [partie] = await app.gq.db.select().from(parties).where(eq(parties.id, partieId));
     const now = partie ? gameClock(lifecycleOf(partie), app.gq.now()) : 0; // heures de jeu (RG-4.4)
+    const p = partie ? await paramsOf(app.gq.db, partie) : null;
+    // RG-5.4 amendé (2026-10-10) : temps avant que le pouvoir se recharge (0 = disponible, null = aucun).
+    const power = (['renforcement', 'emission', 'manipulation'] as const).find((x) => x === j.nen) as NenPower | undefined;
+    const pouvoir = power && p ? pouvoirDisponibleDans(j, power, now, rechargesNenMs(p)[power]) : null;
     return {
       ok: true,
       joueur: { id: j.id, pseudo: j.pseudo, jenny: j.jenny, nen: j.nen, statut: j.statut, examenFait: j.examenScore !== null },
-      // Pour l'écran des sorts : pouvoirs de Nen déjà utilisés (RG-5.4) et délais restants, en ms.
-      pouvoirsUtilises: j.pouvoirsUtilises,
+      // Pour l'écran des sorts : délais restants, en ms ; `pouvoir` = recharge du pouvoir de Nen, `reserve` = Matérialisation.
       delais: {
+        pouvoir,
+        reserve: p ? reserveMaterialisationDans(j, now, p.reserveMaterialisationMin * 60_000) : null,
         offensif: Math.max(0, (j.dernierOffensifA ?? -Infinity) + CASTER_DELAY_MS - now), // RG-10.3
         transformation: Math.max(0, (j.transformationDispoA ?? 0) - now), // RG-5.4
         gel: Math.max(0, (j.geleJusqua ?? 0) - now),

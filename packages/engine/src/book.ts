@@ -12,6 +12,8 @@ export type Origine =
   | { type: 'vol'; sur: string }
   | { type: 'enchere'; enchereId: string }
   | { type: 'arene'; tentativeId: string }
+  /** Réserve de Matérialisation (amendement 2026-10-10). */
+  | { type: 'materialisation' }
   | { type: 'duplication' }
   | { type: 'kit' }
   | { type: 'correction_gm'; par: string };

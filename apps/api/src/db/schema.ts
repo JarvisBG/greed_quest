@@ -106,7 +106,10 @@ export const joueurs = pgTable(
     geleJusqua: heureJeu('gele_jusqua'),
     immuniteJusqua: heureJeu('immunite_jusqua'),
     dernierOffensifA: heureJeu('dernier_offensif_a'),
-    pouvoirsUtilises: jsonb('pouvoirs_utilises').$type<('renforcement' | 'emission' | 'manipulation')[]>().notNull().default([]),
+    /** RG-5.4 amendé (2026-10-10) : heure de jeu du dernier usage de chaque pouvoir rechargeable. */
+    pouvoirsA: jsonb('pouvoirs_a').$type<Partial<Record<'renforcement' | 'emission' | 'manipulation', number>>>().notNull().default({}),
+    /** Matérialisation : dernier tirage bonus de réserve (amendement 2026-10-10). */
+    derniereReserveA: heureJeu('derniere_reserve_a'),
     transformationDispoA: heureJeu('transformation_dispo_a'),
     /** RG-7.1 / 7.2 : balises des tirages réussis, du plus ancien au plus récent. */
     historiqueTirages: jsonb('historique_tirages').$type<string[]>().notNull().default([]),

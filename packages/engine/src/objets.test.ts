@@ -100,7 +100,7 @@ describe('Amendement 2026-10-10 : cartes objets', () => {
     position: ici,
     book: book({ kind: 'sort', id: 's', spell, obtenuA: 0 }),
     nen: 'transformation',
-    pouvoirsUtilises: [],
+    pouvoirsA: {},
     immuniteJusqua: null,
     dernierOffensifA: null,
     geleJusqua: null,

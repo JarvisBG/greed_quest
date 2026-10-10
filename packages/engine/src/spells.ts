@@ -12,7 +12,7 @@ export const GEL_MS = 3 * 60_000; // RG-10 Gel
 export const SS_THEFT_IMMUNITY_MS = 10 * 60_000; // RG-8.11
 
 export type OffensiveSpell = 'vol' | 'echange_force' | 'gel';
-/** Pouvoirs de Nen utilisables une fois par partie. */
+/** Pouvoirs de Nen liés aux sorts : une fois par partie (document), rechargeables (amendement 2026-10-10). */
 export type NenPower = 'renforcement' | 'emission' | 'manipulation';
 
 export interface SpellPlayer {
@@ -21,7 +21,8 @@ export interface SpellPlayer {
   position: Position | null;
   book: Book;
   nen: NenType;
-  pouvoirsUtilises: readonly NenPower[];
+  /** Heure de jeu du dernier usage de chaque pouvoir (absent = jamais utilisé). */
+  pouvoirsA: Readonly<Partial<Record<NenPower, number>>>;
   immuniteJusqua: number | null;
   dernierOffensifA: number | null;
   geleJusqua: number | null;
@@ -35,6 +36,11 @@ export interface SpellWorld {
   portee: RangeSettings;
   rangDe: (cardId: string) => Rank;
   newId: () => string;
+  /**
+   * Amendement 2026-10-10 : recharge des pouvoirs de Nen (ms). Pouvoir absent = une fois par partie (RG-5.4).
+   * Par défaut du jeu : Renforcement 30 min, Émission et Manipulation 40 min (`rechargesNenMs`).
+   */
+  rechargeNenMs?: Partial<Record<NenPower, number>>;
 }
 
 export type SpellRefusalCode =
@@ -92,8 +98,25 @@ function findSpellCard(book: Book, itemId: string, sort: SpellType): BookItem | 
   return item?.kind === 'sort' && item.spell === sort ? item : null;
 }
 
-const usePower = (p: SpellPlayer, power: NenPower): SpellPlayer => ({ ...p, pouvoirsUtilises: [...p.pouvoirsUtilises, power] });
-const hasPower = (p: SpellPlayer, power: NenPower) => p.nen === power && !p.pouvoirsUtilises.includes(power);
+const usePower = (w: SpellWorld, p: SpellPlayer, power: NenPower): SpellPlayer => ({ ...p, pouvoirsA: { ...p.pouvoirsA, [power]: w.now } });
+
+/**
+ * RG-5.4 amendé (2026-10-10) : temps avant que le pouvoir soit de nouveau disponible (0 = disponible),
+ * null si le joueur n'a pas ce pouvoir ou s'il l'a déjà utilisé et qu'il ne se recharge pas.
+ */
+export function pouvoirDisponibleDans(
+  p: { nen: NenType | null; pouvoirsA: Readonly<Partial<Record<NenPower, number>>> },
+  power: NenPower,
+  now: number,
+  rechargeMs: number | undefined,
+): number | null {
+  if (p.nen !== power) return null;
+  const dernier = p.pouvoirsA[power];
+  if (dernier === undefined) return 0;
+  if (rechargeMs === undefined) return null;
+  return Math.max(0, dernier + rechargeMs - now);
+}
+const hasPower = (w: SpellWorld, p: SpellPlayer, power: NenPower) => pouvoirDisponibleDans(p, power, w.now, w.rechargeNenMs?.[power]) === 0;
 
 /** RG-8.11 : une SS ne peut pas être prise dans les 10 min qui suivent son obtention. */
 export function takeableCards(book: Book, now: number, rangDe: (cardId: string) => Rank): CardItem[] {
@@ -146,7 +169,7 @@ export function castOffensive(w: SpellWorld, input: OffensiveInput, rng: Rng): O
 
   // Source : carte de sort, ou pouvoir de Manipulation (1 échange forcé gratuit).
   if (source.type === 'pouvoir') {
-    if (sort !== 'echange_force' || !hasPower(lanceur, 'manipulation')) {
+    if (sort !== 'echange_force' || !hasPower(w, lanceur, 'manipulation')) {
       return refuse('pouvoir_indisponible', 'Pouvoir indisponible');
     }
   } else if (!findSpellCard(lanceur.book, source.itemId, sort)) {
@@ -167,7 +190,7 @@ export function castOffensive(w: SpellWorld, input: OffensiveInput, rng: Rng): O
   if (!isTargetable(cible.position, w.now, w.portee)) return refuse('cible_hors_radar', 'Ce joueur est hors radar'); // RG-10.10 amendé
   let viaEmission = false;
   if (!isInRange(lanceur.position!, cible.position, w.portee)) {
-    if (!input.emission || !hasPower(lanceur, 'emission')) return refuse('cible_hors_portee', 'Ce joueur est hors de portée');
+    if (!input.emission || !hasPower(w, lanceur, 'emission')) return refuse('cible_hors_portee', 'Ce joueur est hors de portée');
     viaEmission = true; // RG-10.1
   }
   if (cible.immuniteJusqua !== null && cible.immuniteJusqua > w.now) {
@@ -184,8 +207,8 @@ export function castOffensive(w: SpellWorld, input: OffensiveInput, rng: Rng): O
   lanceur =
     source.type === 'carte'
       ? { ...lanceur, book: removeItem(lanceur.book, source.itemId) }
-      : usePower(lanceur, 'manipulation');
-  if (viaEmission) lanceur = usePower(lanceur, 'emission');
+      : usePower(w, lanceur, 'manipulation');
+  if (viaEmission) lanceur = usePower(w, lanceur, 'emission');
   lanceur = { ...lanceur, dernierOffensifA: w.now };
 
   const notice = (resultat: SpellNotice['resultat']): SpellNotice => ({ lanceur: lanceur.id, cible: cible.id, sort, resultat });
@@ -198,8 +221,8 @@ export function castOffensive(w: SpellWorld, input: OffensiveInput, rng: Rng): O
     cible = { ...cible, book: removeItem(cible.book, barriere.id) };
     return { ok: true, resultat: 'bloque', protection: 'barriere', lanceur, cible, notice: notice('bloque') };
   }
-  if (hasPower(cible, 'renforcement')) {
-    cible = usePower(cible, 'renforcement');
+  if (hasPower(w, cible, 'renforcement')) {
+    cible = usePower(w, cible, 'renforcement');
     return { ok: true, resultat: 'bloque', protection: 'renforcement', lanceur, cible, notice: notice('bloque') };
   }
 

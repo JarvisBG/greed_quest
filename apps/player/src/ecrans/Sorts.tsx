@@ -62,8 +62,9 @@ export function Sorts(p: Props) {
   if (transfo) return <TextureSurprise partieId={p.partieId} livre={livre} onAnnuler={() => setTransfo(false)} onFini={fin} />;
 
   const dispo = sortsDisponibles(livre);
-  const emission = pouvoirDispo(p.moi.nen, p.moi.pouvoirsUtilises, 'emission');
-  const manipulation = pouvoirDispo(p.moi.nen, p.moi.pouvoirsUtilises, 'manipulation');
+  const ecoule = Date.now() - p.moi.recuA;
+  const emission = pouvoirDispo(p.moi.nen, p.moi.delais.pouvoir, ecoule, 'emission');
+  const manipulation = pouvoirDispo(p.moi.nen, p.moi.delais.pouvoir, ecoule, 'manipulation');
   return (
     <div className="sorts">
       {resultat && (
@@ -135,7 +136,7 @@ function Lancement({
   const [cibles, setCibles] = useState<{ joueurs: Cible[]; tous: Cible[] } | null>(null);
   const sort = SORTS[choix.sort];
   const reste = etapes(choix.sort).find((e) => (e === 'carte' ? !choix.carteItemId : e === 'page' ? !choix.page : !choix.cibleId));
-  const emissionPossible = OFFENSIF.includes(choix.sort) && pouvoirDispo(moi.nen, moi.pouvoirsUtilises, 'emission');
+  const emissionPossible = OFFENSIF.includes(choix.sort) && pouvoirDispo(moi.nen, moi.delais.pouvoir, Date.now() - moi.recuA, 'emission');
 
   // Liste des cibles : la position est d'abord envoyée pour que le serveur calcule la portée à jour.
   const chargerCibles = async () => {

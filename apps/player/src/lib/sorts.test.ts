@@ -48,10 +48,12 @@ describe('sorts côté app (RG-10)', () => {
     expect(doublons(livre).map((c) => c.itemId)).toEqual(['d']);
   });
 
-  it('RG-5.4 : pouvoir de Nen disponible une fois', () => {
-    expect(pouvoirDispo('emission', [], 'emission')).toBe(true);
-    expect(pouvoirDispo('emission', ['emission'], 'emission')).toBe(false);
-    expect(pouvoirDispo('manipulation', [], 'emission')).toBe(false);
+  it('RG-5.4 amendé : pouvoir de Nen disponible quand sa recharge est finie', () => {
+    expect(pouvoirDispo('emission', 0, 0, 'emission')).toBe(true);
+    expect(pouvoirDispo('emission', 60_000, 10_000, 'emission')).toBe(false);
+    expect(pouvoirDispo('emission', 60_000, 60_000, 'emission')).toBe(true);
+    expect(pouvoirDispo('emission', null, 0, 'emission')).toBe(false);
+    expect(pouvoirDispo('manipulation', 0, 0, 'emission')).toBe(false);
   });
 
   it('P1 : corps de l’intention selon le sort (schéma SortIntent)', () => {

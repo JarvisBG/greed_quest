@@ -31,9 +31,12 @@ export function doublons(l: LivreRecu): EmplacementCarte[] {
 
 export type NenPouvoir = 'emission' | 'manipulation' | 'renforcement';
 
-/** RG-5.4 : pouvoir de Nen encore disponible (une fois par partie). */
-export function pouvoirDispo(nen: NenType | null, utilises: readonly NenPouvoir[], p: NenPouvoir): boolean {
-  return nen === p && !utilises.includes(p);
+/**
+ * RG-5.4 amendé (2026-10-10) : pouvoir de Nen disponible maintenant. `delai` = recharge restante reçue de l'API
+ * (0 = disponible, null = aucun pouvoir), `ecoule` = temps passé depuis la réception.
+ */
+export function pouvoirDispo(nen: NenType | null, delai: number | null, ecoule: number, p: NenPouvoir): boolean {
+  return nen === p && delai !== null && delai - ecoule <= 0;
 }
 
 /** Les sorts qui visent un joueur, et ceux qui ne visent que des joueurs à portée. */

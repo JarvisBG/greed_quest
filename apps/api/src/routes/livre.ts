@@ -44,6 +44,8 @@ export async function livreRoutes(app: FastifyInstance) {
             return 'Enchère';
           case 'arene':
             return 'Arène de Soufrabi';
+          case 'materialisation':
+            return 'Matérialisation';
           case 'duplication':
             return 'Duplication';
           case 'kit':

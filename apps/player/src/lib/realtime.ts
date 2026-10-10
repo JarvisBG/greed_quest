@@ -6,7 +6,7 @@ import { io, type Socket } from 'socket.io-client';
 export const EVENEMENTS_JOUEUR = [
   'tirage', 'perte', 'sort_recu', 'malediction', 'carte_maudite', 'echange', 'boutique',
   'enchere', 'enchere_close', 'enchere_gagnee', 'evenement', 'evenement_fin', 'mission',
-  'mission_reussie', 'recompense_raid', 'checkpoint', 'expertise', 'correction', 'sanction',
+  'mission_reussie', 'recompense_raid', 'checkpoint', 'reserve', 'expertise', 'correction', 'sanction',
   'degel', 'partie', 'clear', 'clear_confirme', 'clear_refuse', 'classement_final', 'raid',
 ] as const;
 export type EvenementJoueur = (typeof EVENEMENTS_JOUEUR)[number];

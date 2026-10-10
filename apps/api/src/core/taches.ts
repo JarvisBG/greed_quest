@@ -6,7 +6,11 @@ import {
   J_RECALC_INTERVAL_MS,
   ROTATION_INTERVAL_MS,
   ZONE_EVENTS,
+  BONUS_MATERIALISATION,
+  addItem,
   currentWave,
+  draw,
+  reserveMaterialisationDans,
   expireEvents,
   fillToTarget,
   pick,
@@ -31,7 +35,8 @@ import { SYSTEME } from './journal.js';
 import { paramsOf } from './params.js';
 import { lifecycleOf } from './partie.js';
 import type { ActionCtx, Runner } from './runner.js';
-import { loadActiveEvents, loadBeacons, loadBooks, loadCatalogue, loadJoueurs, saveBeacons, saveBooks, updateJoueur } from './state.js';
+import { catalogForDraw, limitesOf, loadActiveEvents, loadBeacons, loadBooks, loadCatalogue, loadJoueurs, saveBeacons, saveBooks, updateJoueur } from './state.js';
+import { newId } from '../ids.js';
 
 export const INACTIVITY_MS = 15 * 60_000; // RG-5.7
 export const SCREEN_REFRESH_MS = 30_000;
@@ -62,8 +67,42 @@ export async function tickPartie(c: ActionCtx): Promise<void> {
     taches.ecranA = c.now;
   }
   await agenda(c, taches);
+  await reserveMaterialisation(c, p0.reserveMaterialisationMin * 60_000);
   await c.tx.update(parties).set({ taches }).where(eq(parties.id, c.partie.id));
   c.partie.taches = taches;
+}
+
+/**
+ * Amendement 2026-10-10 : réserve de Matérialisation, un tirage bonus (rang C au plus) toutes les 40 min,
+ * même sans checkpoint. Comme le bonus de checkpoint, il peut déborder d'un Livre plein.
+ */
+async function reserveMaterialisation(c: ActionCtx, intervalleMs: number) {
+  const dus = (await loadJoueurs(c.tx, c.partie.id)).filter(
+    (j) => j.statut !== 'disqualifie' && j.statut !== 'abandon' && reserveMaterialisationDans(j, c.now, intervalleMs) === 0,
+  );
+  if (dus.length === 0) return;
+  const [cat, p, books] = await Promise.all([loadCatalogue(c.tx, c.partie.id), paramsOf(c.tx, c.partie), loadBooks(c.tx, dus.map((j) => j.id))]);
+  for (const j of dus) {
+    const g = draw({ beaconType: 'standard', tiragesPrecedents: 0, catalogue: await catalogForDraw(c.tx, cat, c.partie.id), limites: limitesOf(p) }, c.rng, BONUS_MATERIALISATION);
+    const before = books.get(j.id)!;
+    let after = before;
+    let jenny = j.jenny;
+    let bonus: { kind: 'carte'; nom: string; rang: string } | { kind: 'sort'; sort: string } | { kind: 'jenny'; montant: number };
+    if (g.kind === 'carte') {
+      after = addItem(before, { kind: 'carte', id: newId(), cardId: g.cardId, origine: { type: 'materialisation' }, obtenuA: c.now });
+      bonus = { kind: 'carte', nom: cat.nomDe(g.cardId), rang: g.rank };
+    } else if (g.kind === 'sort') {
+      after = addItem(before, { kind: 'sort', id: newId(), spell: g.spell, obtenuA: c.now });
+      bonus = { kind: 'sort', sort: g.spell };
+    } else {
+      jenny += g.amount;
+      bonus = { kind: 'jenny', montant: g.amount };
+    }
+    await saveBooks(c.tx, c.partie.id, c.now, [{ joueurId: j.id, before, after }]);
+    await updateJoueur(c.tx, j.id, { jenny, derniereReserveA: c.now });
+    await c.log({ action: 'reserve_materialisation', resultat: 'ok', details: { joueurId: j.id, bonus } });
+    c.emit({ type: 'joueur', id: j.id }, 'reserve', { bonus });
+  }
 }
 
 /** RG-5.7 : sans action depuis 15 min, un joueur devient inactif (exclu de J). Fin des gels de sanction. */

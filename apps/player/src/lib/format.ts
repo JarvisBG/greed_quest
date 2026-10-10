@@ -43,6 +43,7 @@ const EVENEMENTS: Record<EvenementJoueur, string> = {
   mission_reussie: 'Mission réussie',
   recompense_raid: 'Récompense du raid',
   checkpoint: 'Checkpoint',
+  reserve: 'Matérialisation : tirage bonus',
   expertise: 'Expertise',
   correction: 'Correction de l’équipe',
   sanction: 'Sanction',
@@ -84,11 +85,11 @@ export const SORTS: Record<SpellType, { nom: string; effet: string }> = {
 
 /** RG-5.4 : type de Nen et son passif. */
 export const NENS: Record<NenType, { nom: string; passif: string }> = {
-  renforcement: { nom: 'Renforcement', passif: 'Annule le premier sort offensif reçu (une fois par partie)' },
-  emission: { nom: 'Émission', passif: 'Lance un sort offensif hors de portée (une fois par partie)' },
+  renforcement: { nom: 'Renforcement', passif: 'Annule le prochain sort offensif reçu (se recharge en 30 min)' },
+  emission: { nom: 'Émission', passif: 'Lance un sort offensif hors de portée (se recharge en 40 min)' },
   transformation: { nom: 'Transformation', passif: 'Texture Surprise : déguise un doublon en une autre carte de même rang (toutes les 20 min)' },
-  materialisation: { nom: 'Matérialisation', passif: 'Un tirage bonus (rang C au plus) à chaque checkpoint réussi' },
-  manipulation: { nom: 'Manipulation', passif: 'Un échange forcé gratuit (une fois par partie)' },
+  materialisation: { nom: 'Matérialisation', passif: 'Un tirage bonus (rang C au plus) à chaque checkpoint réussi, et un toutes les 40 min' },
+  manipulation: { nom: 'Manipulation', passif: 'Un échange forcé gratuit (se recharge en 40 min)' },
   specialisation: { nom: 'Spécialisation', passif: 'Type rare : un pouvoir unique et secret, révélé par l’organisation' },
 };
 

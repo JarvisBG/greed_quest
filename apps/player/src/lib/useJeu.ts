@@ -29,10 +29,12 @@ export interface Moi {
   nen: NenType | null;
   statut: string;
   examenFait: boolean;
-  /** RG-5.4 : pouvoirs de Nen déjà utilisés. */
-  pouvoirsUtilises: ('renforcement' | 'emission' | 'manipulation')[];
-  /** Délais restants à la réception (`recuA`), en ms : sort offensif (RG-10.3), Transformation, gel. */
-  delais: { offensif: number; transformation: number; gel: number };
+  /**
+   * Délais restants à la réception (`recuA`), en ms : sort offensif (RG-10.3), Transformation, gel ;
+   * `pouvoir` = recharge du pouvoir de Nen (0 = disponible, null = aucun), `reserve` = tirage de Matérialisation
+   * (amendement 2026-10-10).
+   */
+  delais: { offensif: number; transformation: number; gel: number; pouvoir: number | null; reserve: number | null };
   recuA: number;
 }
 
@@ -98,10 +100,8 @@ export function useJeu() {
           throw e;
         }
       }
-      const m = await api.get<{ joueur: Omit<Moi, 'pouvoirsUtilises' | 'delais' | 'recuA'>; licenceSecret: string } & Pick<Moi, 'pouvoirsUtilises' | 'delais'>>(
-        `/parties/${partieId}/moi`,
-      );
-      setMoi({ ...m.joueur, pouvoirsUtilises: m.pouvoirsUtilises, delais: m.delais, recuA: Date.now() });
+      const m = await api.get<{ joueur: Omit<Moi, 'delais' | 'recuA'>; licenceSecret: string } & Pick<Moi, 'delais'>>(`/parties/${partieId}/moi`);
+      setMoi({ ...m.joueur, delais: m.delais, recuA: Date.now() });
       setLicenceSecret(m.licenceSecret);
       setPhase('en_jeu');
     } catch (e) {

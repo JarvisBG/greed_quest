@@ -65,7 +65,7 @@ describe('RG-10 sorts', () => {
     const moi = (await t.app.inject({ url: `/parties/${t.partieId}/moi`, headers: t.bearer(gon.token) })).json();
     expect(moi.delais.offensif).toBeGreaterThan(0);
     expect(moi.delais.offensif).toBeLessThanOrEqual(120_000);
-    expect(moi.pouvoirsUtilises).toEqual([]);
+    expect(moi.delais.pouvoir).toBeNull(); // pas de pouvoir de Nen rechargeable
     const [k] = await t.db.select().from(joueurs).where(eq(joueurs.id, kirua.id));
     expect(k?.immuniteJusqua).toBeGreaterThan(0);
     expect(recues).toContainEqual({ a: kirua.id, evenement: 'sort_recu', data: { lanceur: 'Gon', sort: 'vol', resultat: 'reussi' } });

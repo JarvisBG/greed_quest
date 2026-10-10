@@ -9,6 +9,7 @@ import { tickPartie } from './taches.js';
 let t: Awaited<ReturnType<typeof testApp>>;
 const recues: { a: string; evenement: string; data: any }[] = [];
 let gon: { id: string };
+let kirua: { id: string };
 const MIN = 60_000;
 
 const tickA = async (minutes: number) => {
@@ -24,7 +25,8 @@ beforeAll(async () => {
   t.app.gq.bus.on((e) => recues.push({ a: e.a.type === 'joueur' ? e.a.id : e.a.type, evenement: e.evenement, data: e.data }));
   await t.setEtat('inscriptions', { inscriptionsOuvertes: true });
   gon = await t.inscrire('Gon');
-  await t.inscrire('Kirua');
+  kirua = await t.inscrire('Kirua');
+  await t.db.update(joueurs).set({ nen: 'materialisation' }).where(eq(joueurs.id, kirua.id));
   await t.inscrire('Leorio');
   debut = t.clock.t;
   await t.setEtat('en_cours', { demarreeA: debut });
@@ -110,6 +112,14 @@ describe('tâches planifiées', () => {
     await tickA(33);
     await tickA(44);
     expect(recues.some((e) => e.a === 'gm' && e.evenement === 'proposition_evenement')).toBe(true);
+  });
+
+  it('Amendement 2026-10-10 : réserve de Matérialisation, un tirage bonus 40 min après l’inscription, puis toutes les 40 min', async () => {
+    const reserves = await t.db.select().from(journal).where(and(eq(journal.partieId, t.partieId), eq(journal.action, 'reserve_materialisation')));
+    expect(reserves).toHaveLength(1); // ticks jusqu'à 44 min : une seule réserve due (à 40 min)
+    const [k] = await t.db.select().from(joueurs).where(eq(joueurs.id, kirua.id));
+    expect(k?.derniereReserveA).toBe(44 * MIN);
+    expect(recues.filter((e) => e.a === kirua.id && e.evenement === 'reserve')).toHaveLength(1);
   });
 
   it('RG-4.4 : en pause, l’horloge de jeu est arrêtée, rien ne bouge', async () => {

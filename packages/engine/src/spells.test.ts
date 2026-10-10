@@ -15,6 +15,7 @@ import {
   castRadar,
   castRegard,
   castRevelation,
+  pouvoirDisponibleDans,
   type OffensiveInput,
   type SpellPlayer,
   type SpellWorld,
@@ -53,7 +54,7 @@ const player = (id: string, over: Partial<SpellPlayer> = {}): SpellPlayer => ({
   position: pos(0),
   book: emptyBook(),
   nen: 'transformation',
-  pouvoirsUtilises: [],
+  pouvoirsA: {},
   immuniteJusqua: null,
   dernierOffensifA: null,
   geleJusqua: null,
@@ -140,7 +141,7 @@ describe('RG-10.4 protections', () => {
     expect(r).toMatchObject({ ok: true, resultat: 'bloque', protection: 'barriere' });
     if (!r.ok) return;
     expect(r.cible.book.items).toHaveLength(0);
-    expect(r.cible.pouvoirsUtilises).toEqual([]);
+    expect(r.cible.pouvoirsA).toEqual({});
     expect(r.cible.immuniteJusqua).toBeNull();
     expect(r.lanceur.book.items).toHaveLength(0);
   });
@@ -150,10 +151,28 @@ describe('RG-10.4 protections', () => {
     const r = castOffensive(world(), offensive({ cible }), rng());
     expect(r).toMatchObject({ ok: true, resultat: 'bloque', protection: 'renforcement' });
     if (!r.ok) return;
-    expect(r.cible.pouvoirsUtilises).toEqual(['renforcement']);
+    expect(r.cible.pouvoirsA).toEqual({ renforcement: NOW });
 
     const encore = castOffensive(world(), offensive({ cible: r.cible }), rng());
     expect(encore).toMatchObject({ ok: true, resultat: 'reussi' });
+  });
+
+  it('Amendement 2026-10-10 : Renforcement se recharge (30 min par défaut)', () => {
+    const recharge = { renforcement: 30 * 60_000 };
+    const cible = player('B', { position: pos(10), nen: 'renforcement', pouvoirsA: { renforcement: NOW - 30 * 60_000 + 1 } });
+    expect(castOffensive(world({ rechargeNenMs: recharge }), offensive({ cible }), rng())).toMatchObject({ resultat: 'reussi' });
+    const pret = { ...cible, pouvoirsA: { renforcement: NOW - 30 * 60_000 } };
+    const r = castOffensive(world({ rechargeNenMs: recharge }), offensive({ cible: pret }), rng());
+    expect(r).toMatchObject({ resultat: 'bloque', protection: 'renforcement' });
+    expect(r.ok && r.cible.pouvoirsA).toEqual({ renforcement: NOW });
+  });
+
+  it('Amendement 2026-10-10 : temps avant le prochain usage (pouvoirDisponibleDans)', () => {
+    const j = { nen: 'emission' as const, pouvoirsA: { emission: NOW - 10 * 60_000 } };
+    expect(pouvoirDisponibleDans(j, 'emission', NOW, 40 * 60_000)).toBe(30 * 60_000);
+    expect(pouvoirDisponibleDans(j, 'emission', NOW, undefined)).toBeNull(); // sans recharge : une fois par partie
+    expect(pouvoirDisponibleDans({ nen: 'emission', pouvoirsA: {} }, 'emission', NOW, undefined)).toBe(0);
+    expect(pouvoirDisponibleDans(j, 'manipulation', NOW, 1)).toBeNull();
   });
 });
 
@@ -208,7 +227,7 @@ describe('Échange forcé', () => {
     const r = castOffensive(world(), input, rng());
     expect(r).toMatchObject({ ok: true, resultat: 'reussi' });
     if (!r.ok) return;
-    expect(r.lanceur.pouvoirsUtilises).toEqual(['manipulation']);
+    expect(r.lanceur.pouvoirsA).toEqual({ manipulation: NOW });
     const plusTard = NOW + 10 * 60_000;
     const encore = castOffensive(
       world({ now: plusTard }),
@@ -216,6 +235,16 @@ describe('Échange forcé', () => {
       rng(),
     );
     expect(code(encore)).toBe('pouvoir_indisponible');
+    // Amendement 2026-10-10 : rechargé après 40 min.
+    const recharge = { manipulation: 40 * 60_000 };
+    const apres = NOW + 40 * 60_000;
+    const rechargee = castOffensive(
+      world({ now: apres, rechargeNenMs: recharge }),
+      { ...input, lanceur: { ...r.lanceur, dernierOffensifA: null, position: pos(0, apres), book: book(carte('a2', '003')) }, cible: { ...r.cible, position: pos(10, apres), immuniteJusqua: null }, carteDonneeId: 'a2' },
+      rng(),
+    );
+    expect(rechargee).toMatchObject({ ok: true, resultat: 'reussi' });
+    expect(code(castOffensive(world({ now: plusTard, rechargeNenMs: recharge }), { ...input, lanceur: { ...r.lanceur, position: pos(0, plusTard) }, cible: { ...r.cible, position: pos(10, plusTard), immuniteJusqua: null } }, rng()))).toBe('pouvoir_indisponible');
   });
 });
 
@@ -227,13 +256,13 @@ describe('Émission (RG-10.1)', () => {
     const r = castOffensive(world(), offensive({ lanceur, cible: loin, emission: true }), rng());
     expect(r).toMatchObject({ ok: true, resultat: 'reussi' });
     if (!r.ok) return;
-    expect(r.lanceur.pouvoirsUtilises).toEqual(['emission']);
+    expect(r.lanceur.pouvoirsA).toEqual({ emission: NOW });
   });
 
   it('n’est pas consommée si la cible est à portée', () => {
     const lanceur = player('A', { nen: 'emission', book: book(mkSort('sp', 'gel')) });
     const r = castOffensive(world(), offensive({ lanceur, emission: true }), rng());
-    expect(r.ok && r.lanceur.pouvoirsUtilises).toEqual([]);
+    expect(r.ok && r.lanceur.pouvoirsA).toEqual({});
   });
 });
 

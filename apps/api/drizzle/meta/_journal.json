@@ -71,6 +71,20 @@
       "when": 1791610819616,
       "tag": "0009_objets",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791611991766,
+      "tag": "0010_nen_recharge",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791611995350,
+      "tag": "0011_nen_recharge_nettoyage",
+      "breakpoints": true
     }
   ]
 }

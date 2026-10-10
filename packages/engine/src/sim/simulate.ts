@@ -133,6 +133,18 @@ export interface SimConfig {
   banditMode: 'hasard' | 'choisi' | 'choisiHorsSS';
   /** Répartition du catalogue par rang (RG-8 : SS 2, S 3, A 5, B 6, C 7, D 7). */
   catalogue: Record<Rank, number>;
+  /** Retardataires (RG-5.6) : part des joueurs qui arrivent en retard, à une minute tirée dans `retardMin`. */
+  partRetardataires: number;
+  retardMin: [number, number];
+  /** RG-5.6 : bonus de rattrapage, en jenny par minute de retard (0 = sans bonus). */
+  rattrapageJParMin: number;
+  /** Vol (carte de sort) : `tout` = n'importe quelle carte de la cible ; `fixes` = seulement ses cartes rangées dans les emplacements fixes (anime). */
+  volCible: 'tout' | 'fixes';
+  /** Cacher : chaque joueur range ses cartes désignées de ces rangs dans ses emplacements libres (s'il y a de la place). */
+  cacheRangs: Rank[];
+  /** Accompagnement : part des sorts tirés qui sont des Accompagnement (localise un joueur déjà croisé et le gèle). */
+  partAccompagnement: number;
+  gelAccompagnementMin: number;
 }
 
 export const DEFAULT_SIM: Omit<SimConfig, 'joueurs' | 'seed'> = {
@@ -182,6 +194,13 @@ export const DEFAULT_SIM: Omit<SimConfig, 'joueurs' | 'seed'> = {
   pepiteJ: 30,
   ticketGains: [[0, 40], [10, 35], [30, 20], [100, 5]],
   reventeHCJ: 10,
+  partRetardataires: 0,
+  retardMin: [10, 60],
+  rattrapageJParMin: 0,
+  volCible: 'tout',
+  cacheRangs: [],
+  partAccompagnement: 0,
+  gelAccompagnementMin: 3,
 };
 
 export interface SimResult {
@@ -234,6 +253,14 @@ export interface SimResult {
   clearPar: string | null;
   /** Utilisations du pouvoir de Spécialisation, par pouvoir. */
   usagesSpe: Partial<Record<PouvoirSpe, number>>;
+  /** Cartes désignées vraies à la fin : retardataires et joueurs à l'heure (somme, nombre), rang du meilleur retardataire (1 = premier). */
+  retardataires: { somme: number; n: number; meilleurRang: number | null };
+  aLHeure: { somme: number; n: number };
+  /** Accompagnement : utilisations, et rencontres qui ont rapporté une carte (sort offensif ou échange). */
+  accompagnements: number;
+  offensifsApresAccompagnement: number;
+  /** Cartes cachées dans les emplacements libres, en moyenne par joueur à la fin. */
+  cachees: number;
 }
 
 interface SimPlayer {
@@ -257,6 +284,12 @@ interface SimPlayer {
   speA: number | null;
   /** Fortune : le prochain scan donne deux gains. */
   fortune: boolean;
+  /** Minute d'arrivée (0 = à l'heure). */
+  arriveeMin: number;
+  /** Cartes désignées rangées dans les emplacements libres (cachées). */
+  caches: Set<string>;
+  accompagnements: number;
+  rencontres: Set<string>;
 }
 
 function buildCatalogue(c: Record<Rank, number>): { ids: string[]; rang: Map<string, Rank> } {
@@ -321,7 +354,19 @@ export function simulate(cfg: SimConfig): SimResult {
     spe: null,
     speA: null,
     fortune: false,
+    arriveeMin: 0,
+    caches: new Set<string>(),
+    accompagnements: 0,
+    rencontres: new Set<string>(),
   }));
+  // RG-5.6 : retardataires, arrivés plus tard avec leur kit et le bonus de rattrapage.
+  for (const p of players) {
+    if (rng.next() >= cfg.partRetardataires) continue;
+    const [a, b] = cfg.retardMin;
+    p.arriveeMin = a + rng.next() * (b - a);
+    p.prochaineAction = p.arriveeMin * MIN;
+    p.jenny += Math.round(cfg.rattrapageJParMin * p.arriveeMin);
+  }
   for (const p of players) {
     if (p.nen === 'specialisation') p.spe = cfg.pouvoirSpe === 'tous' ? POUVOIRS_SPE[randomInt(rng, POUVOIRS_SPE.length)]! : cfg.pouvoirSpe;
   }
@@ -332,6 +377,7 @@ export function simulate(cfg: SimConfig): SimResult {
     usagesSpe[pw] = (usagesSpe[pw] ?? 0) + 1;
   };
   let clearPar: string | null = null;
+  const accStats = { n: 0, ok: 0 };
 
   // Tous les joueurs restent actifs : J = nombre de joueurs.
   const ctx = () => ({
@@ -395,6 +441,25 @@ export function simulate(cfg: SimConfig): SimResult {
   const duplicates = (p: SimPlayer): CardItem[] => {
     const l = layoutBook(p.book, designees);
     return l.libres.flatMap((s) => (s.etat === 'plein' && s.item.kind === 'carte' ? [s.item] : []));
+  };
+  /** Emplacements libres occupés, cartes cachées comprises. */
+  const libresDe = (p: SimPlayer) => layoutBook(p.book, designees).libresUtilises + p.caches.size;
+  const pleinDe = (p: SimPlayer) => libresDe(p) >= 15;
+  /** Cacher : ranger dans les emplacements libres les cartes désignées des rangs choisis, tant qu'il reste 2 places. */
+  const cacher = (p: SimPlayer) => {
+    const ids = new Set(p.book.items.map((i) => i.id));
+    for (const id of [...p.caches]) if (!ids.has(id)) p.caches.delete(id);
+    if (cfg.cacheRangs.length === 0) return;
+    for (const d of layoutBook(p.book, designees).designes) {
+      if (d.slot.etat !== 'plein' || p.caches.has(d.slot.item.id) || !cfg.cacheRangs.includes(rangDe(d.cardId))) continue;
+      if (libresDe(p) >= 13) break;
+      p.caches.add(d.slot.item.id);
+    }
+  };
+  /** Vol « emplacements fixes » : cartes rangées dans les emplacements désignés et non cachées. */
+  const volables = (x: SimPlayer): Set<string> => {
+    const l = layoutBook(x.book, designees);
+    return new Set(l.designes.flatMap((d) => (d.slot.etat === 'plein' && !x.caches.has(d.slot.item.id) ? [d.slot.item.id] : [])));
   };
   const checkClearOf = (p: SimPlayer, now: number) => {
     if (clearA === null && checkClear(p.book, designees).etat === 'complet') {
@@ -485,8 +550,13 @@ export function simulate(cfg: SimConfig): SimResult {
     voulue?: CardItem,
   ): boolean {
     // Carte choisie (Bandit) : le Vol ne voit que cette carte ; les autres sont remises ensuite.
-    const cachees = voulue ? autre.book.items.filter((i) => i.kind === 'carte' && i.id !== voulue.id) : [];
-    const cibleBook = voulue ? { ...autre.book, items: autre.book.items.filter((i) => !cachees.includes(i)) } : autre.book;
+    const permis = !voulue && sort === 'vol' && cfg.volCible === 'fixes' ? volables(autre) : null;
+    const cachees = voulue
+      ? autre.book.items.filter((i) => i.kind === 'carte' && i.id !== voulue.id)
+      : permis
+        ? autre.book.items.filter((i) => i.kind === 'carte' && !permis.has(i.id))
+        : [];
+    const cibleBook = cachees.length > 0 ? { ...autre.book, items: autre.book.items.filter((i) => !cachees.includes(i)) } : autre.book;
     const pos: Position = { lat: 48.85, lng: 2.35, precisionM: 0, a: now };
     const loin: Position = { lat: 48.9, lng: 2.35, precisionM: 0, a: now };
     const r = castOffensive(
@@ -578,7 +648,9 @@ export function simulate(cfg: SimConfig): SimResult {
   }
 
   function encounter(p: SimPlayer, autre: SimPlayer, now: number) {
-    if (invisible(autre, now)) return;
+    if (invisible(autre, now) || autre.arriveeMin * MIN > now) return;
+    p.rencontres.add(autre.id);
+    autre.rencontres.add(p.id);
     // 1. Sort offensif (ou Manipulation).
     if (cfg.sorts) lancer(p, autre, now, false);
 
@@ -777,7 +849,7 @@ export function simulate(cfg: SimConfig): SimResult {
       }
     }
     // Livre toujours plein : on se débarrasse des Gel.
-    while (layoutBook(p.book, designees).libresUtilises >= 13) {
+    while (libresDe(p) >= 13) {
       const gel = p.book.items.find((i) => i.kind === 'sort' && i.spell === 'gel');
       if (!gel) break;
       p.book = removeItem(p.book, gel.id);
@@ -842,6 +914,23 @@ export function simulate(cfg: SimConfig): SimResult {
       if (clearA !== null) break;
     }
 
+    cacher(p);
+    // Accompagnement : localise le mieux classé des joueurs déjà croisés, le gèle, et va le voir (rencontre assurée).
+    if (p.accompagnements > 0 && cfg.sorts) {
+      const offensif = p.book.items.some((i) => i.kind === 'sort' && ['vol', 'echange_force'].includes(i.spell)) || speDispo(p, 'bandit', now);
+      const cibles = players.filter((x) => p.rencontres.has(x.id) && !invisible(x, now) && x.arriveeMin * MIN <= now);
+      if (offensif && cibles.length > 0) {
+        const cible = cibles.reduce((a, b) => (score(b) > score(a) ? b : a));
+        p.accompagnements--;
+        accStats.n++;
+        cible.geleJusqua = Math.max(cible.geleJusqua ?? 0, now + cfg.gelAccompagnementMin * MIN);
+        const avant = p.book;
+        encounter(p, cible, now);
+        if (p.book !== avant) accStats.ok++;
+        if (clearA !== null) break;
+      }
+    }
+
     if (p.versMasadora) {
       masadora(p, now);
       p.prochaineAction = now + marche(rng, cfg.marcheMin);
@@ -904,7 +993,7 @@ export function simulate(cfg: SimConfig): SimResult {
         positionValide: true,
         historiqueTirages: p.historique,
         dernierTirageA: p.dernierTirageA,
-        livrePlein: isBookFull(p.book, designees),
+        livrePlein: pleinDe(p),
       },
       beacon: { id: beacon.id, state: beacon.state, zoneId: beacon.zoneId, stock: beacon.stock },
       zonesFermees: new Set(),
@@ -939,7 +1028,8 @@ export function simulate(cfg: SimConfig): SimResult {
         stats.tiragesCarte++;
         p.book = addItem(p.book, { kind: 'carte', id: newId(), cardId: gain.cardId, origine: { type: 'balise', baliseId: beacon.id }, obtenuA: now });
       } else if (gain.kind === 'sort') {
-        if (cfg.sorts) {
+        if (cfg.sorts && rng.next() < cfg.partAccompagnement) p.accompagnements++;
+        else if (cfg.sorts) {
           p.book = addItem(p.book, { kind: 'sort', id: newId(), spell: gain.spell, obtenuA: now });
           useNonOffensive(p);
         }
@@ -959,7 +1049,7 @@ export function simulate(cfg: SimConfig): SimResult {
       }
 
       checkClearOf(p, now);
-      if (layoutBook(p.book, designees).libresUtilises >= 13 || (cfg.achatsBoutique && p.jenny >= 150)) p.versMasadora = true;
+      if (libresDe(p) >= 13 || (cfg.achatsBoutique && p.jenny >= 150)) p.versMasadora = true;
     }
     p.prochaineAction = now + marche(rng, cfg.marcheMin);
   }
@@ -1011,5 +1101,18 @@ export function simulate(cfg: SimConfig): SimResult {
     }, {}),
     clearPar: finalClear === null ? null : clearPar,
     usagesSpe,
+    retardataires: {
+      somme: players.reduce((a, p, i) => a + (p.arriveeMin > 0 ? scores[i]! : 0), 0),
+      n: players.filter((p) => p.arriveeMin > 0).length,
+      meilleurRang: (() => {
+        const ordre = players.map((p, i) => ({ p, s: scores[i]! })).sort((a, b) => b.s - a.s);
+        const k = ordre.findIndex((x) => x.p.arriveeMin > 0);
+        return k < 0 ? null : k + 1;
+      })(),
+    },
+    aLHeure: { somme: players.reduce((a, p, i) => a + (p.arriveeMin === 0 ? scores[i]! : 0), 0), n: players.filter((p) => p.arriveeMin === 0).length },
+    accompagnements: accStats.n,
+    offensifsApresAccompagnement: accStats.ok,
+    cachees: players.reduce((a, p) => a + p.caches.size, 0) / players.length,
   };
 }

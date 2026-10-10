@@ -173,6 +173,31 @@ Variantes demandées par Sivraj (30 % de Spécialistes, recharge 40 min ; `bandi
 5. **Bandit qui choisit sa carte** : nettement plus fort, mais encore raisonnable (+0,7 à +1,3) ; s'il peut viser la SS, les vols de SS sont multipliés par 3 à 6. Retenu : **choix de la carte, sauf la SS**.
 6. **Alchimie libre** domine (un doublon D devient la SS) : un Spécialiste sur trois gagne. **Même rang ou rang au-dessus** reste équilibrée ; retenue **sans la SS** (donc un peu plus faible que simulée).
 
+## Propositions « fidélité à l'anime » (2026-10-10, 100 graines, réglages du jeu, N = 14)
+Réglages du jeu (référence) : `dureeMin=120 cat=SS1,S2,A2,B3,C3,D3 multLimites=2 balisesParJoueur=0.75 probaCheckpoint=0.05 probaArene=0.05 encheresSSToutesLesMin=30 probaCession=0.15` (prix de cession SS 100, S 60, A 40, B 25, C 15, D 10) `limiteSSUnPour=10 limiteSSMin=4 partReplisHC=0.33 hcEnPlus=true` (recharges du Nen 30 / 40 / 40, réserve 40) `specialisationPct=5 rechargeSpeMin=40 banditMode=choisiHorsSS alchimieMode=plusUn`.
+
+Nouvelles options du simulateur :
+- `partRetardataires`, `retardMin=10-60`, `rattrapageJParMin` (RG-5.6) : une part des joueurs arrive en retard, avec le bonus de rattrapage en jenny ; mesure : cartes désignées finales des retardataires et des joueurs à l'heure, rang médian du meilleur retardataire.
+- `volCible=fixes` : le Vol ne prend que les cartes rangées dans les emplacements fixes (comme le sort Vol de l'anime) ; `cacheRangs=SS,S` : chaque joueur range ses cartes désignées de ces rangs dans ses emplacements libres (elles y prennent une place ; on les suppose remises en place pour le Clear et le classement).
+- `partAccompagnement` (part des sorts tirés), `gelAccompagnementMin=3` : Accompagnement localise **le mieux classé des joueurs déjà croisés**, le gèle 3 min et provoque la rencontre (sort offensif puis échange ou achat). « Utiles » = rencontres qui ont rapporté une carte.
+
+| Scénario | Clear 10 / 30 / 80 j. | Vols / partie (10 / 30 / 80) | Retardataires : cartes finales / à l'heure (rang du meilleur) | Accompagnement utilisés / utiles (10 / 30 / 80) |
+|---|---|---|---|---|
+| Référence | 36 / 43 / 91 | 3 / 9 / 22 | — | — |
+| 25 % de retardataires (10-60 min), rattrapage 2 J/min (actuel) | 61 / 52 / 92 | 3 / 9 / 22 | 8,1 / 10,7 (5e) · 5,9 / 9,6 (11e) · 5,3 / 9,6 (18e) | — |
+| 25 % de retardataires, **sans rattrapage** | 57 / 54 / 96 | 2 / 7 / 16 | 7,8 / 10,8 (6e) · 5,6 / 9,7 (13e) · 5,0 / 9,6 (22e) | — |
+| Vol sur les emplacements fixes + cartes SS et S cachées | 42 / 47 / 86 | 3 / 9 / 23 | — | — |
+| Accompagnement (1 sort tiré sur 10) | 36 / 43 / 87 | 3 / 9 / 22 | — | 0,6 / 0,4 · 2,6 / 1,7 · 7,3 / 4,6 |
+| Tout ensemble (retard sans rattrapage, Vol fixes, cache, Accompagnement) | 53 / 47 / 87 | 2 / 7 / 19 | 7,7 / 10,7 · 5,7 / 9,7 · 5,0 / 9,7 | 0,6 / 0,3 · 2,0 / 1,3 · 5,2 / 3,7 |
+
+Variance : ±10 points de Clear d'une série de 100 parties à l'autre.
+
+Constats :
+1. **Le bonus de rattrapage ne sert presque à rien** : il rapporte ≈ 0,3 carte à un retardataire (sur 5 à 8). Un retard de 10 à 60 min coûte 3 à 4 cartes, bonus ou pas. Le supprimer ne change pas le Clear. (Des retardataires font même monter le Clear : moins de concurrence au début pour les cartes limitées.)
+2. **Vol limité aux emplacements fixes et cartes cachées : neutre** sur le Clear et le nombre de vols. Les joueurs du simulateur cachent peu (0,5 à 1 carte en moyenne) faute de place libre. L'intérêt est tactique et non mesuré : se protéger du Vol et de la Clairvoyance, bluffer.
+3. **Accompagnement à 1 sort sur 10 : neutre** sur le Clear ; 60 à 65 % des utilisations rapportent une carte. Il sert à rattraper le meneur sans le rendre imbattable.
+4. Le simulateur ne joue ni Voyance / Clairvoyance (information), ni Pénétration, ni Retour : aucun effet sur le score à mesurer.
+
 ## Recommandations (validées le 2026-10-09, voir PROGRESS.md « Calibrage »)
 - Limites en mode Multiplicateur × 2 par défaut (ou formules RG-14 revues pour ~20 exemplaires par joueur).
 - Nombre de balises posées recommandé ≈ 0,75 × joueurs attendus (min 10).

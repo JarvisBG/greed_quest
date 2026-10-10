@@ -23,6 +23,12 @@ for (const a of args.filter((x) => x.includes('='))) {
     // `rechargeRenforcement=30`, `rechargeEmission=40`, `rechargeManipulation=40` (min).
     const pw = k.slice('recharge'.length).toLowerCase() as NenPower;
     overrides.rechargeNen = { ...overrides.rechargeNen, [pw]: Number(v) };
+  } else if (k === 'cacheRangs') {
+    // `cacheRangs=SS,S` : rangs des cartes désignées que les joueurs cachent dans leurs emplacements libres.
+    overrides.cacheRangs = v === '' ? [] : (v.split(',') as Rank[]);
+  } else if (k === 'retardMin') {
+    // `retardMin=10-60` : minute d'arrivée des retardataires.
+    overrides.retardMin = v.split('-').map(Number) as [number, number];
   } else if (k.startsWith('prixCession')) {
     prixCession[k.slice('prixCession'.length) as Rank] = Number(v);
   } else {
@@ -40,8 +46,8 @@ const median = (xs: number[]) => {
 const fmt = (x: number | null, d = 0) => (x === null ? '—' : x.toFixed(d));
 
 console.log(`Graines : ${graines} · Réglages : ${JSON.stringify({ ...DEFAULT_SIM, ...overrides })}\n`);
-console.log('| Joueurs | Clear | Clear médian (min) | Meilleur (médiane /N) | Moyenne /30 | Tirages / joueur | Repli jenny | Échanges / achats / vols | Manques du meilleur | SS du meilleur / en jeu | Arène tent. / vict. / SS | Enchères SS vendues / ouvertes (prix) | Cessions | Hors coll. / joueur (Boussoles, Souffles, J) | Scans refusés | Pouvoirs / joueur du type (vols SS) | Écart au score moyen par type | Clears (par type) |');
-console.log('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
+console.log('| Joueurs | Clear | Clear médian (min) | Meilleur (médiane /N) | Moyenne /30 | Tirages / joueur | Repli jenny | Échanges / achats / vols | Manques du meilleur | SS du meilleur / en jeu | Arène tent. / vict. / SS | Enchères SS vendues / ouvertes (prix) | Cessions | Hors coll. / joueur (Boussoles, Souffles, J) | Scans refusés | Pouvoirs / joueur du type (vols SS) | Écart au score moyen par type | Clears (par type) | Retardataires : score / à l’heure (meilleur rang médian) | Accompagnement : utilisés / utiles | Cachées / joueur |');
+console.log('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
 
 for (const joueurs of [10, 30, 80]) {
   const runs: SimResult[] = [];
@@ -81,9 +87,13 @@ for (const joueurs of [10, 30, 80]) {
   const parType: Record<string, number> = {};
   for (const r of runs) if (r.clearPar) parType[r.clearPar] = (parType[r.clearPar] ?? 0) + 1;
   const clearsTxt = Object.entries(parType).map(([k, n]) => `${k.slice(0, 5)} ${n}`).join(', ');
+  const ret = runs.reduce((a, r) => ({ s: a.s + r.retardataires.somme, n: a.n + r.retardataires.n }), { s: 0, n: 0 });
+  const hre = runs.reduce((a, r) => ({ s: a.s + r.aLHeure.somme, n: a.n + r.aLHeure.n }), { s: 0, n: 0 });
+  const rangs = runs.flatMap((r) => (r.retardataires.meilleurRang === null ? [] : [r.retardataires.meilleurRang]));
+  const retardTxt = ret.n === 0 ? '—' : `${fmt(ret.s / ret.n, 1)} / ${fmt(hre.s / hre.n, 1)} (${fmt(median(rangs))})`;
   const nbHC = moy((r) => Object.values(r.hcObtenues).reduce((a, b) => a + b, 0)) / joueurs;
   const hc = `${fmt(nbHC, 1)} (${fmt(moy((r) => r.boussoles) / joueurs, 1)}, ${fmt(moy((r) => r.souffles) / joueurs, 1)}, ${fmt(moy((r) => r.jennyHC) / joueurs)} J)`;
   console.log(
-    `| ${joueurs} | ${clears.length}/${runs.length} | ${fmt(median(clears))} | ${fmt(median(runs.map((r) => r.meilleur)))} | ${fmt(moy((r) => r.moyenne), 1)} | ${fmt(moy((r) => r.tiragesParJoueur), 1)} | ${fmt(moy((r) => r.partRepliJenny) * 100)} % | ${fmt(moy((r) => r.echanges))} / ${fmt(moy((r) => r.achatsCartes))} / ${fmt(moy((r) => r.volsReussis))} | ${manquesTxt || '—'} | ${fmt(moy((r) => r.ssDuMeilleur), 1)} / ${fmt(moy((r) => r.ssEnJeu), 1)} | ${arene} | ${encheres} | ${cessionsTxt || '—'} | ${hc} | ${refusTxt} | ${pouvoirsTxt} (${fmt(moy((r) => r.volsSS), 1)}) | ${typesTxt} | ${clearsTxt} |`,
+    `| ${joueurs} | ${clears.length}/${runs.length} | ${fmt(median(clears))} | ${fmt(median(runs.map((r) => r.meilleur)))} | ${fmt(moy((r) => r.moyenne), 1)} | ${fmt(moy((r) => r.tiragesParJoueur), 1)} | ${fmt(moy((r) => r.partRepliJenny) * 100)} % | ${fmt(moy((r) => r.echanges))} / ${fmt(moy((r) => r.achatsCartes))} / ${fmt(moy((r) => r.volsReussis))} | ${manquesTxt || '—'} | ${fmt(moy((r) => r.ssDuMeilleur), 1)} / ${fmt(moy((r) => r.ssEnJeu), 1)} | ${arene} | ${encheres} | ${cessionsTxt || '—'} | ${hc} | ${refusTxt} | ${pouvoirsTxt} (${fmt(moy((r) => r.volsSS), 1)}) | ${typesTxt} | ${clearsTxt} | ${retardTxt} | ${fmt(moy((r) => r.accompagnements), 1)} / ${fmt(moy((r) => r.offensifsApresAccompagnement), 1)} | ${fmt(moy((r) => r.cachees), 1)} |`,
   );
 }

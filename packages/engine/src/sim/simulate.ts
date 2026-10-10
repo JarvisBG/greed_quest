@@ -25,7 +25,7 @@ import { checkClear } from '../ranking.js';
 import { randomInt, seededRng, weightedPick, type Rng } from '../rng.js';
 import { checkScan, previousDrawsOn, type ScanRefusalCode } from '../scan.js';
 import { DEFAULT_SHOP_CONFIG, buyPack, currentWave, type ShopWave } from '../shop.js';
-import { castOffensive, pouvoirDisponibleDans, type NenPower, type OffensiveSpell, type SpellPlayer } from '../spells.js';
+import { castOffensive, pouvoirDisponibleDans, takeableCards, type NenPower, type OffensiveSpell, type SpellPlayer } from '../spells.js';
 import { closeAuction, joinAuction, openAuction, placeBid, trade, type Auction } from '../trades.js';
 
 const MIN = 60_000;
@@ -128,7 +128,9 @@ export interface SimConfig {
   /** Alchimie : nombre de doublons d'un même rang consommés. */
   alchimieDoublons: number;
   /** Alchimie « meme » : 1 doublon devient une carte manquante du même rang (au lieu de monter d'un rang). */
-  alchimieMode: 'monte' | 'meme';
+  alchimieMode: 'monte' | 'meme' | 'plusUn' | 'libre';
+  /** Bandit : carte volée au hasard, ou choisie (une carte qui lui manque, du plus haut rang), SS comprise ou non. */
+  banditMode: 'hasard' | 'choisi' | 'choisiHorsSS';
   /** Répartition du catalogue par rang (RG-8 : SS 2, S 3, A 5, B 6, C 7, D 7). */
   catalogue: Record<Rank, number>;
 }
@@ -170,6 +172,7 @@ export const DEFAULT_SIM: Omit<SimConfig, 'joueurs' | 'seed'> = {
   zetsuMin: 10,
   alchimieDoublons: 3,
   alchimieMode: 'monte',
+  banditMode: 'hasard',
   reserveMaterialisationMin: null,
   probaEmission: 0.3,
   partReplisHC: 0,
@@ -457,7 +460,14 @@ export function simulate(cfg: SimConfig): SimResult {
       sort = 'vol';
       source = { type: 'carte', itemId: item.id };
       const avant = p.book;
-      const ok = lancerAvec(p, autre, now, horsPortee, sort, source, doublon);
+      let voulue: CardItem | undefined;
+      if (cfg.banditMode !== 'hasard') {
+        const manques = missing(p);
+        voulue = takeableCards(autre.book, now, rangDe)
+          .filter((c) => manques.has(c.cardId) && (cfg.banditMode === 'choisi' || rangDe(c.cardId) !== 'SS'))
+          .sort((a, b) => RANKS.indexOf(rangDe(a.cardId)) - RANKS.indexOf(rangDe(b.cardId)))[0];
+      }
+      const ok = lancerAvec(p, autre, now, horsPortee, sort, source, doublon, voulue);
       if (ok) useSpe(p, 'bandit', now);
       else p.book = removeItem(avant, item.id);
       return ok;
@@ -472,7 +482,11 @@ export function simulate(cfg: SimConfig): SimResult {
     sort: OffensiveSpell,
     source: { type: 'carte'; itemId: string } | { type: 'pouvoir' },
     doublon: CardItem | undefined,
+    voulue?: CardItem,
   ): boolean {
+    // Carte choisie (Bandit) : le Vol ne voit que cette carte ; les autres sont remises ensuite.
+    const cachees = voulue ? autre.book.items.filter((i) => i.kind === 'carte' && i.id !== voulue.id) : [];
+    const cibleBook = voulue ? { ...autre.book, items: autre.book.items.filter((i) => !cachees.includes(i)) } : autre.book;
     const pos: Position = { lat: 48.85, lng: 2.35, precisionM: 0, a: now };
     const loin: Position = { lat: 48.9, lng: 2.35, precisionM: 0, a: now };
     const r = castOffensive(
@@ -481,7 +495,7 @@ export function simulate(cfg: SimConfig): SimResult {
         sort,
         source,
         lanceur: toSpellPlayer(p, pos),
-        cible: toSpellPlayer(autre, horsPortee ? loin : pos),
+        cible: { ...toSpellPlayer(autre, horsPortee ? loin : pos), book: cibleBook },
         emission: horsPortee,
         ...(sort === 'echange_force' && doublon ? { carteDonneeId: doublon.id } : {}),
       },
@@ -489,7 +503,7 @@ export function simulate(cfg: SimConfig): SimResult {
     );
     if (!r.ok) return false;
     fromSpellPlayer(p, r.lanceur, now);
-    fromSpellPlayer(autre, r.cible, now);
+    fromSpellPlayer(autre, { ...r.cible, book: { ...r.cible.book, items: [...r.cible.book.items, ...cachees] } }, now);
     if (sort === 'vol' && r.resultat === 'reussi') {
       stats.vols++;
       if (r.recu?.kind === 'carte' && rangDe(r.recu.cardId) === 'SS') volsSS++;
@@ -526,10 +540,18 @@ export function simulate(cfg: SimConfig): SimResult {
     }
     const circ = countInCirculation(players.map((x) => x.book));
     const manques = missing(p);
-    if (cfg.alchimieMode === 'meme') {
-      for (const r of ['S', 'A', 'B', 'C', 'D'] as Rank[]) {
+    if (cfg.alchimieMode !== 'monte') {
+      // meme : même rang ; plusUn : même rang ou celui du dessus ; libre : n'importe quel rang (SS comprise).
+      const ok = (r: Rank, id: string) => {
+        const ecart = RANKS.indexOf(r) - RANKS.indexOf(rangDe(id));
+        return cfg.alchimieMode === 'libre' ? true : cfg.alchimieMode === 'plusUn' ? ecart === 0 || ecart === 1 : ecart === 0;
+      };
+      for (const r of ['D', 'C', 'B', 'A', 'S'] as Rank[]) {
         const d = parRang.get(r)?.[0];
-        const voulues = designees.filter((id) => rangDe(id) === r && manques.has(id) && (circ.get(id) ?? 0) < limites()[r]);
+        const voulues = designees
+          .filter((id) => ok(r, id) && manques.has(id) && (circ.get(id) ?? 0) < limites()[rangDe(id)])
+          .sort((a, b) => RANKS.indexOf(rangDe(a)) - RANKS.indexOf(rangDe(b)));
+        if (voulues.length > 0) voulues.splice(1);
         if (!d || voulues.length === 0) continue;
         p.book = removeItem(p.book, d.id);
         p.book = addItem(p.book, { kind: 'carte', id: newId(), cardId: voulues[randomInt(rng, voulues.length)]!, origine: { type: 'duplication' }, obtenuA: now });

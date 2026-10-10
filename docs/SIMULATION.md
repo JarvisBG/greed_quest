@@ -160,6 +160,19 @@ Constats :
 3. **Fortune est le plus fort** (+0,3 à +1,3), **Bandit** suit (+0,4 à +0,8) ; une recharge de 40 min les tempère. **Zetsu** est neutre (défensif, comme Renforcement).
 4. Transformation reste le type le plus faible au score : son intérêt (bluff, fausses cartes refilées) n'est pas mesuré par le simulateur.
 
+Variantes demandées par Sivraj (30 % de Spécialistes, recharge 40 min ; `banditMode`, `alchimieMode`) :
+
+| Variante | Écart Bandit / Alchimie (10 / 30 / 80 j.) | Vols de SS / partie (30 / 80 j.) | Clears gagnés par le pouvoir (80 j., sur 38-39) |
+|---|---|---|---|
+| Bandit au hasard, Alchimie même rang | +0,9 / +0,5 / +0,4 · −0,1 / −0,5 / +0,1 | 0,1 / 0,1 | Bandit 3, Alchimie 0 |
+| **Bandit choisit la carte**, SS comprise | +1,3 / +0,8 / +0,7 | **0,3 / 0,6** | Bandit 8 |
+| **Bandit choisit la carte, sauf la SS** | +1,3 / +0,8 / +0,7 | 0,0 / 0,2 | Bandit 7 |
+| Alchimie même rang ou rang au-dessus | −0,9 / 0,0 / +0,3 | — | Alchimie 6 |
+| **Alchimie libre** (n'importe quelle carte, SS comprise) | +0,2 / +0,8 / +0,9 | — | **Alchimie 12** (≈ 8 % des joueurs, ≈ 32 % des Clears) |
+
+5. **Bandit qui choisit sa carte** : nettement plus fort, mais encore raisonnable (+0,7 à +1,3) ; s'il peut viser la SS, les vols de SS sont multipliés par 3 à 6. Retenu : **choix de la carte, sauf la SS**.
+6. **Alchimie libre** domine (un doublon D devient la SS) : un Spécialiste sur trois gagne. **Même rang ou rang au-dessus** reste équilibrée ; retenue **sans la SS** (donc un peu plus faible que simulée).
+
 ## Recommandations (validées le 2026-10-09, voir PROGRESS.md « Calibrage »)
 - Limites en mode Multiplicateur × 2 par défaut (ou formules RG-14 revues pour ~20 exemplaires par joueur).
 - Nombre de balises posées recommandé ≈ 0,75 × joueurs attendus (min 10).

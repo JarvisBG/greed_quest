@@ -124,6 +124,22 @@ Constats :
 2. **Donner la carte en plus des 10 J est neutre à favorable** (+10 à +25 points à 80 joueurs, grâce aux Pépites, Tickets et Boussoles). ≈ 2,5 cartes hors collection par joueur et par partie : assez pour exister, pas assez pour encombrer.
 3. La Boussole et le Second souffle ont un effet mesurable mais modeste ; Voile et Coffre ne jouent que contre les sorts (non modélisés).
 
+## Pouvoirs de Nen (2026-10-10, 40 graines, 120 min, objets en plus des jenny)
+Le simulateur joue désormais les pouvoirs : Renforcement (bloque un sort offensif reçu, moteur), Manipulation (échange forcé sans carte quand le joueur n'a pas de sort offensif), Émission (à chaque action, 30 % de chances de viser hors portée un joueur au hasard, s'il a un sort offensif), Matérialisation (tirage C/D en bonus à chaque checkpoint). Options : `rechargeRenforcement=30`, `rechargeEmission=40`, `rechargeManipulation=40` (min ; absent = une fois par partie), `reserveMaterialisationMin=40` (tirage bonus sans checkpoint). « Pouvoirs » = utilisations moyennes par joueur du type. Clear sur 40 parties.
+
+| Scénario | Clear N = 14 (10 / 30 / 80 j.) | Clear N = 16 (10 / 30 / 80 j.) | Pouvoirs / joueur du type (Renfo, Émission, Manip, Matér.) | Vols de SS / partie |
+|---|---|---|---|---|
+| Une fois par partie (document) | 23 / 14 / 38 | 22 / 18 / 29 | 0,6 · 0,4 · 0,8 · 1,5 | 0,1 |
+| Recharge 30 / 40 / 40 min | 21 / 14 / 40 | 25 / 13 / 32 | 0,8 · 0,4 · 1,2 · 1,5 | 0,1 |
+| Recharge 30 / 40 / 40 + réserve Matérialisation 40 min | 28 / 16 / 38 | 20 / 14 / 30 | 0,8 · 0,4 · 1,2 · 3,4 | 0,1 |
+| Recharge 20 / 30 / 30 + réserve 30 min | 27 / 23 / 38 | 26 / 14 / 29 | 0,8 · 0,5 · 1,4 · 4,3 | 0,1 |
+
+Constats :
+1. **La recharge ne déséquilibre pas la partie** : Clear inchangés à la variance près, vols de SS inchangés (≈ 0,1 par partie).
+2. **Même rechargeables, les pouvoirs défensifs et offensifs servent peu** (moins d'une fois et demie par partie) : ils dépendent des rencontres et des cartes de sort. La recharge enlève surtout la frustration du « déjà utilisé au bout de 15 min ».
+3. **Matérialisation dépend des checkpoints** : la réserve toutes les 40 min double ses tirages bonus (1,5 → 3,4) sans effet visible sur les Clear (cartes C / D seulement).
+4. Le simulateur modélise mal la vraie valeur des pouvoirs offensifs (un joueur réel vise un joueur proche du Clear) : à surveiller en test terrain.
+
 ## Recommandations (validées le 2026-10-09, voir PROGRESS.md « Calibrage »)
 - Limites en mode Multiplicateur × 2 par défaut (ou formules RG-14 revues pour ~20 exemplaires par joueur).
 - Nombre de balises posées recommandé ≈ 0,75 × joueurs attendus (min 10).

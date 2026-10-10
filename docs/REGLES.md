@@ -128,6 +128,18 @@ Prix défaut (réglables) : paquet 50 J · revente D/C/B 5/10/20 J · A/S 40/80 
 - 10.7 Duplication : sous limite → vrai exemplaire compté ; à la limite → contrefaçon.
 - 10.8 Analyse : sa propre page, jamais un échange en cours ; résultat privé.
 > **Amendement 2026-10-09 (Sivraj) — sort Regard** (« Peek » de Greed Island) : montre les cartes d'un joueur **déjà rencontré** (à portée l'un de l'autre au moins une fois, ou visé par un sort de l'un ou l'autre). Les cartes apparaissent telles qu'elles paraissent : une contrefaçon non démasquée paraît vraie, une copie déjà démasquée par son détenteur apparaît comme contrefaçon ; les sorts ne sont pas montrés. **Anonyme** : la cible est prévenue (« Quelqu'un a consulté ton Livre ») sans savoir qui ; l'écran géant affiche le sort sans lanceur ni cible. Refusé sur un Livre gelé (RG-13.1). Deux fois plus rare que les autres sorts au tirage et en boutique, jamais dans le kit.
+> **Amendement 2026-10-10 (Sivraj) — cartes objets** : troisième famille du Livre, à côté des cartes de collection et des sorts ; elles ne comptent pas pour le Clear et ont leur propre section (8 places), sans prendre les 15 places libres. **Source** : 1 repli « carte épuisée » sur 3 (`objetsReplisPct` 33, réglable), au scan et à l'arène, donne un objet **en plus** des 10 J (rien si la section est pleine). Poids : Pépite 3, Ticket 3, Boussole 2, Second souffle 2, Voile 1, Coffre 1. Elles s'échangent (RG-11) mais ne se volent pas ; Livre gelé = inutilisables.
+>
+> | Objet | Effet |
+> |---|---|
+> | Pépite d'or | Se revend 30 J à Masadora |
+> | Ticket de la Fortune | Se gratte : 0 / 10 / 30 / 100 J (40 / 35 / 20 / 5 %) ; ne se revend pas |
+> | Boussole du chercheur | Direction (8 points cardinaux, jamais la distance) de la balise active la plus proche jamais scannée par le joueur ; fantômes exclues ; refus sans consommer si aucune (ou balises sans position de pose) |
+> | Second souffle | Au scan, passe outre la boucle (RG-7.1) ; consommé seulement si la boucle aurait refusé ; le rendement décroissant (RG-7.2) reste |
+> | Voile d'ombre | Passif : bloque le prochain Radar ou Regard reçu (sort consommé, résultat « bloqué ») |
+> | Coffre scellé | Une carte choisie ne peut être ni volée ni prise par échange forcé pendant `coffreMin` (20 min) ; la protection ne suit pas la carte si elle change de main |
+>
+> Revente à Masadora : Pépite 30 J, autres objets 10 J. Simulation : SIMULATION.md « Cartes hors collection ».
 **Géoloc** : 10.9 envoi toutes les 15 s si déplacement > 10 m, + à chaque scan/achat/sort. 10.10 Position > 2 min → hors radar (ni viser ni être visé). 10.11 Portée 30 m (réglable) + marge GPS plafonnée 20 m. 10.12 Positions exactes : serveur + GM seulement ; écran = points anonymes/heatmap, décalage 2 min ; joueur ne reçoit jamais la position d'autrui (sauf zone via Radar).
 > **Amendement 2026-10-09 (Sivraj)** — RG-10.10 : un joueur sans nouvelle position (GPS coupé, téléphone en veille, app quittée) reste **ciblable à sa dernière position connue pendant 10 min** (paramètre `ciblableMin`, réglable), au lieu de sortir du radar après 2 min. Au-delà, il est hors radar et l'équipe reçoit une alerte (`sans_position`, une par disparition). Pour agir lui-même (scan, achat, sort, échange), une position de moins de 2 min reste exigée (RG-7.6). But : qu'on ne puisse pas se cacher en coupant le GPS pour protéger son Livre.
 

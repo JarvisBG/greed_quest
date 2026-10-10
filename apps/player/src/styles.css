@@ -385,30 +385,65 @@ p { margin: 0; }
 .fil li { padding: 10px 0; border-bottom: 1.5px solid var(--encre); font-weight: 600; }
 .fil li:last-child { border-bottom: 0; }
 
-/* ---------- Licence de Hunter ---------- */
+/* ---------- En-tête des pages ouvertes depuis l'accueil ---------- */
+.tete-page { display: flex; align-items: center; gap: 12px; }
+.retour { flex: none; width: 48px; height: 48px; display: grid; place-items: center; padding: 0; border: var(--trait) solid var(--encre); background: var(--case); color: var(--encre); }
+.retour svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: square; }
+.retour:active { background: var(--encre); color: var(--case); }
+
+/* ---------- Licence de Hunter (prototype docs/prototype/licence-presentation.html) ---------- */
+.licence-case { padding: 16px; }
+.licence-scene { position: relative; display: grid; justify-items: center; padding-block: 4px; perspective: 1100px; }
+.licence-scene.devant { z-index: 60; cursor: pointer; }
+.licence-vol { position: relative; width: min(100%, 340px); aspect-ratio: 54 / 85.6; transform-style: preserve-3d; }
 .licence {
-  justify-self: center;
-  width: min(100%, 320px);
+  position: absolute; inset: 0;
   border-radius: 16px;
   background: #121418 repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.035) 0 2px, transparent 2px 9px);
-  box-shadow: inset 0 0 0 2px #2b2f36, inset 0 0 0 8px #121418, inset 0 0 0 9px #8e949c, 0 14px 26px -12px rgba(0, 0, 0, 0.55);
+  box-shadow: inset 0 0 0 2px #2b2f36, inset 0 0 0 8px #121418, inset 0 0 0 9px var(--filet, #8e949c), 0 16px 28px -14px rgba(0, 0, 0, 0.6);
   color: #eef0f2;
-  padding: 24px 22px 22px;
-  display: grid;
-  justify-items: center;
-  gap: 16px;
+  backface-visibility: hidden;
+  overflow: hidden;
 }
-.licence-tete { display: flex; align-items: center; gap: 12px; }
-.licence-tete svg { width: 54px; height: 54px; }
-.licence-tete strong { font: 400 22px/1 var(--f-titre); letter-spacing: 0.14em; }
-.licence-tete span { display: block; font: 600 13px/1.2 var(--f-texte); color: #c3c8cf; margin-top: 4px; }
-.qr-plaque { width: 100%; background: #fff; border-radius: 8px; padding: 12px; display: grid; gap: 10px; }
-.qr-plaque .qr { width: 100%; height: auto; display: block; }
-.jauge-30 { height: 8px; background: #e2e4e7; border-radius: 4px; overflow: hidden; }
-.jauge-30 i { display: block; height: 100%; background: var(--encre); transition: width 1s linear; }
-.licence-pied { width: 100%; display: flex; justify-content: space-between; align-items: end; gap: 10px; }
-.licence-pied b { font: 400 26px/1 var(--f-titre); overflow-wrap: anywhere; }
-.licence-pied span { font: 600 14px/1.2 var(--f-texte); color: #c3c8cf; text-align: right; }
+.licence.face { padding: 24px 22px 22px; display: grid; grid-template-rows: auto 1fr auto; justify-items: center; align-items: center; gap: 14px; }
+.licence.dos { transform: rotateY(180deg); display: grid; place-items: center; }
+.licence.dos svg { width: 52%; }
+.licence.dos::after { content: ''; position: absolute; inset: 18px; border-radius: 8px; border: 1px solid #2b2f36; }
+.licence-tete { justify-self: start; display: flex; align-items: center; gap: 12px; }
+.licence-tete svg { width: 52px; height: 52px; flex: none; }
+.licence-tete strong { display: block; font: 400 24px/1 var(--f-titre); letter-spacing: 0.16em; }
+.licence-tete span { display: block; margin-top: 5px; font: 600 13px/1.2 var(--f-texte); color: #c3c8cf; }
+.qr-plaque { width: 100%; background: #fff; border-radius: 8px; padding: 12px 12px 10px; display: grid; gap: 8px; color: var(--encre); }
+.qr-zone { position: relative; aspect-ratio: 1; }
+.qr-couche { position: absolute; inset: 0; display: grid; place-items: center; }
+.qr-couche .qr { width: 100%; height: 100%; display: block; }
+.qr-couche.neuf { clip-path: inset(0 0 100% 0); background: #fff; }
+.qr-calcul { margin: 0; font-weight: 600; color: var(--encre-2); }
+.balayage { position: absolute; left: -4px; right: -4px; top: 0; height: 3px; background: var(--aura, var(--encre)); box-shadow: 0 0 10px 2px var(--aura, var(--encre)); opacity: 0; pointer-events: none; }
+.compte { display: flex; align-items: center; gap: 10px; min-height: 20px; }
+.jauge-30 { flex: 1; height: 8px; background: #e2e4e7; border-radius: 4px; overflow: hidden; }
+.jauge-30 i { display: block; height: 100%; background: var(--encre); transform-origin: left; transform: scaleX(0); }
+.compte b { min-width: 3.2ch; text-align: right; font: 800 19px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.compte.presse .jauge-30 i { background: var(--alerte); }
+.compte.presse b { color: var(--alerte); }
+.licence-pied { width: 100%; display: flex; justify-content: space-between; align-items: end; gap: 12px; }
+.licence-pied b { font: 400 28px/1 var(--f-titre); overflow-wrap: anywhere; }
+.licence-nen { text-align: right; font: 600 14px/1.25 var(--f-texte); color: #c3c8cf; }
+.licence-nen span { display: block; font: 400 17px/1.1 var(--f-titre); color: var(--aura); letter-spacing: 0.04em; }
+.reflet { position: absolute; inset: -40% -60%; background: linear-gradient(105deg, transparent 42%, rgba(255, 255, 255, 0.05) 46%, rgba(255, 255, 255, 0.32) 50%, rgba(255, 255, 255, 0.05) 54%, transparent 58%); transform: translateX(-70%); pointer-events: none; mix-blend-mode: screen; }
+.licence-consigne { gap: 8px; }
+.licence-consigne p { margin: 0; }
+
+/* Cinématique : la nuit tombe sous la carte, l'aura brûle entre les deux */
+.licence-presentation { position: fixed; inset: 0; z-index: 50; pointer-events: none; overflow: hidden; }
+.licence-presentation.joue { pointer-events: auto; cursor: pointer; }
+.licence-presentation .nuit { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, #1b1d24 0, #0d0e12 45%, #07070a 85%); opacity: 0; }
+.licence-presentation .gi-concentration { opacity: 0; }
+.licence-presentation .gi-concentration path { fill: #e9ecf2; }
+.licence-presentation .flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+.licence-presentation .passer { position: absolute; bottom: max(16px, env(safe-area-inset-bottom, 0px)); left: 50%; translate: -50% 0; font: 600 13px var(--f-texte); color: rgba(235, 238, 242, 0.75); white-space: nowrap; animation: passer-apparait 0.3s 0.5s both; }
+@keyframes passer-apparait { from { opacity: 0; } }
+.licence-aura { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 55; pointer-events: none; }
 
 /* ---------- Scanner ---------- */
 .viseur { position: relative; aspect-ratio: 1; background: #000; border: var(--trait) solid var(--encre); overflow: hidden; }

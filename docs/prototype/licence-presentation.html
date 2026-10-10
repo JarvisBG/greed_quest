@@ -1,0 +1,429 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Licence de Hunter</title>
+<meta name="description" content="Prototype de la page licence de Greed Island : la carte noire sort, s'allume de l'aura du joueur, le QR s'imprime ; le code change toutes les 30 s.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@800&family=Atkinson+Hyperlegible+Next:wght@400;600;800&family=Dela+Gothic+One&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+/* Page ⑤ : la licence de Hunter. La planche reste claire ; à l'ouverture, la nuit tombe un instant,
+   la carte noire monte retournée, se retourne en frappant, s'allume de l'aura du joueur, puis le QR s'imprime. */
+:root {
+  color-scheme: light;
+  --papier: #eeefe9;
+  --case: #fbfbf7;
+  --encre: #111111;
+  --encre-2: #3b3d40;
+  --trame: rgba(17, 17, 17, 0.16);
+  --bleu: #1f4a9c;
+  --alerte: #b3161c;
+  --nuit: #07070a;
+  --carte: #121418;
+  --argent: #8e949c;
+  --nen-renforcement: #ff5a4a;
+  --nen-emission: #ff9a3c;
+  --nen-transformation: #b07cff;
+  --nen-materialisation: #3fd3d8;
+  --nen-manipulation: #5fe07a;
+  --nen-specialisation: #ffd24a;
+  --aura: var(--nen-renforcement);
+  --f-titre: 'Dela Gothic One', 'Arial Black', sans-serif;
+  --f-texte: 'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif;
+  --f-chiffre: 'Atkinson Hyperlegible Mono', ui-monospace, monospace;
+  --trait: 3px;
+  --sortie: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { box-sizing: border-box; }
+html, body { overflow-x: clip; }
+body { margin: 0; background: var(--papier); color: var(--encre); font: 400 17px/1.45 var(--f-texte); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+::selection { background: #d9a11a; color: var(--encre); }
+:focus-visible { outline: 3px solid var(--bleu); outline-offset: 3px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+
+.app { max-width: 480px; margin: 0 auto; padding: 0 16px 32px; display: grid; gap: 10px; }
+
+/* Commandes du prototype (pas dans l'app) */
+.proto { display: grid; gap: 8px; padding: 10px 12px; margin-inline: -16px; background: var(--encre); color: var(--case); }
+.proto p { margin: 0; font: 600 13px/1.3 var(--f-texte); }
+.proto .rang { display: flex; gap: 6px; flex-wrap: wrap; }
+.proto button { min-height: 36px; padding: 0 10px; border: 2px solid var(--case); background: transparent; color: var(--case); font: 700 13px var(--f-texte); }
+.proto button[aria-pressed='true'] { background: var(--case); color: var(--encre); }
+.proto .pastille { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+
+/* Barre d'état de l'app (statique ici) */
+.barre { position: sticky; top: 0; z-index: 30; margin-inline: -16px; padding: 10px 16px; background: var(--case); border-bottom: var(--trait) solid var(--encre); display: flex; align-items: center; gap: 14px; }
+.chrono { font: 800 30px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.jenny { margin-left: auto; font: 800 20px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+
+/* En-tête de la page */
+.tete-page { display: flex; align-items: center; gap: 12px; }
+.retour { min-width: 48px; min-height: 48px; display: grid; place-items: center; border: var(--trait) solid var(--encre); background: var(--case); padding: 0; }
+.retour svg { width: 22px; height: 22px; }
+.retour:active { background: var(--encre); color: var(--case); }
+.tete-page h1 { margin: 0; font: 400 26px/1.1 var(--f-titre); }
+
+.case { background: var(--case); border: var(--trait) solid var(--encre); padding: 16px; }
+.trame-fond { background-color: var(--case); background-image: radial-gradient(var(--trame) 1px, transparent 1.3px); background-size: 6px 6px; }
+
+/* ---------- La carte ---------- */
+.licence-scene { display: grid; justify-items: center; padding-block: 8px; perspective: 1100px; position: relative; }
+.licence-vol { position: relative; width: min(100%, 340px); aspect-ratio: 54 / 85.6; transform-style: preserve-3d; }
+.licence {
+  position: absolute; inset: 0;
+  border-radius: 16px;
+  background: var(--carte) repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.035) 0 2px, transparent 2px 9px);
+  box-shadow: inset 0 0 0 2px #2b2f36, inset 0 0 0 8px var(--carte), inset 0 0 0 9px var(--filet, var(--argent)), 0 16px 28px -14px rgba(0, 0, 0, 0.6);
+  color: #eef0f2;
+  backface-visibility: hidden;
+  overflow: hidden;
+}
+.licence.face { padding: 24px 22px 22px; display: grid; grid-template-rows: auto 1fr auto; justify-items: center; align-items: center; gap: 14px; }
+.licence.dos { transform: rotateY(180deg); display: grid; place-items: center; }
+.licence.dos svg { width: 52%; }
+.licence.dos::after { content: ''; position: absolute; inset: 18px; border-radius: 8px; border: 1px solid #2b2f36; }
+
+.licence-tete { display: flex; align-items: center; gap: 12px; justify-self: start; }
+.licence-tete svg { width: 52px; height: 52px; flex: none; }
+.licence-tete strong { display: block; font: 400 24px/1 var(--f-titre); letter-spacing: 0.16em; }
+.licence-tete span { display: block; margin-top: 5px; font: 600 13px/1.2 var(--f-texte); color: #c3c8cf; }
+
+.qr-plaque { width: 100%; background: #fff; border-radius: 8px; padding: 12px 12px 10px; display: grid; gap: 8px; color: var(--encre); }
+.qr-zone { position: relative; aspect-ratio: 1; }
+.qr-zone .qr { position: absolute; inset: 0; }
+.qr-zone .qr svg { width: 100%; height: 100%; display: block; }
+.qr-zone .neuf { clip-path: inset(0 0 100% 0); background: #fff; }
+.balayage { position: absolute; left: -4px; right: -4px; top: 0; height: 3px; background: var(--aura); box-shadow: 0 0 10px 2px var(--aura); opacity: 0; pointer-events: none; }
+.compte { display: flex; align-items: center; gap: 10px; }
+.jauge { flex: 1; height: 8px; background: #e2e4e7; border-radius: 4px; overflow: hidden; }
+.jauge i { display: block; height: 100%; background: var(--encre); transform-origin: left; transform: scaleX(0); }
+.compte b { min-width: 3.2ch; text-align: right; font: 800 19px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.compte.presse .jauge i { background: var(--alerte); }
+.compte.presse b { color: var(--alerte); }
+
+.licence-pied { width: 100%; display: flex; justify-content: space-between; align-items: end; gap: 12px; }
+.licence-pied b { font: 400 28px/1 var(--f-titre); overflow-wrap: anywhere; }
+.nen { text-align: right; font: 600 14px/1.25 var(--f-texte); color: #c3c8cf; }
+.nen .kanji { display: block; font: 400 17px/1.1 var(--f-titre); color: var(--aura); letter-spacing: 0.04em; }
+
+/* Reflet de la carte (passe une fois pendant la cinématique) */
+.reflet { position: absolute; inset: -40% -60%; background: linear-gradient(105deg, transparent 42%, rgba(255, 255, 255, 0.05) 46%, rgba(255, 255, 255, 0.32) 50%, rgba(255, 255, 255, 0.05) 54%, transparent 58%); transform: translateX(-70%); pointer-events: none; mix-blend-mode: screen; }
+
+.consigne { margin: 0; font-weight: 600; }
+.consigne + .consigne { margin-top: 8px; color: var(--encre-2); font-weight: 400; }
+
+/* ---------- Cinématique ---------- */
+.presentation { position: fixed; inset: 0; z-index: 50; pointer-events: none; overflow: hidden; }
+.presentation.joue { pointer-events: auto; cursor: pointer; }
+.presentation .nuit { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, #1b1d24 0, #0d0e12 45%, var(--nuit) 85%); opacity: 0; }
+.presentation .lignes { position: absolute; inset: -30%; opacity: 0; }
+.presentation .lignes svg { width: 100%; height: 100%; }
+.presentation .flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+.presentation .passer { position: absolute; bottom: max(16px, env(safe-area-inset-bottom, 0px)); left: 50%; translate: -50% 0; font: 600 13px var(--f-texte); color: rgba(235, 238, 242, 0.75); opacity: 0; white-space: nowrap; }
+.presentation.joue .passer { opacity: 1; transition: opacity 0.3s 0.5s; }
+canvas.aura { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 55; pointer-events: none; }
+.licence-scene.devant { z-index: 60; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+</style>
+
+<div class="app">
+  <div class="proto" role="group" aria-label="Commandes du prototype">
+    <p>Prototype : choisis un type de Nen, puis rejoue. Touche l'écran pendant la cinématique pour la passer.</p>
+    <div class="rang" id="nens"></div>
+    <div class="rang">
+      <button id="rejouer">Rejouer l'ouverture</button>
+      <button id="suivant">Code suivant</button>
+    </div>
+  </div>
+
+  <header class="barre" aria-label="État de la partie">
+    <span class="chrono">1:24:10</span>
+    <span class="jenny">1 250 J</span>
+  </header>
+
+  <div class="tete-page">
+    <button class="retour" aria-label="Retour à l'accueil">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg>
+    </button>
+    <h1>Licence de Hunter</h1>
+  </div>
+
+  <section class="case trame-fond" aria-label="Ta licence">
+    <div class="licence-scene" id="scene">
+      <div class="licence-vol" id="vol">
+        <div class="licence face" id="carte">
+          <div class="licence-tete">
+            <svg viewBox="0 0 100 100" fill="none" aria-hidden="true"><path d="M50 4 92 28v44L50 96 8 72V28z" fill="#e7eaee"/><path d="M50 12 85 32v36L50 88 15 68V32z" fill="#121418"/><path d="M34 30v40M66 30v40M34 50h32" stroke="#e7eaee" stroke-width="8" stroke-linecap="square"/><path d="M50 22v8M50 70v8" stroke="#e7eaee" stroke-width="4"/></svg>
+            <div><strong>HUNTER</strong><span>Licence de Hunter</span></div>
+          </div>
+          <div class="qr-plaque">
+            <div class="qr-zone">
+              <div class="qr" id="qr" role="img" aria-label="Code QR de la licence de Gon"></div>
+              <div class="qr neuf" id="qr-neuf" aria-hidden="true"></div>
+              <i class="balayage" id="balayage"></i>
+            </div>
+            <div class="compte" id="compte">
+              <div class="jauge" aria-hidden="true"><i id="jauge"></i></div>
+              <b id="reste" aria-label="Nouveau code dans 30 secondes">30 s</b>
+            </div>
+          </div>
+          <div class="licence-pied">
+            <b>Gon</b>
+            <span class="nen"><span class="kanji" id="nen-kanji">強化系</span><span id="nen-nom">Renforcement</span></span>
+          </div>
+          <i class="reflet" id="reflet" aria-hidden="true"></i>
+        </div>
+        <div class="licence dos" aria-hidden="true">
+          <svg viewBox="0 0 100 100" fill="none"><path d="M50 4 92 28v44L50 96 8 72V28z" fill="#e7eaee"/><path d="M50 12 85 32v36L50 88 15 68V32z" fill="#121418"/><path d="M34 30v40M66 30v40M34 50h32" stroke="#e7eaee" stroke-width="8" stroke-linecap="square"/><path d="M50 22v8M50 70v8" stroke="#e7eaee" stroke-width="4"/></svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="case">
+    <p class="consigne">Montre-la à un PNJ ou au GM : checkpoint, enchère, arène, Clear.</p>
+    <p class="consigne">Le code change toutes les 30 secondes et marche sans réseau. Si le scan échoue, monte la luminosité.</p>
+  </section>
+</div>
+
+<div class="presentation" id="pres" aria-hidden="true">
+  <div class="nuit"></div>
+  <div class="lignes" id="lignes"></div>
+  <div class="flash"></div>
+  <span class="passer">Touche pour passer</span>
+</div>
+<canvas class="aura" id="aura"></canvas>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const calme = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const NENS = {
+  renforcement: ['Renforcement', '強化系'],
+  emission: ['Émission', '放出系'],
+  transformation: ['Transformation', '変化系'],
+  materialisation: ['Matérialisation', '具現化系'],
+  manipulation: ['Manipulation', '操作系'],
+  specialisation: ['Spécialisation', '特質系'],
+};
+let nen = 'renforcement';
+const couleurAura = () => getComputedStyle(document.documentElement).getPropertyValue(`--nen-${nen}`).trim();
+
+// ---------- Sélecteur de Nen (prototype) ----------
+$('#nens').innerHTML = Object.entries(NENS).map(([k, [nom]]) => `<button data-nen="${k}" aria-pressed="${k === nen}"><span class="pastille" style="background:var(--nen-${k})"></span>${nom}</button>`).join('');
+$('#nens').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  nen = b.dataset.nen;
+  $('#nens').querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  appliquerNen(); presenter();
+});
+function appliquerNen() {
+  document.documentElement.style.setProperty('--aura', `var(--nen-${nen})`);
+  $('#nen-nom').textContent = NENS[nen][0];
+  $('#nen-kanji').textContent = NENS[nen][1];
+  fabriquerLueur();
+}
+
+// ---------- QR tournant (RG-5.2) ----------
+let decalageFenetre = 0;
+const fenetreCourante = () => Math.floor(Date.now() / 30000) + decalageFenetre;
+const resteMs = () => 30000 - (Date.now() % 30000);
+function svgQr(fenetre) {
+  if (!window.qrcode) return '<svg viewBox="0 0 10 10"><rect width="10" height="10" fill="#eee"/></svg>';
+  const q = qrcode(0, 'M');
+  q.addData(`GQL1.joueur-gon.${fenetre}.demonstration-prototype`);
+  q.make();
+  return q.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
+}
+const qr = $('#qr'), qrNeuf = $('#qr-neuf'), balayage = $('#balayage');
+let impression = null;
+function terminerImpression() {
+  if (!impression) return;
+  impression.forEach((a) => a.cancel());
+  if (qrNeuf.innerHTML) qr.innerHTML = qrNeuf.innerHTML;
+  qrNeuf.innerHTML = ''; impression = null;
+}
+// Le nouveau code s'imprime de haut en bas sous une ligne de lumière de l'aura (≈ 0,4 s).
+function imprimer(fenetre, duree = 420) {
+  terminerImpression();
+  qrNeuf.innerHTML = svgQr(fenetre);
+  const e = { duration: duree, easing: 'cubic-bezier(.45,0,.25,1)', fill: 'forwards' };
+  const d0 = essai ? essai.t : 0;
+  const a1 = qrNeuf.animate([{ clipPath: 'inset(0 0 100% 0)' }, { clipPath: 'inset(0 0 0% 0)' }], e);
+  const a2 = balayage.animate([{ top: '0%', opacity: 1 }, { top: '100%', opacity: 1, offset: 0.92 }, { top: '100%', opacity: 0 }], e);
+  a1.debut = a2.debut = d0;
+  impression = [a1, a2];
+  a1.onfinish = () => { if (impression && impression[0] === a1) terminerImpression(); };
+  if (duree > 0) navigator.vibrate?.(8);
+}
+
+// Jauge des 30 s : transform, pas de transition de largeur.
+const jauge = $('#jauge'), reste = $('#reste'), compte = $('#compte');
+let animJauge = null;
+function lancerJauge(remplir = 0) {
+  animJauge?.cancel();
+  const r = resteMs(), part = r / 30000;
+  const k = remplir ? [{ transform: 'scaleX(0)' }, { transform: `scaleX(${part})`, offset: remplir / (remplir + r), easing: 'linear' }, { transform: 'scaleX(0)' }] : [{ transform: `scaleX(${part})` }, { transform: 'scaleX(0)' }];
+  animJauge = jauge.animate(k, { duration: remplir + r, easing: remplir ? 'cubic-bezier(.16,1,.3,1)' : 'linear', fill: 'forwards' });
+  animJauge.debut = essai ? essai.t : 0;
+}
+let fenetreAffichee = null;
+function tic() {
+  const s = Math.ceil(resteMs() / 1000);
+  reste.textContent = `${s} s`;
+  reste.setAttribute('aria-label', `Nouveau code dans ${s} secondes`);
+  compte.classList.toggle('presse', s <= 5);
+  const f = fenetreCourante();
+  if (fenetreAffichee !== null && f !== fenetreAffichee && !enCours) { fenetreAffichee = f; imprimer(f); lancerJauge(); }
+}
+setInterval(tic, 250);
+$('#suivant').addEventListener('click', () => { decalageFenetre++; fenetreAffichee = fenetreCourante(); imprimer(fenetreAffichee); lancerJauge(); });
+
+// ---------- Lignes de vitesse ----------
+(function () {
+  let s = 23; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  let d = '';
+  for (let i = 0; i < 120; i++) {
+    const a = r() * Math.PI * 2, r0 = 46 + r() * 24, w = 0.004 + r() * 0.014;
+    const p = (ang, rad) => `${(Math.cos(ang) * rad).toFixed(1)} ${(Math.sin(ang) * rad).toFixed(1)}`;
+    d += `M${p(a, r0)}L${p(a - w, 170)}L${p(a + w, 170)}Z`;
+  }
+  $('#lignes').innerHTML = `<svg viewBox="-100 -100 200 200" preserveAspectRatio="xMidYMid slice"><path d="${d}" fill="#e9ecf2"/></svg>`;
+})();
+
+// ---------- Aura (canvas) : flammes du Ten qui montent du bord de la carte ----------
+const cv = $('#aura'), ctx = cv.getContext('2d');
+let dpr = 1, parts = [], emettre = 0, halo = 0, image = 0, dernier = 0, lueur = null, lueurCouleur = '#fff';
+function taille() { dpr = Math.min(2, devicePixelRatio || 1); cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; }
+addEventListener('resize', taille); taille();
+function fabriquerLueur() {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d'), col = couleurAura();
+  const rg = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  rg.addColorStop(0, col); rg.addColorStop(0.35, col + '88'); rg.addColorStop(1, col + '00');
+  g.fillStyle = rg; g.fillRect(0, 0, 64, 64); lueur = c; lueurCouleur = col;
+}
+function pointDuBord(b) {
+  const per = 2 * (b.width + b.height); let t = Math.random() * per;
+  if (t < b.width) return [b.left + t, b.top, 0, -1];
+  t -= b.width; if (t < b.height) return [b.right, b.top + t, 1, 0];
+  t -= b.height; if (t < b.width) return [b.right - t, b.bottom, 0, 1];
+  t -= b.width; return [b.left, b.bottom - t, -1, 0];
+}
+function emettreAura(n, force) {
+  const b = $('#vol').getBoundingClientRect();
+  for (let i = 0; i < n; i++) {
+    const [x, y, nx, ny] = pointDuBord(b);
+    const v = force ? 220 + Math.random() * 380 : 30 + Math.random() * 60;
+    parts.push({ x, y, vx: nx * v + (Math.random() - 0.5) * 30, vy: ny * v - (force ? 0 : 90 + Math.random() * 120), t: force ? 3 + Math.random() * 6 : 4 + Math.random() * 7, vie: 0, max: force ? 0.5 + Math.random() * 0.6 : 0.55 + Math.random() * 0.6, ph: Math.random() * 6 });
+  }
+}
+function boucle(now) {
+  const dt = Math.min(0.05, (now - dernier) / 1000); dernier = now;
+  if (emettre) emettreAura(Math.round(emettre * dt), false);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, innerWidth, innerHeight);
+  ctx.globalCompositeOperation = 'lighter';
+  if (halo > 0) {
+    // Le Ten : un voile continu qui épouse la carte et vacille.
+    const b = $('#vol').getBoundingClientRect(), f = 0.85 + Math.sin(now / 55) * 0.08 + Math.random() * 0.07;
+    ctx.save(); ctx.globalAlpha = halo * f; ctx.shadowColor = lueurCouleur; ctx.shadowBlur = 34;
+    ctx.strokeStyle = lueurCouleur; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.roundRect(b.left - 3, b.top - 3, b.width + 6, b.height + 6, 18); ctx.stroke(); ctx.stroke();
+    ctx.restore();
+  }
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i]; p.vie += dt;
+    const a = 1 - p.vie / p.max; if (a <= 0) { parts.splice(i, 1); continue; }
+    p.vx *= 0.93; p.vy = p.vy * 0.96 - 40 * dt; p.x += (p.vx + Math.sin(p.vie * 9 + p.ph) * 22) * dt; p.y += p.vy * dt;
+    const t = p.t * (0.5 + a * 0.6);
+    ctx.globalAlpha = a * 0.8; ctx.drawImage(lueur, p.x - t * 1.6, p.y - t * 4, t * 3.2, t * 7);
+  }
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  image = parts.length || emettre || halo > 0 ? requestAnimationFrame(boucle) : 0;
+}
+const lancerBoucle = () => { if (!image) { dernier = performance.now(); image = requestAnimationFrame(boucle); } };
+
+// ---------- Séquence (≈ 2,1 s) ----------
+const pres = $('#pres'), scene = $('#scene'), vol = $('#vol'), carte = $('#carte');
+let enCours = false, minuteurs = [], anims = [];
+// `essai` : inspection image par image (onglet en arrière-plan), sans effet en usage normal.
+let essai = null;
+const A = (el, k, o) => { const a = el.animate(k, { fill: 'forwards', easing: 'cubic-bezier(.16,1,.3,1)', ...o }); a.debut = essai ? essai.t : 0; anims.push(a); return a; };
+const plus = (ms, f) => (essai ? essai.taches.push([ms, f]) : minuteurs.push(setTimeout(f, ms)));
+window.figer = (T) => {
+  essai = { t: 0, taches: [] };
+  presenter();
+  essai.taches.sort((a, b) => a[0] - b[0]).forEach(([ms, f]) => { if (ms <= T) { essai.t = ms; f(); } });
+  [...anims, ...(impression || []), animJauge].filter(Boolean).forEach((a) => { a.pause(); a.currentTime = Math.max(0, T - (a.debut ?? 0)); });
+  let t = performance.now(); dernier = t - 16; for (let i = 0; i < 20; i++) { t += 16; boucle(t); }
+  essai = null;
+};
+
+function poserFinal() {
+  carte.style.setProperty('--filet', 'var(--aura)');
+  fenetreAffichee = fenetreCourante();
+  qr.innerHTML = svgQr(fenetreAffichee);
+}
+function finir() {
+  minuteurs.forEach(clearTimeout); minuteurs = [];
+  anims.forEach((a) => a.cancel()); anims = [];
+  terminerImpression();
+  emettre = 0; halo = 0; parts = [];
+  pres.classList.remove('joue'); scene.classList.remove('devant');
+  poserFinal(); lancerJauge();
+  enCours = false;
+}
+
+function presenter() {
+  if (calme) { finir(); return; }
+  finir();
+  enCours = true;
+  qr.innerHTML = ''; carte.style.removeProperty('--filet');
+  animJauge?.cancel(); jauge.style.transform = 'scaleX(0)';
+  pres.classList.add('joue'); scene.classList.add('devant');
+  const col = couleurAura();
+  lancerBoucle();
+
+  // 1. La nuit tombe, lignes de vitesse.
+  A($('.nuit', pres), [{ opacity: 0 }, { opacity: 1 }], { duration: 240, easing: 'ease-out' });
+  A($('.lignes', pres), [{ opacity: 0, transform: 'scale(1.35)', easing: 'cubic-bezier(.16,1,.3,1)' }, { opacity: 0.8, transform: 'scale(1)', offset: 0.35, easing: 'ease-in' }, { opacity: 0, transform: 'scale(.96)' }], { duration: 1000, easing: 'linear' });
+
+  // 2. La carte monte, de dos, et se retourne.
+  A(vol, [
+    { transform: 'translateY(62vh) rotateY(180deg) rotateZ(-14deg) scale(.7)', easing: 'cubic-bezier(.2,.9,.25,1)' },
+    { transform: 'translateY(0) rotateY(-10deg) rotateZ(2deg) scale(1.05)', offset: 0.82, easing: 'cubic-bezier(.3,0,.2,1)' },
+    { transform: 'translateY(0) rotateY(0deg) rotateZ(0deg) scale(1.05)' },
+  ], { duration: 680, easing: 'linear' });
+
+  // 3. Impact : image inversée, la carte frappe, l'aura jaillit.
+  plus(680, () => {
+    navigator.vibrate?.(30);
+    A(pres, [{ filter: 'invert(1)' }, { filter: 'invert(1)', offset: 0.99 }, { filter: 'none' }], { duration: 90, easing: 'linear', fill: 'none' });
+    A($('.flash', pres), [{ opacity: 0.55 }, { opacity: 0 }], { duration: 220, easing: 'ease-out' });
+    A(vol, [{ transform: 'scale(1.05)' }, { transform: 'scale(.985)', offset: 0.35 }, { transform: 'scale(1)' }], { duration: 380 });
+    A(scene, [{ transform: 'translate(0,0)' }, { transform: 'translate(-5px,3px)' }, { transform: 'translate(4px,-3px)' }, { transform: 'translate(-2px,1px)' }, { transform: 'translate(0,0)' }], { duration: 160, easing: 'linear', fill: 'none' });
+    carte.style.setProperty('--filet', 'var(--aura)');
+    emettreAura(220, true);
+    emettre = 700; halo = 1;
+  });
+
+  // 4. Un reflet traverse la carte ; le QR s'imprime ; la jauge se remplit.
+  plus(900, () => A($('#reflet'), [{ transform: 'translateX(-70%)' }, { transform: 'translateX(70%)' }], { duration: 650, easing: 'cubic-bezier(.45,0,.25,1)', fill: 'none' }));
+  plus(1150, () => { fenetreAffichee = fenetreCourante(); imprimer(fenetreAffichee, 480); lancerJauge(450); });
+
+  // 5. L'aura retombe, la planche revient.
+  plus(1500, () => { emettre = 0; const d = performance.now(); const baisse = (t) => { halo = Math.max(0, 1 - (t - d) / 500); if (halo > 0) requestAnimationFrame(baisse); }; requestAnimationFrame(baisse); });
+  plus(1700, () => A($('.nuit', pres), [{ opacity: 1 }, { opacity: 0 }], { duration: 380, easing: 'ease-in' }));
+  plus(2100, () => { pres.classList.remove('joue'); scene.classList.remove('devant'); anims.forEach((a) => a.cancel()); anims = []; enCours = false; });
+}
+
+pres.addEventListener('click', () => enCours && finir());
+scene.addEventListener('click', () => enCours && finir());
+$('#rejouer').addEventListener('click', presenter);
+appliquerNen();
+tic();
+// L'ouverture de la page joue la présentation (après le chargement des polices).
+document.fonts.ready.then(() => setTimeout(presenter, 250));
+</script>

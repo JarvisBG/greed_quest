@@ -46,3 +46,8 @@ export const FlecheDroite = () => (
     <path d="m9 5 7 7-7 7" />
   </svg>
 );
+export const IconeRetour = () => (
+  <svg {...P}>
+    <path d="M15 4 7 12l8 8" />
+  </svg>
+);

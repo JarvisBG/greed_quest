@@ -118,7 +118,7 @@ export async function pnjRoutes(app: FastifyInstance) {
       let after = await loadBook(c.tx, j.id);
       const before = after;
       if (input.retirerItemId) {
-        if (!after.items.some((i) => i.id === input.retirerItemId)) return refus('element_absent', 'Élément absent du Livre');
+        if (!after.items.some((i) => i.id === input.retirerItemId)) return refus('element_absent', 'Élément absent du Book');
         after = removeItem(after, input.retirerItemId, { cause: 'sanction', a: c.now });
       }
       if (input.ajouterCarteId) {

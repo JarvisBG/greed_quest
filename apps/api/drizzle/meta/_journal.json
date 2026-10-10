@@ -92,6 +92,13 @@
       "when": 1791614649326,
       "tag": "0012_specialisation",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791624138581,
+      "tag": "0013_fidelite_anime",
+      "breakpoints": true
     }
   ]
 }

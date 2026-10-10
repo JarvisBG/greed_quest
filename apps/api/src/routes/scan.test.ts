@@ -26,7 +26,7 @@ const attendre = (ms: number) => {
 };
 
 describe('RG-7 scan de balise', () => {
-  it('scan réussi : tirage, stock décrémenté, gain dans le Livre, journal', async () => {
+  it('scan réussi : tirage, stock décrémenté, gain dans le Book, journal', async () => {
     const [avant] = await t.db.select().from(joueurs).where(eq(joueurs.id, gon.id));
     const res = await scan(gon.token, actives[0]!);
     const body = res.json();

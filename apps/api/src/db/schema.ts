@@ -115,6 +115,13 @@ export const joueurs = pgTable(
     speA: heureJeu('spe_a'),
     zetsuJusqua: heureJeu('zetsu_jusqua'),
     fortuneArmee: boolean('fortune_armee').notNull().default(false),
+    /** Amendement 2026-10-10 : sous Accompagnement (gelé, position montrée au lanceur) jusqu'à cette heure, et par qui. */
+    accompagneJusqua: heureJeu('accompagne_jusqua'),
+    accompagnePar: text('accompagne_par'),
+    /** Amendement 2026-10-10 : villes dont le QR a été scanné (Retour), et visite à distance en cours. */
+    villesVisitees: jsonb('villes_visitees').$type<string[]>().notNull().default([]),
+    retourVille: text('retour_ville'),
+    retourJusqua: heureJeu('retour_jusqua'),
     transformationDispoA: heureJeu('transformation_dispo_a'),
     /** RG-7.1 / 7.2 : balises des tirages réussis, du plus ancien au plus récent. */
     historiqueTirages: jsonb('historique_tirages').$type<string[]>().notNull().default([]),
@@ -152,6 +159,8 @@ export const exemplaires = pgTable(
     maudite: boolean('maudite').notNull().default(false),
     /** Coffre scellé (objet) : protégée du Vol et de l'Échange forcé jusqu'à cette heure. */
     coffreJusqua: heureJeu('coffre_jusqua'),
+    /** RG-8.5 amendé (2026-10-10) : carte désignée cachée dans les emplacements libres. */
+    cachee: boolean('cachee').notNull().default(false),
   },
   (t) => [index('exemplaires_joueur').on(t.joueurId), index('exemplaires_partie').on(t.partieId)],
 );

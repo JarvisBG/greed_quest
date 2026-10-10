@@ -6,6 +6,7 @@ import {
   castOffensive,
   castRadar,
   castRegard,
+  castRetour,
   castRevelation,
   estInvisible,
   playersInRange,
@@ -66,6 +67,7 @@ async function spellPlayer(c: ActionCtx, j: JoueurRow, book: Book): Promise<Spel
     immuniteJusqua: j.immuniteJusqua,
     dernierOffensifA: j.dernierOffensifA,
     geleJusqua: j.geleJusqua,
+    accompagneJusqua: j.accompagneJusqua,
     livreGele: await isLivreGele(c.tx, j.id),
   };
 }
@@ -77,7 +79,18 @@ const playerPatch = (p: SpellPlayer) => ({
   geleJusqua: p.geleJusqua,
   speA: p.speA ?? null,
   zetsuJusqua: p.zetsuJusqua ?? null,
+  accompagneJusqua: p.accompagneJusqua ?? null,
 });
+
+/** Amendement 2026-10-10 : Accompagnement, position exacte de la cible envoyée au seul lanceur (dérogation à RG-10.12). */
+export function positionAccompagnee(cible: { id: string; pseudo: string; position: { lat: number; lng: number; precisionM: number; a: number } | null; accompagneJusqua: number | null }) {
+  return {
+    cibleId: cible.id,
+    pseudo: cible.pseudo,
+    jusqua: cible.accompagneJusqua,
+    position: cible.position ? { lat: cible.position.lat, lng: cible.position.lng, precisionM: cible.position.precisionM, a: cible.position.a } : null,
+  };
+}
 
 export const rangeOf = (p: { porteeSortsM: number; margeGpsMaxM: number; ciblableMin: number }) => ({
   porteeM: p.porteeSortsM,
@@ -105,6 +118,16 @@ export async function sortsRoutes(app: FastifyInstance) {
       const deja = new Set(await rencontresDe(c.tx, moi.id));
       const croises = tous.filter((x) => deja.has(x.id));
       return { ok: true as const, joueurs: proches.map((j) => ({ id: j.id, pseudo: j.pseudo })), tous, croises };
+    });
+  });
+
+  // Amendement 2026-10-10 : Accompagnement en cours lancé par ce joueur (reprise après rechargement de l'app).
+  app.get<P>('/parties/:partieId/accompagnement', async (req) => {
+    const { partieId } = req.params;
+    const s = requireRole(req, partieId, 'joueur');
+    return runner.run(partieId, { type: 'joueur', id: s.sub }, async (c) => {
+      const cible = (await loadJoueurs(c.tx, partieId)).find((x) => x.accompagnePar === s.sub && x.accompagneJusqua !== null && x.accompagneJusqua > c.now);
+      return { ok: true as const, accompagnement: cible ? { ...positionAccompagnee(cible), resteMs: cible.accompagneJusqua! - c.now } : null };
     });
   });
 
@@ -144,6 +167,7 @@ export async function sortsRoutes(app: FastifyInstance) {
         newId,
         rechargeNenMs: rechargesNenMs(p),
         rechargeSpeMs: p.rechargeSpeMin * 60_000, // Bandit
+        designees: cat.designees, // RG-8.5 amendé : Vol (fixes), Pickpocket (libres), Voyance, Clairvoyance
       };
 
       let res:
@@ -152,15 +176,18 @@ export async function sortsRoutes(app: FastifyInstance) {
       switch (input.sort) {
         case 'vol':
         case 'gel':
-        case 'echange_force': {
+        case 'echange_force':
+        case 'pickpocket':
+        case 'accompagnement': {
           const o = castOffensive(
             w,
             {
               sort: input.sort,
-              source: input.source,
+              source: input.sort === 'pickpocket' || input.sort === 'accompagnement' ? { type: 'carte', itemId: input.itemId } : input.source,
               lanceur,
               cible: cible!,
-              ...(input.emission ? { emission: true } : {}),
+              ...('emission' in input && input.emission ? { emission: true } : {}),
+              ...(input.sort === 'accompagnement' ? { rencontre: await seSontRencontres(c.tx, j.id, cible!.id) } : {}),
               ...(input.sort === 'echange_force' ? { carteDonneeId: input.carteDonneeId } : {}),
               ...(input.sort === 'vol' && input.carteVoulueId ? { carteVoulueId: input.carteVoulueId } : {}),
             },
@@ -201,12 +228,14 @@ export async function sortsRoutes(app: FastifyInstance) {
             : o;
           break;
         }
-        case 'regard': {
+        case 'regard':
+        case 'clairvoyance': {
           const o = castRegard(w, {
             lanceur,
             itemId: input.itemId,
             cible: { id: cible!.id, book: cible!.book, livreGele: cible!.livreGele, zetsuJusqua: cible!.zetsuJusqua ?? null },
             rencontre: await seSontRencontres(c.tx, j.id, cible!.id),
+            sort: input.sort,
           });
           res = o.ok
             ? {
@@ -254,6 +283,11 @@ export async function sortsRoutes(app: FastifyInstance) {
           res = o.ok ? { ok: true, lanceur: o.lanceur, notice: o.notice, prive: { contrefacons: o.resultat.contrefacons } } : o; // RG-10.8 : privé
           break;
         }
+        case 'retour': {
+          const o = castRetour(w, { lanceur, itemId: input.itemId, ville: input.ville, visitees: j.villesVisitees });
+          res = o.ok ? { ok: true, lanceur: o.lanceur, notice: o.notice, prive: { ville: o.resultat.ville, jusqua: c.now + p.retourMin * 60_000 } } : o;
+          break;
+        }
         case 'barriere':
           res = castBarrier();
           break;
@@ -263,15 +297,29 @@ export async function sortsRoutes(app: FastifyInstance) {
       const changes = [{ joueurId: j.id, before: books.get(j.id)!, after: res.lanceur.book }];
       if (res.cible && cibleRow) changes.push({ joueurId: cibleRow.id, before: books.get(cibleRow.id)!, after: res.cible.book });
       await saveBooks(c.tx, partieId, c.now, changes);
-      await updateJoueur(c.tx, j.id, { ...actionPatch(j, c.now), ...playerPatch(res.lanceur) });
-      if (res.cible && cibleRow) await updateJoueur(c.tx, cibleRow.id, playerPatch(res.cible));
+      await updateJoueur(c.tx, j.id, {
+        ...actionPatch(j, c.now),
+        ...playerPatch(res.lanceur),
+        // Retour : visite à distance de la ville (boutique, enchères) pendant `retourMin`.
+        ...(input.sort === 'retour' ? { retourVille: input.ville, retourJusqua: res.prive.jusqua as number } : {}),
+      });
+      if (res.cible && cibleRow) {
+        const accompagne = input.sort === 'accompagnement' && res.notice.resultat === 'reussi';
+        await updateJoueur(c.tx, cibleRow.id, { ...playerPatch(res.cible), ...(accompagne ? { accompagnePar: j.id } : {}) });
+        if (accompagne) {
+          // Position exacte de la cible, au lanceur seulement, tout de suite puis à chaque nouvelle position (scan.ts).
+          const vue = positionAccompagnee({ ...cibleRow, accompagneJusqua: res.cible.accompagneJusqua ?? null });
+          res.prive.accompagnement = vue;
+          c.emit({ type: 'joueur', id: j.id }, 'accompagnement', vue);
+        }
+      }
 
       const { notice } = res;
       await c.log({ action: 'sort', resultat: notice.resultat, details: { ...notice, ...res.prive } });
       // RG-10.5 alerte à la cible ; RG-10.6 écran géant (lanceur, cible, résultat).
       const pseudoCible = cibleRow?.pseudo ?? null;
-      // Amendement 2026-10-09 : Regard reste anonyme (la cible sait qu'on l'a regardée, pas qui ; l'écran ne nomme personne).
-      const anonyme = notice.sort === 'regard';
+      // Amendement 2026-10-09 : Voyance (et Clairvoyance) restent anonymes (la cible sait qu'on l'a regardée, pas qui ; l'écran ne nomme personne).
+      const anonyme = notice.sort === 'regard' || notice.sort === 'clairvoyance';
       if (notice.cible) {
         c.emit({ type: 'joueur', id: notice.cible }, 'sort_recu', { lanceur: anonyme ? null : j.pseudo, sort: notice.sort, resultat: notice.resultat });
         await noterRencontre(c, j.id, notice.cible); // un sort ciblé vaut rencontre (Radar, Émission)

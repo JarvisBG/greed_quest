@@ -51,6 +51,7 @@ import { introuvable } from '../errors.js';
 import { refus, send } from '../http.js';
 import { newId } from '../ids.js';
 import { parse } from '../validation.js';
+import { positionAccompagnee } from './sorts.js';
 
 type P = { Params: { partieId: string } };
 
@@ -96,6 +97,10 @@ export async function scanRoutes(app: FastifyInstance) {
       const pos = await recordPosition(c, j, input);
       // Zetsu : la position est notée mais ne s'affiche pas sur la carte de chaleur (core/ecran.ts).
       await c.log({ action: 'position', resultat: 'ok', details: { ...pos, ...(estInvisible(j, c.now) ? { zetsu: true } : {}) } });
+      // Amendement 2026-10-10 : Accompagnement, la position exacte part au seul lanceur pendant 3 min (dérogation à RG-10.12).
+      if (j.accompagnePar && j.accompagneJusqua !== null && j.accompagneJusqua > c.now) {
+        c.emit({ type: 'joueur', id: j.accompagnePar }, 'accompagnement', positionAccompagnee({ ...j, position: pos }));
+      }
       return { ok: true as const };
     });
   });

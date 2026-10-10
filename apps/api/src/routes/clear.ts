@@ -34,7 +34,7 @@ export async function clearRoutes(app: FastifyInstance) {
       };
       if (!gameOpen(c.partie.etat)) return deny('partie_fermee', 'Le Clear se déclare pendant la partie');
       if (j.statut === 'disqualifie' || j.statut === 'abandon') return deny('joueur_exclu', 'Tu ne joues plus');
-      if (await isLivreGele(c.tx, j.id)) return deny('deja_gele', 'Ton Livre est déjà gelé : va voir le Game Master');
+      if (await isLivreGele(c.tx, j.id)) return deny('deja_gele', 'Ton Book est déjà gelé : va voir le Game Master');
       const cat = await loadCatalogue(c.tx, partieId);
       const check = checkClear(await loadBook(c.tx, j.id), cat.designees);
       if (check.etat === 'incomplet') {
@@ -48,7 +48,7 @@ export async function clearRoutes(app: FastifyInstance) {
       await updateJoueur(c.tx, j.id, actionPatch(j, c.now));
       await c.log({ action: 'clear_demande', resultat: 'ok', details: { joueurId: j.id } });
       c.emit({ type: 'staff' }, 'demande_clear', { joueurId: j.id, pseudo: j.pseudo }); // demande de validation
-      return { ok: true as const, message: 'Livre complet ! Ton Livre est gelé : va voir le Game Master' };
+      return { ok: true as const, message: 'Book complet ! Ton Book est gelé : va voir le Game Master' };
     });
     return send(reply, r);
   });
@@ -65,7 +65,7 @@ export async function clearRoutes(app: FastifyInstance) {
       if (!(await isLivreGele(c.tx, j.id))) return refus('pas_de_clear', 'Ce joueur n’a pas déclaré de Clear');
       const cat = await loadCatalogue(c.tx, partieId);
       const check = checkClear(await loadBook(c.tx, j.id), cat.designees);
-      if (check.etat !== 'complet') return refus('livre_incomplet', 'Le Livre n’est plus complet');
+      if (check.etat !== 'complet') return refus('livre_incomplet', 'Le Book n’est plus complet');
       const res = endByClear(lifecycleOf(c.partie), c.realNow);
       if (!res.ok) return refus('transition_impossible', res.message);
       await c.tx.update(parties).set({ gagnantId: j.id }).where(eq(parties.id, partieId));

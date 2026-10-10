@@ -80,7 +80,13 @@ export const SortIntent = z.discriminatedUnion('sort', [
     position: PositionInput,
   }),
   z.object({ sort: z.literal('radar'), itemId: z.string(), cibleId: z.string(), position: PositionInput }),
+  /** Voyance (emplacements libres) et Clairvoyance (emplacements fixes), amendement 2026-10-10. */
   z.object({ sort: z.literal('regard'), itemId: z.string(), cibleId: z.string(), position: PositionInput }),
+  z.object({ sort: z.literal('clairvoyance'), itemId: z.string(), cibleId: z.string(), position: PositionInput }),
+  /** Amendement 2026-10-10 : Pickpocket (vol dans les emplacements libres), Accompagnement (joueur déjà croisé), Retour (ville déjà visitée). */
+  z.object({ sort: z.literal('pickpocket'), itemId: z.string(), cibleId: z.string(), emission: z.boolean().optional(), position: PositionInput }),
+  z.object({ sort: z.literal('accompagnement'), itemId: z.string(), cibleId: z.string(), position: PositionInput }),
+  z.object({ sort: z.literal('retour'), itemId: z.string(), ville: z.enum(['masadora', 'antokiba']), position: PositionInput }),
   z.object({ sort: z.literal('revelation'), itemId: z.string(), position: PositionInput }),
   z.object({ sort: z.literal('duplication'), itemId: z.string(), carteItemId: z.string(), position: PositionInput }),
   z.object({ sort: z.literal('analyse'), itemId: z.string(), page: z.number().int().min(1), position: PositionInput }),
@@ -107,13 +113,17 @@ export const SpecialisationIntent = z.discriminatedUnion('pouvoir', [
 ]);
 export type SpecialisationIntent = z.infer<typeof SpecialisationIntent>;
 
+/** RG-8.5 amendé (2026-10-10) : cacher une carte désignée dans les emplacements libres, ou la remettre en place. */
+export const DeplacementIntent = z.object({ itemId: z.string(), cacher: z.boolean() });
+
 /** RG-5.4 Transformation : Texture Surprise. */
 export const TransformationIntent = z.object({ itemId: z.string(), cibleCarteId: z.string() });
 
 /** RG-9.2 : achat d'un paquet, avec le QR de la boutique scanné sur place. */
-export const AchatIntent = z.object({ qr: z.string().min(1).max(100), position: PositionInput });
+/** `qr` absent : visite à distance ouverte par le sort Retour (amendement 2026-10-10). */
+export const AchatIntent = z.object({ qr: z.string().max(100).optional(), position: PositionInput });
 /** RG-9.4 : revente d'une carte à Masadora. */
-export const ReventeIntent = z.object({ qr: z.string().min(1).max(100), itemId: z.string(), position: PositionInput });
+export const ReventeIntent = z.object({ qr: z.string().max(100).optional(), itemId: z.string(), position: PositionInput });
 
 /** RG-11.1 amendé : proposer un échange à un joueur à portée. */
 export const EchangeProposition = z.object({ cibleId: z.string(), position: PositionInput });
@@ -124,7 +134,7 @@ export const EchangeOffre = z.object({ itemIds: z.array(z.string()).max(30), jen
 /** RG-11.4 : un PNJ met une carte aux enchères. */
 export const EnchereOuverture = z.object({ carteId: z.string(), prixDepart: z.number().int().min(1).default(1) });
 /** RG-11.4 : participer exige le QR de l'enchère, scanné sur place. */
-export const EnchereInscription = z.object({ qr: z.string().min(1).max(100), position: PositionInput });
+export const EnchereInscription = z.object({ qr: z.string().max(100).optional(), position: PositionInput });
 export const EnchereOffre = z.object({ montant: z.number().int().min(1) });
 
 // --- Console GM / PNJ (RG-3) ---

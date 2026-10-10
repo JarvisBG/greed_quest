@@ -22,7 +22,7 @@ beforeAll(async () => {
 });
 afterAll(() => t.close());
 
-describe('RG-8.5 Livre du joueur', () => {
+describe('RG-8.5 Book du joueur', () => {
   it('pages de 10 : 3 pages de cartes désignées puis les emplacements libres ; provenance, perte, contrefaçon marquée pour son créateur', async () => {
     const res = await t.app.inject({ url: `/parties/${t.partieId}/livre`, headers: t.bearer(gon.token) });
     const l = res.json();
@@ -43,8 +43,8 @@ describe('RG-8.5 Livre du joueur', () => {
   });
 });
 
-describe('RG-3.1 Livre d’un joueur pour le GM', () => {
-  it('RG-3.1 : le GM voit le Livre de Gon et la vérité de chaque carte ; un PNJ ou un joueur, non', async () => {
+describe('RG-3.1 Book d’un joueur pour le GM', () => {
+  it('RG-3.1 : le GM voit le Book de Gon et la vérité de chaque carte ; un PNJ ou un joueur, non', async () => {
     const gm = t.app.gq.tokens.issue({ role: 'gm', sub: 'gm1', partieId: t.partieId });
     const pnj = t.app.gq.tokens.issue({ role: 'pnj', sub: 'pnj1', partieId: t.partieId });
     const url = `/parties/${t.partieId}/joueurs/${gon.id}/livre`;
@@ -59,7 +59,7 @@ describe('RG-3.1 Livre d’un joueur pour le GM', () => {
     expect(propre.pages[0][5].verite).toBeUndefined();
   });
 
-  it('RG-13.1 : un Livre gelé (Clear déclaré) apparaît dans la liste des joueurs de l’équipe', async () => {
+  it('RG-13.1 : un Book gelé (Clear déclaré) apparaît dans la liste des joueurs de l’équipe', async () => {
     const pnj = t.app.gq.tokens.issue({ role: 'pnj', sub: 'pnj1', partieId: t.partieId });
     await t.db.update(livres).set({ gele: true, geleA: 0 }).where(eq(livres.joueurId, gon.id));
     const js = (await t.app.inject({ url: `/parties/${t.partieId}/joueurs`, headers: t.bearer(pnj) })).json().joueurs;

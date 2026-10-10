@@ -45,7 +45,7 @@ const post = (url: string, token: string, payload: Record<string, unknown> = {})
 const licence = async (j: J) => licenceCode(j.id, (await t.db.select().from(joueurs).where(eq(joueurs.id, j.id)))[0]!.licenceSecret, t.clock.t).qr;
 
 describe('RG-13 Clear', () => {
-  it('Livre incomplet : refusé avec le nombre de cartes manquantes', async () => {
+  it('Book incomplet : refusé avec le nombre de cartes manquantes', async () => {
     expect((await post('/clear', kirua.token)).json()).toMatchObject({ ok: false, code: 'incomplet', message: 'Il te manque 30 cartes' });
   });
 
@@ -53,7 +53,7 @@ describe('RG-13 Clear', () => {
     expect((await post('/clear', gon.token)).json()).toMatchObject({ ok: false, code: 'contrefacon', message: 'Une contrefaçon se cache en page 2' });
   });
 
-  it('RG-13.1 : Livre complet → Livre gelé, insensible aux sorts ; l’équipe est prévenue', async () => {
+  it('RG-13.1 : Book complet → Book gelé, insensible aux sorts ; l’équipe est prévenue', async () => {
     await t.db.update(exemplaires).set({ faux: null }).where(eq(exemplaires.id, faux));
     expect((await post('/clear', gon.token)).json()).toMatchObject({ ok: true });
     expect(recues.some((e) => e.a === 'staff' && e.evenement === 'demande_clear')).toBe(true);

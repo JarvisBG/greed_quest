@@ -48,7 +48,7 @@ export async function specialisationRoutes(app: FastifyInstance) {
         }
         case 'alchimie': {
           if ((await engagedItems(c.tx, partieId, j.id, c.now)).has(input.doublonItemId)) return deny(ENGAGEE.code, ENGAGEE.message);
-          if (await isLivreGele(c.tx, j.id)) return deny('livre_gele', 'Ton Livre est gelé : va voir le Game Master'); // RG-13.1
+          if (await isLivreGele(c.tx, j.id)) return deny('livre_gele', 'Ton Book est gelé : va voir le Game Master'); // RG-13.1
           const [book, cat, n] = await Promise.all([loadBook(c.tx, j.id), loadCatalogue(c.tx, partieId), circulation(c.tx, partieId)]);
           const limites = limitesOf(p);
           const o = alchimie(

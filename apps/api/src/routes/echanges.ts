@@ -69,6 +69,9 @@ function view(s: TradeSession, moi: string, pseudos: Record<string, string>, boo
   };
 }
 
+const sousAccompagnement = (j: { accompagneJusqua: number | null }, now: number) => j.accompagneJusqua !== null && j.accompagneJusqua > now;
+const ACCOMPAGNE_MSG = 'Tu es sous Accompagnement : pas d’échange pour l’instant';
+
 export async function echangesRoutes(app: FastifyInstance) {
   const { runner } = app.gq;
 
@@ -105,6 +108,9 @@ export async function echangesRoutes(app: FastifyInstance) {
       };
       if (!b || b.partieId !== partieId) return deny('cible_invalide', 'Joueur introuvable');
       if (estInvisible(b, c.now)) return deny('hors_portee', 'Ce joueur est hors de portée'); // Zetsu
+      // Amendement 2026-10-10 : Accompagnement, ni échange ni proposition pendant 3 min.
+      if (sousAccompagnement(a, c.now)) return deny('accompagne', ACCOMPAGNE_MSG);
+      if (sousAccompagnement(b, c.now)) return deny('accompagne', 'Ce joueur est sous Accompagnement : il ne peut pas échanger pour l’instant');
       // Une seule session active par joueur.
       if (await activeSession(c.tx, partieId, a.id, c.now)) return deny('session_en_cours', 'Termine d’abord ton échange en cours');
       if (await activeSession(c.tx, partieId, b.id, c.now)) return deny('session_en_cours', 'Ce joueur est déjà en train d’échanger');
@@ -157,7 +163,11 @@ export async function echangesRoutes(app: FastifyInstance) {
       const s = requireRole(req, partieId, 'joueur');
       const r = await runner.run(partieId, { type: 'joueur', id: s.sub }, async (c) => {
         const ctx = await load(c, id);
-        const res = await apply(c, ctx, s.sub, req.body);
+        const moi = await loadJoueur(c.tx, s.sub);
+        const res =
+          url !== 'annuler' && moi && sousAccompagnement(moi, c.now)
+            ? ({ ok: false, code: 'accompagne', message: ACCOMPAGNE_MSG } as const)
+            : await apply(c, ctx, s.sub, req.body);
         if (!res.ok) {
           await c.log({ action, resultat: 'refus', details: { sessionId: id, code: res.code } });
           return refus(res.code, res.message);
@@ -180,7 +190,7 @@ export async function echangesRoutes(app: FastifyInstance) {
     const book = ctx.books.get(joueurId)!;
     // On ne propose que ses propres cartes (pas de sorts, RG-11) et des jenny qu'on possède.
     const ok = side.itemIds.every((itemId) => book.items.some((i) => i.id === itemId && i.kind === 'carte'));
-    if (!ok || new Set(side.itemIds).size !== side.itemIds.length) return refus('element_invalide', 'Choisis des cartes de ton Livre');
+    if (!ok || new Set(side.itemIds).size !== side.itemIds.length) return refus('element_invalide', 'Choisis des cartes de ton Book');
     const jenny = joueurId === ctx.a.id ? ctx.a.jenny : ctx.b.jenny;
     if (side.jenny > jenny) return refus('jenny_insuffisants', 'Jenny insuffisants');
     return setTradeOffer(ctx.s, joueurId, side, c.now);

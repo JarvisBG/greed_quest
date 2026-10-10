@@ -52,11 +52,11 @@ describe('RG-5 inscription', () => {
     expect(res.json()).toMatchObject({ ok: true, joueurId: id });
   });
 
-  it('RG-5.6 : retardataire = kit + rattrapage proportionnel au temps de jeu', async () => {
-    // Démarrée il y a 30 min réelles, sans pause : 30 min de jeu × 2 J.
+  it('RG-5.6 amendé (2026-10-10) : un retardataire reçoit le kit normal, sans bonus de rattrapage par défaut', async () => {
+    // Démarrée il y a 30 min réelles : le rattrapage (`rattrapageJParMin`, 0 par défaut) reste réglable par le GM.
     await t.setEtat('en_cours', { inscriptionsOuvertes: true, demarreeA: t.clock.t - 30 * 60_000 });
     const { body } = await t.inscrire('Kurapika');
-    expect(body.kit).toMatchObject({ jenny: 50, rattrapage: 60 });
+    expect(body.kit).toMatchObject({ jenny: 50, rattrapage: 0 });
   });
 
   it('RG-5.3 : Examen une seule fois, bonus par bonne réponse', async () => {

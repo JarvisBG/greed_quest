@@ -33,6 +33,7 @@ export function cardItemOf(r: ExemplaireRow): CardItem {
     ...(r.marque ? { marque: r.marque } : {}),
     ...(r.maudite ? { maudite: true as const } : {}),
     ...(r.coffreJusqua !== null ? { coffreJusqua: r.coffreJusqua } : {}),
+    ...(r.cachee ? { cachee: true as const } : {}),
   };
 }
 
@@ -104,6 +105,7 @@ export async function saveBooks(db: DbOrTx, partieId: string, now: number, chang
         marque: item.marque ?? null,
         maudite: item.maudite ?? false,
         coffreJusqua: item.coffreJusqua ?? null,
+        cachee: item.cachee ?? false,
       };
       await db.insert(exemplaires).values(row).onConflictDoUpdate({ target: exemplaires.id, set: row });
     } else if (item.kind === 'objet') {

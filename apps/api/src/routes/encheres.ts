@@ -14,7 +14,7 @@ import { introuvable } from '../errors.js';
 import { refus, send } from '../http.js';
 import { newId } from '../ids.js';
 import { parse } from '../validation.js';
-import { isPlaceQr } from './boutique.js';
+import { presence } from './boutique.js';
 
 type P = { Params: { partieId: string } };
 type PE = { Params: { partieId: string; id: string } };
@@ -168,7 +168,7 @@ export async function encheresRoutes(app: FastifyInstance) {
   playerAction('rejoindre', 'enchere_inscription', async (c, a, j, body) => {
     const input = parse(EnchereInscription, body);
     await recordPosition(c, j, input.position);
-    if (!(await isPlaceQr(c.tx, c.partie.id, input.qr, 'antokiba'))) {
+    if (!(await presence(c, j, input.qr, 'antokiba'))) {
       return { ok: false, code: 'non_inscrit', message: 'Scanne le QR de l’enchère, sur place' };
     }
     return joinAuction(a, j.id, c.now);

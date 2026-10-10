@@ -173,6 +173,10 @@ export async function joueursRoutes(app: FastifyInstance) {
       joueur: { id: j.id, pseudo: j.pseudo, jenny: j.jenny, nen: j.nen, pouvoirSpe: j.pouvoirSpe, statut: j.statut, examenFait: j.examenScore !== null },
       // Spécialisation : Zetsu en cours, Fortune armée (amendement 2026-10-10).
       specialisation: { zetsu: Math.max(0, (j.zetsuJusqua ?? 0) - now), fortuneArmee: j.fortuneArmee },
+      // Amendements 2026-10-10 : villes déjà visitées (Retour), visite à distance en cours (ms restantes), Accompagnement subi.
+      villesVisitees: j.villesVisitees,
+      retour: j.retourVille && (j.retourJusqua ?? 0) > now ? { ville: j.retourVille, resteMs: j.retourJusqua! - now } : null,
+      accompagne: Math.max(0, (j.accompagneJusqua ?? 0) - now),
       // Pour l'écran des sorts : délais restants, en ms ; `pouvoir` = recharge du pouvoir de Nen, `reserve` = Matérialisation.
       delais: {
         pouvoir,

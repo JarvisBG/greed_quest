@@ -44,7 +44,7 @@ describe('Arène de Soufrabi (amendement 2026-10-09)', () => {
     expect(enCours.json().tentatives).toEqual([expect.objectContaining({ pseudo: 'Gon', mise: 30 })]);
   });
 
-  it('victoire : une carte A, S ou SS entre dans le Livre, provenance « arène »', async () => {
+  it('victoire : une carte A, S ou SS entre dans le Book, provenance « arène »', async () => {
     const [tentative] = await t.db.select().from(arene).where(eq(arene.joueurId, gon.id));
     const res = await post(`/arene/${tentative!.id}/issue`, pnj, { victoire: true });
     expect(res.json()).toMatchObject({ ok: true, joueur: 'Gon', gain: { kind: 'carte' } });

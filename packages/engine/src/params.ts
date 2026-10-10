@@ -32,6 +32,7 @@ export const PARAM_KEYS = [
   'reserveMaterialisationMin',
   'rechargeSpeMin',
   'zetsuMin',
+  'retourMin',
 ] as const;
 export type ParamKey = (typeof PARAM_KEYS)[number];
 
@@ -102,6 +103,8 @@ export const AUTO_FORMULAS: Record<ParamKey, (c: ParamContext) => number> = {
   // Amendement 2026-10-10 : pouvoirs de Spécialisation, recharge 40 min ; Zetsu dure 10 min.
   rechargeSpeMin: () => 40,
   zetsuMin: () => 10,
+  // Amendement 2026-10-10 : Retour ouvre une visite à distance de 10 min d'une ville déjà visitée.
+  retourMin: () => 10,
 };
 
 /** Calibrage validé le 2026-10-09 (docs/SIMULATION.md) : limites d'exemplaires × 2 par défaut. */

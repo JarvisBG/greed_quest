@@ -37,6 +37,21 @@ export async function isPlaceQr(db: DbOrTx, partieId: string, qr: string, type: 
   return z !== undefined;
 }
 
+/**
+ * Le joueur est-il à Masadora / Antokiba ? QR du lieu scanné (la ville est alors notée comme visitée, pour Retour),
+ * ou visite à distance ouverte par le sort Retour (amendement 2026-10-10).
+ */
+export async function presence(c: ActionCtx, j: JoueurRow, qr: string | undefined, type: 'masadora' | 'antokiba'): Promise<boolean> {
+  if (qr && (await isPlaceQr(c.tx, c.partie.id, qr, type))) {
+    if (!j.villesVisitees.includes(type)) {
+      j.villesVisitees = [...j.villesVisitees, type];
+      await updateJoueur(c.tx, j.id, { villesVisitees: j.villesVisitees });
+    }
+    return true;
+  }
+  return j.retourVille === type && j.retourJusqua !== null && j.retourJusqua > c.now;
+}
+
 const shopper = (j: JoueurRow, book: ShopPlayer['book']): ShopPlayer => ({ id: j.id, status: j.statut, position: j.position, jenny: j.jenny, book });
 
 async function wave(c: ActionCtx) {
@@ -78,7 +93,7 @@ export async function boutiqueRoutes(app: FastifyInstance) {
         {
           now: c.now,
           gameState: c.partie.etat,
-          qrBoutiqueScanne: await isPlaceQr(c.tx, partieId, input.qr, 'masadora'),
+          qrBoutiqueScanne: await presence(c, j, input.qr, 'masadora'),
           designees: cat.designees,
           config: shopConfigOf(c.partie),
           wave: w,
@@ -113,11 +128,11 @@ export async function boutiqueRoutes(app: FastifyInstance) {
       const [book, cat] = await Promise.all([loadBook(c.tx, j.id), loadCatalogue(c.tx, partieId)]);
       if ((await engagedItems(c.tx, partieId, j.id, c.now)).has(input.itemId)) return refus(ENGAGEE.code, ENGAGEE.message);
       // RG-13.1 : un Livre gelé (Clear provisoire) ne change plus.
-      if (await isLivreGele(c.tx, j.id)) return refus('livre_gele', 'Ton Livre est gelé : va voir le Game Master');
+      if (await isLivreGele(c.tx, j.id)) return refus('livre_gele', 'Ton Book est gelé : va voir le Game Master');
       // Amendement 2026-10-10 : revente d'un objet (Pépite d'or 30 J, autres 10 J).
       if (book.items.find((i) => i.id === input.itemId)?.kind === 'objet') {
         const o = sellObjet(
-          { now: c.now, gameState: c.partie.etat, qrBoutiqueScanne: await isPlaceQr(c.tx, partieId, input.qr, 'masadora'), designees: cat.designees },
+          { now: c.now, gameState: c.partie.etat, qrBoutiqueScanne: await presence(c, j, input.qr, 'masadora'), designees: cat.designees },
           shopper(j, book),
           input.itemId,
         );
@@ -134,7 +149,7 @@ export async function boutiqueRoutes(app: FastifyInstance) {
         {
           now: c.now,
           gameState: c.partie.etat,
-          qrBoutiqueScanne: await isPlaceQr(c.tx, partieId, input.qr, 'masadora'),
+          qrBoutiqueScanne: await presence(c, j, input.qr, 'masadora'),
           designees: cat.designees,
           config: shopConfigOf(c.partie),
         },

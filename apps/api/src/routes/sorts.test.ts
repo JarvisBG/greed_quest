@@ -138,9 +138,10 @@ describe('RG-10 sorts', () => {
 });
 
 describe('Amendement 2026-10-09 : sort Regard', () => {
-  it('rencontre notée à portée ; Regard montre les cartes, la cible est prévenue sans savoir qui', async () => {
+  it('rencontre notée à portée ; Voyance (Regard) montre les emplacements libres, la cible est prévenue sans savoir qui', async () => {
     const regard = await donnerSort(leorio.id, 'regard');
     await donnerCarte(gon.id, 1);
+    await donnerCarte(gon.id, 1); // doublon : dans les emplacements libres (amendement 2026-10-10)
     t.clock.t += 6 * 60_000; // immunités et délais des tests précédents passés
     await bouger(gon);
     await bouger(leorio); // Gon et Leorio sont à portée : rencontre

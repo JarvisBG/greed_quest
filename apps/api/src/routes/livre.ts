@@ -1,12 +1,16 @@
 // Livre du joueur (RG-8.5) : pages de 10, provenance (RG-8.14), emplacements perdus (RG-8.13),
 // contrefaçons vues selon ce que le joueur sait (RG-8.9). Un joueur ne voit que son propre Livre (RG-3) ;
 // le GM voit tout Livre, avec la vérité sur chaque carte (corrections RG-3.1, vérification d'un Clear RG-13.2).
-import { PLACES_OBJETS, describeLoss, layoutBook, objetsDe, viewCard, type Origine, type Slot } from '@gq/engine';
+import { PLACES_OBJETS, deplacerCarte, describeLoss, layoutBook, objetsDe, viewCard, type Origine, type Slot } from '@gq/engine';
+import { DeplacementIntent } from '@gq/shared';
 import type { FastifyInstance } from 'fastify';
 import { requireRole } from '../auth/guard.js';
 import type { ActionCtx } from '../core/runner.js';
 import { engagedItems } from '../core/echanges.js';
-import { isLivreGele, loadBook, loadCatalogue, loadJoueurs } from '../core/state.js';
+import { ENGAGEE } from '../core/echanges.js';
+import { actionPatch, isLivreGele, loadBook, loadCatalogue, loadJoueur, loadJoueurs, saveBooks, updateJoueur } from '../core/state.js';
+import { refus, send } from '../http.js';
+import { parse } from '../validation.js';
 import { introuvable } from '../errors.js';
 
 type P = { Params: { partieId: string } };
@@ -77,6 +81,8 @@ export async function vueLivre(c: ActionCtx, partieId: string, joueurId: string,
       provenance: provenance(i.origine),
       obtenue: heureAffichee(i.obtenuA, c.now, c.realNow),
       engagee: engagees.has(i.id),
+      // RG-8.5 amendé : carte désignée cachée dans les emplacements libres (ne compte pas tant qu'elle n'est pas remise).
+      cachee: !!i.cachee,
       // Coffre scellé (objet) : heure de fin de la protection.
       coffreJusqua: i.coffreJusqua !== undefined && i.coffreJusqua > c.now ? heureAffichee(i.coffreJusqua, c.now, c.realNow) : null,
       // Vue du GM seulement : ce que le serveur sait (contrefaçon, vraie carte d'un doublon déguisé, malédiction).
@@ -118,6 +124,33 @@ export async function livreRoutes(app: FastifyInstance) {
     const { partieId } = req.params;
     const s = requireRole(req, partieId, 'joueur');
     return runner.run(partieId, { type: 'joueur', id: s.sub }, async (c) => vueLivre(c, partieId, s.sub, false));
+  });
+
+  // RG-8.5 amendé (2026-10-10) : cacher une carte désignée dans les emplacements libres, ou la remettre en place.
+  app.post<P>('/parties/:partieId/book/deplacer', async (req, reply) => {
+    const { partieId } = req.params;
+    const s = requireRole(req, partieId, 'joueur');
+    const input = parse(DeplacementIntent, req.body);
+    const r = await runner.run(partieId, { type: 'joueur', id: s.sub }, async (c) => {
+      const j = await loadJoueur(c.tx, s.sub);
+      if (!j) throw introuvable('Joueur');
+      const deny = async (code: string, message: string) => {
+        await c.log({ action: 'deplacement', resultat: 'refus', details: { code, itemId: input.itemId } });
+        return refus(code, message);
+      };
+      if (c.partie.etat === 'terminee') return deny('partie_terminee', 'La partie est terminée');
+      if (j.statut === 'disqualifie' || j.statut === 'abandon') return deny('joueur_exclu', 'Tu ne joues plus');
+      if (await isLivreGele(c.tx, j.id)) return deny('livre_gele', 'Ton Book est gelé : va voir le Game Master'); // RG-13.1
+      if ((await engagedItems(c.tx, partieId, j.id, c.now)).has(input.itemId)) return deny(ENGAGEE.code, ENGAGEE.message);
+      const [book, cat] = await Promise.all([loadBook(c.tx, j.id), loadCatalogue(c.tx, partieId)]);
+      const o = deplacerCarte(book, cat.designees, input.itemId, input.cacher);
+      if (!o.ok) return deny(o.code, o.message);
+      await saveBooks(c.tx, partieId, c.now, [{ joueurId: j.id, before: book, after: o.book }]);
+      await updateJoueur(c.tx, j.id, actionPatch(j, c.now));
+      await c.log({ action: 'deplacement', resultat: input.cacher ? 'cachee' : 'remise', details: { itemId: input.itemId } });
+      return { ok: true as const, cachee: input.cacher };
+    });
+    return send(reply, r);
   });
 
   // Livre d'un joueur pour le GM (correction RG-3.1, Clear RG-13.2) : lecture seule.

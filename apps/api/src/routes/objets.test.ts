@@ -38,7 +38,7 @@ const utilise = async (id: string) => (await t.db.select().from(objets).where(eq
 const jennyDe = async (id: string) => (await t.db.select().from(joueurs).where(eq(joueurs.id, id)))[0]!.jenny;
 
 describe('Amendement 2026-10-10 : cartes objets', () => {
-  it('repli « carte épuisée » : un objet en plus des 10 J ; le Livre a sa section des objets', async () => {
+  it('repli « carte épuisée » : un objet en plus des 10 J ; le Book a sa section des objets', async () => {
     // Limites à 0 : chaque tirage de carte se replie en jenny ; 100 % des replis donnent un objet.
     for (const cle of ['limiteSS', 'limiteS', 'limiteA', 'limiteB', 'limiteCD']) expect((await parametre(cle, 0)).statusCode).toBe(200);
     expect((await parametre('objetsReplisPct', 100)).statusCode).toBe(200);

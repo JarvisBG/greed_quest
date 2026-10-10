@@ -258,7 +258,7 @@ export async function gmRoutes(app: FastifyInstance) {
     const r = await gm(req, async (c) => {
       if (c.partie.demarreeA !== null) return refus('partie_demarree', 'Le catalogue se compose avant le démarrage de la partie');
       if ((await c.tx.select({ id: exemplaires.id }).from(exemplaires).where(eq(exemplaires.partieId, c.partie.id)).limit(1)).length > 0) {
-        return refus('cartes_en_jeu', 'Des cartes sont déjà dans des Livres : le catalogue ne peut plus changer');
+        return refus('cartes_en_jeu', 'Des cartes sont déjà dans des Books : le catalogue ne peut plus changer');
       }
       // Les stocks des checkpoints désignaient les anciennes cartes : ils sont vidés.
       const cps = await c.tx.select().from(checkpoints).where(eq(checkpoints.partieId, c.partie.id));

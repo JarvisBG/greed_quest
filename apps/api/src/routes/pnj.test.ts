@@ -69,7 +69,7 @@ describe('RG-3 / RG-15 sanctions', () => {
     expect((await joueur(kirua.id)).statut).toBe('gele');
   });
 
-  it('RG-3 / RG-15.2 : disqualification par le GM seulement ; le Livre est perdu', async () => {
+  it('RG-3 / RG-15.2 : disqualification par le GM seulement ; le Book est perdu', async () => {
     await donnerCarte(leorio.id, 1);
     expect((await post('/sanctions/disqualification', pnj, { joueurId: leorio.id, motif: 'Faux GPS' })).statusCode).toBe(403);
     expect((await post('/sanctions/disqualification', gm, { joueurId: leorio.id, motif: 'Faux GPS' })).json().ok).toBe(true);

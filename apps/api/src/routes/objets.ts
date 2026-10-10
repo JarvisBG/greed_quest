@@ -38,7 +38,7 @@ export async function objetsRoutes(app: FastifyInstance) {
       const book = await loadBook(c.tx, j.id);
       const engagees = await engagedItems(c.tx, partieId, j.id, c.now);
       if (engagees.has(input.itemId) || (input.objet === 'coffre' && engagees.has(input.carteItemId))) return deny(ENGAGEE.code, ENGAGEE.message);
-      if (await isLivreGele(c.tx, j.id)) return deny('livre_gele', 'Ton Livre est gelé : va voir le Game Master'); // RG-13.1
+      if (await isLivreGele(c.tx, j.id)) return deny('livre_gele', 'Ton Book est gelé : va voir le Game Master'); // RG-13.1
       const joueur = { status: j.statut, book };
 
       let after: Book;

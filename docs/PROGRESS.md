@@ -202,6 +202,7 @@
 
 ## Décisions prises
 _(date — décision — raison)_
+- 2026-10-10 — Habillage *Hunter × Hunter* / Greed Island pleinement assumé (Book, cartes, voix du jeu, écriture Hunter en décor, licence, Nen) — public de fans ; droits sur l'œuvre à la charge du client.
 - 2026-10-09 — Stack TypeScript monorepo validée (voir CLAUDE.md) — moteur testable isolément, un seul langage pour api et fronts.
 - 2026-10-09 — Ordre : engine avant api — l'engine porte la logique métier, l'api l'orchestre.
 - 2026-10-09 — Balises toutes identiques ; type (standard/rare) tiré par le serveur à chaque activation, `partRaresPct` = 15 % ; fantôme = mode temporaire d'une balise quelconque (amendement RG-6 dans REGLES.md).
@@ -210,4 +211,4 @@ _(date — décision — raison)_
 - 2026-10-09 — Pas de Docker. Dev et tests : PGlite (PostgreSQL embarqué, zéro installation) via Drizzle ; prod : PostgreSQL hébergé. Raison : rien à installer sur le poste Windows, même dialecte SQL qu'en prod.
 
 ## Points ouverts (repris du document de règles)
-- Nom / habillage · Clear = fin de partie ou phase finale ? · Compte joueur persistant ? · Contenu Examen et test de Nen · Portée 30 m · Calibrage.
+- ~~Nom / habillage~~ (tranché : anime assumé) · Clear = fin de partie ou phase finale ? · Compte joueur persistant ? · Contenu Examen et test de Nen · Portée 30 m · Calibrage.

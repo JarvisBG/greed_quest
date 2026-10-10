@@ -27,17 +27,22 @@ Brouillon existant : `apps/staff/` (non commité, non vérifié : squelette, Con
 
 ## 2. Direction artistique
 
-### 2.1 Thème : l'univers de *Greed Island*, sans copie
-L'inspiration est l'anime ; le rendu doit rester **original** (le nom et l'habillage définitifs sont un point ouvert avec le client : pas de logo officiel, pas de personnage, pas d'image de l'anime, pas de police « Hunter » copiée).
+### 2.1 Thème : *Hunter × Hunter*, arc *Greed Island*, pleinement assumé
+**Décision de Sivraj (2026-10-10)** : l'habillage assume l'anime. Les joueurs sont des fans ; ils doivent se sentir **dans** Greed Island, pas dans un jeu « qui y ressemble ». Les noms, le vocabulaire et les codes visuels de l'œuvre sont permis. Seule limite technique : on n'intègre que des images et polices dont on dispose réellement (pas d'image téléchargée au hasard) ; tout le reste est dessiné en SVG / CSS. Les droits sur l'œuvre relèvent du client.
 
-Motifs à exploiter, avec retenue :
-- **Le Livre** (« Book ») : un classeur à pochettes numérotées. Les cartes sont l'objet central de tout le produit. Une carte = numéro à trois chiffres (`001`), nom, **lettre de rang** dans un coin, fond selon le rang. Un emplacement vide montre le numéro en creux. Cette carte doit être dessinée avec soin une fois, puis réutilisée partout (joueur, console, écran géant).
-- **Les rangs** SS, S, A, B, C, D : une échelle de couleurs et de matières claire (SS rare et précieuse, D sobre). Lisible aussi pour un daltonien : la lettre fait toujours foi, la couleur ne fait que renforcer.
-- **Les annonces du jeu** : dans l'anime, une voix système prévient le joueur (« Le joueur X a utilisé Vol sur toi »). Les alertes de sort, d'évènement et de sanction prennent ce ton : bandeau sec, typographie système, sans fioriture.
-- **Le Nen** : les six types sont disposés en hexagone (Renforcement, Émission, Manipulation, Spécialisation, Matérialisation, Transformation). L'écran du test de Nen et la fiche du pouvoir s'appuient sur ce diagramme, redessiné.
-- **La licence de Hunter** : la licence QR du joueur se présente comme une carte d'identité officielle du jeu (emblème original, pseudo, type de Nen, QR tournant).
-- **Les villes** : Masadora (boutique de sorts), Antokiba (enchères), Soufrabi (arène). Chacune peut avoir un en-tête identifiable, sans tomber dans le décor.
-- Ambiance générale : nuit, or patiné, encre, papier de carte. L'app joueur actuelle est en **thème sombre doré** : on garde cette base et on l'affine.
+Ce que l'interface reprend de l'anime :
+- **Le Livre** (« Book ») : le classeur qu'on invoque en disant « Book ». L'ouverture du Livre dans l'app est le geste signature (le mot « Book » peut apparaître à l'ouverture). Pochettes numérotées, cartes à numéro à trois chiffres (`001`), nom, **lettre de rang** dans un coin, encadrement et fond selon le rang, comme les cartes de Greed Island ; dos de carte commun. Emplacement vide : numéro en creux. Cette carte est dessinée avec soin une fois et réutilisée partout (joueur, console, écran géant).
+- **Les rangs** SS, S, A, B, C, D : échelle de couleurs et de matières (SS précieuse, D sobre). La lettre fait toujours foi (daltonisme).
+- **La voix du jeu** : dans Greed Island, une annonce système prévient le joueur (« Le joueur X a utilisé un sort sur toi »). Toutes les alertes de sort, d'évènement, de sanction et le fil de l'écran géant adoptent ce ton et cette forme : bandeau sec, typographie « système du jeu ».
+- **L'écriture Hunter** (alphabet de l'anime, polices de fans disponibles) : autorisée en **décor** (titres d'en-tête, dos de carte, emblème de la licence, écran d'attente du tracker), jamais pour porter une information, toujours doublée en français.
+- **Le Nen** : diagramme hexagonal des six types (Renforcement, Émission, Transformation, Matérialisation, Manipulation, Spécialisation, dans l'ordre de l'anime), divination par le verre d'eau pour la révélation du test de Nen, couleur d'aura par type.
+- **La licence de Hunter** : la licence QR prend la forme de la carte de licence de l'anime (format carte, emblème Hunter redessiné, pseudo, type de Nen, QR tournant au centre).
+- **L'Examen Hunter**, les **villes** (Masadora la ville des sorts, Antokiba la ville des enchères, Soufrabi l'arène), la **Brigade** du raid, le **Clear** : chacun a son identité visuelle dans l'esprit de l'anime.
+- **Les Game Masters** : la console GM peut s'inspirer de la salle de contrôle des créateurs du jeu ; l'écran géant, d'une retransmission du monde de Greed Island.
+- Vocabulaire : « Book », « Clear », « Hunter », « Nen », « Zetsu », « jenny » sont employés tels quels. Les noms de sorts restent ceux des règles (Vol, Gel, Regard…) car ils sont déjà dans l'API et les tests ; le nom anglais de l'anime peut figurer en sous-titre (Regard · *Peek*).
+- Ambiance : nuit, or patiné, encre, papier de carte. Base actuelle de l'app joueur (**sombre doré**) conservée et affinée.
+
+L'ambition « anime assumé » ne lève aucun interdit du § 2.2 : on fait un produit de fan exigeant, pas un collage.
 
 ### 2.2 « Pro, sans marqueurs IA » : interdits explicites
 - Pas de dégradé violet-bleu, pas de glassmorphism, pas de halo flou derrière les titres, pas de fond « aurora ».
@@ -181,5 +186,5 @@ Pour chacun : petit commit API séparé, test nommé avec l'id de règle, ligne 
 - Aucun texte, nombre ou nom inventé à l'écran ; tous les refus de l'API sont affichés tels quels.
 - Aucune position exacte hors de l'écran Carte du GM (vérifier aussi le réseau dans les outils du navigateur).
 - Contraste AA partout, AAA pour chrono, jenny et numéros de carte ; cibles ≥ 48 px sur téléphone ; lisible à 8 m sur l'écran géant.
-- Une personne qui ne connaît pas l'anime comprend chaque écran ; une personne qui le connaît reconnaît le Livre, les rangs, le Nen et les villes.
+- Un fan de *Hunter × Hunter* se sent dans Greed Island dès l'ouverture du Book ; une personne qui ne connaît pas l'anime comprend quand même chaque écran.
 - Revue finale avec `impeccable` (critique et audit) sur chaque application : aucun des interdits du § 2.2.

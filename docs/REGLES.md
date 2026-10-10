@@ -239,7 +239,7 @@ Sanctions : photo de balise → gains annulés + gel 5 min (PNJ/GM) · faux GPS 
 | Clear | confirmation/refus | push si confirmé | demande de validation | plein écran |
 
 ## Points ouverts (à trancher)
-- Nom définitif / habillage (HxH fans vs original clients).
+- ~~Nom définitif / habillage~~ **Tranché le 2026-10-10 (Sivraj)** : habillage *Hunter × Hunter* / Greed Island pleinement assumé (voir `docs/PROMPT_INTERFACES.md` § 2.1). Nom de l'app : Greed Quest.
 - Le Clear termine-t-il la partie ou ouvre-t-il une phase finale pour le podium ?
 - Compte joueur persistant entre parties ou par partie ?
 - Contenu Examen Hunter et test de Nen.

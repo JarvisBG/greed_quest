@@ -13,17 +13,17 @@ export type Gain =
   | { kind: 'objet'; objet: ObjetType };
 
 export type IssueScan =
-  | { type: 'ok'; gains: Gain[]; jenny: number }
+  | { type: 'ok'; gains: Gain[]; jenny: number; secondSouffle?: boolean }
   | { type: 'refus'; code: string; message: string }
   | { type: 'en_file' }
   | { type: 'deja_en_file' };
 
-type Reponse = { gains: Gain[]; jenny: number };
+type Reponse = { gains: Gain[]; jenny: number; secondSouffle?: boolean };
 
 async function envoyer(api: Api, s: ScanEnAttente, horsLigne: boolean, secondSouffle = false): Promise<IssueScan> {
   const corps = { baliseId: s.baliseId, position: s.position, ...(horsLigne ? { scanneA: s.scanneA } : {}), ...(secondSouffle ? { secondSouffle: true } : {}) };
   const r = await api.post<Reponse>(`/parties/${s.partieId}/scan`, corps);
-  return { type: 'ok', gains: r.gains, jenny: r.jenny };
+  return { type: 'ok', gains: r.gains, jenny: r.jenny, ...(r.secondSouffle ? { secondSouffle: true } : {}) };
 }
 
 /** `secondSouffle` (objet, amendement 2026-10-10) : le serveur ne le consomme que si la boucle (RG-7.1) refuserait le scan. */

@@ -14,12 +14,14 @@ import { Licence } from './ecrans/licence/Licence';
 import { Livre } from './ecrans/Livre';
 import { Nen } from './ecrans/Nen';
 import { Raid } from './ecrans/Raid';
-import { Scan } from './ecrans/Scan';
+import { Scan } from './ecrans/scan/Scan';
+import { Tirage, useTirages } from './ecrans/scan/Tirage';
 import { Sorts } from './ecrans/Sorts';
 import { api, session } from './lib/client';
 import { creerEveil, eveilDisponible, preferenceEveil } from './lib/eveil';
 import { baliseDepuisUrl } from './lib/qr';
 import type { Question } from './lib/quiz';
+import { etapesDuTirage } from './lib/tirage';
 import { useJeu, type Moi } from './lib/useJeu';
 
 /** Amendement 2026-10-10 : visite à distance (sort Retour) encore ouverte pour cette ville. */
@@ -51,6 +53,15 @@ export function App() {
   /** Écran ouvert depuis l'accueil (licence, lieux, raid). */
   const [sous, setSous] = useState<SousEcran | null>(null);
   const evenements = useEvenements(jeu.partieId ?? '', jeu.version);
+  /** Cinématiques du tirage (page ⑥), jouées une à une par-dessus l'app. */
+  const tirages = useTirages();
+  // RG-7.5 : chaque tirage rejoué au retour du réseau a sa cinématique ; le solde suit à la fin.
+  useEffect(() => {
+    const r = jeu.rejoues[0];
+    if (!r) return;
+    jeu.prendreRejoue();
+    void tirages.jouer(etapesDuTirage(r.gains), { secondSouffle: r.secondSouffle, surJenny: jeu.ajouterJenny }).then(() => jeu.majJenny(r.jenny));
+  }, [jeu.rejoues]);
   // Balise scannée avec l'appareil photo du téléphone : l'app s'ouvre sur `?balise=<id>`.
   const [baliseLien, setBaliseLien] = useState<string | null>(() => baliseDepuisUrl(location.search));
   // Option « garder l'écran allumé » (facultative, consomme de la batterie).
@@ -201,6 +212,9 @@ export function App() {
                 enFile={jeu.enFile}
                 gpsErreur={jeu.gpsErreur}
                 baliseInitiale={baliseLien}
+                jouerTirage={tirages.jouer}
+                majJenny={jeu.majJenny}
+                ajouterJenny={jeu.ajouterJenny}
                 key={baliseLien ?? 'camera'}
               />
             )}
@@ -313,6 +327,7 @@ export function App() {
           ))}
         </nav>
       )}
+      {tirages.courant && <Tirage key={tirages.courant.id} demande={tirages.courant} onFini={tirages.terminer} />}
     </div>
   );
 }

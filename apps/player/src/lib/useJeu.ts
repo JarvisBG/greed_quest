@@ -113,6 +113,9 @@ export function useJeu() {
     setNotifs((l) => [{ n: ++compteur.current, texte, recuA: Date.now() }, ...l].slice(0, 30));
   }, []);
   const majJenny = useCallback((jenny: number) => setMoi((m) => (m ? { ...m, jenny } : m)), []);
+  const ajouterJenny = useCallback((montant: number) => setMoi((m) => (m ? { ...m, jenny: m.jenny + montant } : m)), []);
+  /** RG-7.5 : tirages reçus au rejeu de la file, en attente de leur cinématique (l'app les joue un par un). */
+  const [rejoues, setRejoues] = useState<Extract<IssueScan, { type: 'ok' }>[]>([]);
 
   const rafraichir = useCallback(async () => {
     if (!partieId) return;
@@ -170,14 +173,19 @@ export function useJeu() {
     rejeuEnCours.current = true;
     try {
       for (const r of await rejouerFile(api, file, sess.partieId, Date.now())) {
-        if (r.issue.type === 'ok') majJenny(r.issue.jenny);
+        // Un tirage rejoué a sa cinématique ; le solde suit à la fin de celle-ci.
+        if (r.issue.type === 'ok') {
+          const ok = r.issue;
+          setRejoues((l) => [...l, ok]);
+          setVersion((v) => v + 1);
+        }
         notifier(`Scan hors ligne : ${resumeIssue(r.issue)}`);
       }
     } finally {
       rejeuEnCours.current = false;
       setEnFile(file.aRejouer(sess.partieId, Date.now()).valides.length);
     }
-  }, [sess, majJenny, notifier]);
+  }, [sess, notifier]);
 
   useEffect(() => {
     if (!sess) return;
@@ -314,15 +322,15 @@ export function useJeu() {
         }
       }
       const issue = await scanner(api, file, sess.partieId, baliseId, position, Date.now(), secondSouffle);
+      // Le solde (`issue.jenny`) est posé par l'écran à la fin de la cinématique du tirage.
       if (issue.type === 'ok') {
         suivi.current?.marquerEnvoyee(position);
-        majJenny(issue.jenny);
         setVersion((v) => v + 1);
       }
       if (issue.type === 'en_file') setEnFile((n) => n + 1);
       return issue;
     },
-    [sess, majJenny],
+    [sess],
   );
 
   // Retour sur l'app (écran rallumé, onglet revenu au premier plan) : le navigateur a pu suspendre
@@ -397,6 +405,11 @@ export function useJeu() {
     quitterPartie,
     /** Solde annoncé par le serveur (bonus de l'Examen…) sans recharger tout le profil. */
     majJenny,
+    /** Jenny gagnés un à un pendant la cinématique du tirage. */
+    ajouterJenny,
+    rejoues,
+    /** Retire le premier tirage rejoué (sa cinématique commence). */
+    prendreRejoue: () => setRejoues((l) => l.slice(1)),
     ouvrirSession,
     scannerBalise,
   };

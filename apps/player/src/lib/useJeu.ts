@@ -47,6 +47,28 @@ export interface Moi {
   recuA: number;
 }
 
+/** Annonce du jeu en boîte de dialogue (voix de Greed Island) : sort reçu, évènement, sanction, invitation. */
+export interface Alerte {
+  n: number;
+  genre: 'sort' | 'evenement' | 'sanction' | 'info';
+  qui: string;
+  texte: string;
+  voir?: 'echanges';
+}
+
+/** Évènements annoncés en boîte de dialogue, en plus du fil des notifications. */
+const ANNONCES: Partial<Record<string, { genre: Alerte['genre']; qui: string }>> = {
+  evenement: { genre: 'evenement', qui: 'Évènement' },
+  mission: { genre: 'evenement', qui: 'Mission' },
+  sanction: { genre: 'sanction', qui: 'Sanction' },
+  carte_maudite: { genre: 'sanction', qui: 'Malédiction' },
+  malediction: { genre: 'sanction', qui: 'Malédiction' },
+  perte: { genre: 'sort', qui: 'Perte' },
+  clear: { genre: 'evenement', qui: 'Clear' },
+  clear_refuse: { genre: 'sanction', qui: 'Clear refusé' },
+  clear_confirme: { genre: 'evenement', qui: 'Clear' },
+};
+
 export interface Notif {
   n: number;
   texte: string;
@@ -65,7 +87,7 @@ export function useJeu() {
   /** Heure locale de réception de `partie` : le temps restant est décompté à partir d'elle. */
   const [partieRecueA, setPartieRecueA] = useState(0);
   /** Alerte urgente affichée en bandeau (sort reçu, RG-10.5). */
-  const [alerte, setAlerte] = useState<{ n: number; texte: string; voir?: 'echanges' } | null>(null);
+  const [alerte, setAlerte] = useState<Alerte | null>(null);
   /** Session d'échange en cours (RG-11.1 amendé) et message de fin de la dernière. */
   const [echange, setEchange] = useState<VueEchange | null>(null);
   const [finEchange, setFinEchange] = useState<string | null>(null);
@@ -181,7 +203,7 @@ export function useJeu() {
           if (vue.etat === 'invitation' && vue.invite && echangeRef.current?.id !== vue.id) {
             const texte = `${vue.avec.pseudo} te propose un échange`;
             notifier(texte);
-            setAlerte({ n: Date.now(), texte, voir: 'echanges' });
+            setAlerte({ n: Date.now(), genre: 'info', qui: 'Échange', texte, voir: 'echanges' });
             navigator.vibrate?.(200);
           }
           setFinEchange(null);
@@ -192,7 +214,7 @@ export function useJeu() {
           // RG-10.5 : alerte immédiate à la cible.
           const texte = texteSortRecu(data as Parameters<typeof texteSortRecu>[0]);
           notifier(texte);
-          setAlerte({ n: Date.now(), texte });
+          setAlerte({ n: Date.now(), genre: 'sort', qui: 'Sort', texte });
           navigator.vibrate?.([200, 100, 200]);
           void rafraichir();
           return;
@@ -206,8 +228,14 @@ export function useJeu() {
         // Mises à jour fréquentes (surenchères, PV du raid) : l'écran se met à jour, sans notification.
         if (nom === 'enchere' || nom === 'raid') return;
         const texte = (data as { texte?: unknown } | null)?.texte;
-        notifier(typeof texte === 'string' ? texte : libelleEvenement(nom));
-        if (nom === 'partie') void rafraichir();
+        const message = typeof texte === 'string' ? texte : libelleEvenement(nom);
+        notifier(message);
+        const annonce = ANNONCES[nom];
+        if (annonce) {
+          setAlerte({ n: Date.now(), ...annonce, texte: message });
+          navigator.vibrate?.(120);
+        }
+        if (nom === 'partie' || nom === 'sanction' || nom === 'degel') void rafraichir();
         const j = (data as { jenny?: unknown } | null)?.jenny;
         if (nom === 'tirage' && typeof j === 'number') majJenny(j);
       },
@@ -275,7 +303,7 @@ export function useJeu() {
 
   /** RG-7 : scan d'une balise, position jointe (RG-7.6 : sans position, pas de scan). */
   const scannerBalise = useCallback(
-    async (baliseId: string): Promise<IssueScan> => {
+    async (baliseId: string, secondSouffle = false): Promise<IssueScan> => {
       if (!sess) return { type: 'refus', code: 'non_inscrit', message: 'Inscris-toi d’abord' };
       let position = suivi.current?.fraiche() ?? null;
       if (!position) {
@@ -285,7 +313,7 @@ export function useJeu() {
           return { type: 'refus', code: 'gps', message: e instanceof Error ? e.message : String(e) };
         }
       }
-      const issue = await scanner(api, file, sess.partieId, baliseId, position, Date.now());
+      const issue = await scanner(api, file, sess.partieId, baliseId, position, Date.now(), secondSouffle);
       if (issue.type === 'ok') {
         suivi.current?.marquerEnvoyee(position);
         majJenny(issue.jenny);

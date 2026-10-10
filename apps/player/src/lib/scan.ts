@@ -5,7 +5,8 @@ import type { FileScans, ScanEnAttente } from './file';
 import type { ObjetType, PositionInput, Rank, SpellType } from '@gq/shared';
 
 export type Gain =
-  | { kind: 'carte'; carteId: string; nom: string; rang: Rank }
+  /** Carte tirée, complète pour la retourner à l'écran : numéro de l'anime, texte d'ambiance, limite de la partie (RG-8.2). */
+  | { kind: 'carte'; carteId: string; nom: string; rang: Rank; numero?: number | null; texte?: string | null; limite?: number | null }
   | { kind: 'sort'; sort: SpellType }
   | { kind: 'jenny'; montant: number }
   /** Amendement 2026-10-10 : objet reçu en plus des jenny d'un repli. */
@@ -19,16 +20,17 @@ export type IssueScan =
 
 type Reponse = { gains: Gain[]; jenny: number };
 
-async function envoyer(api: Api, s: ScanEnAttente, horsLigne: boolean): Promise<IssueScan> {
-  const corps = { baliseId: s.baliseId, position: s.position, ...(horsLigne ? { scanneA: s.scanneA } : {}) };
+async function envoyer(api: Api, s: ScanEnAttente, horsLigne: boolean, secondSouffle = false): Promise<IssueScan> {
+  const corps = { baliseId: s.baliseId, position: s.position, ...(horsLigne ? { scanneA: s.scanneA } : {}), ...(secondSouffle ? { secondSouffle: true } : {}) };
   const r = await api.post<Reponse>(`/parties/${s.partieId}/scan`, corps);
   return { type: 'ok', gains: r.gains, jenny: r.jenny };
 }
 
-export async function scanner(api: Api, file: FileScans, partieId: string, baliseId: string, position: PositionInput, now: number): Promise<IssueScan> {
+/** `secondSouffle` (objet, amendement 2026-10-10) : le serveur ne le consomme que si la boucle (RG-7.1) refuserait le scan. */
+export async function scanner(api: Api, file: FileScans, partieId: string, baliseId: string, position: PositionInput, now: number, secondSouffle = false): Promise<IssueScan> {
   const s: ScanEnAttente = { partieId, baliseId, position, scanneA: now };
   try {
-    return await envoyer(api, s, false);
+    return await envoyer(api, s, false, secondSouffle);
   } catch (e) {
     if (e instanceof ApiError && e.horsLigne) return file.ajouter(s) ? { type: 'en_file' } : { type: 'deja_en_file' };
     if (e instanceof ApiError) return { type: 'refus', code: e.code, message: e.message };

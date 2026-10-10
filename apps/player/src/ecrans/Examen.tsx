@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { api } from '../lib/client';
 import type { Question } from '../lib/quiz';
+import { IconeFaux, IconeJuste } from './Icones';
 import { Questionnaire } from './Questionnaire';
 
 interface Resultat {
@@ -16,40 +17,59 @@ export function Examen({ partieId, questions, onReporter, onFini }: { partieId: 
   const [resultat, setResultat] = useState<Resultat | null>(null);
 
   if (resultat) {
-    const s = resultat.bonnes > 1 ? 's' : '';
     return (
-      <div className="carte">
-        <h1>
-          {resultat.bonnes}/{questions.length} bonne{s} réponse{s}
-        </h1>
-        <p>{resultat.bonus > 0 ? `+${resultat.bonus} J ajoutés à ta bourse.` : 'Pas de bonus cette fois.'}</p>
-        <ul className="liste">
-          {questions.map((q, i) => {
-            const bonne = resultat.corrige[i] ?? -1;
-            const juste = resultat.reponses[i] === bonne;
-            return (
-              <li key={q.id}>
-                <span className={juste ? 'ok' : 'ko'}>{juste ? '✓' : '✗'}</span> {q.texte} <strong>{q.choix[bonne]}</strong>
-              </li>
-            );
-          })}
-        </ul>
-        <button onClick={onFini}>Continuer</button>
+      <div className="planche">
+        <section className="gi-case gi-trame">
+          <h1 className="titre-ecran">Examen Hunter</h1>
+          <p className="score" aria-label={`${resultat.bonnes} bonnes réponses sur ${questions.length}`}>
+            {resultat.bonnes} / {questions.length}
+          </p>
+          <p className="texte-grand">{resultat.bonus > 0 ? `+${resultat.bonus} J ajoutés à ta bourse.` : 'Pas de bonus cette fois.'}</p>
+        </section>
+        <section className="gi-case">
+          <h2 className="sous-titre">Corrigé</h2>
+          <ul className="corrige">
+            {questions.map((q, i) => {
+              const bonne = resultat.corrige[i] ?? -1;
+              const juste = resultat.reponses[i] === bonne;
+              return (
+                <li key={q.id} className={juste ? 'juste' : 'faux'}>
+                  {juste ? <IconeJuste /> : <IconeFaux />}
+                  <span>
+                    <span className="sr">{juste ? 'Juste : ' : 'Faux : '}</span>
+                    {q.texte} <strong>{q.choix[bonne]}</strong>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          <button className="gi-btn-encre" onClick={onFini}>
+            Continuer
+          </button>
+        </section>
       </div>
     );
   }
 
   if (!commence) {
     return (
-      <div className="carte">
-        <h1>Examen Hunter</h1>
-        <p>{questions.length} questions sur les règles. Chaque bonne réponse rapporte des jenny. Tu ne peux le passer qu’une fois.</p>
-        <button onClick={() => setCommence(true)}>Commencer</button>
-        {onReporter && (
-          <button className="secondaire" onClick={onReporter}>
-            Plus tard
+      <div className="planche">
+        <section className="gi-case gi-trame">
+          <h1 className="titre-ecran">Examen Hunter</h1>
+          <p className="texte-grand">
+            {questions.length} questions sur les règles. Chaque bonne réponse rapporte des jenny. Tu ne peux le passer qu’une fois.
+          </p>
+        </section>
+        <div className="actions">
+          <button className="gi-btn-encre" onClick={() => setCommence(true)}>
+            Commencer l’Examen
           </button>
-        )}
+          {onReporter && (
+            <button className="gi-btn-trait" onClick={onReporter}>
+              Plus tard
+            </button>
+          )}
+        </div>
       </div>
     );
   }

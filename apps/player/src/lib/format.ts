@@ -72,30 +72,31 @@ export const POUVOIRS_SPE: Record<PouvoirSpe, { nom: string; effet: string }> = 
 };
 
 /** Amendement 2026-10-10 : cartes objets. */
-export const OBJETS: Record<ObjetType, { nom: string; effet: string }> = {
+export const OBJETS: Record<ObjetType, { numero?: number; nom: string; effet: string }> = {
   pepite: { nom: 'Pépite d’or', effet: 'Se revend 30 J à Masadora' },
-  ticket: { nom: 'Loterie', effet: 'À gratter : 0, 10, 30 ou 100 J' },
+  ticket: { numero: 1032, nom: 'Loterie', effet: 'À gratter : 0, 10, 30 ou 100 J' },
   boussole: { nom: 'Boussole du chercheur', effet: 'Indique la direction d’une balise active que tu n’as jamais scannée' },
   souffle: { nom: 'Second souffle', effet: 'Rescanne une balise sans faire la boucle des autres balises' },
-  voile: { nom: 'Rideau noir', effet: 'Bloque la prochaine Trace, Voyance ou Clairvoyance lancée sur toi' },
-  coffre: { nom: 'Solidité', effet: 'Une carte de ton choix ne peut être ni volée ni prise pendant 20 min' },
+  voile: { numero: 1025, nom: 'Rideau noir', effet: 'Bloque la prochaine Trace, Voyance ou Clairvoyance lancée sur toi' },
+  coffre: { numero: 1035, nom: 'Solidité', effet: 'Une carte de ton choix ne peut être ni volée ni prise pendant 20 min' },
 };
 
-export const SORTS: Record<SpellType, { nom: string; effet: string }> = {
+/** Numéro de l'anime (« 1007 ») quand le sort y existe ; Gel est une création. */
+export const SORTS: Record<SpellType, { numero?: number; nom: string; effet: string }> = {
   // Noms de l'anime (traduction française), amendements 2026-10-10.
-  vol: { nom: 'Vol', effet: 'Prend 1 carte au hasard dans les emplacements fixes d’un joueur proche' },
-  pickpocket: { nom: 'Pickpocket', effet: 'Prend 1 carte au hasard dans les emplacements libres d’un joueur proche' },
-  echange_force: { nom: 'Échange', effet: 'Donne 1 carte choisie à un joueur proche et lui en prend 1 au hasard' },
+  vol: { numero: 1007, nom: 'Vol', effet: 'Prend 1 carte au hasard dans les emplacements fixes d’un joueur proche' },
+  pickpocket: { numero: 1006, nom: 'Pickpocket', effet: 'Prend 1 carte au hasard dans les emplacements libres d’un joueur proche' },
+  echange_force: { numero: 1008, nom: 'Échange', effet: 'Donne 1 carte choisie à un joueur proche et lui en prend 1 au hasard' },
   gel: { nom: 'Gel', effet: 'Un joueur proche ne peut plus scanner pendant 3 min' },
-  barriere: { nom: 'Mur défensif', effet: 'Annule le prochain sort offensif reçu' },
-  radar: { nom: 'Trace', effet: 'Montre la zone de la dernière position d’un joueur' },
-  revelation: { nom: 'Guide', effet: 'Montre la zone d’une balise rare active' },
-  duplication: { nom: 'Mimétisme', effet: 'Copie une carte de ton Book (contrefaçon si la limite est atteinte)' },
-  analyse: { nom: 'Pénétration', effet: 'Rend leur vraie apparence aux cartes modifiées d’une page de ton Book' },
-  regard: { nom: 'Voyance', effet: 'Montre les emplacements libres d’un joueur déjà croisé' },
-  clairvoyance: { nom: 'Clairvoyance', effet: 'Montre les emplacements fixes d’un joueur déjà croisé' },
-  accompagnement: { nom: 'Accompagnement', effet: 'Montre la position d’un joueur déjà croisé pendant 3 min et le gèle 3 min' },
-  retour: { nom: 'Retour', effet: 'Utilise à distance une ville déjà visitée pendant 10 min' },
+  barriere: { numero: 1003, nom: 'Mur défensif', effet: 'Annule le prochain sort offensif reçu' },
+  radar: { numero: 1027, nom: 'Trace', effet: 'Montre la zone de la dernière position d’un joueur' },
+  revelation: { numero: 1030, nom: 'Guide', effet: 'Montre la zone d’une balise rare active' },
+  duplication: { numero: 1010, nom: 'Mimétisme', effet: 'Copie une carte de ton Book (contrefaçon si la limite est atteinte)' },
+  analyse: { numero: 1024, nom: 'Pénétration', effet: 'Rend leur vraie apparence aux cartes modifiées d’une page de ton Book' },
+  regard: { numero: 1001, nom: 'Voyance', effet: 'Montre les emplacements libres d’un joueur déjà croisé' },
+  clairvoyance: { numero: 1002, nom: 'Clairvoyance', effet: 'Montre les emplacements fixes d’un joueur déjà croisé' },
+  accompagnement: { numero: 1039, nom: 'Accompagnement', effet: 'Montre la position d’un joueur déjà croisé pendant 3 min et le gèle 3 min' },
+  retour: { numero: 1009, nom: 'Retour', effet: 'Utilise à distance une ville déjà visitée pendant 10 min' },
 };
 
 /** RG-5.4 : type de Nen et son passif. */
@@ -122,6 +123,9 @@ export function resumeIssue(i: IssueScan): string {
   if (i.type === 'en_file') return 'pas de réseau, scan gardé et envoyé au retour de la connexion';
   return 'cette balise attend déjà dans la file';
 }
+
+/** Numéro affiché d'un sort ou d'un objet : celui de l'anime, sinon un tiret. */
+export const numeroSort = (n: number | undefined) => (n === undefined ? '—' : String(n));
 
 /** RG-8.1 : cartes numérotées 001..N. */
 export const numeroCarte = (n: number | null) => (n === null ? '???' : String(n).padStart(3, '0'));

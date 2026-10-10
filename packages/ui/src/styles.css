@@ -1,0 +1,248 @@
+/*
+ * Greed Island : planche de manga imprimée (encre pure, trames, cases cernées), thème clair pour le jeu au soleil.
+ * La couleur est réservée aux objets du jeu : Book, cartes (rouge désignée, bleu sort, jaune objet), rangs, licence.
+ * Contrat de direction : apps/player/.impeccable/surfaces/apps-player-src-app-tsx.md
+ */
+@import '@fontsource/dela-gothic-one/latin.css';
+@import '@fontsource/dela-gothic-one/latin-ext.css';
+@import '@fontsource/dotgothic16/latin.css';
+@import '@fontsource/dotgothic16/latin-ext.css';
+@import '@fontsource/atkinson-hyperlegible-next/latin-400.css';
+@import '@fontsource/atkinson-hyperlegible-next/latin-ext-400.css';
+@import '@fontsource/atkinson-hyperlegible-next/latin-400-italic.css';
+@import '@fontsource/atkinson-hyperlegible-next/latin-ext-400-italic.css';
+@import '@fontsource/atkinson-hyperlegible-next/latin-600.css';
+@import '@fontsource/atkinson-hyperlegible-next/latin-ext-600.css';
+@import '@fontsource/atkinson-hyperlegible-next/latin-800.css';
+@import '@fontsource/atkinson-hyperlegible-next/latin-ext-800.css';
+@import '@fontsource/atkinson-hyperlegible-mono/latin-500.css';
+@import '@fontsource/atkinson-hyperlegible-mono/latin-800.css';
+
+:root {
+  color-scheme: light;
+  --papier: #eeefe9;      /* papier journal froid : fond de planche */
+  --case: #fbfbf7;        /* intérieur des cases */
+  --case-2: #ecece6;      /* survol, champs */
+  --encre: #111111;
+  --encre-2: #3b3d40;     /* texte secondaire, >= 7:1 sur --case */
+  --trame: rgba(17, 17, 17, 0.16);
+  --rouge: #c0272d;       /* cadre des cartes désignées */
+  --bleu: #1f4a9c;        /* cadre des sorts, focus */
+  --jaune: #d9a11a;       /* cadre des objets */
+  --cuir: #5a1a1e;        /* couverture du Book */
+  --or: #d7b25a;
+  --or-fonce: #8a6a12;
+  --succes: #17713a;
+  --alerte: #b3161c;
+  --nuit: #0c0c0e;        /* boîte de dialogue du jeu */
+
+  --f-titre: 'Dela Gothic One', 'Arial Black', system-ui, sans-serif;
+  --f-texte: 'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif;
+  --f-chiffre: 'Atkinson Hyperlegible Mono', ui-monospace, 'Cascadia Mono', monospace;
+  --f-jeu: 'DotGothic16', ui-monospace, monospace;
+
+  --trait: 3px;
+  --gouttiere: 10px;
+  --sortie: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { overflow-x: clip; }
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--papier);
+  color: var(--encre);
+  font: 400 17px/1.45 var(--f-texte);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+::selection { background: var(--jaune); color: var(--encre); }
+:focus-visible { outline: 3px solid var(--bleu); outline-offset: 3px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ---------- Cases de la planche ---------- */
+.gi-case {
+  position: relative;
+  background: var(--case);
+  border: var(--trait) solid var(--encre);
+  padding: 18px 16px 20px;
+  display: grid;
+  gap: 14px;
+}
+.gi-case > * { min-width: 0; }
+.gi-trame {
+  background-color: var(--case);
+  background-image: radial-gradient(var(--trame) 1.1px, transparent 1.3px);
+  background-size: 6px 6px;
+}
+.gi-penchee { transform: skewY(-2.5deg); margin-block: 8px; }
+.gi-penchee > * { transform: skewY(2.5deg); }
+
+/* ---------- Boutons : une seule action en aplat d'encre par écran ---------- */
+.gi-btn-encre, .gi-btn-trait {
+  min-height: 56px;
+  border: var(--trait) solid var(--encre);
+  padding: 10px 18px;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  text-align: center;
+  transition: transform 0.12s var(--sortie), background-color 0.2s;
+}
+.gi-btn-encre { background: var(--encre); color: var(--case); font: 400 21px/1.1 var(--f-titre); letter-spacing: 0.03em; }
+.gi-btn-trait { background: var(--case); color: var(--encre); font: 800 17px/1.15 var(--f-texte); }
+.gi-btn-encre:active:not(:disabled), .gi-btn-trait:active:not(:disabled) { transform: translateY(2px); }
+@media (hover: hover) { .gi-btn-trait:hover:not(:disabled) { background: var(--case-2); } }
+.gi-lien {
+  background: none; border: 0; padding: 6px 0; min-height: 44px;
+  font: 600 16px var(--f-texte); color: var(--encre);
+  text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px;
+  justify-self: start;
+}
+
+/* ---------- Champs ---------- */
+.gi-champ {
+  width: 100%; min-height: 56px;
+  border: var(--trait) solid var(--encre);
+  background: var(--case);
+  padding: 10px 14px;
+  font: 600 19px var(--f-texte);
+}
+.gi-champ::placeholder { color: #6a6d72; font-weight: 400; }
+
+/* ---------- Carte de Greed Island (taille libre : tout est en unités du conteneur) ---------- */
+.gi-carte {
+  container-type: inline-size;
+  aspect-ratio: 63 / 88;
+  width: 100%;
+  max-width: 100%;
+  position: relative;
+}
+.gi-carte .c-cadre {
+  position: absolute; inset: 0;
+  border-radius: 4.5cqi;
+  padding: 5cqi;
+  background: var(--cadre, var(--rouge));
+  box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 3cqi;
+}
+.gi-carte.f-sort { --cadre: var(--bleu); }
+.gi-carte.f-objet { --cadre: var(--jaune); }
+.gi-carte.f-designee .c-txt { font-style: italic; }
+.gi-carte .c-tete {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 3cqi;
+  background: var(--case); border-radius: 2cqi; padding: 2.5cqi 3cqi;
+  box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55);
+}
+.gi-carte .c-num { font: 800 9cqi/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.gi-carte .c-nom { font: 800 6.4cqi/1.1 var(--f-texte); text-align: center; text-wrap: balance; overflow-wrap: anywhere; }
+.gi-rang {
+  font: 400 7cqi/1 var(--f-titre);
+  padding: 1.6cqi 2.4cqi;
+  border-radius: 1.6cqi;
+  white-space: nowrap;
+  color: var(--encre);
+  background: var(--matiere, var(--case));
+  box-shadow: 0 0 0 0.6cqi var(--encre);
+}
+.gi-carte .c-art {
+  border-radius: 2cqi;
+  background: #f4f2ea radial-gradient(var(--trame) 0.9px, transparent 1.1px) 0 0 / 5px 5px;
+  box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55);
+  display: grid; place-items: center;
+  overflow: hidden; min-height: 0;
+}
+.gi-carte .c-art svg { width: 62%; height: auto; }
+.gi-carte .c-art .c-filigrane {
+  font: 400 30cqi/1 var(--f-titre);
+  color: transparent;
+  -webkit-text-stroke: 0.9cqi rgba(17, 17, 17, 0.55);
+  letter-spacing: -0.02em;
+}
+.gi-carte .c-txt {
+  margin: 0; background: var(--case); border-radius: 2cqi; padding: 3cqi 3.5cqi;
+  font: 400 5.6cqi/1.3 var(--f-texte);
+  box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55);
+}
+.gi-carte.grisee { filter: grayscale(1) contrast(0.9); }
+.gi-carte.grisee .c-cadre::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit;
+  background: repeating-linear-gradient(-45deg, rgba(17, 17, 17, 0.25) 0 1.5px, transparent 1.5px 7px);
+}
+
+/* Matières des rangs : la lettre fait toujours foi (daltonisme) */
+.r-SS { --matiere: linear-gradient(125deg, #9c7a1c 0%, #f6dc85 28%, #c39a2c 50%, #fbe7a6 72%, #a8841f 100%); }
+.r-S  { --matiere: linear-gradient(125deg, #8d949b 0%, #f1f3f5 35%, #aab1b8 60%, #e9ecef 100%); }
+.r-A  { --matiere: linear-gradient(125deg, #c97a4a 0%, #f2b48a 45%, #d88a58 100%); }
+.r-B  { --matiere: linear-gradient(125deg, #6fb596 0%, #b6e0cc 50%, #82c2a6 100%); }
+.r-C  { --matiere: linear-gradient(125deg, #9eb0c4 0%, #d6dfea 50%, #aebfd1 100%); }
+.r-D, .r-sort, .r-objet { --matiere: var(--case); }
+
+/* Rang hors carte (listes, fiches) */
+.gi-rang.seul { font-size: 15px; padding: 4px 8px; border-radius: 4px; box-shadow: 0 0 0 2px var(--encre); display: inline-block; }
+
+/* Carte vue petite (pochette du Book) */
+@container (max-width: 130px) {
+  .gi-carte .c-nom, .gi-carte .c-txt { display: none; }
+  .gi-carte .c-tete { grid-template-columns: 1fr auto; padding: 4cqi; }
+  .gi-carte .c-num { font-size: 17cqi; }
+  .gi-carte .gi-rang { font-size: 13cqi; padding: 2.5cqi 4cqi; }
+  .gi-carte .gi-rang .lim { display: none; }
+  .gi-carte .r-sort, .gi-carte .r-objet { display: none; }
+  .gi-carte.f-sort .c-tete, .gi-carte.f-objet .c-tete { grid-template-columns: 1fr; }
+  .gi-carte .c-cadre { padding: 6cqi; gap: 5cqi; grid-template-rows: auto 1fr; }
+}
+
+/* Dos de carte commun */
+.gi-carte.dos .c-cadre {
+  background: #15233f;
+  box-shadow: inset 0 0 0 1.2cqi #15233f, inset 0 0 0 2.2cqi var(--or), inset 0 0 0 3.4cqi #15233f, inset 0 0 0 4cqi var(--or);
+  place-items: center;
+  grid-template-rows: 1fr;
+}
+.gi-carte.dos svg { width: 58%; height: auto; }
+
+/* ---------- Annonce du jeu : boîte de dialogue de console ---------- */
+.gi-annonce {
+  position: fixed; z-index: 60;
+  left: 50%;
+  top: calc(env(safe-area-inset-top, 0px) + 70px);
+  width: min(calc(100% - 24px), 440px);
+  transform: translate(-50%, calc(-100% - 120px));
+  visibility: hidden;
+  transition: transform 0.45s var(--sortie), visibility 0s 0.45s;
+  background: var(--nuit);
+  color: #f6f6f2;
+  border: 0;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f6f6f2, inset 0 0 0 8px var(--nuit), inset 0 0 0 9px #f6f6f2, 0 16px 30px -14px rgba(0, 0, 0, 0.6);
+  padding: 22px 22px 18px;
+  text-align: left;
+  display: grid; gap: 8px;
+}
+.gi-annonce.visible { transform: translate(-50%, 0); visibility: visible; transition: transform 0.45s var(--sortie), visibility 0s; }
+.gi-annonce .a-qui { justify-self: start; font: 400 15px/1 var(--f-jeu); background: #f6f6f2; color: var(--nuit); padding: 4px 8px; }
+.gi-annonce.t-sort .a-qui { background: #8fb2ff; }
+.gi-annonce.t-evenement .a-qui { background: #f2c84b; }
+.gi-annonce.t-sanction .a-qui { background: #ff8c86; }
+.gi-annonce .a-texte { font: 400 20px/1.4 var(--f-jeu); min-height: 2.8em; }
+.gi-annonce .a-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.gi-annonce .a-actions button { background: #f6f6f2; color: var(--nuit); border: 0; font: 400 16px var(--f-jeu); padding: 10px 14px; min-height: 44px; }
+.gi-annonce .a-pied { font: 600 13px var(--f-texte); color: #b9bcc2; margin-left: auto; }
+
+/* ---------- Lignes de concentration (moments forts) ---------- */
+.gi-concentration { position: absolute; inset: -30% -40%; pointer-events: none; }
+.gi-concentration svg { width: 100%; height: 100%; }
+
+/* ---------- Petits éléments ---------- */
+.gi-chiffre { font-family: var(--f-chiffre); font-weight: 800; font-variant-numeric: tabular-nums; }
+.gi-pastille { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--encre); background: var(--alerte); display: inline-block; }
+.gi-pastille.en_ligne { background: var(--succes); }
+.gi-pastille.connexion { background: var(--jaune); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}

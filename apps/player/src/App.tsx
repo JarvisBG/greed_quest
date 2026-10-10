@@ -1,16 +1,19 @@
+import { Annonce } from '@gq/ui';
 import { useEffect, useRef, useState } from 'react';
 import { Accueil, useEvenements, type SousEcran } from './ecrans/Accueil';
 import { Boutique } from './ecrans/Boutique';
+import { Chrono } from './ecrans/Chrono';
 import { Echanges } from './ecrans/Echanges';
 import { Encheres } from './ecrans/Encheres';
+import { Entree } from './ecrans/Entree';
 import { Examen } from './ecrans/Examen';
-import { Raid } from './ecrans/Raid';
+import { IconeAccueil, IconeBook, IconeEchanges, IconeScanner, IconeSorts } from './ecrans/Icones';
 import { Inscription, type Kit as KitRecu } from './ecrans/Inscription';
 import { Kit } from './ecrans/Kit';
 import { Licence } from './ecrans/Licence';
 import { Livre } from './ecrans/Livre';
 import { Nen } from './ecrans/Nen';
-import { Chrono } from './ecrans/Chrono';
+import { Raid } from './ecrans/Raid';
 import { Scan } from './ecrans/Scan';
 import { Sorts } from './ecrans/Sorts';
 import { api, session } from './lib/client';
@@ -28,12 +31,12 @@ interface Questionnaires {
 }
 
 type Onglet = 'accueil' | 'scan' | 'livre' | 'sorts' | 'echanges';
-const ONGLETS: { id: Onglet; nom: string }[] = [
-  { id: 'accueil', nom: 'Accueil' },
-  { id: 'scan', nom: 'Scanner' },
-  { id: 'livre', nom: 'Book' },
-  { id: 'sorts', nom: 'Sorts' },
-  { id: 'echanges', nom: 'Échanges' },
+const ONGLETS: { id: Onglet; nom: string; icone: () => React.JSX.Element }[] = [
+  { id: 'accueil', nom: 'Accueil', icone: IconeAccueil },
+  { id: 'scan', nom: 'Scanner', icone: IconeScanner },
+  { id: 'livre', nom: 'Book', icone: IconeBook },
+  { id: 'sorts', nom: 'Sorts', icone: IconeSorts },
+  { id: 'echanges', nom: 'Échanges', icone: IconeEchanges },
 ];
 
 export function App() {
@@ -80,46 +83,73 @@ export function App() {
     u.searchParams.delete('balise');
     history.replaceState(null, '', u);
   }, [ecran, baliseLien]);
+  useEffect(() => window.scrollTo(0, 0), [onglet, sous, ecran]);
 
   const finEtape = () => {
     setExamenOuvert(false);
     void jeu.rafraichir();
   };
+  const enJeu = jeu.phase === 'en_jeu' && partie && moi;
 
   return (
     <div className="app">
       <header className="barre">
-        <span className="titre">Greed Quest</span>
-        {partie && jeu.phase === 'en_jeu' && <Chrono partie={partie} recueA={jeu.partieRecueA} />}
-        {moi && <span className="jenny">{moi.jenny} J</span>}
-        {jeu.phase === 'en_jeu' && <span className={`pastille ${jeu.connexion}`} title={jeu.connexion === 'en_ligne' ? 'Connecté' : 'Hors ligne'} />}
+        {enJeu ? (
+          <>
+            <Chrono partie={partie} recueA={jeu.partieRecueA} />
+            <span className="liaison">
+              <i className={`gi-pastille ${jeu.connexion}`} aria-hidden="true" />
+              {jeu.connexion === 'en_ligne' ? 'En ligne' : jeu.connexion === 'connexion' ? 'Connexion…' : 'Hors ligne'}
+            </span>
+            <span className="jenny" aria-label={`${moi.jenny} jenny`}>
+              {moi.jenny}
+              <small>J</small>
+            </span>
+          </>
+        ) : (
+          <span className="marque">Greed Island</span>
+        )}
       </header>
+
       {jeu.alerte && (
-        <div className="alerte" role="alert" key={jeu.alerte.n}>
-          <span>{jeu.alerte.texte}</span>
-          {jeu.alerte.voir && (
-            <button
-              className="lien"
-              onClick={() => {
-                setOnglet('echanges');
-                jeu.fermerAlerte();
-              }}
-            >
-              Voir
-            </button>
-          )}
-          <button className="lien" onClick={jeu.fermerAlerte} aria-label="Fermer l’alerte">
-            ✕
-          </button>
-        </div>
+        <Annonce
+          cle={jeu.alerte.n}
+          genre={jeu.alerte.genre}
+          qui={jeu.alerte.qui}
+          texte={jeu.alerte.texte}
+          onFermer={jeu.fermerAlerte}
+          {...(jeu.alerte.voir
+            ? {
+                action: (
+                  <button
+                    onClick={() => {
+                      setOnglet('echanges');
+                      jeu.fermerAlerte();
+                    }}
+                  >
+                    Voir
+                  </button>
+                ),
+              }
+            : {})}
+        />
       )}
+
       <main>
-        {jeu.phase === 'sans_partie' && <ChoixPartie onChoix={jeu.choisirPartie} />}
-        {jeu.phase === 'chargement' && <p className="info">Chargement…</p>}
+        {jeu.phase === 'sans_partie' && <Entree onChoix={jeu.choisirPartie} />}
+        {jeu.phase === 'chargement' && (
+          <div className="planche">
+            <p className="doux">Chargement…</p>
+          </div>
+        )}
         {jeu.phase === 'erreur' && (
-          <div className="carte">
-            <p>{jeu.erreur}</p>
-            <button onClick={() => void jeu.rafraichir()}>Réessayer</button>
+          <div className="planche">
+            <section className="gi-case">
+              <p className="erreur">{jeu.erreur}</p>
+              <button className="gi-btn-encre" onClick={() => void jeu.rafraichir()}>
+                Réessayer
+              </button>
+            </section>
           </div>
         )}
         {jeu.phase === 'non_inscrit' && partie && (
@@ -131,7 +161,7 @@ export function App() {
             }}
           />
         )}
-        {jeu.phase === 'en_jeu' && partie && moi && (
+        {enJeu && (
           <>
             {ecran === 'kit' && kit && <Kit kit={kit} onSuite={() => setKit(null)} />}
             {ecran === 'examen' && quiz && (
@@ -147,9 +177,14 @@ export function App() {
               />
             )}
             {ecran === 'nen' && quiz && <Nen partieId={partie.id} questions={quiz.nen} onFini={finEtape} />}
-            {(ecran === 'examen' || ecran === 'nen') && !quiz && <p className="info">Chargement…</p>}
+            {(ecran === 'examen' || ecran === 'nen') && !quiz && (
+              <div className="planche">
+                <p className="doux">Chargement…</p>
+              </div>
+            )}
             {ecran === 'accueil' && onglet === 'scan' && (
               <Scan
+                partieId={partie.id}
                 scannerBalise={jeu.scannerBalise}
                 enFile={jeu.enFile}
                 gpsErreur={jeu.gpsErreur}
@@ -157,72 +192,78 @@ export function App() {
                 key={baliseLien ?? 'camera'}
               />
             )}
-            {ecran === 'accueil' && onglet === 'livre' && <Livre partieId={partie.id} version={jeu.version} apresAction={jeu.apresAction} />}
+            {ecran === 'accueil' && onglet === 'livre' && <Livre partieId={partie.id} version={jeu.version} apresAction={jeu.apresAction} positionAction={jeu.positionAction} />}
             {ecran === 'accueil' && onglet === 'sorts' && (
-              <Sorts
-                partieId={partie.id}
-                moi={moi}
-                version={jeu.version}
-                positionAction={jeu.positionAction}
-                apresAction={jeu.apresAction}
-                suiviCible={jeu.suiviCible}
-                ouvrirSuivi={jeu.ouvrirSuivi}
-                positionConnue={jeu.positionConnue}
-              />
+              <div className="ancien">
+                <Sorts
+                  partieId={partie.id}
+                  moi={moi}
+                  version={jeu.version}
+                  positionAction={jeu.positionAction}
+                  apresAction={jeu.apresAction}
+                  suiviCible={jeu.suiviCible}
+                  ouvrirSuivi={jeu.ouvrirSuivi}
+                  positionConnue={jeu.positionConnue}
+                />
+              </div>
             )}
             {ecran === 'accueil' && onglet === 'echanges' && (
-              <Echanges
-                partieId={partie.id}
-                jenny={moi.jenny}
-                version={jeu.version}
-                echange={jeu.echange}
-                setEchange={jeu.setEchange}
-                finEchange={jeu.finEchange}
-                fermerFinEchange={jeu.fermerFinEchange}
-                positionAction={jeu.positionAction}
-              />
+              <div className="ancien">
+                <Echanges
+                  partieId={partie.id}
+                  jenny={moi.jenny}
+                  version={jeu.version}
+                  echange={jeu.echange}
+                  setEchange={jeu.setEchange}
+                  finEchange={jeu.finEchange}
+                  fermerFinEchange={jeu.fermerFinEchange}
+                  positionAction={jeu.positionAction}
+                />
+              </div>
             )}
             {ecran === 'accueil' && onglet === 'accueil' && sous === 'licence' && jeu.licenceSecret && (
-              <>
-                <button className="lien" onClick={() => setSous(null)}>
-                  ‹ Retour
-                </button>
-                <Licence partieId={partie.id} joueurId={moi.id} pseudo={moi.pseudo} secret={jeu.licenceSecret} />
-              </>
+              <Licence partieId={partie.id} joueurId={moi.id} pseudo={moi.pseudo} nen={moi.nen} secret={jeu.licenceSecret} onRetour={() => setSous(null)} />
             )}
             {ecran === 'accueil' && onglet === 'accueil' && sous === 'boutique' && (
-              <Boutique
-                partieId={partie.id}
-                jenny={moi.jenny}
-                version={jeu.version}
-                positionAction={jeu.positionAction}
-                apresAction={jeu.apresAction}
-                onRetour={() => setSous(null)}
-                aDistance={retourActif(moi, 'masadora')}
-              />
+              <div className="ancien">
+                <Boutique
+                  partieId={partie.id}
+                  jenny={moi.jenny}
+                  version={jeu.version}
+                  positionAction={jeu.positionAction}
+                  apresAction={jeu.apresAction}
+                  onRetour={() => setSous(null)}
+                  aDistance={retourActif(moi, 'masadora')}
+                />
+              </div>
             )}
             {ecran === 'accueil' && onglet === 'accueil' && sous === 'encheres' && (
-              <Encheres
-                partieId={partie.id}
-                jenny={moi.jenny}
-                version={jeu.version}
-                positionAction={jeu.positionAction}
-                onRetour={() => setSous(null)}
-                aDistance={retourActif(moi, 'antokiba')}
-              />
+              <div className="ancien">
+                <Encheres
+                  partieId={partie.id}
+                  jenny={moi.jenny}
+                  version={jeu.version}
+                  positionAction={jeu.positionAction}
+                  onRetour={() => setSous(null)}
+                  aDistance={retourActif(moi, 'antokiba')}
+                />
+              </div>
             )}
             {ecran === 'accueil' && onglet === 'accueil' && sous === 'raid' && (
-              <Raid
-                partieId={partie.id}
-                pv={evenements.liste.find((e) => e.type === 'raid')?.pv ?? 0}
-                pvMax={evenements.liste.find((e) => e.type === 'raid')?.pvMax ?? 0}
-                onRetour={() => setSous(null)}
-              />
+              <div className="ancien">
+                <Raid
+                  partieId={partie.id}
+                  pv={evenements.liste.find((e) => e.type === 'raid')?.pv ?? 0}
+                  pvMax={evenements.liste.find((e) => e.type === 'raid')?.pvMax ?? 0}
+                  onRetour={() => setSous(null)}
+                />
+              </div>
             )}
             {ecran === 'accueil' && onglet === 'accueil' && sous === null && (
               <Accueil
                 partie={partie}
                 moi={moi}
+                version={jeu.version}
                 evenements={evenements}
                 notifs={jeu.notifs}
                 ecranAllume={ecranAllume}
@@ -237,18 +278,21 @@ export function App() {
           </>
         )}
       </main>
+
       {jeu.phase === 'en_jeu' && ecran === 'accueil' && (
-        <nav className="onglets">
+        <nav className="onglets" aria-label="Navigation">
           {ONGLETS.map((o) => (
             <button
               key={o.id}
-              className={onglet === o.id ? 'actif' : ''}
+              data-onglet={o.id}
+              aria-current={onglet === o.id ? 'page' : undefined}
               onClick={() => {
                 if (o.id === 'scan') setBaliseLien(null);
                 if (o.id === 'accueil') setSous(null);
                 setOnglet(o.id);
               }}
             >
+              <o.icone />
               {o.nom}
               {o.id === 'echanges' && jeu.echange && <span className="point" aria-label="échange en cours" />}
             </button>
@@ -256,23 +300,5 @@ export function App() {
         </nav>
       )}
     </div>
-  );
-}
-
-function ChoixPartie({ onChoix }: { onChoix: (id: string) => void }) {
-  const [id, setId] = useState('');
-  return (
-    <form
-      className="carte"
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (id.trim()) onChoix(id.trim());
-      }}
-    >
-      <h1>Rejoindre une partie</h1>
-      <p className="info">Scanne le QR d'accueil affiché par l'organisation, ou saisis le code de la partie.</p>
-      <input value={id} onChange={(e) => setId(e.target.value)} placeholder="Code de la partie" autoCapitalize="off" />
-      <button type="submit">Continuer</button>
-    </form>
   );
 }

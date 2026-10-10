@@ -13,6 +13,7 @@
   "dependencies": {
     "@gq/engine": "workspace:*",
     "@gq/shared": "workspace:*",
+    "@gq/ui": "workspace:*",
     "qr-scanner": "1.4.2",
     "qrcode-generator": "2.0.4",
     "react": "^19.3.0",

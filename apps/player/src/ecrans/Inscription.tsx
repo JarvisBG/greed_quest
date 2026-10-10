@@ -19,9 +19,11 @@ export function Inscription({ partie, onInscrit }: { partie: Partie; onInscrit: 
 
   if (!partie.inscriptionsOuvertes) {
     return (
-      <div className="carte">
-        <h1>{partie.nom}</h1>
-        <p className="info">Les inscriptions sont fermées.</p>
+      <div className="planche">
+        <section className="gi-case">
+          <h1 className="titre-ecran">{partie.nom}</h1>
+          <p className="texte-grand">Les inscriptions sont fermées.</p>
+        </section>
       </div>
     );
   }
@@ -46,20 +48,41 @@ export function Inscription({ partie, onInscrit }: { partie: Partie; onInscrit: 
 
   const valide = pseudo.trim().length >= 2 && pseudo.trim().length <= 20;
   return (
-    <form
-      className="carte"
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (valide && etape === 'saisie') void envoyer();
-      }}
-    >
-      <h1>{partie.nom}</h1>
-      <p className="info">Choisis ton pseudo de Hunter. Ta position est demandée : sans elle, pas de partie.</p>
-      <input value={pseudo} onChange={(e) => setPseudo(e.target.value)} placeholder="Pseudo (2 à 20 caractères)" maxLength={20} autoComplete="nickname" />
-      {erreur && <p className="erreur">{erreur}</p>}
-      <button type="submit" disabled={!valide || etape !== 'saisie'}>
-        {etape === 'position' ? 'Recherche de ta position…' : etape === 'envoi' ? 'Inscription…' : 'S’inscrire'}
-      </button>
-    </form>
+    <div className="planche">
+      <form
+        className="gi-case"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (valide && etape === 'saisie') void envoyer();
+        }}
+      >
+        <h1 className="titre-ecran">{partie.nom}</h1>
+        <div className="champ-groupe">
+          <label htmlFor="pseudo">Ton pseudo de Hunter</label>
+          <input
+            id="pseudo"
+            className="gi-champ"
+            value={pseudo}
+            onChange={(e) => setPseudo(e.target.value)}
+            placeholder="2 à 20 caractères"
+            maxLength={20}
+            autoComplete="nickname"
+            aria-invalid={!!erreur}
+            aria-describedby="pseudo-aide"
+          />
+          <p id="pseudo-aide" className="doux">
+            Ta position sera demandée : sans elle, pas de partie. Personne ne la verra.
+          </p>
+        </div>
+        {erreur && (
+          <p className="erreur" role="alert">
+            {erreur}
+          </p>
+        )}
+        <button type="submit" className="gi-btn-encre" disabled={!valide || etape !== 'saisie'}>
+          {etape === 'position' ? 'Recherche de ta position…' : etape === 'envoi' ? 'Inscription…' : 'S’inscrire'}
+        </button>
+      </form>
+    </div>
   );
 }

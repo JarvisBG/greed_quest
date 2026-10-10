@@ -50,9 +50,20 @@ Seul le GM avance l'état, sauf passage auto en phase finale et fin du temps. Un
 | Transformation | Texture Surprise : déguise 1 doublon en carte de même rang → contrefaçon (toutes les 20 min). *Amendement 2026-10-09 : un doublon S peut aussi imiter la SS (unique au catalogue), pour le bluff.* |
 | Matérialisation | +1 tirage bonus ≤ rang C à chaque checkpoint PNJ réussi — *amendé : + 1 tirage bonus de réserve toutes les 40 min* |
 | Manipulation | 1 échange forcé gratuit (1×/partie) — *amendé : se recharge, 40 min* |
-| Spécialisation | Pouvoir unique secret tiré au sort (liste à définir) |
+| Spécialisation | Pouvoir unique secret tiré au sort — *amendé : Alchimie, Bandit, Zetsu ou Fortune, recharge 40 min* |
 
 > **Amendement 2026-10-10 (Sivraj) — Nen rechargeable** : les pouvoirs « une fois par partie » se rechargent après usage : Renforcement `rechargeRenforcementMin` 30 min, Émission `rechargeEmissionMin` 40 min, Manipulation `rechargeManipulationMin` 40 min (RG-14, réglables). Matérialisation reçoit en plus un tirage bonus ≤ C toutes les `reserveMaterialisationMin` 40 min (40 min après l'inscription, puis 40 min après le précédent), distribué par la tâche planifiée, débordement du Livre toléré comme au checkpoint. Simulation : SIMULATION.md « Pouvoirs de Nen ».
+
+> **Amendement 2026-10-10 (Sivraj) — pouvoirs de Spécialisation** : au test de Nen, le Spécialiste reçoit au hasard l'un de ces 4 pouvoirs, secret pour les autres joueurs (l'équipe le voit). Chacun se recharge `rechargeSpeMin` (40 min) après usage.
+>
+> | Pouvoir | Effet |
+> |---|---|
+> | Alchimie | Un doublon (carte hors de son emplacement désigné) devient une carte du catalogue choisie, du même rang ou du rang au-dessus, jamais la SS, sous sa limite (RG-8.2). Le doublon sort du jeu. Contrefaçon : l'alchimie échoue, la fausse carte disparaît, le pouvoir est consommé. Provenance « Alchimie » |
+> | Bandit | Un Vol sans carte de sort (RG-10, portée, immunité, délai et protections inchangés) ; il peut viser une carte du catalogue, prise si la cible en a un exemplaire prenable, **jamais la SS** ; sinon carte au hasard |
+> | Zetsu | Invisible `zetsuMin` (10 min) : absent des listes de cibles et de la carte de chaleur, ni ciblable (sorts, Radar, Regard), ni joignable pour un échange, ni « croisé » (Regard). Lancer un sort offensif ou proposer un échange le rompt |
+> | Fortune | Le prochain scan réussi donne un gain de plus (comme Double gain, cumulable) |
+>
+> Simulation : SIMULATION.md « Pouvoirs de Spécialisation ».
 
 ## RG-6 Balises
 - 6.1 Id unique non devinable ; QR imprimé fixe, seul l'état serveur change.
@@ -231,6 +242,6 @@ Sanctions : photo de balise → gains annulés + gel 5 min (PNJ/GM) · faux GPS 
 - Nom définitif / habillage (HxH fans vs original clients).
 - Le Clear termine-t-il la partie ou ouvre-t-il une phase finale pour le podium ?
 - Compte joueur persistant entre parties ou par partie ?
-- Pouvoirs de Spécialisation, contenu Examen Hunter et test de Nen.
+- Contenu Examen Hunter et test de Nen.
 - Portée 30 m à valider sur le terrain.
 - Calibrage par simulation : temps moyen d'un Clear à 10, 30, 80 joueurs.

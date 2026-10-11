@@ -201,6 +201,35 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .cine .passer { position: absolute; bottom: max(16px, env(safe-area-inset-bottom, 0px)); left: 50%; translate: -50% 0; font: 600 13px var(--f-texte); color: rgba(235, 238, 242, 0.75); white-space: nowrap; opacity: 0; transition: opacity 0.25s; }
 .cine.intro .passer { opacity: 1; transition-delay: 0.6s; }
 
+/* ---------- Vision : le Book de l'autre joueur, dans la nuit ---------- */
+.cine .vision { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; gap: 10px; padding: max(12px, env(safe-area-inset-top, 0px)) 16px max(14px, env(safe-area-inset-bottom, 0px)); opacity: 0; visibility: hidden; cursor: default; }
+.cine .vision.ouverte { visibility: visible; }
+.v-tag { margin: 0; font: 400 16px/1 var(--f-jeu); background: #f6f6f2; color: var(--nuit); padding: 5px 9px; }
+.v-page { width: min(88vw, 380px, calc((100dvh - 236px) * 0.52)); }
+.v-legende { margin: 0; min-height: 2.6em; max-width: 380px; text-align: center; font: 400 16px/1.3 var(--f-jeu); color: #e9ecf2; }
+.v-bas { display: flex; align-items: center; gap: 10px; }
+.v-bas button { min-height: 48px; min-width: 48px; border: 2px solid #f6f6f2; background: transparent; color: #f6f6f2; font: 400 17px/1 var(--f-jeu); padding: 0 12px; }
+.v-bas button:disabled { opacity: 0.3; cursor: default; }
+.v-bas #v-folio { min-width: 52px; text-align: center; font: 400 16px var(--f-jeu); color: #c3c6cc; }
+.v-bas .v-fermer { background: #f6f6f2; color: var(--nuit); margin-left: 8px; }
+.page { --feuille: #fbfbf7; --filet: var(--rouge); position: relative; background: var(--feuille); border: var(--trait) solid var(--encre); border-left-width: 14px; border-radius: 2px 6px 6px 2px; padding: 10px 12px 14px; display: grid; align-content: start; gap: 10px; box-shadow: inset 16px 0 16px -12px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(143, 178, 255, 0.5), 0 0 40px rgba(143, 178, 255, 0.35); }
+.page.p-libre { --feuille: #d3d1c8; --filet: var(--encre); background-image: radial-gradient(rgba(17, 17, 17, 0.2) 0.9px, transparent 1.2px); background-size: 6px 6px; }
+.page::before { content: ''; position: absolute; left: -11px; top: 8%; bottom: 8%; width: 8px; background: radial-gradient(circle, var(--feuille) 2.4px, transparent 2.8px) center / 8px 34px repeat-y; }
+.page-tete { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding-bottom: 7px; border-bottom: 3px solid var(--filet); font: 400 15px/1 var(--f-titre); }
+.page-tete span:last-child { font: 800 15px var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.page-tete small { font-size: 13px; color: var(--encre-2); }
+.poches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.poche { position: relative; aspect-ratio: 63 / 88; border-radius: 4px; background: #e2e0d7; box-shadow: inset 0 0 0 1.5px rgba(17, 17, 17, 0.55), inset 0 2px 5px rgba(0, 0, 0, 0.18); padding: 3px; display: grid; border: 0; overflow: hidden; color: var(--encre); }
+.p-libre .poche { background: #c4c2b9; }
+.poche::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(118deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 32%, rgba(255, 255, 255, 0) 64%, rgba(255, 255, 255, 0.22) 78%, rgba(255, 255, 255, 0) 90%); }
+button.poche { cursor: pointer; }
+button.poche[aria-pressed='true'] { outline: 3px solid #8fb2ff; outline-offset: 1px; }
+.poche-num { align-self: center; justify-self: center; display: grid; justify-items: center; gap: 4px; font: 800 20px/1 var(--f-chiffre); color: #b3b1a8; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9), 0 -1px 0 rgba(0, 0, 0, 0.3); }
+.poche-num em { font: 400 12px/1 var(--f-titre); font-style: normal; color: #a9a79e; }
+.page-folio { display: grid; place-items: center; font: 400 34px/1 var(--f-titre); color: #c9c7be; }
+.p-libre .page-folio { color: #a3a198; }
+.case-vide { aspect-ratio: 63 / 88; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
@@ -272,6 +301,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
   <div class="vise" id="vise"></div>
   <div class="orbe" id="orbe"></div>
   <div class="flash" id="flash"></div>
+  <div class="vision" id="vision" role="dialog" aria-label="Book de l’autre joueur">
+    <p class="v-tag" id="v-tag"></p>
+    <div class="page v-page" id="v-page"></div>
+    <p class="v-legende" id="v-legende" aria-live="polite"></p>
+    <div class="v-bas"><button id="v-prec" aria-label="Page précédente">‹</button><span id="v-folio"></span><button id="v-suiv" aria-label="Page suivante">›</button><button class="v-fermer" id="v-fermer">Fermer</button></div>
+  </div>
   <div class="dialogue gi-dialogue" id="dialogue" role="status">
     <span class="a-qui" id="d-qui">Greed Island</span>
     <p class="a-texte" id="d-texte"></p>
@@ -294,14 +329,24 @@ const SORTS = {
   gel: { num: '', nom: 'Gel', off: true, cible: 'portee', txt: 'Un joueur proche ne peut plus scanner pendant 3 min.' },
   radar: { num: '1027', nom: 'Trace', off: false, cible: 'tous', txt: 'Montre la zone de la dernière position d’un joueur.' },
   regard: { num: '1001', nom: 'Voyance', off: false, cible: 'croises', txt: 'Montre les emplacements libres d’un joueur déjà croisé.' },
+  clairvoyance: { num: '1002', nom: 'Clairvoyance', off: false, cible: 'croises', txt: 'Montre les emplacements fixes d’un joueur déjà croisé.' },
   duplication: { num: '1010', nom: 'Mimétisme', off: false, cible: null, txt: 'Copie une carte de ton Book (contrefaçon si la limite est atteinte).' },
   barriere: { num: '1003', nom: 'Mur défensif', off: false, passif: true, txt: 'Annule le prochain sort offensif reçu.' },
 };
-const MAIN0 = { vol: 2, pickpocket: 1, echange_force: 1, gel: 1, radar: 1, regard: 1, duplication: 1, barriere: 1 };
+const MAIN0 = { vol: 2, pickpocket: 1, echange_force: 1, gel: 1, radar: 1, regard: 1, clairvoyance: 1, duplication: 1, barriere: 1 };
 let main = { ...MAIN0 };
 const JOUEURS = { portee: ['Kirua', 'Biscuit', 'Goreinu'], tous: ['Kirua', 'Biscuit', 'Goreinu', 'Hisoka', 'Kurapika'], croises: ['Kirua', 'Hisoka'] };
 const VOLEE = { genre: 'designee', num: '079', nom: 'Le diamant arc-en-ciel', rang: 'C', lim: 8, txt: 'Le diamant des demandes en mariage : la réponse est toujours oui.' };
 const RECUE = { genre: 'designee', num: '019', nom: 'L’oreiller de l’esprit joueur', rang: 'B', lim: 5, txt: 'Un oreiller qui laisse l’esprit vagabonder pendant le sommeil, 24 heures au plus.' };
+// Vision (Voyance, Clairvoyance) : le catalogue de la partie (le Book du joueur le connaît) et les cartes de Kirua, telles qu'elles paraissent.
+const LIM = { SS: 1, S: 2, A: 3, B: 5, C: 8, D: 12 };
+const RANGS = 'SS S S B B S B A A A B D A B C A S S B B'.split(' ');
+const NOMS = { '003': 'Le vase de la fontaine', '007': 'La pierre de grossesse', '008': 'Le lac du mystère', '011': 'La balance d’or', '014': 'Les ciseaux coupe-liens', '019': 'L’oreiller de l’esprit joueur', '020': 'Le mètre de pulsions spirituelles', '025': 'Le dé du risque', '030': 'Coussin connexion', '032': 'Le bonbon mainate' };
+const RANG_DE = { '020': 'D', '025': 'D', '030': 'C', '032': 'D' };
+const rangDe = (n) => RANGS[+n] ?? RANG_DE[n];
+const KIRUA_FIXES = ['003', '007', '008', '011', '014', '019'];
+const KIRUA_LIBRES = ['011', '014', '020', '025', '011', '030', '032'];
+const LIBRES_MAX = 15;
 // Réponses possibles du serveur (mêmes phrases que `resumeSort` dans l'app).
 const ISSUES = {
   'Réussi': { resultat: 'reussi' },
@@ -588,7 +633,10 @@ function surToucher() {
   else if (phase === 'revele' && attenteToucher && performance.now() - revelA > 350) { const r = attenteToucher; attenteToucher = null; r(); }
 }
 cine.addEventListener('pointerdown', surToucher);
-addEventListener('keydown', (e) => { if (cine.classList.contains('joue') && ['Enter', ' ', 'Escape'].includes(e.key)) { e.preventDefault(); surToucher(); } });
+addEventListener('keydown', (e) => {
+  if (phase === 'vision') { if (e.key === 'Escape') finVision?.(); return; }
+  if (cine.classList.contains('joue') && ['Enter', ' ', 'Escape'].includes(e.key)) { e.preventDefault(); surToucher(); }
+});
 
 // Le serveur (simulé) : la requête part au toucher du bouton ; la cinématique attend sa réponse au moment de lâcher le sort.
 function serveur(k, cibleNom) {
@@ -617,9 +665,10 @@ async function lancer() {
   [criNom, criOn, vise, orbe, mur, givre, embrase].forEach((e) => (e.style.opacity = '0'));
   lancerBoucle();
 
-  // 1. La nuit tombe depuis le bouton ; la carte de la fiche vient au centre.
-  const [bx, by] = centre(agir), R = Math.hypot(innerWidth, innerHeight);
-  A(nuit, [{ opacity: 1, clipPath: `circle(0px at ${bx}px ${by}px)` }, { opacity: 1, clipPath: `circle(${R}px at ${bx}px ${by}px)` }], { duration: 460, easing: 'cubic-bezier(.5,0,.2,1)' });
+  // 1. La nuit tombe ; la carte de la fiche vient au centre.
+  // La nuit est posée d'abord en style : elle reste en place même si une animation ne joue pas sur le téléphone.
+  nuit.style.clipPath = 'none'; nuit.style.opacity = '1';
+  A(nuit, [{ opacity: 0 }, { opacity: 1 }], { duration: 280, easing: 'ease-out' });
   A(lignes, [{ opacity: 0, transform: 'scale(1.4)' }, { opacity: 0.7, transform: 'scale(1)' }], { duration: 700 });
   vol.style.opacity = '1';
   const src = $('#fiche-carte').getBoundingClientRect(), dst = vol.getBoundingClientRect();
@@ -681,6 +730,7 @@ async function lancer() {
   // 5. L'issue.
   if (r.resultat === 'bloque') return jouerMur(r);
   if (k === 'gel') return jouerGel(r);
+  if (k === 'regard' || k === 'clairvoyance') return jouerVision(r);
   if (r.resultat === 'reussi' && ['vol', 'pickpocket', 'echange_force'].includes(k)) return jouerRetour(r);
   return jouerSansRetour(r);
 }
@@ -781,10 +831,79 @@ async function jouerSansRetour(r) {
   let texte;
   if (r.resultat === 'sans_effet') texte = r.sort === 'pickpocket' ? `${r.cible} n’avait rien dans ses emplacements libres.` : r.sort === 'echange_force' ? `${r.cible} n’avait rien à échanger.` : `${r.cible} n’avait rien à voler.`;
   else if (r.sort === 'radar') texte = `Dernière position connue de ${r.cible} : zone Forêt.`;
-  else if (r.sort === 'regard') texte = `Page ⑨ : les emplacements libres de ${r.cible}, en page de Book.`;
   else texte = `${s.nom} lancé. (La suite viendra page ⑨.)`;
   await revele('Greed Island', texte, 'Touche l’écran pour revenir');
   await toucher();
+  await refermer();
+}
+
+// Voyance / Clairvoyance : la comète revient chargée de ce qu'elle a vu ; la page du Book de la cible
+// s'ouvre dans la nuit, ses cartes se révèlent une à une ; on la feuillette, puis on referme.
+const vision = $('#vision'), vPage = $('#v-page'), vLegende = $('#v-legende');
+let vPages = [], vI = 0, vLibre = false, vCible = '';
+function pagesVision(libre) {
+  if (libre) {
+    const poches = Array.from({ length: LIBRES_MAX }, (_, i) => (KIRUA_LIBRES[i] ? { num: KIRUA_LIBRES[i] } : { vide: true }));
+    return [poches.slice(0, 10), poches.slice(10)];
+  }
+  const tous = RANGS.map((_, i) => String(i).padStart(3, '0'));
+  return [tous.slice(0, 10), tous.slice(10, 20)].map((pg) => pg.map((num) => (KIRUA_FIXES.includes(num) ? { num } : { num, absente: true })));
+}
+function dessinerVision(apparition) {
+  const poches = vPages[vI], restes = 12 - poches.length, span = restes % 3 || 3;
+  const pleines = vLibre ? KIRUA_LIBRES.length : KIRUA_FIXES.length;
+  const tete = vLibre
+    ? `<span>Libres</span><span>${pleines}<small> / ${LIBRES_MAX}</small></span>`
+    : `<span>Fixes</span><span>${poches[0].num} – ${poches[poches.length - 1].num}</span>`;
+  const html = poches.map((e, k) => {
+    if (e.vide) return '<span class="poche" aria-hidden="true"></span>';
+    const rang = rangDe(e.num);
+    if (e.absente) return `<span class="poche" aria-label="${e.num}, pas dans son Book"><span class="poche-num">${e.num}<em>${rang}</em></span></span>`;
+    const c = { genre: 'designee', num: e.num, nom: NOMS[e.num], rang, lim: LIM[rang], txt: '' };
+    return `<button class="poche" data-v="${k}" aria-pressed="false" aria-label="${e.num}, ${c.nom}, rang ${rang}">${carteHTML(c)}</button>`;
+  }).join('');
+  vPage.className = `page v-page ${vLibre ? 'p-libre' : 'p-designee'}`;
+  vPage.innerHTML = `<div class="page-tete">${tete}</div><div class="poches">${html}${restes > 0 ? `<span class="page-folio" style="grid-column: span ${span}">${vI + 1}</span>` : ''}${'<span class="case-vide"></span>'.repeat(Math.max(0, restes - span))}</div>`;
+  $('#v-folio').textContent = `${vI + 1} / ${vPages.length}`;
+  $('#v-prec').disabled = vI === 0; $('#v-suiv').disabled = vI === vPages.length - 1;
+  vLegende.textContent = pleines ? 'Touche une carte pour lire son nom.' : `${vCible} n’a aucune carte ici.`;
+  // Les cartes se révèlent une à une, comme si la lumière les déposait.
+  vPage.querySelectorAll('button.poche .gi-carte').forEach((el, i) => {
+    if (!reduit) el.animate([{ opacity: 0, transform: 'translateY(-8px) scale(1.06)' }, { opacity: 1, transform: 'none' }], { duration: 320, delay: (apparition ? 260 : 0) + i * 70, easing: 'cubic-bezier(.16,1,.3,1)', fill: 'backwards' });
+  });
+}
+vPage.addEventListener('click', (e) => {
+  const b = e.target.closest('button.poche'); if (!b) return;
+  vPage.querySelectorAll('button.poche').forEach((x) => x.setAttribute('aria-pressed', x === b));
+  const n = vPages[vI][+b.dataset.v].num, rang = rangDe(n);
+  const fois = vLibre ? KIRUA_LIBRES.filter((x) => x === n).length : 1;
+  vLegende.textContent = `${n} · ${NOMS[n]}, rang ${rang}${fois > 1 ? ` (×${fois})` : ''}`;
+});
+$('#v-prec').addEventListener('click', () => { if (vI > 0) { vI--; dessinerVision(false); } });
+$('#v-suiv').addEventListener('click', () => { if (vI < vPages.length - 1) { vI++; dessinerVision(false); } });
+let finVision = null;
+$('#v-fermer').addEventListener('click', () => finVision?.());
+async function jouerVision(r) {
+  vLibre = r.sort === 'regard'; vCible = r.cible; vPages = pagesVision(vLibre); vI = 0;
+  const [cx, cy] = [innerWidth / 2, innerHeight * 0.45];
+  fx.trainee = !saute; lancerBoucle();
+  orbe.style.opacity = '1';
+  await finAnim(A(orbe, [
+    { transform: `translate(${innerWidth + 90}px, -90px) scale(.55)` },
+    { transform: `translate(${cx}px, ${cy}px) scale(1.4)` },
+  ], { duration: saute ? 1 : 460, easing: 'cubic-bezier(.2,.6,.3,1)' }));
+  fx.trainee = false; orbe.style.opacity = '0';
+  if (!saute) { A(flash, [{ opacity: 0.5 }, { opacity: 0 }], { duration: 240, easing: 'ease-out' }); onde(cx, cy, '#8fb2ff', 1.1); etincelles(cx, cy, 90, '#cfe0ff', 0.8); vibrer(25); }
+  A(lignes, [{ opacity: 0.25 }, { opacity: 0.12 }], { duration: 400 });
+  $('#v-tag').textContent = `${SORTS[r.sort].nom} · Book de ${r.cible}`;
+  dessinerVision(true);
+  vision.classList.add('ouverte'); vision.style.opacity = '1';
+  A(vision, [{ opacity: 0, transform: 'scale(.92)' }, { opacity: 1, transform: 'none' }], { duration: 360 });
+  phase = 'vision'; cine.classList.remove('intro'); saute = false;
+  $('#v-fermer').focus({ preventScroll: true });
+  await new Promise((res) => { finVision = res; });
+  finVision = null;
+  A(vision, [{ opacity: 1 }, { opacity: 0, transform: 'scale(.96)' }], { duration: 220 });
   await refermer();
 }
 
@@ -846,6 +965,7 @@ function terminer(fait) {
   [nuit, lignes, vol, dialogue, orbe, mur, givre, embrase].forEach((e) => (e.style.opacity = '0'));
   [criNom, criOn, vise].forEach((e) => (e.style.opacity = '0'));
   nuit.style.clipPath = '';
+  vision.classList.remove('ouverte'); vision.style.opacity = '0';
   cri.classList.remove('creux', 'centre');
   phase = 'repos'; saute = false;
   if (!fait) majAgir();

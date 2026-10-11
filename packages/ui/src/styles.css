@@ -210,6 +210,8 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   .gi-carte .c-nom, .gi-carte .c-txt { display: none; }
   .gi-carte .c-tete { grid-template-columns: 1fr auto; padding: 4cqi; }
   .gi-carte .c-num { font-size: 17cqi; }
+  /* Numéros à 4 chiffres des sorts et objets (« 1007 ») : lisibles en petite carte. */
+  .gi-carte .c-num.long { font-size: 14cqi; }
   .gi-carte .gi-rang { font-size: 13cqi; padding: 2.5cqi 4cqi; }
   .gi-carte .gi-rang .lim { display: none; }
   .gi-carte .r-sort, .gi-carte .r-objet { display: none; }

@@ -30,6 +30,8 @@ export function Fiche({ sujet, livre, actions, onFermer }: { sujet: Sujet; livre
   const [envoi, setEnvoi] = useState(false);
   const [refus, setRefus] = useState<string | null>(null);
   const aRafraichir = useRef(false);
+  /** Le fond ne ferme la fiche que si le doigt s'y est posé (pas sur un clic qui suit l'ouverture). */
+  const appuiFond = useRef(false);
 
   useEffect(() => {
     ref.current?.showModal();
@@ -59,8 +61,12 @@ export function Fiche({ sujet, livre, actions, onFermer }: { sujet: Sujet; livre
       ref={ref}
       aria-labelledby="fiche-titre"
       onClose={onFermer}
+      onPointerDown={(e) => {
+        appuiFond.current = e.target === ref.current;
+      }}
       onClick={(e) => {
-        if (e.target === ref.current) fermer();
+        if (e.target === ref.current && appuiFond.current) fermer();
+        appuiFond.current = false;
       }}
     >
       <div className="fiche-corps">

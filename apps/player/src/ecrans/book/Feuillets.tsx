@@ -123,10 +123,7 @@ export function Feuillets({ livre, onPoche }: { livre: LivreRecu; onPoche: (s: S
     const a = appui.current;
     if (!a || e.pointerId !== a.id) return;
     appui.current = null;
-    if (!a.actif) {
-      if (e.type === 'pointerup' && Math.hypot(e.clientX - a.x, e.clientY - a.y) < 12) toucher(e.clientX, e.clientY);
-      return;
-    }
+    if (!a.actif) return;
     const t = tourCourant.current;
     const elan = t && t.sens > 0 ? -a.vx : a.vx;
     await finir(elan > 0.5 || (prog.current > 0.45 && elan > -0.3));
@@ -169,10 +166,13 @@ export function Feuillets({ livre, onPoche }: { livre: LivreRecu; onPoche: (s: S
         onPointerUp={(e) => void lacher(e)}
         onPointerCancel={(e) => void lacher(e)}
         onClickCapture={(e) => {
-          // Clics de souris ou de doigt : déjà traités par `toucher` (ou c'était un glissé). Le clavier (detail 0) passe.
+          // Le clavier (detail 0) garde le bouton de la pochette. Doigt ou souris : la pochette est cherchée d'après la
+          // position du clic (pas sa cible, peu fiable sur le Book en 3D), et rien après un glissé de page.
+          // La fiche s'ouvre sur le clic, pas au lâcher du doigt : sinon le clic qui suit tombe sur son fond et la referme.
           if (e.detail === 0 && !glisse.current) return;
           e.stopPropagation();
           e.preventDefault();
+          if (!glisse.current) toucher(e.clientX, e.clientY);
           glisse.current = false;
         }}
         onKeyDown={(e) => {

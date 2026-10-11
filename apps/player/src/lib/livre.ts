@@ -5,6 +5,9 @@ export interface Carte {
   numero: number | null;
   nom: string;
   rang: Rank | null;
+  /** Texte de la carte (banque des 100 cartes) et limite de la partie (RG-8.2, « A-3 »). */
+  texte?: string | null;
+  limite?: number | null;
 }
 
 export type Emplacement =
@@ -25,6 +28,8 @@ export type Emplacement =
       engagee: boolean;
       /** RG-8.5 amendé : carte désignée cachée dans les emplacements libres. */
       cachee?: boolean;
+      /** Objet Solidité : heure de fin de la protection (« 14h25 »), null sans protection. */
+      coffreJusqua?: string | null;
     } & Carte);
 
 export interface LivreRecu {
@@ -65,4 +70,36 @@ export function titreDePage(l: LivreRecu, i: number): string {
 /** RG-8.5 amendé : cartes désignées rangées à leur place (que l'on peut cacher) et cartes cachées (à remettre). */
 export function cartesACacher(l: LivreRecu): EmplacementCarte[] {
   return contenu(l).filter((e): e is EmplacementCarte => e.kind === 'carte' && e.designe && !e.engagee && !l.gele);
+}
+
+/** RG-8.5 : page d'emplacements désignés (numéros de l'anime) ou page d'emplacements libres. */
+export function genreDePage(l: LivreRecu, i: number): 'designee' | 'libre' {
+  return (l.pages[i] ?? []).some((e) => e.designe) ? 'designee' : 'libre';
+}
+
+/** Rang de la page parmi les pages de son genre et nombre de pages de ce genre (« Libres 2 / 2 »). */
+export function rangDePage(l: LivreRecu, i: number): { rang: number; sur: number } {
+  const g = genreDePage(l, i);
+  const memes = l.pages.map((_, k) => k).filter((k) => genreDePage(l, k) === g);
+  return { rang: memes.indexOf(i) + 1, sur: memes.length };
+}
+
+/** RG-13.1 : le Clear se propose quand toutes les cartes désignées sont en place (le serveur vérifie les contrefaçons). */
+export function clearPossible(l: LivreRecu): boolean {
+  return !l.gele && l.total > 0 && l.cartesDesignees >= l.total;
+}
+
+/** Objet Solidité : cartes que l'on peut sceller (pas dans un échange, pas déjà scellées). */
+export function cartesASceller(l: LivreRecu): EmplacementCarte[] {
+  return contenu(l).filter((e): e is EmplacementCarte => e.kind === 'carte' && !e.engagee && !e.coffreJusqua);
+}
+
+/** Étiquette la plus importante d'une carte rangée, montrée sur sa pochette. */
+export function etiquetteDe(e: EmplacementCarte): { texte: string; alerte: boolean } | null {
+  if (e.badge === 'maudite') return { texte: 'Maudite', alerte: true };
+  if (e.badge === 'contrefacon') return { texte: 'Contrefaçon', alerte: true };
+  if (e.engagee) return { texte: 'Échange', alerte: false };
+  if (e.cachee) return { texte: 'Cachée', alerte: false };
+  if (e.coffreJusqua) return { texte: 'Scellée', alerte: false };
+  return null;
 }

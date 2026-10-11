@@ -10,8 +10,8 @@ import { Examen } from './ecrans/Examen';
 import { IconeAccueil, IconeBook, IconeEchanges, IconeScanner, IconeSorts } from './ecrans/Icones';
 import { Inscription, type Kit as KitRecu } from './ecrans/Inscription';
 import { Kit } from './ecrans/Kit';
+import { Book } from './ecrans/book/Book';
 import { Licence } from './ecrans/licence/Licence';
-import { Livre } from './ecrans/Livre';
 import { Nen } from './ecrans/Nen';
 import { Raid } from './ecrans/Raid';
 import { Scan } from './ecrans/scan/Scan';
@@ -218,7 +218,7 @@ export function App() {
                 key={baliseLien ?? 'camera'}
               />
             )}
-            {ecran === 'accueil' && onglet === 'livre' && <Livre partieId={partie.id} version={jeu.version} apresAction={jeu.apresAction} positionAction={jeu.positionAction} />}
+            {ecran === 'accueil' && onglet === 'livre' && <Book partieId={partie.id} version={jeu.version} apresAction={jeu.apresAction} positionAction={jeu.positionAction} onSorts={() => setOnglet('sorts')} />}
             {ecran === 'accueil' && onglet === 'sorts' && (
               <div className="ancien">
                 <Sorts

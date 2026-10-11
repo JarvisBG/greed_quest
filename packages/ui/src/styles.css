@@ -175,6 +175,8 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   overflow: hidden; min-height: 0;
 }
 .gi-carte .c-art svg { width: 62%; height: auto; }
+.gi-carte .c-art > * { grid-area: 1 / 1; }
+.gi-carte .c-nom-petit { display: none; }
 .gi-carte .c-art .c-filigrane {
   font: 400 30cqi/1 var(--f-titre);
   color: transparent;
@@ -213,6 +215,8 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   .gi-carte .r-sort, .gi-carte .r-objet { display: none; }
   .gi-carte.f-sort .c-tete, .gi-carte.f-objet .c-tete { grid-template-columns: 1fr; }
   .gi-carte .c-cadre { padding: 6cqi; gap: 5cqi; grid-template-rows: auto 1fr; }
+  .gi-carte .c-nom-petit { display: block; padding: 0 5cqi; font: 800 14cqi/1.1 var(--f-texte); text-align: center; hyphens: auto; overflow-wrap: break-word; background: rgba(251, 251, 247, 0.85); }
+  .gi-carte:is(.f-sort, .f-objet) .c-filigrane { opacity: 0.35; }
 }
 
 /* Dos de carte commun */

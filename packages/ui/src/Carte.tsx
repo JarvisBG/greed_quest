@@ -46,6 +46,8 @@ export function Carte({ genre, numero, nom, rang = null, limite = null, texte = 
         </div>
         <div className="c-art" aria-hidden="true">
           {illustration ?? <span className="c-filigrane">{genre === 'designee' ? num : genre === 'sort' ? 'S' : 'O'}</span>}
+          {/* Sort ou objet vu petit (pochette) : le nom, que la tête n'a plus la place d'écrire. */}
+          {genre !== 'designee' && <span className="c-nom-petit">{nom}</span>}
         </div>
         {texte && <p className="c-txt">{texte}</p>}
       </div>

@@ -217,6 +217,9 @@
 
 ## Décisions prises
 _(date — décision — raison)_
+- 2026-10-11 — Objets rangés dans le Book, en **page « Objets »** à la fin (papier crème, filet jaune, 8 places), au lieu d'une case séparée — fidélité à l'anime (demande de Sivraj) ; pas dans les 15 libres : un objet y prendrait une place et un Book plein bloque le scan (calibrage inchangé).
+- 2026-10-11 — Cinématique d'invocation à **chaque** ouverture de l'onglet Book (bouton de l'accueil ou onglet du bas) — décision de Sivraj du 2026-10-10 (« à chaque invocation, pas de version courte »).
+- 2026-10-11 — Cartes désignées **sans effet** (collection seule, pas de « matérialisation » comme dans l'anime) ; cacher une carte dans les libres la protège du Vol et de la Clairvoyance mais l'expose au Pickpocket et à la Voyance, et elle ne compte plus pour le Clear — rappel donné à Sivraj ; une carte désignée « utilisable » serait une nouvelle règle à simuler.
 - 2026-10-10 — Habillage *Hunter × Hunter* / Greed Island pleinement assumé (Book, cartes, voix du jeu, écriture Hunter en décor, licence, Nen) — public de fans ; droits sur l'œuvre à la charge du client.
 - 2026-10-09 — Stack TypeScript monorepo validée (voir CLAUDE.md) — moteur testable isolément, un seul langage pour api et fronts.
 - 2026-10-09 — Ordre : engine avant api — l'engine porte la logique métier, l'api l'orchestre.

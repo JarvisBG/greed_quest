@@ -123,11 +123,34 @@ export function Feuillets({ livre, onPoche }: { livre: LivreRecu; onPoche: (s: S
     const a = appui.current;
     if (!a || e.pointerId !== a.id) return;
     appui.current = null;
-    if (!a.actif) return;
+    if (!a.actif) {
+      if (e.type === 'pointerup' && Math.hypot(e.clientX - a.x, e.clientY - a.y) < 12) toucher(e.clientX, e.clientY);
+      return;
+    }
     const t = tourCourant.current;
     const elan = t && t.sens > 0 ? -a.vx : a.vx;
     await finir(elan > 0.5 || (prog.current > 0.45 && elan > -0.3));
     occupe.current = false;
+  };
+
+  // Toucher une pochette : on ne se fie pas au « hit-testing » du navigateur sur le Book incliné en 3D (il varie
+  // d'un téléphone à l'autre et laissait des pochettes muettes) ; la zone plate autour du Book reçoit tous les
+  // touchers et cherche la pochette sous le doigt d'après sa position à l'écran.
+  const toucher = (x: number, y: number) => {
+    const poches = [...(zone.current?.querySelectorAll<HTMLElement>('.page.droite:not(.dessous):not(.recto) [data-poche]') ?? [])];
+    const sous = poches.find((b) => {
+      const r = b.getBoundingClientRect();
+      return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+    });
+    if (!sous) return;
+    const k = Number(sous.dataset.poche);
+    if (genreDePage(livre, p) === 'objets') {
+      const o = livre.objets[k];
+      if (o) onPoche({ type: 'objet', o });
+      return;
+    }
+    const e = livre.pages[p]?.[k];
+    if (e && !(e.etat === 'vide' && !e.designe)) onPoche({ type: 'poche', e });
   };
 
   // Ce qu'on voit à gauche : la garde de la couverture, ou le revers de la page précédente.
@@ -138,26 +161,28 @@ export function Feuillets({ livre, onPoche }: { livre: LivreRecu; onPoche: (s: S
 
   return (
     <>
-      <div className={`livre-zone ouvert${livre.gele ? ' gele' : ''}`} ref={zone}>
+      <div
+        className={`livre-zone ouvert${livre.gele ? ' gele' : ''}`}
+        ref={zone}
+        onPointerDown={surAppui}
+        onPointerMove={surMouvement}
+        onPointerUp={(e) => void lacher(e)}
+        onPointerCancel={(e) => void lacher(e)}
+        onClickCapture={(e) => {
+          // Clics de souris ou de doigt : déjà traités par `toucher` (ou c'était un glissé). Le clavier (detail 0) passe.
+          if (e.detail === 0 && !glisse.current) return;
+          e.stopPropagation();
+          e.preventDefault();
+          glisse.current = false;
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowRight') void tourner(1);
+          if (e.key === 'ArrowLeft') void tourner(-1);
+        }}
+      >
         <div className="livre-pos">
           <div className="livre flotte">
-            <div
-              className="feuillets"
-              onPointerDown={surAppui}
-              onPointerMove={surMouvement}
-              onPointerUp={(e) => void lacher(e)}
-              onPointerCancel={(e) => void lacher(e)}
-              onClickCapture={(e) => {
-                if (glisse.current) {
-                  e.stopPropagation();
-                  glisse.current = false;
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'ArrowRight') void tourner(1);
-                if (e.key === 'ArrowLeft') void tourner(-1);
-              }}
-            >
+            <div className="feuillets">
               {gauche === 0 ? (
                 <div className="page gauche interieur" aria-hidden="true" />
               ) : (
@@ -258,9 +283,9 @@ function Contenu({ livre, i, verso, onPoche }: { livre: LivreRecu; i: number; ve
           ? Array.from({ length: livre.placesObjets }, (_, k) => {
               const o = livre.objets[k];
               if (verso) return <span key={k} className="poche">{o && <DosCarte />}</span>;
-              return o ? <PocheObjet key={o.itemId} o={o} onPoche={onPoche} /> : <span key={k} className="poche" aria-hidden="true" />;
+              return o ? <PocheObjet key={o.itemId} k={k} o={o} onPoche={onPoche} /> : <span key={k} className="poche" aria-hidden="true" />;
             })
-          : (livre.pages[i] ?? []).map((e, k) => (verso ? <Revers key={k} e={e} /> : <Poche key={e.etat === 'plein' ? e.itemId : `v${k}`} e={e} onPoche={onPoche} />))}
+          : (livre.pages[i] ?? []).map((e, k) => (verso ? <Revers key={k} e={e} /> : <Poche key={e.etat === 'plein' ? e.itemId : `v${k}`} k={k} e={e} onPoche={onPoche} />))}
         {restes > 0 && (
           <span className="page-folio" style={{ gridColumn: `span ${span}` }} aria-hidden="true">
             {verso ? '' : i + 1}
@@ -279,24 +304,25 @@ function Revers({ e }: { e: Emplacement }) {
   return <span className="poche">{e.etat === 'plein' && <DosCarte />}</span>;
 }
 
-function PocheObjet({ o, onPoche }: { o: ObjetRecu; onPoche?: ((s: Sujet) => void) | undefined }) {
+function PocheObjet({ k, o, onPoche }: { k: number; o: ObjetRecu; onPoche?: ((s: Sujet) => void) | undefined }) {
   const d = OBJETS[o.objet];
   return (
-    <button className="poche" onClick={onPoche ? () => onPoche({ type: 'objet', o }) : undefined} tabIndex={onPoche ? 0 : -1} aria-label={`Objet ${d.nom}${o.engage ? ', dans un échange' : ''}`}>
+    <button className="poche" data-poche={onPoche ? k : undefined} onClick={onPoche ? () => onPoche({ type: 'objet', o }) : undefined} tabIndex={onPoche ? 0 : -1} aria-label={`Objet ${d.nom}${o.engage ? ', dans un échange' : ''}`}>
       <Carte genre="objet" numero={numeroSort(d.numero)} nom={d.nom} />
       {o.engage && <span className="badge-poche">Échange</span>}
     </button>
   );
 }
 
-function Poche({ e, onPoche }: { e: Emplacement; onPoche?: ((s: Sujet) => void) | undefined }) {
+function Poche({ k, e, onPoche }: { k: number; e: Emplacement; onPoche?: ((s: Sujet) => void) | undefined }) {
   const ouvrir = onPoche ? () => onPoche({ type: 'poche', e }) : undefined;
   const tab = onPoche ? 0 : -1;
+  const idx = onPoche ? k : undefined;
   if (e.etat === 'vide' && !e.designe) return <span className="poche" aria-hidden="true" />;
   if (e.etat === 'vide') {
     const num = numeroCarte(e.carte.numero);
     return (
-      <button className="poche" onClick={ouvrir} tabIndex={tab} aria-label={`${num} ${e.carte.nom}, rang ${e.carte.rang ?? '?'}, pas encore trouvée`}>
+      <button className="poche" data-poche={idx} onClick={ouvrir} tabIndex={tab} aria-label={`${num} ${e.carte.nom}, rang ${e.carte.rang ?? '?'}, pas encore trouvée`}>
         <span className="poche-num">
           {num}
           <em>{e.carte.rang}</em>
@@ -307,7 +333,7 @@ function Poche({ e, onPoche }: { e: Emplacement; onPoche?: ((s: Sujet) => void) 
   if (e.etat === 'perdu') {
     const num = numeroCarte(e.carte.numero);
     return (
-      <button className="poche perdue" onClick={ouvrir} tabIndex={tab} aria-label={`${num} ${e.carte.nom} : ${e.message}`}>
+      <button className="poche perdue" data-poche={idx} onClick={ouvrir} tabIndex={tab} aria-label={`${num} ${e.carte.nom} : ${e.message}`}>
         <span className="poche-num">
           {num}
           <span>{e.message}</span>
@@ -318,7 +344,7 @@ function Poche({ e, onPoche }: { e: Emplacement; onPoche?: ((s: Sujet) => void) 
   if (e.kind === 'sort') {
     const s = SORTS[e.sort];
     return (
-      <button className="poche" onClick={ouvrir} tabIndex={tab} aria-label={`Sort ${s.nom}`}>
+      <button className="poche" data-poche={idx} onClick={ouvrir} tabIndex={tab} aria-label={`Sort ${s.nom}`}>
         <Carte genre="sort" numero={numeroSort(s.numero)} nom={s.nom} />
       </button>
     );
@@ -326,7 +352,7 @@ function Poche({ e, onPoche }: { e: Emplacement; onPoche?: ((s: Sujet) => void) 
   const etiquette = etiquetteDe(e);
   const nom = e.apparence === 'grisee' ? `Contrefaçon de ${e.nom}` : e.nom;
   return (
-    <button className="poche" onClick={ouvrir} tabIndex={tab} aria-label={`${numeroCarte(e.numero)} ${nom}, rang ${e.rang ?? '?'}${etiquette ? `, ${etiquette.texte.toLowerCase()}` : ''}`}>
+    <button className="poche" data-poche={idx} onClick={ouvrir} tabIndex={tab} aria-label={`${numeroCarte(e.numero)} ${nom}, rang ${e.rang ?? '?'}${etiquette ? `, ${etiquette.texte.toLowerCase()}` : ''}`}>
       <Carte genre="designee" numero={e.numero} nom={nom} rang={e.rang} limite={e.limite ?? null} grisee={e.apparence === 'grisee'} />
       {etiquette && <span className={`badge-poche${etiquette.alerte ? ' rouge' : ''}`}>{etiquette.texte}</span>}
     </button>

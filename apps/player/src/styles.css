@@ -613,6 +613,9 @@ p { margin: 0; }
   perspective: 1500px;
   perspective-origin: 58% 40%;
   overflow-x: clip;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
 }
 /* Le Book est incliné (rotateX) : le haut des pages passe derrière le plan de .livre-pos, qui ne doit donc pas
    intercepter les touchers (sinon les pochettes du haut ne répondent plus). */
@@ -620,7 +623,7 @@ p { margin: 0; }
 .livre { position: relative; width: 100%; transform-style: preserve-3d; transform: rotateX(4deg); pointer-events: auto; }
 .livre.flotte { animation: flotte 2.6s ease-in-out 3; }
 .livre-ombre { position: absolute; bottom: 6px; left: 16%; right: 10%; height: 22px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0, 0, 0, 0.38), transparent); animation: ombre 2.6s ease-in-out 3; }
-.feuillets { position: relative; transform-style: preserve-3d; touch-action: pan-y; }
+.feuillets { position: relative; transform-style: preserve-3d; }
 
 /* Deux papiers (demande de Sivraj, 2026-10-10) : désignées = papier blanc, filet rouge ;
    libres = papier tramé gris, filet d'encre. Les trous du classeur prennent la couleur du papier. */

@@ -72,15 +72,26 @@ export function cartesACacher(l: LivreRecu): EmplacementCarte[] {
   return contenu(l).filter((e): e is EmplacementCarte => e.kind === 'carte' && e.designe && !e.engagee && !l.gele);
 }
 
-/** RG-8.5 : page d'emplacements désignés (numéros de l'anime) ou page d'emplacements libres. */
-export function genreDePage(l: LivreRecu, i: number): 'designee' | 'libre' {
+export type GenrePage = 'designee' | 'libre' | 'objets';
+
+/**
+ * Pages du Book : celles de l'API (RG-8.5), puis la page des objets (amendement 2026-10-10 : 8 places à part,
+ * hors des 15 libres ; rangée dans le Book comme dans l'anime, demande de Sivraj du 2026-10-11).
+ */
+export function nombreDePages(l: LivreRecu): number {
+  return l.pages.length + 1;
+}
+
+/** RG-8.5 : page d'emplacements désignés (numéros de l'anime), d'emplacements libres, ou page des objets. */
+export function genreDePage(l: LivreRecu, i: number): GenrePage {
+  if (i >= l.pages.length) return 'objets';
   return (l.pages[i] ?? []).some((e) => e.designe) ? 'designee' : 'libre';
 }
 
 /** Rang de la page parmi les pages de son genre et nombre de pages de ce genre (« Libres 2 / 2 »). */
 export function rangDePage(l: LivreRecu, i: number): { rang: number; sur: number } {
   const g = genreDePage(l, i);
-  const memes = l.pages.map((_, k) => k).filter((k) => genreDePage(l, k) === g);
+  const memes = Array.from({ length: nombreDePages(l) }, (_, k) => k).filter((k) => genreDePage(l, k) === g);
   return { rang: memes.indexOf(i) + 1, sur: memes.length };
 }
 

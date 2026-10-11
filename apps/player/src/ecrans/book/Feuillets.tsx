@@ -1,12 +1,14 @@
 // Le Book ouvert (prototype validé docs/prototype/book-greed-island.html) : à gauche l'intérieur de la couverture
 // ou le revers de la page précédente, à droite la page courante ; on tourne les pages au doigt (aller-retour libre,
 // élan) ou avec les flèches. RG-8.5 : pages d'emplacements désignés (papier blanc, filet rouge, numéro de l'anime
-// en creux dans chaque pochette vide) puis pages d'emplacements libres (papier tramé gris, filet d'encre, sans numéro).
+// en creux dans chaque pochette vide) puis pages d'emplacements libres (papier tramé gris, filet d'encre, sans numéro),
+// et la page des objets (papier crème, filet jaune ; 8 places à part des libres, rangées dans le Book comme dans l'anime).
 import { FREE_SLOTS } from '@gq/engine';
 import { Carte, DosCarte, numeroCarte } from '@gq/ui';
 import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
-import { numeroSort, SORTS } from '../../lib/format';
-import { etiquetteDe, genreDePage, rangDePage, titreDePage, type Emplacement, type LivreRecu } from '../../lib/livre';
+import { numeroSort, OBJETS, SORTS } from '../../lib/format';
+import { etiquetteDe, genreDePage, nombreDePages, rangDePage, titreDePage, type Emplacement, type LivreRecu } from '../../lib/livre';
+import type { ObjetRecu, Sujet } from './Fiche';
 
 const POCHES_PAR_PAGE = 12; // grille 3 × 4 : 10 pochettes (RG-8.5) et le folio
 
@@ -15,8 +17,8 @@ interface Tour {
   cible: number;
 }
 
-export function Feuillets({ livre, onPoche }: { livre: LivreRecu; onPoche: (e: Emplacement) => void }) {
-  const n = livre.pages.length;
+export function Feuillets({ livre, onPoche }: { livre: LivreRecu; onPoche: (s: Sujet) => void }) {
+  const n = nombreDePages(livre);
   const [courante, setCourante] = useState(0);
   const [tour, setTour] = useState<Tour | null>(null);
   const prog = useRef(0);
@@ -201,7 +203,7 @@ export function Feuillets({ livre, onPoche }: { livre: LivreRecu; onPoche: (e: E
           </svg>
         </button>
         <span aria-live="polite">
-          {genre === 'designee' ? 'Désignées' : 'Libres'} · page <b>{p + 1}</b> / {n}
+          {NOMS[genre]} · page <b>{p + 1}</b> / {n}
           <span className="sr">
             {' '}
             ({rang} sur {sur})
@@ -217,9 +219,12 @@ export function Feuillets({ livre, onPoche }: { livre: LivreRecu; onPoche: (e: E
   );
 }
 
-/** Tranche des feuillets qui restent à droite : blanc pour les pages désignées, gris pour les libres. */
+const NOMS = { designee: 'Désignées', libre: 'Libres', objets: 'Objets' } as const;
+const TRANCHE = { designee: '#fbfbf7', libre: '#a9a69c', objets: '#e2cf8f' } as const;
+
+/** Tranche des feuillets qui restent à droite : une bande par page, à la couleur de son papier. */
 function Tranche({ livre, depuis }: { livre: LivreRecu; depuis: number }) {
-  const bandes = livre.pages.slice(depuis).map((_, k) => (genreDePage(livre, depuis + k) === 'designee' ? '#fbfbf7' : '#a9a69c'));
+  const bandes = Array.from({ length: nombreDePages(livre) - depuis }, (_, k) => TRANCHE[genreDePage(livre, depuis + k)]);
   const pas = 3;
   const fond = `linear-gradient(90deg, ${bandes.map((c, k) => `${c} ${k * pas}px ${k * pas + 2}px, #6f6c64 ${k * pas + 2}px ${(k + 1) * pas}px`).join(', ')})`;
   const largeur = bandes.length * pas + 2;
@@ -227,29 +232,35 @@ function Tranche({ livre, depuis }: { livre: LivreRecu; depuis: number }) {
   return <span className="tranche" style={style} aria-hidden="true" />;
 }
 
-function Contenu({ livre, i, verso, onPoche }: { livre: LivreRecu; i: number; verso?: boolean; onPoche?: (e: Emplacement) => void }) {
-  const poches = livre.pages[i] ?? [];
+function Contenu({ livre, i, verso, onPoche }: { livre: LivreRecu; i: number; verso?: boolean; onPoche?: (s: Sujet) => void }) {
   const genre = genreDePage(livre, i);
-  const restes = POCHES_PAR_PAGE - poches.length;
+  const objets = genre === 'objets';
+  const poches = objets ? livre.placesObjets : (livre.pages[i] ?? []).length;
+  const restes = POCHES_PAR_PAGE - poches;
   const span = restes % 3 || 3;
-  const titre = titreDePage(livre, i);
   return (
     <>
       <div className="page-tete">
-        <span>{genre === 'designee' ? 'Désignées' : 'Libres'}</span>
+        <span>{NOMS[genre]}</span>
         <span>
           {genre === 'designee' ? (
-            titre
+            titreDePage(livre, i)
           ) : (
             <>
-              {livre.libresUtilises}
-              <small> / {FREE_SLOTS}</small>
+              {objets ? livre.objets.length : livre.libresUtilises}
+              <small> / {objets ? livre.placesObjets : FREE_SLOTS}</small>
             </>
           )}
         </span>
       </div>
       <div className="poches">
-        {poches.map((e, k) => (verso ? <Revers key={k} e={e} /> : <Poche key={e.etat === 'plein' ? e.itemId : `v${k}`} e={e} onPoche={onPoche} />))}
+        {objets
+          ? Array.from({ length: livre.placesObjets }, (_, k) => {
+              const o = livre.objets[k];
+              if (verso) return <span key={k} className="poche">{o && <DosCarte />}</span>;
+              return o ? <PocheObjet key={o.itemId} o={o} onPoche={onPoche} /> : <span key={k} className="poche" aria-hidden="true" />;
+            })
+          : (livre.pages[i] ?? []).map((e, k) => (verso ? <Revers key={k} e={e} /> : <Poche key={e.etat === 'plein' ? e.itemId : `v${k}`} e={e} onPoche={onPoche} />))}
         {restes > 0 && (
           <span className="page-folio" style={{ gridColumn: `span ${span}` }} aria-hidden="true">
             {verso ? '' : i + 1}
@@ -268,8 +279,18 @@ function Revers({ e }: { e: Emplacement }) {
   return <span className="poche">{e.etat === 'plein' && <DosCarte />}</span>;
 }
 
-function Poche({ e, onPoche }: { e: Emplacement; onPoche?: ((e: Emplacement) => void) | undefined }) {
-  const ouvrir = onPoche ? () => onPoche(e) : undefined;
+function PocheObjet({ o, onPoche }: { o: ObjetRecu; onPoche?: ((s: Sujet) => void) | undefined }) {
+  const d = OBJETS[o.objet];
+  return (
+    <button className="poche" onClick={onPoche ? () => onPoche({ type: 'objet', o }) : undefined} tabIndex={onPoche ? 0 : -1} aria-label={`Objet ${d.nom}${o.engage ? ', dans un échange' : ''}`}>
+      <Carte genre="objet" numero={numeroSort(d.numero)} nom={d.nom} />
+      {o.engage && <span className="badge-poche">Échange</span>}
+    </button>
+  );
+}
+
+function Poche({ e, onPoche }: { e: Emplacement; onPoche?: ((s: Sujet) => void) | undefined }) {
+  const ouvrir = onPoche ? () => onPoche({ type: 'poche', e }) : undefined;
   const tab = onPoche ? 0 : -1;
   if (e.etat === 'vide' && !e.designe) return <span className="poche" aria-hidden="true" />;
   if (e.etat === 'vide') {

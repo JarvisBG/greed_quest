@@ -1,6 +1,6 @@
 // Page ⑦ Book : pages désignées / libres, Clear, Solidité, étiquette des pochettes.
 import { describe, expect, it } from 'vitest';
-import { cartesASceller, clearPossible, etiquetteDe, genreDePage, rangDePage, type Emplacement, type EmplacementCarte, type LivreRecu } from './livre';
+import { cartesASceller, clearPossible, etiquetteDe, genreDePage, nombreDePages, rangDePage, type Emplacement, type EmplacementCarte, type LivreRecu } from './livre';
 
 const carte = (numero: number, autre: Partial<EmplacementCarte> = {}): EmplacementCarte => ({
   etat: 'plein',
@@ -26,6 +26,12 @@ describe('RG-8.5 : pages du Book', () => {
 
   it('RG-8.5 : page désignée si elle porte un emplacement désigné, libre sinon', () => {
     expect([0, 1, 2].map((i) => genreDePage(l, i))).toEqual(['designee', 'libre', 'libre']);
+  });
+
+  it('Objets (amendement 2026-10-10) : une page à part, après les libres', () => {
+    expect(nombreDePages(l)).toBe(4);
+    expect(genreDePage(l, 3)).toBe('objets');
+    expect(rangDePage(l, 3)).toEqual({ rang: 1, sur: 1 });
   });
 
   it('RG-8.5 : rang de la page parmi celles de son genre', () => {

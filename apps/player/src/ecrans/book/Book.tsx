@@ -1,14 +1,13 @@
 // Page ⑦ Book. RG-8.5 : pages de 10, emplacements fixes dans l'ordre des numéros de l'anime puis emplacements libres ;
-// amendement 2026-10-10 : une carte désignée se cache dans les libres puis se remet en place ; section Objets à part.
+// amendement 2026-10-10 : une carte désignée se cache dans les libres puis se remet en place ; page des objets en fin de Book.
 // RG-8.14 : provenance en clair ; RG-8.13 : emplacement perdu ; RG-8.9 : contrefaçons telles que le joueur les connaît ;
 // RG-13.1 : Clear provisoire (Book gelé). Le serveur décide de tout ce qui est montré.
 // À chaque ouverture, la cinématique d'invocation (Invocation.tsx) ; toucher pour passer.
 import { FREE_SLOTS } from '@gq/engine';
 import type { ObjetType, PositionInput } from '@gq/shared';
-import { Carte, Dialogue } from '@gq/ui';
+import { Dialogue } from '@gq/ui';
 import { useRef, useState } from 'react';
 import { api } from '../../lib/client';
-import { numeroSort, OBJETS } from '../../lib/format';
 import { clearPossible, type LivreRecu } from '../../lib/livre';
 import { useLivre } from '../../lib/useLivre';
 import { Feuillets } from './Feuillets';
@@ -81,44 +80,13 @@ export function Book({
         </div>
         {!livre && <p className="doux">{erreur ?? 'Le Book arrive…'}</p>}
         {livre && <Bandeaux livre={livre} horsLigne={!!erreur} />}
-        {livre && <Feuillets livre={livre} onPoche={(e) => ouvrir({ type: 'poche', e })} />}
+        {livre && <Feuillets livre={livre} onPoche={ouvrir} />}
         {livre && clearPossible(livre) && (
           <button className="gi-btn-encre btn-clear" onClick={() => ouvrir({ type: 'clear' })}>
             Clear !
           </button>
         )}
       </section>
-
-      {livre && (
-        <section className="gi-case objets-case" aria-labelledby="t-objets">
-          <div className="scene-hud">
-            <h2 id="t-objets" className="sous-titre">
-              Objets
-            </h2>
-            <span>
-              <b>
-                {livre.objets.length}
-                <small> / {livre.placesObjets}</small>
-              </b>
-            </span>
-          </div>
-          <div className="objets">
-            {livre.objets.map((o) => {
-              const d = OBJETS[o.objet];
-              return (
-                <button key={o.itemId} className="poche" onClick={() => ouvrir({ type: 'objet', o })} aria-label={`Objet ${d.nom}${o.engage ? ', dans un échange' : ''}`}>
-                  <Carte genre="objet" numero={numeroSort(d.numero)} nom={d.nom} />
-                  {o.engage && <span className="badge-poche">Échange</span>}
-                </button>
-              );
-            })}
-            {Array.from({ length: Math.max(0, livre.placesObjets - livre.objets.length) }, (_, k) => (
-              <span key={k} className="objet-vide" aria-hidden="true" />
-            ))}
-          </div>
-          {livre.objets.length === 0 && <p className="doux">Une balise épuisée donne parfois un objet en plus des jenny.</p>}
-        </section>
-      )}
 
       {sujet && livre && <Fiche key={cle} sujet={sujet} livre={livre} actions={actions} onFermer={() => setSujet(null)} />}
       {invocation && <Invocation poches={apercu(livre)} onFini={() => setInvocation(false)} />}

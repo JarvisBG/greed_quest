@@ -1,3 +1,4 @@
+<html lang="fr">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Sorts de Greed Island</title>
@@ -109,6 +110,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .cibles button[aria-pressed='true'] { background: var(--encre); color: var(--case); }
 .cibles button[aria-pressed='true'] .ok { visibility: visible; }
 @media (hover: hover) { .cibles button:hover:not([aria-pressed='true']) { background: var(--case-2); } }
+.mes-cartes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 10px; margin: 0; padding: 0; list-style: none; }
+.mes-cartes button { width: 100%; display: grid; align-content: start; gap: 5px; padding: 4px; border: 0; border-radius: 6px; background: none; text-align: center; font: 700 14px/1.15 var(--f-texte); overflow-wrap: break-word; hyphens: auto; text-wrap: balance; }
+.mes-cartes .gi-carte { color: var(--encre); }
+.mes-cartes button[aria-pressed='true'] { background: var(--encre); color: var(--case); }
+@media (hover: hover) { .mes-cartes button:hover:not([aria-pressed='true']) { background: var(--case-2); } }
+.case[hidden] { display: none; }
 .gi-lien { background: none; border: 0; padding: 6px 0; min-height: 44px; font: 600 16px var(--f-texte); color: var(--encre); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; }
 .pied { position: fixed; z-index: 41; left: 0; right: 0; bottom: 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--papier); border-top: var(--trait) solid var(--encre); visibility: hidden; }
 .fiche.ouverte + .pied { visibility: visible; }
@@ -180,6 +187,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .cine .vise { position: absolute; left: 50%; translate: -50% 0; top: calc(50% + min(39vw, 180px) * 0.7 + 20px); font: 400 19px/1 var(--f-jeu); color: var(--nuit); background: #f6f6f2; padding: 6px 10px; white-space: nowrap; opacity: 0; }
 .cine .flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
 .cine .scene { position: absolute; inset: 0; display: grid; place-items: center; }
+.cine .scene > * { grid-area: 1 / 1; }
+.cine .donnee { position: absolute; left: 0; top: 0; width: 120px; opacity: 0; will-change: transform; }
 .cine .vol { width: min(52vw, 240px, calc((100dvh - 330px) * 63 / 88)); perspective: 1300px; opacity: 0; will-change: transform; }
 .cine .retourne { position: relative; transform-style: preserve-3d; }
 .cine .retourne > .gi-carte { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
@@ -195,14 +204,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .cine .givre { position: absolute; inset: 0; opacity: 0; }
 .cine .givre svg { position: absolute; width: 54vmin; height: 54vmin; }
 .cine .givre path { fill: none; stroke: #dff0ff; stroke-linecap: round; }
-.cine .dialogue { position: absolute; left: 50%; bottom: max(18px, env(safe-area-inset-bottom, 0px)); width: min(calc(100% - 24px), 440px); translate: -50% 0; opacity: 0; }
+.cine .dialogue { pointer-events: none; position: absolute; left: 50%; bottom: max(18px, env(safe-area-inset-bottom, 0px)); width: min(calc(100% - 24px), 440px); translate: -50% 0; opacity: 0; }
 .cine .dialogue .a-indice { margin: 0; font: 600 14px/1.3 var(--f-texte); color: #c3c6cc; opacity: 0; transition: opacity 0.3s; }
 .cine .dialogue .a-indice.visible { opacity: 1; }
-.cine .passer { position: absolute; bottom: max(16px, env(safe-area-inset-bottom, 0px)); left: 50%; translate: -50% 0; font: 600 13px var(--f-texte); color: rgba(235, 238, 242, 0.75); white-space: nowrap; opacity: 0; transition: opacity 0.25s; }
+.cine .passer { pointer-events: none; position: absolute; bottom: max(16px, env(safe-area-inset-bottom, 0px)); left: 50%; translate: -50% 0; font: 600 13px var(--f-texte); color: rgba(235, 238, 242, 0.75); white-space: nowrap; opacity: 0; transition: opacity 0.25s; }
 .cine.intro .passer { opacity: 1; transition-delay: 0.6s; }
 
 /* ---------- Vision : le Book de l'autre joueur, dans la nuit ---------- */
-.cine .vision { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; gap: 10px; padding: max(12px, env(safe-area-inset-top, 0px)) 16px max(14px, env(safe-area-inset-bottom, 0px)); opacity: 0; visibility: hidden; cursor: default; }
+.cine .vision { z-index: 3; position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; gap: 10px; padding: max(12px, env(safe-area-inset-top, 0px)) 16px max(14px, env(safe-area-inset-bottom, 0px)); opacity: 0; visibility: hidden; cursor: default; }
 .cine .vision.ouverte { visibility: visible; }
 .v-tag { margin: 0; font: 400 16px/1 var(--f-jeu); background: #f6f6f2; color: var(--nuit); padding: 5px 9px; }
 .v-page { width: min(88vw, 380px, calc((100dvh - 236px) * 0.52)); }
@@ -275,6 +284,7 @@ button.poche[aria-pressed='true'] { outline: 3px solid #8fb2ff; outline-offset: 
     <button class="retour" id="fermer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>Sorts</button>
     <h2 id="fiche-titre" class="sr" hidden></h2>
     <div class="fiche-carte" id="fiche-carte"></div>
+    <div class="case" id="fiche-choix" hidden></div>
     <div class="case" id="fiche-cible"></div>
   </div>
 </div>
@@ -297,9 +307,11 @@ button.poche[aria-pressed='true'] { outline: 3px solid #8fb2ff; outline-offset: 
   <div class="cri" id="cri"><span id="cri-nom"></span><span class="on" id="cri-on">ON !</span></div>
   <div class="scene" id="scene">
     <div class="vol" id="vol"><div class="retourne" id="ret"><div id="face"></div><div class="gi-carte dos" id="dos"></div><div class="embrase" id="embrase"></div></div></div>
+    <div class="vol" id="copie"></div>
   </div>
   <div class="vise" id="vise"></div>
   <div class="orbe" id="orbe"></div>
+  <div class="donnee" id="donnee"></div>
   <div class="flash" id="flash"></div>
   <div class="vision" id="vision" role="dialog" aria-label="Book de l’autre joueur">
     <p class="v-tag" id="v-tag"></p>
@@ -325,15 +337,19 @@ $('#dos').innerHTML = `<div class="c-cadre">${DOS_SVG}</div>`;
 const SORTS = {
   vol: { num: '1007', nom: 'Vol', off: true, cible: 'portee', txt: 'Prend 1 carte au hasard dans les emplacements fixes d’un joueur proche.' },
   pickpocket: { num: '1006', nom: 'Pickpocket', off: true, cible: 'portee', txt: 'Prend 1 carte au hasard dans les emplacements libres d’un joueur proche.' },
-  echange_force: { num: '1008', nom: 'Échange', off: true, cible: 'portee', txt: 'Donne 1 carte choisie à un joueur proche et lui en prend 1 au hasard.' },
+  echange_force: { num: '1008', nom: 'Échange', off: true, cible: 'portee', carte: 'donner', txt: 'Donne 1 carte choisie à un joueur proche et lui en prend 1 au hasard.' },
   gel: { num: '', nom: 'Gel', off: true, cible: 'portee', txt: 'Un joueur proche ne peut plus scanner pendant 3 min.' },
+  accompagnement: { num: '1039', nom: 'Accompagnement', off: true, cible: 'croises', txt: 'Montre la position d’un joueur déjà croisé pendant 3 min et le gèle 3 min.' },
+  revelation: { num: '1030', nom: 'Guide', off: false, cible: null, txt: 'Montre la zone d’une balise rare active.' },
   radar: { num: '1027', nom: 'Trace', off: false, cible: 'tous', txt: 'Montre la zone de la dernière position d’un joueur.' },
   regard: { num: '1001', nom: 'Voyance', off: false, cible: 'croises', txt: 'Montre les emplacements libres d’un joueur déjà croisé.' },
   clairvoyance: { num: '1002', nom: 'Clairvoyance', off: false, cible: 'croises', txt: 'Montre les emplacements fixes d’un joueur déjà croisé.' },
-  duplication: { num: '1010', nom: 'Mimétisme', off: false, cible: null, txt: 'Copie une carte de ton Book (contrefaçon si la limite est atteinte).' },
+  duplication: { num: '1010', nom: 'Mimétisme', off: false, cible: null, carte: 'copier', txt: 'Copie une carte de ton Book (contrefaçon si la limite est atteinte).' },
+  analyse: { num: '1024', nom: 'Pénétration', off: false, cible: null, note: 'Le choix de la page de ton Book à examiner viendra avec la page ⑨.', txt: 'Rend leur vraie apparence aux cartes modifiées d’une page de ton Book.' },
+  retour: { num: '1009', nom: 'Retour', off: false, cible: null, note: 'Le choix de la ville déjà visitée viendra avec la page ⑨.', txt: 'Utilise à distance une ville déjà visitée pendant 10 min.' },
   barriere: { num: '1003', nom: 'Mur défensif', off: false, passif: true, txt: 'Annule le prochain sort offensif reçu.' },
 };
-const MAIN0 = { vol: 2, pickpocket: 1, echange_force: 1, gel: 1, radar: 1, regard: 1, clairvoyance: 1, duplication: 1, barriere: 1 };
+const MAIN0 = { vol: 2, pickpocket: 1, echange_force: 1, gel: 1, accompagnement: 1, radar: 1, revelation: 1, regard: 1, clairvoyance: 1, duplication: 1, analyse: 1, retour: 1, barriere: 1 };
 let main = { ...MAIN0 };
 const JOUEURS = { portee: ['Kirua', 'Biscuit', 'Goreinu'], tous: ['Kirua', 'Biscuit', 'Goreinu', 'Hisoka', 'Kurapika'], croises: ['Kirua', 'Hisoka'] };
 const VOLEE = { genre: 'designee', num: '079', nom: 'Le diamant arc-en-ciel', rang: 'C', lim: 8, txt: 'Le diamant des demandes en mariage : la réponse est toujours oui.' };
@@ -347,11 +363,20 @@ const rangDe = (n) => RANGS[+n] ?? RANG_DE[n];
 const KIRUA_FIXES = ['003', '007', '008', '011', '014', '019'];
 const KIRUA_LIBRES = ['011', '014', '020', '025', '011', '030', '032'];
 const LIBRES_MAX = 15;
+const MES_CARTES = [
+  { num: '010', nom: 'Le rurubu d’or', rang: 'B', txt: 'Un guide doré qui dit où et quand rencontrer les personnes de son type.' },
+  { num: '012', nom: 'Le dictionnaire d’or', rang: 'A', txt: 'Un dictionnaire dont un mot brille d’or chaque jour : il servira le lendemain.' },
+  { num: '022', nom: 'Toraemon', rang: 'C', txt: 'Une bête rare qui fourre des trésors dans sa poche à quatre dimensions.' },
+  { num: '026', nom: 'Les sept nains au travail', rang: 'C', txt: 'Sept nains qui abattent tout le travail pendant le sommeil de leur maître.' },
+  { num: '034', nom: 'Enquête sur tout', rang: 'D', txt: 'Un questionnaire auquel on répond toujours avec franchise.' },
+  { num: '079', nom: 'Le diamant arc-en-ciel', rang: 'C', txt: 'Le diamant des demandes en mariage : la réponse est toujours oui.' },
+];
 // Réponses possibles du serveur (mêmes phrases que `resumeSort` dans l'app).
 const ISSUES = {
   'Réussi': { resultat: 'reussi' },
   'Mur défensif': { resultat: 'bloque', protection: 'barriere' },
   'Rien à prendre': { resultat: 'sans_effet' },
+  'Contrefaçon': { resultat: 'reussi', contrefacon: true },
   'Refus': { refus: 'Kirua n’est plus à portée (30 m environ). Ton sort n’est pas utilisé.' },
 };
 let issue = 'Réussi', delaiFin = 0, personne = false, montee = 0;
@@ -438,14 +463,18 @@ const fiche = $('#fiche'), agir = $('#agir');
 let enCours = null; // { sort, cible }
 function ouvrirFiche(k, src) {
   const s = SORTS[k];
-  enCours = { sort: k, cible: null, src };
+  enCours = { sort: k, cible: null, carte: null, src };
   $('#fiche-titre').textContent = s.nom;
   $('#fiche-carte').innerHTML = carteSort(k);
   const zone = $('#fiche-cible');
+  zone.hidden = false;
+  $('#fiche-choix').hidden = !s.carte;
+  if (s.carte) dessinerChoix();
   if (s.passif) {
     zone.innerHTML = `<h2>Passif</h2><p>Il te protège tout seul : le prochain sort offensif lancé sur toi est annulé, et le Mur défensif est perdu.</p>`;
   } else if (!s.cible) {
-    zone.innerHTML = `<h2>Sans cible</h2><p class="aide">Page ⑨ : le choix de la carte à copier. Ici, le lancer part directement.</p>`;
+    zone.innerHTML = `<h2>Sans cible</h2><p class="aide">${s.note ?? 'Le sort part sans viser personne.'}</p>`;
+    zone.hidden = !!s.carte;
     enCours.cible = '';
   } else dessinerCibles();
   fiche.classList.add('ouverte'); fiche.scrollTop = 0;
@@ -481,11 +510,20 @@ function dessinerCibles() {
   $('#actualiser').addEventListener('click', () => { enCours.cible = null; dessinerCibles(); majAgir(); });
   document.querySelectorAll('[data-cible]').forEach((b) => b.addEventListener('click', () => { enCours.cible = b.dataset.cible; dessinerCibles(); majAgir(); }));
 }
+// Échange : la carte que tu donnes ; Mimétisme : la carte à copier.
+function dessinerChoix() {
+  const s = SORTS[enCours.sort], copier = s.carte === 'copier';
+  $('#fiche-choix').innerHTML = `<h2>${copier ? 'Carte à copier' : 'Carte que tu donnes'}</h2>
+    <p class="aide">${copier ? 'Une carte de ton Book. Si sa limite d’exemplaires est atteinte, la copie sera une contrefaçon.' : 'Le joueur visé la reçoit, et tu lui prends une carte au hasard.'}</p>
+    <ul class="mes-cartes">${MES_CARTES.map((c, i) => `<li><button data-carte="${i}" aria-pressed="${enCours.carte === i}">${carteHTML({ genre: 'designee', ...c, lim: LIM[c.rang] })}<span>${c.nom}</span></button></li>`).join('')}</ul>`;
+  document.querySelectorAll('[data-carte]').forEach((b) => b.addEventListener('click', () => { enCours.carte = +b.dataset.carte; dessinerChoix(); majAgir(); }));
+}
 function majAgir() {
   if (!enCours) return;
   const s = SORTS[enCours.sort];
   if (s.passif) { agir.disabled = true; agir.textContent = 'Rien à faire : il veille'; return; }
   if (s.off && delaiFin > Date.now()) { agir.disabled = true; agir.innerHTML = `Prochain sort offensif dans <b>${mmss(delaiFin - Date.now())}</b>`; return; }
+  if (s.carte && enCours.carte === null) { agir.disabled = true; agir.textContent = s.carte === 'copier' ? 'Choisis la carte à copier' : 'Choisis la carte à donner'; return; }
   if (enCours.cible === null) { agir.disabled = true; agir.textContent = 'Choisis une cible'; return; }
   agir.disabled = false;
   agir.textContent = enCours.cible ? `Lancer ${s.nom} sur ${enCours.cible}` : `Lancer ${s.nom}`;
@@ -639,9 +677,10 @@ addEventListener('keydown', (e) => {
 });
 
 // Le serveur (simulé) : la requête part au toucher du bouton ; la cinématique attend sa réponse au moment de lâcher le sort.
-function serveur(k, cibleNom) {
-  const r = ISSUES[issue];
-  return new Promise((res) => setTimeout(() => res({ sort: k, cible: cibleNom, ...r }), 260));
+function serveur(k, cibleNom, donnee) {
+  let r = ISSUES[issue];
+  if (!SORTS[k].off && (r.resultat === 'bloque' || r.resultat === 'sans_effet')) r = ISSUES['Réussi'];
+  return new Promise((res) => setTimeout(() => res({ sort: k, cible: cibleNom, donnee, ...r }), 260));
 }
 function secouer(px) {
   if (!px || reduit) return;
@@ -651,7 +690,8 @@ function secouer(px) {
 // ---------- La cinématique ----------
 async function lancer() {
   const k = enCours.sort, s = SORTS[k], cibleNom = enCours.cible || null;
-  const reponse = serveur(k, cibleNom);
+  const donnee = enCours.carte !== null ? MES_CARTES[enCours.carte] : null;
+  const reponse = serveur(k, cibleNom, donnee);
   saute = false; phase = 'intro';
   viderAnims(); viderFx();
   face.innerHTML = carteSort(k);
@@ -714,8 +754,14 @@ async function lancer() {
   A(criNom, [{ opacity: 1 }, { opacity: 0, transform: 'scale(1.1)' }], { duration: 300, delay: 120 });
   A(criOn, [{ opacity: 1 }, { opacity: 0, transform: 'scale(1.1)' }], { duration: 300, delay: 120 });
   A(vise, [{ opacity: 1 }, { opacity: 0 }], { duration: 200, delay: 120 });
-  await pause(240);
+  if (k === 'echange_force' && donnee) {
+    const el = $('#donnee');
+    el.innerHTML = carteHTML({ genre: 'designee', ...donnee, lim: LIM[donnee.rang] }); el.style.opacity = '1';
+    A(el, [{ transform: `translate(${cx - 60}px, ${innerHeight + 20}px) rotate(-8deg)` }, { transform: `translate(${cx - 60}px, ${cy - 84}px) scale(.12) rotate(6deg)`, opacity: 0.3 }], { duration: 440, easing: 'cubic-bezier(.5,0,.75,0)' });
+  }
+  await pause(k === 'echange_force' ? 460 : 240);
   if (!saute) { A(flash, [{ opacity: 0.55 }, { opacity: 0 }], { duration: 220, easing: 'ease-out' }); onde(cx, cy, '#8fb2ff', 1); etincelles(cx, cy, 60, '#cfe0ff', 0.7); vibrer(30); }
+  if (k === 'duplication') return jouerCopie(r, cx, cy);
   const [ex, ey] = [innerWidth + 90, -90];
   fx.trainee = !saute; lancerBoucle();
   await finAnim(A(orbe, [
@@ -776,11 +822,33 @@ async function jouerRetour(r) {
   A(ret, [{ transform: 'rotateY(900deg)' }, { transform: 'rotateY(180deg)', offset: 0.7 }, { transform: 'rotateY(0deg)' }], { duration: 900, easing: 'cubic-bezier(.12,.8,.2,1)' });
   await pause(900);
   const texte = r.sort === 'echange_force'
-    ? `Échange forcé avec ${r.cible} : tu reçois ${enPhrase(c.nom)}.`
+    ? `Échange forcé avec ${r.cible} : tu lui donnes ${enPhrase(r.donnee.nom)} et tu reçois ${enPhrase(c.nom)}.`
     : r.sort === 'pickpocket' ? `Tu as pris ${enPhrase(c.nom)} à ${r.cible}.` : `Tu as volé ${enPhrase(c.nom)} à ${r.cible}.`;
   await revele('Greed Island', texte, 'Touche l’écran pour la ranger dans ton Book');
   await toucher();
   await ranger();
+}
+
+// Mimétisme : la boule de lumière se pose sur la carte choisie, qui apparaît puis se dédouble ; la copie file dans le Book.
+async function jouerCopie(r, cx, cy) {
+  const c = { genre: 'designee', ...r.donnee, lim: LIM[r.donnee.rang] };
+  const copie = $('#copie');
+  [vol, ret, embrase].forEach((e) => e.getAnimations().forEach((a) => a.cancel()));
+  embrase.style.opacity = '0'; ret.style.transform = 'none';
+  face.innerHTML = carteHTML(c); copie.innerHTML = carteHTML(c);
+  vol.style.opacity = '1';
+  A(orbe, [{ transform: `translate(${cx}px, ${cy}px) scale(1)`, opacity: 1 }, { transform: `translate(${cx}px, ${cy}px) scale(2.6)`, opacity: 0 }], { duration: 380 });
+  A(vol, [{ transform: 'scale(.2)', opacity: 0 }, { transform: 'scale(1.06)', opacity: 1, offset: 0.7 }, { transform: 'none', opacity: 1 }], { duration: 480 });
+  await pause(620);
+  copie.style.opacity = '1';
+  if (!saute) { A(flash, [{ opacity: 0.45 }, { opacity: 0 }], { duration: 220 }); etincelles(cx, cy, 90, '#ffd0d2', 0.8); onde(cx, cy, '#ffffff', 0.8); vibrer(25); }
+  A(vol, [{ transform: 'none' }, { transform: 'translateX(-30%) rotate(-5deg) scale(.86)' }], { duration: 520 });
+  A(copie, [{ transform: 'none' }, { transform: 'translateX(30%) rotate(5deg) scale(.86)' }], { duration: 520 });
+  await pause(620);
+  const texte = r.contrefacon ? 'Copie créée, mais la limite d’exemplaires est atteinte : c’est une contrefaçon.' : 'Copie réussie : un vrai exemplaire de plus.';
+  await revele('Greed Island', texte, 'Touche l’écran pour la ranger dans ton Book');
+  await toucher();
+  await ranger(copie);
 }
 
 // Le Mur défensif de la cible : la comète revient, frappe la coque d'alvéoles et s'y brise ; la coque se fend et tombe.
@@ -831,6 +899,8 @@ async function jouerSansRetour(r) {
   let texte;
   if (r.resultat === 'sans_effet') texte = r.sort === 'pickpocket' ? `${r.cible} n’avait rien dans ses emplacements libres.` : r.sort === 'echange_force' ? `${r.cible} n’avait rien à échanger.` : `${r.cible} n’avait rien à voler.`;
   else if (r.sort === 'radar') texte = `Dernière position connue de ${r.cible} : zone Forêt.`;
+  else if (r.sort === 'revelation') texte = 'Une balise rare est active en zone Lac.';
+  else if (r.sort === 'accompagnement') texte = `${r.cible} est gelé 3 min : suis sa position. (La carte en direct viendra page ⑨.)`;
   else texte = `${s.nom} lancé. (La suite viendra page ⑨.)`;
   await revele('Greed Island', texte, 'Touche l’écran pour revenir');
   await toucher();
@@ -918,10 +988,10 @@ async function revele(qui, texte, indice, refus = false) {
 }
 
 // La carte reçue file dans l'onglet Book ; la nuit se referme dessus.
-async function ranger() {
+async function ranger(el = vol) {
   phase = 'range';
   const onglet = $('[data-onglet="livre"]');
-  const [tx, ty] = centre(onglet), b = vol.getBoundingClientRect(), [bx, by] = [b.left + b.width / 2, b.top + b.height / 2];
+  const [tx, ty] = centre(onglet), b = el.getBoundingClientRect(), [bx, by] = [b.left + b.width / 2, b.top + b.height / 2];
   const dx = tx - bx, dy = ty - by, s = 30 / b.width, R = Math.hypot(innerWidth, innerHeight);
   vibrer(10);
   consommer();
@@ -929,12 +999,14 @@ async function ranger() {
   A(dialogue, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(24px)' }], { duration: 200, easing: 'ease' });
   A(lignes, [{ opacity: 0.25 }, { opacity: 0 }], { duration: 250 });
   A(nuit, [{ clipPath: `circle(${R}px at ${tx}px ${ty}px)` }, { clipPath: `circle(0px at ${tx}px ${ty}px)` }], { duration: 560, delay: 80, easing: 'cubic-bezier(.6,0,.4,1)' });
-  await finAnim(A(vol, [
-    { transform: 'none', easing: 'cubic-bezier(.2,.7,.3,1)' },
+  const depart = getComputedStyle(el).transform;
+  if (el !== vol) A(vol, [{ opacity: 1 }, { opacity: 0 }], { duration: 300 });
+  await finAnim(A(el, [
+    { transform: depart === 'none' ? 'none' : depart, easing: 'cubic-bezier(.2,.7,.3,1)' },
     { transform: `translate(${dx * 0.18}px, ${dy * 0.18 - 70}px) scale(.72) rotate(-6deg)`, offset: 0.32, easing: 'cubic-bezier(.6,0,.9,.5)' },
     { transform: `translate(${dx}px, ${dy}px) scale(${s}) rotate(-18deg)` },
   ], { duration: 640, easing: 'linear' }));
-  vol.style.opacity = '0';
+  el.style.opacity = '0';
   onglet.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.16)' }, { transform: 'scale(1)' }], { duration: reduit ? 1 : 320, easing: 'cubic-bezier(.16,1,.3,1)' });
   const plus = document.createElement('span'); plus.className = 'plus-un'; plus.textContent = '+1'; onglet.append(plus);
   plus.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none', offset: 0.2 }, { opacity: 1, offset: 0.75 }, { opacity: 0, transform: 'translateY(-8px)' }], { duration: reduit ? 1 : 1300, easing: 'ease-out' }).finished.then(() => plus.remove());
@@ -962,7 +1034,7 @@ function consommer() {
 function terminer(fait) {
   viderAnims(); viderFx();
   cine.classList.remove('joue', 'intro');
-  [nuit, lignes, vol, dialogue, orbe, mur, givre, embrase].forEach((e) => (e.style.opacity = '0'));
+  [nuit, lignes, vol, dialogue, orbe, mur, givre, embrase, $('#copie'), $('#donnee')].forEach((e) => (e.style.opacity = '0'));
   [criNom, criOn, vise].forEach((e) => (e.style.opacity = '0'));
   nuit.style.clipPath = '';
   vision.classList.remove('ouverte'); vision.style.opacity = '0';

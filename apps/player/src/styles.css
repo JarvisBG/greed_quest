@@ -614,8 +614,10 @@ p { margin: 0; }
   perspective-origin: 58% 40%;
   overflow-x: clip;
 }
-.livre-pos { width: 100%; padding-left: var(--bande); padding-right: 22px; transform-style: preserve-3d; }
-.livre { position: relative; width: 100%; transform-style: preserve-3d; transform: rotateX(4deg); }
+/* Le Book est incliné (rotateX) : le haut des pages passe derrière le plan de .livre-pos, qui ne doit donc pas
+   intercepter les touchers (sinon les pochettes du haut ne répondent plus). */
+.livre-pos { width: 100%; padding-left: var(--bande); padding-right: 22px; transform-style: preserve-3d; pointer-events: none; }
+.livre { position: relative; width: 100%; transform-style: preserve-3d; transform: rotateX(4deg); pointer-events: auto; }
 .livre.flotte { animation: flotte 2.6s ease-in-out 3; }
 .livre-ombre { position: absolute; bottom: 6px; left: 16%; right: 10%; height: 22px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0, 0, 0, 0.38), transparent); animation: ombre 2.6s ease-in-out 3; }
 .feuillets { position: relative; transform-style: preserve-3d; touch-action: pan-y; }

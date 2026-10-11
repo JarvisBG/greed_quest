@@ -40,6 +40,7 @@ import {
   loadJoueurs,
   saveBooks,
   updateJoueur,
+  vueCarte,
   type JoueurRow,
 } from '../core/state.js';
 import { zones } from '../db/schema.js';
@@ -202,7 +203,8 @@ export async function sortsRoutes(app: FastifyInstance) {
                 prive: {
                   resultat: o.resultat,
                   protection: o.protection ?? null,
-                  recu: o.recu ? { itemId: o.recu.id, ...(o.recu.kind === 'carte' ? { carteId: o.recu.cardId, nom: cat.nomDe(o.recu.cardId) } : {}) } : null,
+                  // Page ⑧ : la carte prise se retourne chez le lanceur (numéro, rang, limite, texte).
+                  recu: o.recu ? { itemId: o.recu.id, ...(o.recu.kind === 'carte' ? { carteId: o.recu.cardId, ...vueCarte(cat, o.recu.cardId, limitesOf(p)) } : {}) } : null,
                 },
               }
             : o;

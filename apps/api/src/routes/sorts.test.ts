@@ -55,6 +55,8 @@ describe('RG-10 sorts', () => {
     const carte = await donnerCarte(kirua.id);
     const res = await lancer(gon, { sort: 'vol', source: { type: 'carte', itemId: vol }, cibleId: kirua.id });
     expect(res.json()).toMatchObject({ ok: true, resultat: 'reussi', recu: { itemId: carte } });
+    // La carte prise arrive complète, pour la retourner chez le lanceur.
+    expect(res.json().recu).toEqual(expect.objectContaining({ carteId: expect.any(String), numero: expect.any(Number), nom: expect.any(String), rang: expect.any(String), limite: expect.any(Number) }));
     const [ex] = await t.db.select().from(exemplaires).where(eq(exemplaires.id, carte));
     expect(ex?.joueurId).toBe(gon.id);
     expect(ex?.origine).toEqual({ type: 'vol', sur: kirua.id });

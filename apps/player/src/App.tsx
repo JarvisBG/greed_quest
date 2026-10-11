@@ -16,7 +16,7 @@ import { Nen } from './ecrans/Nen';
 import { Raid } from './ecrans/Raid';
 import { Scan } from './ecrans/scan/Scan';
 import { Tirage, useTirages } from './ecrans/scan/Tirage';
-import { Sorts } from './ecrans/Sorts';
+import { Sorts } from './ecrans/sorts/Sorts';
 import { api, session } from './lib/client';
 import { creerEveil, eveilDisponible, preferenceEveil } from './lib/eveil';
 import { baliseDepuisUrl } from './lib/qr';
@@ -220,18 +220,16 @@ export function App() {
             )}
             {ecran === 'accueil' && onglet === 'livre' && <Book partieId={partie.id} version={jeu.version} apresAction={jeu.apresAction} positionAction={jeu.positionAction} onSorts={() => setOnglet('sorts')} />}
             {ecran === 'accueil' && onglet === 'sorts' && (
-              <div className="ancien">
-                <Sorts
-                  partieId={partie.id}
-                  moi={moi}
-                  version={jeu.version}
-                  positionAction={jeu.positionAction}
-                  apresAction={jeu.apresAction}
-                  suiviCible={jeu.suiviCible}
-                  ouvrirSuivi={jeu.ouvrirSuivi}
-                  positionConnue={jeu.positionConnue}
-                />
-              </div>
+              <Sorts
+                partieId={partie.id}
+                moi={moi}
+                version={jeu.version}
+                positionAction={jeu.positionAction}
+                apresAction={jeu.apresAction}
+                suiviCible={jeu.suiviCible}
+                ouvrirSuivi={jeu.ouvrirSuivi}
+                positionConnue={jeu.positionConnue}
+              />
             )}
             {ecran === 'accueil' && onglet === 'echanges' && (
               <div className="ancien">

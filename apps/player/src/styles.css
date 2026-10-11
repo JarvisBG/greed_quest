@@ -878,6 +878,136 @@ dialog.fiche[open] { animation: monte 0.35s var(--sortie); }
 .inv-flash { position: absolute; inset: 0; background: #fff8e8; opacity: 0; pointer-events: none; }
 .inv-passer { position: absolute; bottom: max(16px, env(safe-area-inset-bottom, 0px)); left: 50%; translate: -50% 0; font: 600 13px var(--f-texte); color: rgba(255, 240, 210, 0.75); white-space: nowrap; animation: passer-apparait 0.4s 0.6s both; }
 
+/* ---------- Sorts (page ⑧ ; prototype docs/prototype/sorts-lancer.html) ---------- */
+.sorts-page { display: grid; gap: 10px; padding: 6px 0 12px; }
+.sorts-page > * { min-width: 0; }
+.sorts-tete { align-items: baseline; }
+.sorts-tete h1 { margin: 0; font: 400 30px/1 var(--f-titre); }
+.sorts-compte { margin-left: auto; font: 600 15px var(--f-texte); color: var(--encre-2); }
+.sorts-attente { margin: 16px 0; font: 600 16px var(--f-texte); color: var(--encre-2); }
+.sorts-aide { margin: 0; font: 400 15px/1.35 var(--f-texte); color: var(--encre-2); }
+.sorts-note { margin-bottom: 4px; }
+.sorts-note .gi-lien { color: #f6f6f2; justify-self: end; font-family: var(--f-jeu); }
+/* La main : les cartes de sort, par famille */
+.sorts-famille { display: grid; gap: 10px; margin-top: 8px; }
+.sorts-famille-tete { display: flex; align-items: center; gap: 10px; border-bottom: var(--trait) solid var(--encre); padding-bottom: 6px; }
+.sorts-famille-tete h2 { margin: 0; font: 400 20px/1.1 var(--f-titre); }
+/* Délai entre deux sorts offensifs (RG-10.3) : une case tramée, chiffres d'encre. */
+.sorts-delai { margin-left: auto; display: flex; align-items: baseline; gap: 6px; padding: 4px 9px; border: 2px solid var(--encre); background: var(--case) radial-gradient(var(--trame) 0.9px, transparent 1.1px) 0 0 / 5px 5px; font: 600 13px/1.1 var(--f-texte); }
+.sorts-delai b { font: 800 18px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.sorts-main { display: grid; grid-template-columns: repeat(3, minmax(0, 124px)); justify-content: space-between; gap: 16px 12px; margin: 0; padding: 0; list-style: none; }
+.sorts-pochette { display: grid; gap: 7px; width: 100%; padding: 0; border: 0; background: none; color: var(--encre); text-align: center; touch-action: manipulation; }
+.sorts-tas { position: relative; display: block; }
+.sorts-tas .gi-carte + .gi-carte { position: absolute; inset: 0; }
+.sorts-tas.double .gi-carte:first-child { translate: 5px 4px; rotate: 4deg; }
+/* Le nom est écrit dessous : pas besoin de celui de la petite carte. */
+.sorts-tas .c-nom-petit { display: none; }
+.sorts-nb { position: absolute; z-index: 2; right: -6px; top: -8px; min-width: 32px; height: 32px; padding: 0 6px; display: grid; place-items: center; border-radius: 16px; background: var(--encre); color: var(--case); font: 800 15px/1 var(--f-chiffre); box-shadow: 0 0 0 2px var(--case); }
+.sorts-nom { font: 800 15px/1.15 var(--f-texte); text-wrap: balance; overflow-wrap: break-word; hyphens: auto; }
+.sorts-nom span { display: block; font: 600 13px/1.2 var(--f-texte); color: var(--encre-2); }
+/* Mur défensif : passif, tamponné. */
+.sorts-tampon { position: absolute; z-index: 2; left: 50%; top: 52%; translate: -50% -50%; rotate: -14deg; padding: 3px 7px; border: 3px solid var(--encre); background: var(--case); font: 400 14px/1 var(--f-titre); letter-spacing: 0.04em; }
+/* En attente du délai : la carte est imprimée en gris tramé. */
+.sorts-pochette.attend .sorts-tas { filter: grayscale(1) contrast(0.85) brightness(1.08); }
+.sorts-pochette.attend .sorts-tas::after { content: ''; position: absolute; z-index: 1; inset: 0; border-radius: 4px; background: radial-gradient(rgba(17, 17, 17, 0.3) 0.9px, transparent 1.2px) 0 0 / 4px 4px; }
+.sorts-pochette.part .sorts-tas { visibility: hidden; }
+@media (hover: hover) { .sorts-pochette .sorts-tas { transition: translate 0.2s var(--sortie); } .sorts-pochette:hover .sorts-tas { translate: 0 -3px; } }
+.sorts-case { background: var(--case); border: var(--trait) solid var(--encre); padding: 14px 16px; display: grid; gap: 10px; }
+.sorts-case h2 { margin: 0; font: 400 20px/1.1 var(--f-titre); }
+.sorts-case h3 { margin: 0; font: 800 17px/1.2 var(--f-texte); }
+.sorts-case p { margin: 0; }
+.sorts-case .aide { font: 400 15px/1.35 var(--f-texte); color: var(--encre-2); }
+.sorts-case-tete { display: flex; align-items: baseline; gap: 10px; }
+.sorts-case-tete .gi-lien { margin-left: auto; }
+.sorts-chrono { margin-left: auto; font: 800 20px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.sorts-pouvoir { grid-template-columns: 1fr auto; align-items: center; }
+.sorts-pouvoir .gi-btn-trait { min-height: 52px; }
+.sorts-erreur { color: var(--alerte); font-weight: 600; }
+
+/* Fiche de lancement */
+.sorts-fiche { position: fixed; inset: 0; z-index: 40; background: var(--papier); overflow-y: auto; overscroll-behavior: contain; }
+.sorts-fiche-corps { max-width: 480px; margin: 0 auto; padding: max(8px, env(safe-area-inset-top, 0px)) 16px 120px; display: grid; gap: 14px; }
+.sorts-fermer { justify-self: start; display: flex; align-items: center; gap: 4px; min-height: 48px; padding: 0 4px 0 0; border: 0; background: none; color: var(--encre); font: 800 17px var(--f-texte); }
+.sorts-fermer svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.sorts-fiche-carte { justify-self: center; width: min(58vw, 236px); rotate: -2deg; }
+.sorts-fiche-carte .gi-carte .c-cadre { box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35), 0 14px 22px -10px rgba(0, 0, 0, 0.45); }
+.sorts-liste { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.sorts-liste button { width: 100%; min-height: 56px; display: flex; align-items: center; gap: 12px; padding: 8px 14px; border: var(--trait) solid var(--encre); background: var(--case); color: var(--encre); font: 800 19px/1.1 var(--f-texte); text-align: left; }
+.sorts-liste .coche { margin-left: auto; width: 26px; height: 26px; flex: none; visibility: hidden; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.sorts-liste button[aria-pressed='true'] { background: var(--encre); color: var(--case); }
+.sorts-liste button[aria-pressed='true'] .coche { visibility: visible; }
+@media (hover: hover) { .sorts-liste button:hover:not([aria-pressed='true']) { background: var(--case-2); } }
+.sorts-mes-cartes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 10px; margin: 0; padding: 0; list-style: none; }
+.sorts-mes-cartes button { width: 100%; display: grid; align-content: start; gap: 5px; padding: 4px; border: 0; border-radius: 6px; background: none; color: var(--encre); text-align: center; font: 700 14px/1.15 var(--f-texte); overflow-wrap: break-word; hyphens: auto; text-wrap: balance; }
+.sorts-mes-cartes button[aria-pressed='true'] { background: var(--encre); color: var(--case); }
+.sorts-mes-cartes .gi-carte { color: var(--encre); }
+@media (hover: hover) { .sorts-mes-cartes button:hover:not([aria-pressed='true']) { background: var(--case-2); } }
+.sorts-emission { display: flex; gap: 12px; align-items: flex-start; font: 600 15px/1.35 var(--f-texte); }
+.sorts-emission input { width: 24px; height: 24px; flex: none; accent-color: var(--encre); }
+.sorts-pied { position: fixed; z-index: 41; left: 0; right: 0; bottom: 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--papier); border-top: var(--trait) solid var(--encre); }
+.sorts-agir { display: block; width: 100%; max-width: 448px; margin: 0 auto; min-height: 60px; }
+.sorts-agir:disabled { opacity: 1; cursor: default; background: var(--case) radial-gradient(var(--trame) 0.9px, transparent 1.1px) 0 0 / 5px 5px; color: var(--encre-2); font: 800 18px/1.15 var(--f-texte); letter-spacing: 0; }
+
+/* ---------- Cinématique du lancer (au-dessus de l'app) ---------- */
+.lancer { position: fixed; inset: 0; z-index: 50; overflow: hidden; cursor: pointer; touch-action: none; }
+.lancer-nuit { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 42%, #18264a 0, #0d1120 46%, #050608 92%); opacity: 0; }
+.lancer-lignes { position: absolute; inset: 0; opacity: 0; }
+.lancer-lignes .gi-concentration { inset: -30%; }
+.lancer-lignes path { fill: #dfe8ff; }
+.lancer-toile { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+/* Le cri : le nom du sort, puis « ON ! », frappés l'un sous l'autre. */
+.lancer-cri { position: absolute; left: 0; right: 0; top: max(14px, calc(50% - 44vh)); display: grid; justify-items: center; pointer-events: none; }
+.lancer-cri.centre { top: 50%; translate: 0 -50%; }
+.lancer-cri span { display: block; font: 400 var(--taille, 96px)/0.92 var(--f-titre); letter-spacing: -0.03em; white-space: nowrap; color: #fff; -webkit-text-stroke: 3px #8fb2ff; paint-order: stroke fill; opacity: 0; }
+.lancer-cri .on { font-size: min(24vw, 112px); color: #8fb2ff; -webkit-text-stroke: 3px #fff; rotate: -6deg; }
+.lancer-cri.creux span { color: transparent; -webkit-text-stroke: 3px rgba(233, 236, 242, 0.6); }
+.lancer-vise { position: absolute; left: 50%; translate: -50% 0; top: calc(50% + min(36vw, 170px) * 0.7 + 20px); font: 400 19px/1 var(--f-jeu); color: var(--nuit); background: #f6f6f2; padding: 6px 10px; white-space: nowrap; opacity: 0; pointer-events: none; }
+.lancer-flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+.lancer-scene { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+.lancer-scene > * { grid-area: 1 / 1; }
+.lancer-vol { width: min(52vw, 240px, calc((100dvh - 330px) * 63 / 88)); perspective: 1300px; opacity: 0; will-change: transform; }
+.lancer-retourne { position: relative; transform-style: preserve-3d; }
+.lancer-retourne > .gi-carte { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.lancer-retourne > .dos { position: absolute; inset: 0; transform: rotateY(180deg); }
+/* Ombre portée en box-shadow : un filtre drop-shadow se recalcule à chaque image pendant le vol (lent sur téléphone). */
+.lancer-vol .gi-carte:not(.dos) .c-cadre { box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35), 0 18px 30px rgba(0, 0, 0, 0.55); }
+/* La carte qui s'embrase : un voile blanc bleuté posé dessus (pas de filtre sur un élément qui bouge). */
+.lancer-embrase { position: absolute; inset: -2px; border-radius: 12px; background: radial-gradient(closest-side, #fff 0, #e7efff 45%, #a9c3ff 100%); opacity: 0; pointer-events: none; }
+.lancer-orbe { position: absolute; left: 0; top: 0; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: radial-gradient(closest-side, #fff 0, #fff 22%, #cfe0ff 40%, rgba(120, 160, 255, 0.55) 62%, rgba(80, 120, 255, 0) 100%); opacity: 0; pointer-events: none; will-change: transform; }
+.lancer-donnee { position: absolute; left: 0; top: 0; width: 120px; opacity: 0; pointer-events: none; will-change: transform; }
+/* Mur défensif de la cible : une coque d'alvéoles qui encaisse et se brise. */
+.lancer-mur { position: absolute; left: 50%; top: 42%; width: min(92vw, 420px); aspect-ratio: 1; translate: -50% -50%; opacity: 0; pointer-events: none; }
+.lancer-mur svg { width: 100%; height: 100%; overflow: visible; }
+/* Gel : le givre gagne les coins de l'écran. */
+.lancer-givre { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+.lancer-givre svg { position: absolute; width: 54vmin; height: 54vmin; }
+.lancer-givre path { fill: none; stroke: #dff0ff; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
+.lancer-givre .hg { left: 0; top: 0; }
+.lancer-givre .hd { right: 0; top: 0; transform: scaleX(-1); }
+.lancer-givre .bg { left: 0; bottom: 0; transform: scaleY(-1); }
+.lancer-givre .bd { right: 0; bottom: 0; transform: scale(-1, -1); }
+/* La boîte du jeu ne prend jamais le toucher : elle couvrirait les boutons de la vision (retour de Sivraj, 2026-10-11). */
+.lancer-dialogue { position: absolute; left: 50%; bottom: max(18px, env(safe-area-inset-bottom, 0px)); width: min(calc(100% - 24px), 440px); translate: -50% 0; opacity: 0; pointer-events: none; }
+.lancer-dialogue .a-texte { min-height: 2.9em; }
+.lancer-dialogue .a-indice { margin: 0; font: 600 14px/1.3 var(--f-texte); color: #c3c6cc; opacity: 0; transition: opacity 0.3s; }
+.lancer-dialogue .a-indice.visible { opacity: 1; }
+.lancer-passer { position: absolute; bottom: max(16px, env(safe-area-inset-bottom, 0px)); left: 50%; translate: -50% 0; font: 600 13px var(--f-texte); color: rgba(235, 238, 242, 0.75); white-space: nowrap; opacity: 0; transition: opacity 0.25s; pointer-events: none; }
+.lancer.intro .lancer-passer { opacity: 1; transition-delay: 0.6s; }
+/* Vision : le Book de l'autre joueur, dans la nuit (Voyance, Clairvoyance) */
+.lancer-vision { position: absolute; inset: 0; z-index: 3; display: grid; align-content: center; justify-items: center; gap: 10px; padding: max(12px, env(safe-area-inset-top, 0px)) 16px max(14px, env(safe-area-inset-bottom, 0px)); cursor: default; animation: lancer-vision 0.36s cubic-bezier(.16,1,.3,1) both; }
+@keyframes lancer-vision { from { opacity: 0; transform: scale(0.92); } }
+.lancer-vision-titre { margin: 0; font: 400 16px/1 var(--f-jeu); background: #f6f6f2; color: var(--nuit); padding: 5px 9px; }
+.lancer-vision-page { width: min(88vw, 380px, calc((100dvh - 236px) * 0.52)); box-shadow: inset 16px 0 16px -12px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(143, 178, 255, 0.5), 0 0 40px rgba(143, 178, 255, 0.35); }
+.lancer-vision-page button.poche { cursor: pointer; }
+.lancer-vision-page button.poche[aria-pressed='true'] { outline: 3px solid #8fb2ff; outline-offset: 1px; }
+.lancer-vision-legende { margin: 0; min-height: 2.6em; max-width: 380px; text-align: center; font: 400 16px/1.3 var(--f-jeu); color: #e9ecf2; }
+.lancer-vision-bas { display: flex; align-items: center; gap: 10px; }
+.lancer-vision-bas button { min-height: 48px; min-width: 48px; display: grid; place-items: center; border: 2px solid #f6f6f2; background: transparent; color: #f6f6f2; font: 400 17px/1 var(--f-jeu); padding: 0 12px; }
+.lancer-vision-bas button svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.lancer-vision-bas button:disabled { opacity: 0.3; }
+.lancer-vision-bas span { min-width: 52px; text-align: center; font: 400 16px var(--f-jeu); color: #c3c6cc; }
+.lancer-vision-bas .fermer { background: #f6f6f2; color: var(--nuit); margin-left: 8px; }
+
 /* ---------- Écrans pas encore refaits (blocs 1b et 1c) : habillage minimal dans le nouveau thème ---------- */
 .ancien { display: grid; gap: 12px; padding-block: 12px; }
 .ancien .carte { background: var(--case); border: var(--trait) solid var(--encre); padding: 16px; display: grid; gap: 10px; }

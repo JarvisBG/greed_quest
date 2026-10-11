@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LivreRecu } from './livre';
-import { cartesUtilisables, corpsSort, doublons, etapes, pouvoirDispo, resumeSort, sortsDisponibles, texteSortRecu } from './sorts';
+import { cartesUtilisables, corpsSort, doublons, enPhrase, etapes, familles, issueLancer, pagesVision, pouvoirDispo, resumeSort, sortsDisponibles, texteSortRecu } from './sorts';
 
 const carte = (itemId: string, o: Partial<{ designe: boolean; engagee: boolean; apparence: 'normale' | 'grisee'; nom: string }> = {}) => ({
   etat: 'plein' as const,
@@ -100,5 +100,51 @@ describe('sorts côté app (RG-10)', () => {
     expect(texteSortRecu({ lanceur: null, sort: 'regard', resultat: 'reussi' })).toBe('Quelqu’un a consulté ton Book.');
     expect(corpsSort({ sort: 'regard', itemId: 'g', cibleId: 'k' }, { lat: 1, lng: 2, precisionM: 5 })).toEqual({ sort: 'regard', itemId: 'g', cibleId: 'k', position: { lat: 1, lng: 2, precisionM: 5 } });
     expect(etapes('regard')).toEqual(['cible']);
+  });
+
+  it('page ⑧ : la main en deux familles, offensifs d’abord (RG-10.3)', () => {
+    const { offensifs, autres } = familles(sortsDisponibles(livre));
+    expect(offensifs.map((d) => d.sort)).toEqual(['vol']);
+    expect(autres.map((d) => d.sort)).toEqual(['radar', 'barriere']);
+  });
+
+  it('page ⑧ : l’article du nom passe en minuscule dans la phrase', () => {
+    expect(enPhrase('Le diamant arc-en-ciel')).toBe('le diamant arc-en-ciel');
+    expect(enPhrase("L'oreiller de l'esprit joueur")).toBe("l'oreiller de l'esprit joueur");
+    expect(enPhrase('Les ciseaux coupe-liens')).toBe('les ciseaux coupe-liens');
+    expect(enPhrase('Toraemon')).toBe('Toraemon');
+    expect(enPhrase('Lettre')).toBe('Lettre');
+    const r = { sort: 'echange_force' as const, resultat: 'reussi' as const, recu: { itemId: 'x', nom: "L'oreiller" } };
+    expect(resumeSort(r, 'Kirua', () => '', 'Toraemon')).toBe("Échange forcé avec Kirua : tu lui donnes Toraemon et tu reçois l'oreiller.");
+  });
+
+  it('page ⑧ : ce que la comète rapporte selon la réponse du serveur', () => {
+    expect(issueLancer({ sort: 'vol', resultat: 'reussi', recu: { itemId: 'x', nom: 'Couronne' } })).toBe('butin');
+    expect(issueLancer({ sort: 'vol', resultat: 'sans_effet' })).toBe('texte');
+    expect(issueLancer({ sort: 'pickpocket', resultat: 'bloque', protection: 'renforcement' })).toBe('mur');
+    expect(issueLancer({ sort: 'gel', resultat: 'reussi' })).toBe('gel');
+    expect(issueLancer({ sort: 'clairvoyance', resultat: 'reussi', cartes: [] })).toBe('vision');
+    expect(issueLancer({ sort: 'duplication', resultat: 'reussi', copie: { itemId: 'c', carteId: 'x', contrefacon: false } })).toBe('copie');
+    expect(issueLancer({ sort: 'radar', resultat: 'reussi', zone: 'Forêt' })).toBe('texte');
+  });
+
+  it('page ⑧ : la vision montre le Book de la cible par pages de 10', () => {
+    const cartes = [
+      { carteId: 'a', numero: 1, nom: 'Couronne', rang: 'SS', n: 1, contrefacon: false },
+      { carteId: 'b', numero: 4, nom: 'Boussole', rang: 'A', n: 2, contrefacon: true },
+    ];
+    // Voyance : les 15 emplacements libres, cartes répétées selon leur nombre.
+    const libres = pagesVision({ sort: 'regard', resultat: 'reussi', cartes }, livre, 15);
+    expect(libres.map((p) => p.length)).toEqual([10, 5]);
+    expect(libres[0]!.slice(0, 4).map((x) => x.type)).toEqual(['carte', 'carte', 'carte', 'vide']);
+    // Clairvoyance : les emplacements fixes du catalogue ; une carte absente garde son numéro en creux.
+    const fixes = pagesVision({ sort: 'clairvoyance', resultat: 'reussi', cartes: [{ carteId: 'z', numero: 3, nom: 'X', rang: 'B', n: 1, contrefacon: false }] }, livre, 15);
+    expect(fixes).toEqual([
+      [
+        { type: 'absente', numero: 1, rang: 'C' },
+        { type: 'absente', numero: 1, rang: 'C' },
+        { type: 'carte', numero: 3, nom: 'X', rang: 'B', n: 1, contrefacon: false },
+      ],
+    ]);
   });
 });

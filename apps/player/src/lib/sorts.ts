@@ -1,8 +1,8 @@
 // Sorts (RG-10) côté app : ce que le joueur peut lancer, et les phrases affichées pour les résultats
 // et les alertes reçues (RG-10.5). Le serveur décide de tout (P1) ; ici on ne fait que présenter.
-import type { NenType, PositionInput, SpellType } from '@gq/shared';
+import type { NenType, PositionInput, Rank, SpellType } from '@gq/shared';
 import { SORTS } from './format';
-import { contenu, type EmplacementCarte, type LivreRecu } from './livre';
+import { contenu, type Carte, type EmplacementCarte, type LivreRecu } from './livre';
 
 /** Ordre d'affichage : offensifs, puis information, puis Livre. */
 const ORDRE: SpellType[] = ['vol', 'pickpocket', 'echange_force', 'gel', 'accompagnement', 'radar', 'regard', 'clairvoyance', 'revelation', 'retour', 'duplication', 'analyse', 'barriere'];
@@ -50,7 +50,8 @@ export interface ReponseSort {
   sort: SpellType;
   resultat: 'reussi' | 'bloque' | 'sans_effet';
   protection?: 'barriere' | 'renforcement' | null;
-  recu?: { itemId: string; carteId?: string; nom?: string } | null;
+  /** Carte prise (Vol, Pickpocket, Échange) : complète, pour la retourner chez le lanceur (page ⑧). */
+  recu?: ({ itemId: string; carteId?: string; nom?: string } & Partial<Carte>) | null;
   zone?: string | null;
   copie?: { itemId: string; carteId: string; contrefacon: boolean };
   contrefacons?: string[];
@@ -64,15 +65,23 @@ export interface ReponseSort {
 
 const PROTECTION = { barriere: 'son Mur défensif', renforcement: 'son Renforcement' } as const;
 
-/** Phrase de résultat pour le lanceur. `cible` : pseudo visé ; `noms` : nom des cartes par itemId (Analyse). */
-export function resumeSort(r: ReponseSort, cible: string | null, noms: (itemId: string) => string): string {
+/** « Tu as volé le diamant… » : l'article du nom de carte passe en minuscule au milieu d'une phrase. */
+export const enPhrase = (nom: string) => nom.replace(/^(Les|Le|La)(?=\s)|^L['’]/, (m) => m.toLowerCase());
+
+/**
+ * Phrase de résultat pour le lanceur. `cible` : pseudo visé ; `noms` : nom des cartes par itemId (Analyse) ;
+ * `donnee` : nom de la carte donnée (Échange).
+ */
+export function resumeSort(r: ReponseSort, cible: string | null, noms: (itemId: string) => string, donnee?: string): string {
   const qui = cible ?? 'La cible';
+  const prise = r.recu?.nom ? enPhrase(r.recu.nom) : 'une carte';
   if (r.resultat === 'bloque') return `${qui} était protégé : sort bloqué par ${r.protection ? PROTECTION[r.protection] : 'une protection'}.`;
   switch (r.sort) {
     case 'vol':
-      return r.resultat === 'reussi' ? `Tu as volé ${r.recu?.nom ?? 'une carte'} à ${qui}.` : `${qui} n’avait rien à voler.`;
+      return r.resultat === 'reussi' ? `Tu as volé ${prise} à ${qui}.` : `${qui} n’avait rien à voler.`;
     case 'echange_force':
-      return r.resultat === 'reussi' ? `Échange forcé avec ${qui} : tu reçois ${r.recu?.nom ?? 'une carte'}.` : `${qui} n’avait rien à échanger.`;
+      if (r.resultat !== 'reussi') return `${qui} n’avait rien à échanger.`;
+      return donnee ? `Échange forcé avec ${qui} : tu lui donnes ${enPhrase(donnee)} et tu reçois ${prise}.` : `Échange forcé avec ${qui} : tu reçois ${prise}.`;
     case 'gel':
       return `${qui} est gelé : plus de scan pendant 3 min.`;
     case 'radar':
@@ -90,7 +99,7 @@ export function resumeSort(r: ReponseSort, cible: string | null, noms: (itemId: 
     case 'barriere':
       return SORTS.barriere.effet;
     case 'pickpocket':
-      return r.resultat === 'reussi' ? `Tu as pris ${r.recu?.nom ?? 'une carte'} à ${qui}.` : `${qui} n’avait rien dans ses emplacements libres.`;
+      return r.resultat === 'reussi' ? `Tu as pris ${prise} à ${qui}.` : `${qui} n’avait rien dans ses emplacements libres.`;
     case 'accompagnement':
       return `${qui} est gelé 3 min : suis sa position.`;
     case 'retour':
@@ -177,4 +186,64 @@ export function etapes(sort: SpellType): ('carte' | 'page' | 'cible' | 'ville')[
   if (sort === 'analyse') return ['page'];
   if (VISE_JOUEUR.includes(sort)) return ['cible'];
   return [];
+}
+
+/** Page ⑧ : la main de sorts en deux familles, les offensifs (soumis au délai, RG-10.3) puis les autres. */
+export function familles(dispo: SortDisponible[]): { offensifs: SortDisponible[]; autres: SortDisponible[] } {
+  return { offensifs: dispo.filter((d) => OFFENSIF.includes(d.sort)), autres: dispo.filter((d) => !OFFENSIF.includes(d.sort)) };
+}
+
+/**
+ * Page ⑧ : ce que la comète rapporte. `butin` = la carte prise revient et se retourne ; `mur` = elle se brise
+ * sur la protection de la cible ; `gel` = le givre ; `vision` = le Book de la cible (Voyance, Clairvoyance) ;
+ * `copie` = la carte choisie se dédouble (Mimétisme) ; `texte` = la boîte du jeu seule.
+ */
+export type IssueLancer = 'butin' | 'mur' | 'gel' | 'vision' | 'copie' | 'texte';
+
+export function issueLancer(r: ReponseSort): IssueLancer {
+  if (r.resultat === 'bloque') return 'mur';
+  if (r.resultat !== 'reussi') return 'texte';
+  if (r.sort === 'gel') return 'gel';
+  if (r.sort === 'regard' || r.sort === 'clairvoyance') return 'vision';
+  if (r.sort === 'duplication' && r.copie) return 'copie';
+  if ((r.sort === 'vol' || r.sort === 'pickpocket' || r.sort === 'echange_force') && r.recu?.nom) return 'butin';
+  return 'texte';
+}
+
+/** Une pochette du Book de la cible, telle que Voyance ou Clairvoyance la montre. */
+export type PocheVision =
+  | { type: 'vide' }
+  | { type: 'absente'; numero: number | null; rang: Rank | null }
+  | { type: 'carte'; numero: number; nom: string; rang: Rank; n: number; contrefacon: boolean };
+
+/**
+ * Pages de la vision, par 10 pochettes comme le Book (RG-8.5). Voyance : les emplacements libres de la cible
+ * (`libres` places, cartes répétées selon leur nombre). Clairvoyance : ses emplacements fixes, numérotés d'après
+ * le catalogue que le Book du lanceur connaît ; une carte qu'il n'a pas laisse son numéro en creux.
+ */
+export function pagesVision(r: ReponseSort, livre: LivreRecu, libres: number): PocheVision[][] {
+  const cartes = r.cartes ?? [];
+  const parDix = <T,>(l: T[]) => Array.from({ length: Math.max(1, Math.ceil(l.length / 10)) }, (_, i) => l.slice(i * 10, i * 10 + 10));
+  if (r.sort === 'regard') {
+    const poches: PocheVision[] = cartes.flatMap((c) =>
+      Array.from({ length: c.n }, () => ({ type: 'carte' as const, numero: c.numero, nom: c.nom, rang: c.rang as Rank, n: c.n, contrefacon: c.contrefacon })),
+    );
+    while (poches.length < libres) poches.push({ type: 'vide' });
+    return parDix(poches);
+  }
+  const chez = new Map(cartes.map((c) => [c.numero, c]));
+  return livre.pages
+    .filter((page) => page.some((e) => e.designe))
+    .map((page) =>
+      page
+        .filter((e) => e.designe)
+        .map((e): PocheVision => {
+          const fiche = e.etat === 'plein' ? (e.kind === 'carte' ? e : null) : e.designe ? e.carte : null;
+          const numero = fiche?.numero ?? null;
+          const c = numero !== null ? chez.get(numero) : undefined;
+          return c
+            ? { type: 'carte', numero: c.numero, nom: c.nom, rang: c.rang as Rank, n: c.n, contrefacon: c.contrefacon }
+            : { type: 'absente', numero, rang: fiche?.rang ?? null };
+        }),
+    );
 }

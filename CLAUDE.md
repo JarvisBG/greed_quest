@@ -20,7 +20,7 @@ Monorepo TypeScript (pnpm workspaces). Poste de dev : Windows 10, Node 24.
 - `apps/tracker` — écran géant, lecture seule (React + Vite).
 
 Ordre de construction : engine (**fait**) → api (**fait**) → player (**fait**) → staff → tracker.
-En cours : **refonte visuelle de l'app joueur**, page par page, sur la branche `refonte-joueur` (skill impeccable, direction « planche de manga », cinématiques aux grands moments). Bloc 1a validé (① à ⑦, ⑦ Book le 2026-10-11) ; prochain : bloc 1b (sorts, échanges), sur feu vert de Sivraj. Détail et méthode : `docs/PROGRESS.md`, « Reprise de session ».
+En cours : **refonte visuelle de l'app joueur**, page par page, sur la branche `refonte-joueur` (skill impeccable, direction « planche de manga », cinématiques aux grands moments). Bloc 1a validé (① à ⑦) ; bloc 1b en cours : ⑧ sorts validée et portée le 2026-10-11 ; prochaine : ⑨ sorts d'information, sur feu vert de Sivraj. Détail et méthode : `docs/PROGRESS.md`, « Reprise de session ».
 
 Commandes (racine) : `pnpm test` · `pnpm typecheck` · `pnpm --filter @gq/engine test` · `pnpm --filter @gq/api dev` (API, PGlite) · `pnpm --filter @gq/api seed` · `pnpm --filter @gq/player dev` (app joueur, port 5173, relaie `/parties`, `/admin`, `/socket.io` vers l'API locale).
 Packages internes : `@gq/engine`, `@gq/shared` (exportent `src/index.ts` directement, pas de build).

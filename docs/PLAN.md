@@ -58,7 +58,7 @@ Périmètre exact et direction artistique : `docs/PROMPT_INTERFACES.md` (§ 4.1)
 
 ## Phase 5 bis — Refonte de l'app joueur (`apps/player`)
 - [ ] 5.2 Présentation refaite avec `@gq/ui` (logique et tests inchangés) + écrans manquants : objets, recharge du Nen, Spécialisation, Regard, Texture Surprise SS, arène, Clear, abandon, fin de partie, sanctions (`docs/PROMPT_INTERFACES.md` § 4.3)
-  - Avancement (branche `refonte-joueur`, détail dans `docs/PROGRESS.md`) : ① entrée / inscription / kit, ② Examen, ③ test de Nen, ④ accueil (+ carte de l'île), ⑤ licence, ⑥ scanner (+ cinématique du tirage), ⑦ Book (+ invocation, page Objets) validés ; à faire : blocs 1b, 1c.
+  - Avancement (branche `refonte-joueur`, détail dans `docs/PROGRESS.md`) : ① entrée / inscription / kit, ② Examen, ③ test de Nen, ④ accueil (+ carte de l'île), ⑤ licence, ⑥ scanner (+ cinématique du tirage), ⑦ Book (+ invocation, page Objets), ⑧ sorts (+ cinématique du lancer, vision du Book de la cible) validés ; à faire : bloc 1b (⑨ sorts d'information, ⑩ pouvoirs de Nen, ⑪ sort reçu, ⑫ échanges), bloc 1c.
 
 ## Phase 6 — Terrain
 - [ ] 6.1 Déploiement (hébergement api + PostgreSQL)

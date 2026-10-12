@@ -57,7 +57,7 @@ Seul le GM avance l'état, sauf passage auto en phase finale et fin du temps. Un
 |---|---|
 | Renforcement | Annule le 1er sort offensif reçu (1×/partie) — *amendé : se recharge, 30 min* |
 | Émission | 1 sort offensif hors portée (1×/partie) — *amendé : se recharge, 40 min* |
-| Transformation | Texture Surprise : déguise 1 doublon en carte de même rang → contrefaçon (toutes les 20 min). *Amendement 2026-10-09 : un doublon S peut aussi imiter la SS (unique au catalogue), pour le bluff.* |
+| Transformation | Texture Surprise : déguise 1 doublon en carte de même rang → contrefaçon (toutes les 20 min). *Amendement 2026-10-09 : un doublon S peut aussi imiter la SS (unique au catalogue), pour le bluff.* *Décision 2026-10-12 (Sivraj) : sur un doublon qui est une contrefaçon ignorée du joueur, le déguisement échoue comme l'Alchimie : pouvoir utilisé, la carte reste et devient démasquée pour lui (RG-8.9).* |
 | Matérialisation | +1 tirage bonus ≤ rang C à chaque checkpoint PNJ réussi — *amendé : + 1 tirage bonus de réserve toutes les 40 min* |
 | Manipulation | 1 échange forcé gratuit (1×/partie) — *amendé : se recharge, 40 min* |
 | Spécialisation | Pouvoir unique secret tiré au sort — *amendé : Alchimie, Bandit, Zetsu ou Fortune, choisi par la question secrète de Wing, recharge 40 min* |

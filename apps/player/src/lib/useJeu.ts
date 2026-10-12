@@ -40,6 +40,8 @@ export interface Moi {
   delais: { offensif: number; transformation: number; gel: number; pouvoir: number | null; reserve: number | null; specialisation: number | null };
   /** Zetsu restant (ms) et Fortune armée. */
   specialisation: { zetsu: number; fortuneArmee: boolean };
+  /** Page ⑩ : durées complètes des recharges (ms, RG-14), pour la jauge ; null = sans objet. */
+  recharges: { pouvoir: number | null; transformation: number; reserve: number | null; specialisation: number | null; zetsu: number | null };
   /** Amendements 2026-10-10 : villes déjà visitées (Retour), visite à distance en cours, Accompagnement subi (ms restantes). */
   villesVisitees: string[];
   retour: { ville: 'masadora' | 'antokiba'; resteMs: number } | null;
@@ -136,12 +138,13 @@ export function useJeu() {
           throw e;
         }
       }
-      type Recu = Pick<Moi, 'delais' | 'specialisation' | 'villesVisitees' | 'retour' | 'accompagne'>;
+      type Recu = Pick<Moi, 'delais' | 'specialisation' | 'recharges' | 'villesVisitees' | 'retour' | 'accompagne'>;
       const m = await api.get<{ joueur: Omit<Moi, keyof Recu | 'recuA'>; licenceSecret: string } & Recu>(`/parties/${partieId}/moi`);
       setMoi({
         ...m.joueur,
         delais: m.delais,
         specialisation: m.specialisation,
+        recharges: m.recharges,
         villesVisitees: m.villesVisitees ?? [],
         retour: m.retour ?? null,
         accompagne: m.accompagne ?? 0,

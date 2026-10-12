@@ -17,6 +17,8 @@ import { Raid } from './ecrans/Raid';
 import { Scan } from './ecrans/scan/Scan';
 import { Tirage, useTirages } from './ecrans/scan/Tirage';
 import { ADistance } from './ecrans/sorts/ADistance';
+import { BandeauZetsu } from './ecrans/sorts/BandeauZetsu';
+import { PieceFortune } from './ecrans/sorts/CaseNen';
 import { Sorts } from './ecrans/sorts/Sorts';
 import { api, session } from './lib/client';
 import { creerEveil, eveilDisponible, preferenceEveil } from './lib/eveil';
@@ -129,6 +131,7 @@ export function App() {
         )}
       </header>
       )}
+      {enJeu && ecran === 'accueil' && <BandeauZetsu moi={moi} />}
 
       {jeu.alerte && (
         <Annonce
@@ -328,6 +331,11 @@ export function App() {
               <o.icone />
               {o.nom}
               {o.id === 'echanges' && jeu.echange && <span className="point" aria-label="échange en cours" />}
+              {o.id === 'scan' && moi?.specialisation.fortuneArmee && (
+                <span className="onglet-fortune" role="img" aria-label="Fortune armée : un gain de plus">
+                  <PieceFortune plus />
+                </span>
+              )}
             </button>
           ))}
         </nav>

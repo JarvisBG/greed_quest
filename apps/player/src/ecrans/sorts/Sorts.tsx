@@ -4,21 +4,28 @@
 // tamponné « PASSIF ». Toucher une carte ouvre la fiche de lancement (FicheSort), puis la cinématique (Lancer).
 // Page ⑨ (validée le 2026-10-12) : après un Accompagnement réussi, le suivi s'ouvre (SuiviAccompagnement) ; tant
 // qu'il dure, un bandeau en haut de la page le rouvre. Après Retour, la ville s'ouvre (onVille).
-// Reste de la version précédente, à refaire avec la page ⑩ : les pouvoirs de Nen (Manipulation, Texture Surprise).
-import type { PositionInput, SpellType } from '@gq/shared';
+// Page ⑩ (validée le 2026-10-12, docs/prototype/pouvoirs-nen.html) : la case du Nen en tête de page (CaseNen) ;
+// Émission charge le prochain sort offensif touché ; Texture Surprise, Alchimie, L'épée du vol et l'Échange forcé
+// passent par la fiche en deux temps (FichePouvoir) ; Zetsu et Fortune partent tout de suite ; puis la cinématique
+// « aura puis effet » (Pouvoir).
+import type { PositionInput } from '@gq/shared';
 import { Carte } from '@gq/ui';
 import { useEffect, useState } from 'react';
 import { resteSuivi, type SuiviCible } from '../../lib/accompagnement';
 import { construirePlan } from '../../lib/carte';
-import { formatDuree, NENS, numeroSort, SORTS } from '../../lib/format';
+import { numeroSort, SORTS } from '../../lib/format';
 import { useLivre } from '../../lib/useLivre';
-import { familles, pouvoirDispo, sortsDisponibles, type ChoixSort, type ReponseSort, type SortDisponible } from '../../lib/sorts';
+import { AVEC_FICHE, type ClePouvoir } from '../../lib/pouvoir';
+import { api } from '../../lib/client';
+import { familles, sortsDisponibles, type ChoixSort, type ReponseSort, type SortDisponible } from '../../lib/sorts';
 import type { Moi } from '../../lib/useJeu';
 import { useCarte } from '../carte/CaseCarte';
 import { FicheSort, minSec } from './FicheSort';
 import { Lancer, type DemandeLancer, type FinLancer } from './Lancer';
+import { CaseNen } from './CaseNen';
+import { FichePouvoir, type PouvoirAvecFiche } from './FichePouvoir';
+import { Pouvoir, type DemandePouvoir, type IssuePouvoir } from './Pouvoir';
 import { SuiviAccompagnement } from './SuiviAccompagnement';
-import { TextureSurprise } from './TextureSurprise';
 
 interface Props {
   partieId: string;
@@ -51,38 +58,41 @@ export function Sorts(p: Props) {
   const { livre, erreur } = useLivre(p.partieId, p.version);
   const [fiche, setFiche] = useState<{ choix: ChoixSort; origine: DOMRect | null } | null>(null);
   const [lancer, setLancer] = useState<{ n: number; demande: DemandeLancer } | null>(null);
-  const [transfo, setTransfo] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [emission, setEmission] = useState(false);
+  const [fichePouvoir, setFichePouvoir] = useState<PouvoirAvecFiche | null>(null);
+  const [pouvoir, setPouvoir] = useState<{ n: number; demande: DemandePouvoir } | null>(null);
   const [suiviOuvert, setSuiviOuvert] = useState(false);
   const carte = useCarte(p.partieId, p.version);
   const offensifDans = useRestant(p.moi.delais.offensif, p.moi.recuA);
   const suiviDans = useRestant(p.suiviCible?.resteMs ?? 0, p.suiviCible?.recuA ?? 0);
-  const transfoDans = useRestant(p.moi.delais.transformation, p.moi.recuA);
 
   if (!livre) return <p className="sorts-attente">{erreur ?? 'Chargement…'}</p>;
-  if (transfo)
-    return (
-      <div className="ancien">
-        <TextureSurprise
-          partieId={p.partieId}
-          livre={livre}
-          onAnnuler={() => setTransfo(false)}
-          onFini={(t) => {
-            setTransfo(false);
-            setNote(t);
-            p.apresAction();
-          }}
-        />
-      </div>
-    );
 
   const dispo = sortsDisponibles(livre);
   const { offensifs, autres } = familles(dispo);
   const total = dispo.reduce((t, d) => t + d.itemIds.length, 0);
-  const ecoule = Date.now() - p.moi.recuA;
-  const emission = pouvoirDispo(p.moi.nen, p.moi.delais.pouvoir, ecoule, 'emission');
-  const manipulation = pouvoirDispo(p.moi.nen, p.moi.delais.pouvoir, ecoule, 'manipulation');
   const ouvrir = (choix: ChoixSort, el: Element | null) => setFiche({ choix, origine: el?.querySelector('.sorts-tas')?.getBoundingClientRect() ?? null });
+  // Page ⑩ : la case du Nen. Zetsu et Fortune partent tout de suite (la requête part au toucher, P1).
+  const lancerPouvoir = (demande: DemandePouvoir) => {
+    setFichePouvoir(null);
+    setPouvoir((x) => ({ n: (x?.n ?? 0) + 1, demande }));
+  };
+  const utiliser = (cle: ClePouvoir) => {
+    if (cle === 'emission') return setEmission(true);
+    if ((AVEC_FICHE as readonly string[]).includes(cle)) return setFichePouvoir(cle as PouvoirAvecFiche);
+    if ((cle === 'zetsu' || cle === 'fortune') && p.moi.nen) {
+      const reponse = api.post(`/parties/${p.partieId}/specialisation`, { pouvoir: cle }).then(
+        (): IssuePouvoir => ({ phrase: '' }),
+        (e: unknown): IssuePouvoir => ({ phrase: '', refus: e instanceof Error ? e.message : String(e) }),
+      );
+      lancerPouvoir({ nen: p.moi.nen, scene: cle === 'zetsu' ? { cle, dureeMs: p.moi.recharges.zetsu } : { cle }, reponse });
+    }
+  };
+  const finPouvoir = (i: IssuePouvoir | null) => {
+    setPouvoir(null);
+    if (i) p.apresAction();
+  };
   // La nuit se lève : sous elle, la fiche est déjà fermée et, après Accompagnement, le suivi déjà ouvert.
   const rangement = (r: ReponseSort) => {
     setFiche(null);
@@ -106,9 +116,19 @@ export function Sorts(p: Props) {
     const passif = d.sort === 'barriere';
     const attend = offensifs.includes(d) && offensifDans > 0;
     const etat = passif ? ', passif' : attend ? ', en attente du délai' : '';
+    // Émission chargée : seuls les offensifs se touchent, et partent hors de portée.
+    const charge = emission && offensifs.includes(d);
     return (
       <li key={d.sort}>
-        <button className={`sorts-pochette${attend ? ' attend' : ''}${fiche?.choix.itemId === d.itemIds[0] ? ' part' : ''}`} aria-label={`${s.nom}${n > 1 ? `, ${n} exemplaires` : ''}${etat}`} onClick={(e) => ouvrir({ sort: d.sort, itemId: d.itemIds[0]! }, e.currentTarget)}>
+        <button
+          className={`sorts-pochette${attend ? ' attend' : ''}${charge ? ' charge' : ''}${fiche?.choix.itemId === d.itemIds[0] ? ' part' : ''}`}
+          aria-label={`${s.nom}${n > 1 ? `, ${n} exemplaires` : ''}${etat}${charge ? ', hors de portée' : ''}`}
+          disabled={emission && !charge}
+          onClick={(e) => {
+            ouvrir({ sort: d.sort, itemId: d.itemIds[0]!, ...(charge ? { emission: true } : {}) }, e.currentTarget);
+            setEmission(false);
+          }}
+        >
           <span className={`sorts-tas${n > 1 ? ' double' : ''}`}>
             {n > 1 && <Carte genre="sort" numero={numeroSort(s.numero)} nom={s.nom} />}
             <Carte genre="sort" numero={numeroSort(s.numero)} nom={s.nom} />
@@ -118,6 +138,7 @@ export function Sorts(p: Props) {
           <span className="sorts-nom">
             {s.nom}
             {passif && <span>s’active tout seul</span>}
+            {charge && <span>hors portée</span>}
           </span>
         </button>
       </li>
@@ -151,7 +172,7 @@ export function Sorts(p: Props) {
         </button>
       )}
 
-      {emission && <p className="sorts-aide">Émission : tu peux viser une fois un joueur hors de portée avec un sort offensif.</p>}
+      <CaseNen moi={p.moi} offensifDans={offensifDans} emission={emission} onUtiliser={utiliser} onAnnulerEmission={() => setEmission(false)} />
 
       {offensifs.length > 0 && (
         <section className="sorts-famille" aria-labelledby="sorts-off">
@@ -181,36 +202,6 @@ export function Sorts(p: Props) {
         </section>
       )}
 
-      {(manipulation || p.moi.nen === 'transformation') && (
-        <section className="sorts-famille" aria-labelledby="sorts-nen">
-          <div className="sorts-famille-tete">
-            <h2 id="sorts-nen">Pouvoir de Nen</h2>
-          </div>
-          {manipulation && (
-            <div className="sorts-case sorts-pouvoir">
-              <div>
-                <h3>Échange forcé gratuit</h3>
-                <p className="aide">{NENS.manipulation.passif}</p>
-              </div>
-              <button className="gi-btn-trait" disabled={offensifDans > 0} onClick={() => ouvrir({ sort: 'echange_force' as SpellType, itemId: null }, null)}>
-                Utiliser
-              </button>
-            </div>
-          )}
-          {p.moi.nen === 'transformation' && (
-            <div className="sorts-case sorts-pouvoir">
-              <div>
-                <h3>Texture Surprise</h3>
-                <p className="aide">{NENS.transformation.passif}</p>
-              </div>
-              <button className="gi-btn-trait" disabled={transfoDans > 0} onClick={() => setTransfo(true)}>
-                {transfoDans > 0 ? formatDuree(transfoDans) : 'Utiliser'}
-              </button>
-            </div>
-          )}
-        </section>
-      )}
-
       {fiche && (
         <FicheSort
           key={`${fiche.choix.sort}-${fiche.choix.itemId}`}
@@ -227,7 +218,11 @@ export function Sorts(p: Props) {
         />
       )}
       {suiviOuvert && p.suiviCible && <SuiviAccompagnement suivi={p.suiviCible} carte={carte} maPosition={p.positionCarte} onFermer={() => setSuiviOuvert(false)} />}
+      {fichePouvoir && p.moi.nen && (
+        <FichePouvoir partieId={p.partieId} nen={p.moi.nen} cle={fichePouvoir} livre={livre} positionAction={p.positionAction} onFermer={() => setFichePouvoir(null)} onLancer={lancerPouvoir} />
+      )}
       {lancer && <Lancer key={lancer.n} demande={lancer.demande} onRangement={rangement} onFini={finLancer} />}
+      {pouvoir && <Pouvoir key={pouvoir.n} demande={pouvoir.demande} onFini={finPouvoir} />}
     </div>
   );
 }

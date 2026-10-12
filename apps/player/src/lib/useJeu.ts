@@ -113,9 +113,14 @@ export function useJeu() {
   const [alerte, setAlerte] = useState<Alerte | null>(null);
   /** Session d'échange en cours (RG-11.1 amendé) et message de fin de la dernière. */
   const [echange, setEchange] = useState<VueEchange | null>(null);
-  const [finEchange, setFinEchange] = useState<string | null>(null);
+  /** Page ⑫ : échange conclu, rejoué en cinématique « TRADE ! » (parts telles qu'à la double validation). */
+  const [echangeConclu, setEchangeConclu] = useState<VueEchange | null>(null);
   const echangeRef = useRef<VueEchange | null>(null);
   echangeRef.current = echange;
+  /** Fin déjà traitée (l'évènement et la réponse à ma propre action arrivent tous les deux). */
+  const finVue = useRef<string | null>(null);
+  /** Je viens de refuser ou d'annuler : la phrase de fin le dit. */
+  const finParMoi = useRef(false);
   const [moi, setMoi] = useState<Moi | null>(null);
   /** Accompagnement lancé par ce joueur : position de sa cible pendant 3 min (amendement 2026-10-10). */
   const [suiviCible, setSuiviCible] = useState<SuiviCible | null>(null);
@@ -244,25 +249,7 @@ export function useJeu() {
       evenement: (nom, data) => {
         setVersion((v) => v + 1);
         if (nom === 'echange') {
-          const e = data as EvenementEchange;
-          if (termine(e.etat)) {
-            const avec = 'avec' in e ? e.avec.pseudo : echangeRef.current?.avec.pseudo ?? null;
-            const texte = messageFin(e.etat, avec);
-            setEchange(null);
-            setFinEchange(texte);
-            notifier(texte);
-            if (e.etat === 'conclu') void rafraichir();
-            return;
-          }
-          const vue = e as VueEchange;
-          if (vue.etat === 'invitation' && vue.invite && echangeRef.current?.id !== vue.id) {
-            const texte = `${vue.avec.pseudo} te propose un échange`;
-            notifier(texte);
-            setAlerte({ n: Date.now(), genre: 'info', qui: 'Échange', texte, voir: 'echanges' });
-            navigator.vibrate?.(200);
-          }
-          setFinEchange(null);
-          setEchange(vue);
+          recevoirEchange(data as EvenementEchange);
           return;
         }
         if (nom === 'sort_recu') {
@@ -308,11 +295,40 @@ export function useJeu() {
     };
   }, [sess]);
 
+  /**
+   * Page ⑫ : une session d'échange change (évènement `echange`, ou réponse à ma propre action). Conclue : la
+   * cinématique « TRADE ! » la rejoue ; refusée, annulée, expirée : le jeu le dit dans sa boîte. Une invitation
+   * reçue prend l'écran comme un appel (SessionEchange), sans autre alerte.
+   */
+  const recevoirEchange = (e: EvenementEchange) => {
+    if (termine(e.etat)) {
+      const cle = `${e.id}:${e.etat}`;
+      if (finVue.current === cle) return;
+      finVue.current = cle;
+      const avant = echangeRef.current?.id === e.id ? echangeRef.current : null;
+      const avec = 'avec' in e ? e.avec.pseudo : avant?.avec.pseudo ?? null;
+      const texte = messageFin(e.etat, avec, { parMoi: finParMoi.current, avant: avant?.etat ?? null, invite: avant?.invite ?? false });
+      finParMoi.current = false;
+      setEchange(null);
+      notifier(texte);
+      if (e.etat === 'conclu' && 'maPart' in e) setEchangeConclu(e);
+      else {
+        setAlerte({ n: Date.now(), genre: 'info', qui: 'Échange', texte });
+        navigator.vibrate?.([60, 60, 60]);
+      }
+      void rafraichir();
+      return;
+    }
+    const vue = e as VueEchange;
+    if (vue.etat === 'invitation' && vue.invite && echangeRef.current?.id !== vue.id) notifier(vue.vente ? `${vue.avec.pseudo} te vend une carte` : `${vue.avec.pseudo} te propose un échange`);
+    setEchange({ ...vue, recuA: Date.now() });
+  };
+
   // Reprise d'un échange en cours (app rechargée).
   useEffect(() => {
     if (!sess) return;
     api.get<{ echange: VueEchange | null }>(`/parties/${sess.partieId}/echanges/courant`).then(
-      (r) => setEchange(r.echange),
+      (r) => setEchange(r.echange ? { ...r.echange, recuA: Date.now() } : null),
       () => undefined,
     );
   }, [sess]);
@@ -436,9 +452,14 @@ export function useJeu() {
     annoncer: (texte: string) => setAlerte({ n: Date.now(), genre: 'sort', qui: 'Greed Island', texte }),
     finSortRecu: () => setSortsRecus((l) => l.slice(1)),
     echange,
-    setEchange,
-    finEchange,
-    fermerFinEchange: () => setFinEchange(null),
+    /** Page ⑫ : session à jour (réponse d'une action, ou évènement). */
+    recevoirEchange,
+    /** À appeler juste avant de refuser ou d'annuler soi-même. */
+    finParMoi: () => {
+      finParMoi.current = true;
+    },
+    echangeConclu,
+    finEchangeConclu: () => setEchangeConclu(null),
     positionAction,
     apresAction,
     moi,

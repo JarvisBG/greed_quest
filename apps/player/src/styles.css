@@ -1274,3 +1274,211 @@ dialog.fiche[open] { animation: monte 0.35s var(--sortie); }
 .onglets button.gele { overflow: hidden; background: #e3eef7; color: var(--encre-2); }
 .onglets button.gele::before { content: ''; position: absolute; inset: 0; opacity: 0.55; background: var(--givre-motif) left -12px top -14px / 70px 70px no-repeat, var(--givre-motif) right -18px bottom -22px / 76px 76px no-repeat; pointer-events: none; }
 .onglets button .gel-t { position: absolute; top: 4px; right: 4px; font: 800 11px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; background: var(--case); border: 1.5px solid var(--encre); padding: 2px 3px; color: var(--encre); }
+
+/* ---------- Page ⑫ : échanges (prototype validé le 2026-10-12 : docs/prototype/echanges.html) ---------- */
+/* Page : joueurs à portée, « Échanger » ou « Vendre une carte ». */
+.ech-joueurs { list-style: none; margin: 0; padding: 0; display: grid; }
+.ech-joueur { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; align-items: center; padding: 12px 0; border-top: 1.5px solid var(--encre); }
+.ech-joueur:first-child { border-top: 0; padding-top: 2px; }
+.ech-joueur .tete { grid-row: span 2; width: 44px; height: 44px; border-radius: 50%; border: var(--trait) solid var(--encre); display: grid; place-items: center; font: 400 20px/1 var(--f-titre); background: var(--case-2); }
+.ech-joueur .qui { min-width: 0; }
+.ech-joueur .qui b { font: 800 18px/1.1 var(--f-texte); }
+.ech-joueur .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.ech-joueur .actions button { min-height: 44px; padding: 0 12px; border: var(--trait) solid var(--encre); background: var(--case); font: 800 14px var(--f-texte); white-space: nowrap; }
+.ech-joueur .actions button.plein { background: var(--encre); color: var(--case); }
+.ech-joueur .actions button:active:not(:disabled) { translate: 0 2px; }
+.ech-joueur .actions button:disabled { opacity: 0.45; }
+.ech-aide { font-size: 15px; line-height: 1.35; }
+
+/* Anneau du délai de réponse (60 s), autour de l'initiale de l'autre joueur. */
+.ech-anneau { position: relative; width: 132px; height: 132px; }
+.ech-anneau svg { position: absolute; inset: 0; width: 100%; height: 100%; rotate: -90deg; }
+.ech-anneau circle { fill: none; stroke-width: 6; transition: stroke-dasharray 1s linear; }
+.ech-anneau .fond { stroke: var(--case-2); }
+.ech-anneau .reste { stroke: var(--encre); }
+.ech-anneau .tete { position: absolute; inset: 18px; border-radius: 50%; border: var(--trait) solid var(--encre); display: grid; place-items: center; font: 400 44px/1 var(--f-titre); background: var(--case); }
+
+/* Attente de la réponse, côté de celui qui propose. */
+.ech-attente { position: fixed; inset: 0; z-index: 45; background: rgba(238, 239, 233, 0.95); display: grid; place-items: center; padding: 16px; }
+.ech-attente .boite { width: min(100%, 400px); display: grid; justify-items: center; gap: 14px; text-align: center; }
+.ech-attente p { font: 800 19px/1.3 var(--f-texte); text-wrap: balance; }
+.ech-attente small { font: 600 15px/1.3 var(--f-texte); color: var(--encre-2); }
+.ech-attente .secs { font: 800 15px var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.ech-btn-ligne { min-height: 48px; padding: 0 18px; border: var(--trait) solid var(--encre); background: var(--case); font: 800 16px var(--f-texte); }
+
+/* Appel entrant : la proposition prend l'écran. */
+.ech-appel { position: fixed; inset: 0; z-index: 60; display: grid; grid-template-rows: 1fr auto; grid-template-columns: minmax(0, 1fr); padding: max(28px, env(safe-area-inset-top, 0px)) 16px max(20px, env(safe-area-inset-bottom, 0px)); background: radial-gradient(ellipse at 50% 32%, #3a2c10 0, #17120a 45%, #070605 90%); color: #f6f6f2; overflow: hidden; }
+.ech-appel-lignes { opacity: 0.16; animation: ech-tourne 40s linear infinite; }
+.ech-appel-lignes path { fill: #ffd877; }
+@keyframes ech-tourne { to { rotate: 360deg; } }
+.ech-appel .haut { position: relative; display: grid; justify-items: center; align-content: center; gap: 14px; text-align: center; }
+.ech-appel .cri { font: 400 min(13.5vw, 72px)/0.95 var(--f-titre); letter-spacing: -0.03em; color: #fff; -webkit-text-stroke: 3px var(--or); paint-order: stroke fill; rotate: -4deg; white-space: nowrap; }
+.ech-appel .ech-anneau { width: 150px; height: 150px; }
+.ech-appel .ech-anneau .fond { stroke: rgba(255, 216, 119, 0.18); }
+.ech-appel .ech-anneau .reste { stroke: #ffd877; }
+.ech-appel .ech-anneau .tete { inset: 16px; border: 0; background: #f6f6f2; color: var(--nuit); font-size: 52px; box-shadow: 0 0 0 5px var(--nuit), 0 0 50px 8px rgba(255, 216, 119, 0.35); }
+.ech-appel .sonne .tete { animation: ech-sonne 1.2s ease-in-out infinite; }
+@keyframes ech-sonne { 0%, 60%, 100% { scale: 1; } 15% { scale: 1.06; } 30% { scale: 0.98; } 45% { scale: 1.03; } }
+.ech-appel .nom { font: 400 22px/1 var(--f-jeu); background: #f6f6f2; color: var(--nuit); padding: 6px 12px; }
+.ech-appel .phrase { max-width: 30ch; font: 400 20px/1.4 var(--f-jeu); text-wrap: balance; }
+.ech-appel .phrase b { font-weight: 400; color: #ffd877; }
+.ech-appel .secs { font: 800 15px var(--f-chiffre); font-variant-numeric: tabular-nums; color: #c3c6cc; }
+.ech-appel .vendue { width: 116px; }
+.ech-appel .erreur-nuit { font: 600 15px/1.3 var(--f-texte); color: #ff8c86; }
+.ech-appel .bas { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: min(100%, 420px); justify-self: center; }
+.ech-appel .bas button { min-height: 60px; border: 3px solid #f6f6f2; font: 400 19px/1 var(--f-titre); letter-spacing: 0.01em; }
+.ech-appel .refuser { background: transparent; color: #f6f6f2; }
+.ech-appel .accepter { background: #ffd877; color: var(--nuit); border-color: #ffd877 !important; }
+.ech-appel .bas button:active { translate: 0 2px; }
+
+/* La table : un tapis de jeu dans la nuit, habillé comme le dos des cartes (marine, doubles filets d'or). */
+.ech-table, .ech-tiroir { --marine: #15233f; --marine-2: #0b1426; --creme: #f3ead2; --creme-2: #b9b29c; --sceau: #e0463c; --or-vif: #ffd877; }
+.ech-table { position: fixed; z-index: 40; inset: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); background: radial-gradient(ellipse at 50% 42%, #2a2110 0, #120e08 55%, #050404 100%); color: var(--creme); }
+.ech-table .t-barre { display: flex; align-items: center; gap: 10px; padding: max(10px, env(safe-area-inset-top, 0px)) 16px 10px; }
+.ech-table .titre { display: grid; gap: 4px; min-width: 0; }
+.ech-table h1 { margin: 0; font: 400 21px/1.05 var(--f-titre); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--creme); }
+.ech-table .mode { justify-self: start; font: 800 11px/1 var(--f-texte); letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 7px; color: var(--or-vif); box-shadow: inset 0 0 0 1.5px rgba(215, 178, 90, 0.7); }
+.ech-table .mode.vente { background: var(--or-vif); color: var(--marine-2); box-shadow: none; }
+.ech-table .t-barre .reste { margin-left: auto; display: grid; justify-items: end; gap: 2px; font: 600 11px/1 var(--f-texte); letter-spacing: 0.06em; text-transform: uppercase; color: var(--creme-2); }
+.ech-table .t-barre .reste b { font: 800 20px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--or-vif); letter-spacing: 0; }
+.ech-table .annuler { min-height: 44px; padding: 0 12px; border: 1.5px solid rgba(243, 234, 210, 0.55); background: transparent; color: var(--creme); font: 800 14px var(--f-texte); border-radius: 4px; }
+.ech-table .annuler:disabled { opacity: 0.4; }
+.ech-table .plateau { position: relative; margin: 0 10px; border-radius: 22px; display: grid; grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr); grid-template-columns: minmax(0, 1fr); overflow: hidden; isolation: isolate;
+  background: radial-gradient(ellipse 75% 50% at 50% 50%, rgba(255, 226, 160, 0.16), rgba(255, 226, 160, 0) 70%), radial-gradient(rgba(255, 255, 255, 0.045) 0.8px, transparent 1.2px) 0 0 / 4px 4px, linear-gradient(#1a2c52, #0f1b33);
+  box-shadow: inset 0 0 0 5px var(--marine-2), inset 0 0 0 7px var(--or), inset 0 0 0 11px var(--marine-2), inset 0 0 0 12px rgba(215, 178, 90, 0.55), inset 0 0 70px rgba(0, 0, 0, 0.65), 0 24px 60px rgba(0, 0, 0, 0.7); }
+/* Les filets s'allument quand les deux sceaux sont posés. */
+.ech-table .plateau::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 0 7px var(--or-vif), inset 0 0 40px 6px rgba(255, 216, 119, 0.55); opacity: 0; }
+.ech-table .plateau.scelle::after { animation: ech-allume 1s ease-out forwards; }
+@keyframes ech-allume { 30% { opacity: 1; } to { opacity: 0.8; } }
+.ech-table .part { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); align-content: center; gap: 10px; padding: 22px 24px; min-height: 0; min-width: 0; }
+.ech-table .chez-lui { align-content: start; padding-top: 24px; }
+.ech-table .chez-moi { align-content: end; padding-bottom: 22px; }
+.ech-table .etiquette { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.ech-table .etiquette b { font: 400 13px/1 var(--f-titre); letter-spacing: 0.12em; text-transform: uppercase; color: var(--or-vif); }
+.ech-table .resume { font: 600 13px/1.25 var(--f-texte); color: var(--creme-2); font-variant-numeric: tabular-nums; }
+/* Une seule rangée : quand la main déborde, les cartes se chevauchent comme un éventail posé. */
+.ech-table .posees { display: flex; gap: 10px; align-items: center; min-height: 96px; }
+.ech-table .posees.serre { gap: 0; }
+.ech-table .posees.serre > * + * { margin-inline-start: var(--chevauche); }
+.ech-table .chez-lui .posees.serre > * + * { margin-inline: 0 var(--chevauche); }
+.ech-table .chez-lui .posees { flex-direction: row-reverse; }
+.ech-table .posee { position: relative; width: 64px; flex: none; border: 0; padding: 0; background: none; translate: 0 var(--y, 0); transition: translate 0.2s var(--sortie); }
+.ech-table .posee .gi-carte { rotate: var(--r, 0deg); filter: drop-shadow(0 7px 6px rgba(0, 0, 0, 0.55)); }
+.ech-table .chez-lui .posee .gi-carte { rotate: calc(180deg + var(--r, 0deg)); }
+.ech-table .chez-moi .posee:active { translate: 0 calc(var(--y, 0px) - 6px); }
+.ech-table .posee .retirer { position: absolute; z-index: 2; top: -8px; left: -8px; width: 24px; height: 24px; border-radius: 50%; background: var(--marine-2); color: var(--or-vif); box-shadow: 0 0 0 1.5px var(--or); display: grid; place-items: center; font: 800 15px/1 var(--f-texte); }
+.ech-table .posee.arrive { animation: ech-jeter 0.5s var(--sortie); }
+@keyframes ech-jeter { from { translate: 0 60px; rotate: -14deg; opacity: 0; } }
+.ech-table .chez-lui .posee.arrive { animation-name: ech-jeter-lui; }
+@keyframes ech-jeter-lui { from { translate: 0 -60px; rotate: 14deg; opacity: 0; } }
+.ech-table .ajouter { width: 64px; flex: none; aspect-ratio: 63 / 88; border: 1.5px dashed rgba(255, 216, 119, 0.75); border-radius: 5px; background: rgba(255, 216, 119, 0.05); color: var(--or-vif); display: grid; place-content: center; justify-items: center; gap: 2px; font: 800 12px/1.1 var(--f-texte); }
+.ech-table .ajouter span { font: 400 28px/1 var(--f-titre); }
+.ech-table .ajouter:active { background: rgba(255, 216, 119, 0.14); }
+.ech-table .vide-lui, .ech-tiroir .vide-lui { font: 400 italic 15px/1.3 var(--f-texte); color: var(--creme-2); }
+.ech-table .vide-lui::after { content: ''; display: inline-block; width: 1.2em; text-align: left; animation: ech-points 1.4s steps(4) infinite; }
+@keyframes ech-points { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+/* Pile de jenny : des pièces d'or empilées. */
+.ech-table .pile { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ech-pieces { position: relative; width: 44px; height: 42px; flex: none; }
+.ech-pieces:empty::before { content: ''; position: absolute; left: 2px; bottom: 0; width: 40px; height: 13px; border-radius: 50%; border: 1.5px dashed rgba(215, 178, 90, 0.6); }
+.ech-pieces i { position: absolute; left: 2px; width: 40px; height: 13px; border-radius: 50%; background: linear-gradient(90deg, #8f6614 0%, #f7dc8a 28%, #c99a2a 52%, #fbe8a9 74%, #9c7417 100%); box-shadow: 0 2px 0 #6e500f, 0 3px 4px rgba(0, 0, 0, 0.5); }
+.ech-pieces i:last-child::after { content: 'J'; position: absolute; inset: 0; display: grid; place-items: center; font: 800 8px/1 var(--f-chiffre); color: #6b4f0d; }
+.ech-table .montant { font: 800 26px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--or-vif); min-width: 3ch; }
+.ech-table .montant small { font: 600 14px var(--f-texte); margin-left: 3px; color: var(--creme-2); }
+.ech-table .note { font: 600 13px/1.25 var(--f-texte); color: var(--creme-2); flex-basis: 100%; }
+.ech-table .montants, .ech-tiroir .montants { display: flex; gap: 6px; flex-wrap: wrap; }
+.ech-table .montants button, .ech-tiroir .montants button { min-height: 40px; min-width: 48px; padding: 0 10px; border: 1.5px solid rgba(215, 178, 90, 0.7); border-radius: 999px; background: rgba(0, 0, 0, 0.25); color: var(--or-vif); font: 800 14px var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.ech-table .montants button:active:not(:disabled), .ech-tiroir .montants button:active:not(:disabled) { background: var(--or-vif); color: var(--marine-2); }
+.ech-table .montants button:disabled, .ech-tiroir .montants button:disabled { opacity: 0.3; }
+/* La couture : double filet d'or, l'étoile du dos au milieu, l'état des deux sceaux de part et d'autre. */
+.ech-table .couture { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; padding: 0 24px; height: 60px; }
+.ech-table .couture::before { content: ''; position: absolute; left: 12px; right: 12px; top: 50%; height: 5px; translate: 0 -50%; border-block: 1px solid rgba(215, 178, 90, 0.75); z-index: -1; }
+.ech-table .embleme { position: relative; width: 58px; height: 58px; border-radius: 50%; background: var(--marine); box-shadow: 0 0 0 2px var(--marine-2), 0 0 0 3.5px var(--or), 0 0 0 6px var(--marine-2), 0 0 0 7px rgba(215, 178, 90, 0.55), 0 6px 18px rgba(0, 0, 0, 0.6); display: grid; place-items: center; }
+.ech-table .embleme svg { width: 76%; height: auto; transition: filter 0.4s; }
+.ech-table .plateau.scelle .embleme { animation: ech-embleme 1s var(--sortie) forwards; }
+.ech-table .plateau.scelle .embleme svg { filter: drop-shadow(0 0 6px #ffd877) drop-shadow(0 0 16px #ffb347); }
+@keyframes ech-embleme { 30% { scale: 1.25; rotate: 45deg; } to { scale: 1.1; rotate: 45deg; } }
+.ech-table .etat { display: grid; gap: 3px; font: 800 13px/1 var(--f-texte); color: var(--creme); min-width: 0; }
+.ech-table .etat small { font: 600 11px/1 var(--f-texte); letter-spacing: 0.08em; text-transform: uppercase; color: var(--creme-2); white-space: nowrap; }
+.ech-table .etat.droite { justify-items: end; text-align: right; }
+.ech-table .etat.ok small { color: #ff8c86; }
+/* Le sceau « VALIDÉ » : encre rouge, frappé de travers sur la part ; il saute quand une part change. */
+.ech-table .sceau { position: absolute; z-index: 3; right: 20px; top: 50%; width: 104px; aspect-ratio: 1; translate: 0 -50%; rotate: -14deg; pointer-events: none; visibility: hidden; }
+.ech-table .chez-lui .sceau { right: auto; left: 20px; rotate: 166deg; }
+.ech-table .sceau svg { width: 100%; height: 100%; overflow: visible; }
+.ech-table .sceau::before { content: ''; position: absolute; inset: 6%; border-radius: 50%; border: 3px solid var(--sceau); opacity: 0; }
+.ech-table .sceau.pose { visibility: visible; animation: ech-frapper 0.34s cubic-bezier(.3, 1.6, .5, 1); }
+.ech-table .sceau.pose::before { animation: ech-eclat 0.55s ease-out 0.1s; }
+@keyframes ech-frapper { from { scale: 2.2; opacity: 0; } 65% { scale: 0.93; opacity: 1; } }
+@keyframes ech-eclat { from { scale: 0.9; opacity: 0.9; } to { scale: 1.9; opacity: 0; } }
+.ech-table .sceau.tombe { visibility: visible; animation: ech-sauter 0.55s ease-in forwards; }
+@keyframes ech-sauter { 20% { scale: 1.08; } to { translate: 0 -10%; scale: 0.6; opacity: 0; filter: blur(2px); } }
+/* Bas de la table : valider par un appui long. */
+.ech-table .t-bas { display: grid; gap: 8px; padding: 12px 16px max(14px, env(safe-area-inset-bottom, 0px)); }
+.ech-maintenir { position: relative; overflow: hidden; min-height: 58px; border: 0; border-radius: 6px; background: linear-gradient(100deg, #b98a24, #ffd877 30%, #e8b947 55%, #ffe7a6 80%, #c4952b); color: #0b1426; font: 400 18px/1 var(--f-titre); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35), 0 8px 24px rgba(255, 190, 80, 0.18); touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.ech-maintenir .remplit { position: absolute; inset: 0; background: linear-gradient(90deg, #a51f22, #e0463c); transform-origin: left; scale: 0 1; }
+.ech-maintenir span { position: relative; }
+.ech-maintenir:disabled { background: rgba(255, 255, 255, 0.05); color: #b9b29c; box-shadow: inset 0 0 0 1.5px rgba(215, 178, 90, 0.35); }
+.ech-maintenir.fait { background: transparent; color: #ffd877; box-shadow: inset 0 0 0 1.5px var(--or); }
+.ech-table .indice { margin: 0; min-height: 1.3em; font: 600 14px/1.3 var(--f-texte); color: var(--creme-2); text-align: center; }
+@media (max-height: 680px) {
+  .ech-table .posees { min-height: 80px; gap: 8px; }
+  .ech-table .posee, .ech-table .ajouter { width: 54px; }
+  .ech-table .part { gap: 6px; padding-block: 12px; }
+  .ech-table .couture { height: 50px; }
+  .ech-table .embleme { width: 46px; height: 46px; }
+  .ech-table .sceau { width: 84px; }
+}
+
+/* Tiroir de mes cartes et objets (table, ou vente depuis la page). */
+.ech-voile { position: fixed; inset: 0; z-index: 48; background: rgba(5, 4, 4, 0.6); }
+.ech-tiroir { position: fixed; z-index: 49; left: 0; right: 0; bottom: 0; max-height: 80dvh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: linear-gradient(#17284a, #0d1830); color: var(--creme); border-radius: 18px 18px 0 0; box-shadow: inset 0 0 0 1px rgba(215, 178, 90, 0.5), inset 0 2px 0 var(--or), 0 -20px 50px rgba(0, 0, 0, 0.6); animation: ech-monter 0.32s var(--sortie); }
+@keyframes ech-monter { from { translate: 0 100%; } }
+.ech-tiroir .t-tete { display: flex; align-items: baseline; gap: 10px; padding: 18px 18px 12px; border-bottom: 1px solid rgba(215, 178, 90, 0.35); }
+.ech-tiroir .t-tete h2 { margin: 0; font: 400 20px/1 var(--f-titre); }
+.ech-tiroir .t-tete span { margin-left: auto; font: 800 14px var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--or-vif); }
+.ech-tiroir .defile { overflow-y: auto; padding: 14px 18px 18px; display: grid; align-content: start; gap: 14px; overscroll-behavior: contain; }
+.ech-tiroir h3 { margin: 0; font: 400 12px/1 var(--f-titre); letter-spacing: 0.14em; text-transform: uppercase; color: var(--or-vif); }
+.ech-tiroir .grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 12px 10px; }
+.ech-tiroir .choix { position: relative; border: 0; padding: 0; background: none; display: grid; gap: 5px; justify-items: center; font: 600 12px/1.15 var(--f-texte); text-align: center; color: var(--creme-2); }
+.ech-tiroir .choix .gi-carte { width: 100%; filter: drop-shadow(0 5px 5px rgba(0, 0, 0, 0.5)); transition: translate 0.2s var(--sortie); }
+.ech-tiroir .choix[aria-pressed='true'] .gi-carte { translate: 0 -5px; filter: drop-shadow(0 0 8px rgba(255, 216, 119, 0.8)); }
+.ech-tiroir .choix[aria-pressed='true'] .gi-carte .c-cadre { box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35), 0 0 0 3px var(--or-vif); }
+.ech-tiroir .choix[aria-pressed='true']::after { content: '✓'; position: absolute; z-index: 2; top: -10px; right: -6px; width: 24px; height: 24px; border-radius: 50%; background: var(--or-vif); color: #0b1426; display: grid; place-items: center; font: 800 14px/1 var(--f-texte); }
+.ech-tiroir .choix[aria-pressed='true'] .ou { color: var(--or-vif); }
+.ech-tiroir .t-pied { padding: 12px 18px max(14px, env(safe-area-inset-bottom, 0px)); border-top: 1px solid rgba(215, 178, 90, 0.35); display: grid; gap: 10px; }
+.ech-tiroir .prix { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ech-tiroir .prix .libelle { font: 800 15px var(--f-texte); }
+.ech-tiroir .prix .montant { font: 800 24px var(--f-chiffre); color: var(--or-vif); font-variant-numeric: tabular-nums; }
+.ech-btn-plein { min-height: 54px; border: 0; border-radius: 6px; background: linear-gradient(100deg, #b98a24, #ffd877 30%, #e8b947 55%, #ffe7a6 80%, #c4952b); color: #0b1426; font: 400 17px/1 var(--f-titre); }
+.ech-btn-plein:disabled { background: rgba(255, 255, 255, 0.05); color: #b9b29c; box-shadow: inset 0 0 0 1.5px rgba(215, 178, 90, 0.35); }
+/* Fiche : une carte de l'autre en grand, à l'endroit. */
+.ech-fiche { position: fixed; z-index: 55; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(5, 4, 4, 0.78); }
+.ech-fiche .f-boite { width: min(72vw, 280px); display: grid; gap: 14px; animation: ech-fiche 0.4s var(--sortie); }
+@keyframes ech-fiche { from { rotate: 180deg; scale: 0.4; opacity: 0; } }
+.ech-fiche .gi-carte { filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.6)); }
+.ech-fiche p { text-align: center; font: 600 14px var(--f-texte); color: #e9e9e4; }
+
+/* Cinématique « TRADE ! » : la nuit chaude de l'échange, entre l'or et le bleu des deux comètes. */
+.ech-trade { z-index: 65; }
+.ech-trade-nuit { background: radial-gradient(ellipse at 50% 50%, #33270d 0, #15110a 46%, #050404 92%); }
+.ech-trade-lignes path { fill: #ffe9b8; }
+.ech-trade .cri { position: absolute; left: 0; right: 0; top: 50%; translate: 0 -50%; text-align: center; font: 400 min(19vw, 104px)/0.92 var(--f-titre); letter-spacing: -0.03em; white-space: nowrap; color: #fff; -webkit-text-stroke: 3px var(--or); paint-order: stroke fill; opacity: 0; pointer-events: none; }
+.ech-trade .eventail { position: absolute; left: 50%; display: flex; justify-content: center; opacity: 0; pointer-events: none; will-change: transform; }
+.ech-trade .eventail > * > .gi-carte, .ech-trade .eventail .jeton { width: 96px; flex: none; }
+.ech-trade .eventail > * { margin-inline: -18px; }
+.ech-trade .eventail .gi-carte .c-cadre { box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35), 0 14px 24px rgba(0, 0, 0, 0.5); }
+.ech-trade .moi-ev { bottom: 13%; translate: -50% 0; }
+.ech-trade .lui-ev { top: 13%; translate: -50% 0; }
+.ech-trade .embrase { filter: drop-shadow(0 0 12px #ffd877) drop-shadow(0 0 26px #ff9a3c) brightness(1.15); }
+.ech-trade .jeton { aspect-ratio: 63 / 88; display: grid; place-content: center; justify-items: center; gap: 6px; border-radius: 6px; background: #2a2110; box-shadow: inset 0 0 0 3px var(--or); color: #ffd877; font: 800 22px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.ech-trade .jeton .ech-pieces { scale: 1.2; }
+.lancer-orbe.chaude { background: radial-gradient(closest-side, #fff 0, #fff 22%, #ffe9b0 40%, rgba(255, 190, 80, 0.55) 62%, rgba(255, 160, 40, 0) 100%); }
+/* Ce que tu reçois : de dos, puis retourné, au centre. */
+.ech-trade .recues { position: absolute; left: 50%; top: 44%; translate: -50% -50%; display: flex; gap: 10px; justify-content: center; width: min(92vw, 440px); flex-wrap: wrap; pointer-events: none; }
+.ech-trade .recue { width: min(30vw, 128px, calc((100dvh - 360px) * 63 / 88)); perspective: 1100px; opacity: 0; }
+.ech-trade .recue .gi-carte:not(.dos) .c-cadre { box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35), 0 18px 30px rgba(0, 0, 0, 0.55); }
+.ech-trade .gain { width: 100%; text-align: center; font: 800 40px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; color: #ffd877; opacity: 0; }
+.ech-trade-dialogue { z-index: 6; }
+.ech-trade-dialogue .a-qui { background: #ffd877 !important; }
+.ech-plus { position: fixed; z-index: 40; font: 400 22px/1 var(--f-titre); color: var(--encre); background: var(--case); border: var(--trait) solid var(--encre); padding: 3px 8px; pointer-events: none; }

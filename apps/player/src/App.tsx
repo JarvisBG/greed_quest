@@ -3,8 +3,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Accueil, useEvenements, type SousEcran } from './ecrans/Accueil';
 import { Boutique } from './ecrans/Boutique';
 import { Chrono } from './ecrans/Chrono';
-import { Echanges } from './ecrans/Echanges';
 import { Encheres } from './ecrans/Encheres';
+import { Echanges } from './ecrans/echanges/Echanges';
+import { SessionEchange } from './ecrans/echanges/SessionEchange';
+import { Trade } from './ecrans/echanges/Trade';
 import { Entree } from './ecrans/Entree';
 import { Examen } from './ecrans/Examen';
 import { IconeAccueil, IconeBook, IconeEchanges, IconeScanner, IconeSorts } from './ecrans/Icones';
@@ -61,6 +63,9 @@ export function App() {
   const evenements = useEvenements(jeu.partieId ?? '', jeu.version);
   /** Cinématiques du tirage (page ⑥), jouées une à une par-dessus l'app. */
   const tirages = useTirages();
+  /** Page ⑫ : la table scellée laisse place à la cinématique « TRADE ! », puis disparaît sous sa nuit. */
+  const [trade, setTrade] = useState(false);
+  const [tableCachee, setTableCachee] = useState(false);
   // RG-7.5 : chaque tirage rejoué au retour du réseau a sa cinématique ; le solde suit à la fin.
   useEffect(() => {
     const r = jeu.rejoues[0];
@@ -249,18 +254,7 @@ export function App() {
               />
             )}
             {ecran === 'accueil' && onglet === 'echanges' && (
-              <div className="ancien">
-                <Echanges
-                  partieId={partie.id}
-                  jenny={moi.jenny}
-                  version={jeu.version}
-                  echange={jeu.echange}
-                  setEchange={jeu.setEchange}
-                  finEchange={jeu.finEchange}
-                  fermerFinEchange={jeu.fermerFinEchange}
-                  positionAction={jeu.positionAction}
-                />
-              </div>
+              <Echanges partieId={partie.id} version={jeu.version} echange={jeu.echange} recevoir={jeu.recevoirEchange} positionAction={jeu.positionAction} />
             )}
             {ecran === 'accueil' && onglet === 'accueil' && sous === 'licence' && jeu.licenceSecret && (
               <Licence partieId={partie.id} joueurId={moi.id} pseudo={moi.pseudo} nen={moi.nen} secret={jeu.licenceSecret} onRetour={() => setSous(null)} />
@@ -353,6 +347,32 @@ export function App() {
             </button>
           ))}
         </nav>
+      )}
+      {/* Page ⑫ : proposition reçue (appel), attente, table, où que soit le joueur dans l'app ; puis « TRADE ! ». */}
+      {enJeu && ecran === 'accueil' && (
+        <SessionEchange
+          partieId={partie.id}
+          jenny={moi.jenny}
+          version={jeu.version}
+          echange={jeu.echange}
+          conclu={jeu.echangeConclu}
+          tableCachee={tableCachee}
+          recevoir={jeu.recevoirEchange}
+          finParMoi={jeu.finParMoi}
+          onScelle={() => setTrade(true)}
+        />
+      )}
+      {trade && jeu.echangeConclu && (
+        <Trade
+          key={jeu.echangeConclu.id}
+          echange={jeu.echangeConclu}
+          onNuit={() => setTableCachee(true)}
+          onFini={() => {
+            setTrade(false);
+            setTableCachee(false);
+            jeu.finEchangeConclu();
+          }}
+        />
       )}
       {tirages.courant && <Tirage key={tirages.courant.id} demande={tirages.courant} onFini={tirages.terminer} />}
       {/* Page ⑪ : sorts reçus qui frappent, un par un, après un tirage en cours. */}

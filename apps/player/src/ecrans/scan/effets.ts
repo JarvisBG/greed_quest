@@ -12,6 +12,8 @@ export interface Effets {
   fuite(intensite: number, couleur: string, parSeconde?: number): void;
   /** Traînée de braises derrière un point qui bouge (la comète d'un sort, page ⑧) ; null l'arrête. */
   trainee(point: (() => [number, number]) | null): void;
+  /** Plusieurs traînées à la fois, chacune de ses couleurs (les deux comètes croisées de l'échange, page ⑫). */
+  trainees(liste: { point: () => [number, number]; couleurs: string[] }[]): void;
   vider(): void;
   arreter(): void;
 }
@@ -58,7 +60,8 @@ export function creerEffets(cv: HTMLCanvasElement, carte: () => DOMRect): Effets
   let fuite = 0;
   let fuiteCouleur = '#ffffff';
   let fuiteTaux = 0;
-  let suivre: (() => [number, number]) | null = null;
+  let suivis: { point: () => [number, number]; couleurs: string[] }[] = [];
+  const COMETE = ['#ffffff', '#8fb2ff', '#8fb2ff'];
   let image = 0;
   let dernier = 0;
 
@@ -85,10 +88,10 @@ export function creerEffets(cv: HTMLCanvasElement, carte: () => DOMRect): Effets
         parts.push({ fumee: false, x, y, vx: nx * v, vy: ny * v - 30, r: 2 + Math.random() * 3, couleur: fuiteCouleur, vie: 0, max: 0.35 + Math.random() * 0.4 });
       }
     }
-    if (suivre) {
-      const [ox, oy] = suivre();
+    for (const { point, couleurs } of suivis) {
+      const [ox, oy] = point();
       for (let i = 0; i < 6 && parts.length < MAX_PARTICULES; i++) {
-        parts.push({ fumee: false, x: ox + (Math.random() - 0.5) * 18, y: oy + (Math.random() - 0.5) * 18, vx: (Math.random() - 0.5) * 50, vy: (Math.random() - 0.5) * 50, r: 3 + Math.random() * 4, couleur: i % 3 ? '#8fb2ff' : '#ffffff', vie: 0, max: 0.3 + Math.random() * 0.35 });
+        parts.push({ fumee: false, x: ox + (Math.random() - 0.5) * 18, y: oy + (Math.random() - 0.5) * 18, vx: (Math.random() - 0.5) * 50, vy: (Math.random() - 0.5) * 50, r: 3 + Math.random() * 4, couleur: couleurs[i % couleurs.length]!, vie: 0, max: 0.3 + Math.random() * 0.35 });
       }
     }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -160,7 +163,7 @@ export function creerEffets(cv: HTMLCanvasElement, carte: () => DOMRect): Effets
     }
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
-    const vivant = parts.length || ondes.length || fuiteTaux || fuite > 0.01 || suivre;
+    const vivant = parts.length || ondes.length || fuiteTaux || fuite > 0.01 || suivis.length;
     image = vivant ? requestAnimationFrame(boucle) : 0;
   };
   // Relancée à chaque émission : la boucle s'arrête d'elle-même quand il n'y a plus rien à dessiner.
@@ -199,7 +202,11 @@ export function creerEffets(cv: HTMLCanvasElement, carte: () => DOMRect): Effets
       lancer();
     },
     trainee(point) {
-      suivre = point;
+      suivis = point ? [{ point, couleurs: COMETE }] : [];
+      lancer();
+    },
+    trainees(liste) {
+      suivis = liste;
       lancer();
     },
     vider() {
@@ -207,7 +214,7 @@ export function creerEffets(cv: HTMLCanvasElement, carte: () => DOMRect): Effets
       ondes = [];
       fuite = 0;
       fuiteTaux = 0;
-      suivre = null;
+      suivis = [];
     },
     arreter() {
       cancelAnimationFrame(image);

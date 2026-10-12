@@ -1,0 +1,775 @@
+<title>Boutique de Masadora</title>
+<meta name="description" content="Prototype de la page ⑬ : la vitrine de Masadora (paquet scellé de 3 sorts, stock de la vague, Krach −50 %), la revente en grille de cartes avec les pièces qui tombent dans la barre, et la cinématique d’ouverture du paquet.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@800&family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,800;1,400&family=Dela+Gothic+One&family=DotGothic16&display=swap">
+<style>
+/* Page ⑬ : Masadora, la ville des cartes de sort. Planche claire de l'app (papier, encre, cases) ;
+   une enseigne suspendue, le paquet scellé en vitrine, la revente en grille de cartes dessous.
+   Le grand moment : l'ouverture du paquet, dans la nuit bleue des sorts. Thème clair unique (jeu au
+   soleil), comme les autres pages. */
+:root {
+  color-scheme: light;
+  --papier: #eeefe9;
+  --case: #fbfbf7;
+  --case-2: #ecece6;
+  --encre: #111111;
+  --encre-2: #3b3d40;
+  --trame: rgba(17, 17, 17, 0.16);
+  --rouge: #c0272d;
+  --bleu: #1f4a9c;
+  --bleu-vif: #8fb2ff;
+  --jaune: #d9a11a;
+  --or: #d7b25a;
+  --or-vif: #ffd877;
+  --succes: #17713a;
+  --nuit: #0c0c0e;
+  --marine: #15233f;
+  --marine-2: #0b1426;
+  --sceau: #e0463c;
+  --f-titre: 'Dela Gothic One', 'Arial Black', sans-serif;
+  --f-texte: 'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif;
+  --f-chiffre: 'Atkinson Hyperlegible Mono', ui-monospace, monospace;
+  --f-jeu: 'DotGothic16', ui-monospace, monospace;
+  --trait: 3px;
+  --sortie: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { overflow-x: clip; }
+body { margin: 0; background: var(--papier); color: var(--encre); font: 400 17px/1.45 var(--f-texte); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 3px solid var(--bleu); outline-offset: 3px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { cursor: default; }
+
+.app { max-width: 480px; margin: 0 auto; padding: 0 16px 104px; display: grid; gap: 14px; }
+.app > * { min-width: 0; }
+
+/* Commandes du prototype (pas dans l'app) */
+.proto { display: grid; gap: 7px; padding: 10px 12px; margin-inline: -16px; background: var(--encre); color: var(--case); }
+.proto p { margin: 0; font: 600 13px/1.3 var(--f-texte); }
+.proto .rang { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.proto .rang > span { font: 800 12px var(--f-texte); color: #b9bcc2; min-width: 58px; }
+.proto button { min-height: 36px; padding: 0 10px; border: 2px solid var(--case); background: transparent; color: var(--case); font: 700 13px var(--f-texte); }
+.proto button[aria-pressed='true'] { background: var(--case); color: var(--encre); }
+
+/* Barre d'état de l'app */
+.barre { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; margin-inline: -16px; padding: 10px 16px; background: var(--case); border-bottom: var(--trait) solid var(--encre); display: flex; align-items: center; gap: 12px; min-height: 58px; }
+.chrono { font: 800 30px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.liaison { display: flex; align-items: center; gap: 6px; font: 600 14px var(--f-texte); }
+.pastille { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--encre); background: var(--succes); display: inline-block; }
+.jenny { margin-left: auto; font: 800 22px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.jenny small { font: 600 15px var(--f-texte); margin-left: 3px; }
+
+/* ---------- Onglets ---------- */
+.onglets { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, 1fr); background: var(--case); border-top: var(--trait) solid var(--encre); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.onglets button { position: relative; min-height: 64px; border: 0; border-right: 1.5px solid var(--encre); background: transparent; display: grid; justify-items: center; align-content: center; gap: 3px; font: 800 12.5px/1 var(--f-texte); padding: 6px 2px; }
+.onglets button:last-child { border-right: 0; }
+.onglets svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.onglets button[aria-current='page'] { background: var(--encre); color: var(--case); }
+.onglets .plus-un { position: absolute; top: -30px; left: 50%; translate: -50% 0; font: 400 22px/1 var(--f-titre); color: var(--encre); background: var(--case); border: var(--trait) solid var(--encre); padding: 3px 8px; pointer-events: none; }
+.jenny { position: relative; }
+.flotte { position: absolute; right: 0; top: 100%; font: 800 18px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; padding: 4px 7px; background: var(--case); border: 2px solid var(--encre); pointer-events: none; white-space: nowrap; }
+.flotte.gain { color: var(--succes); }
+.flotte.perte { color: var(--rouge); }
+
+.aide { font: 400 15px/1.35 var(--f-texte); color: var(--encre-2); margin: 0; }
+.case { background: var(--case); border: var(--trait) solid var(--encre); padding: 14px 16px; display: grid; gap: 12px; }
+.case h2 { margin: 0; font: 400 20px/1.1 var(--f-titre); }
+.case p { margin: 0; }
+
+/* ---------- En-tête : retour et enseigne suspendue ---------- */
+.tete-ville { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding-top: 8px; }
+.retour { min-height: 44px; padding: 0 12px 0 8px; border: var(--trait) solid var(--encre); background: var(--case); font: 800 15px var(--f-texte); display: inline-flex; align-items: center; gap: 4px; justify-self: start; }
+.retour svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.enseigne { justify-self: center; position: relative; padding-top: 22px; transform-origin: 50% 0; animation: balance 5s ease-in-out infinite; }
+@keyframes balance { 0%, 100% { rotate: -1.6deg; } 50% { rotate: 0.6deg; } }
+/* Deux chaînes, puis la planche noire au double filet. */
+.enseigne::before, .enseigne::after { content: ''; position: absolute; top: 0; width: 4px; height: 24px; background: repeating-linear-gradient(var(--encre) 0 5px, transparent 5px 7px); border-inline: 1px solid var(--encre); }
+.enseigne::before { left: 18%; }
+.enseigne::after { right: 18%; }
+.planche { background: var(--encre); color: var(--case); padding: 10px 18px 9px; border-radius: 3px; box-shadow: inset 0 0 0 3px var(--encre), inset 0 0 0 5px var(--case), 0 6px 0 -2px rgba(17, 17, 17, 0.25); display: grid; justify-items: center; gap: 4px; }
+.planche h1 { margin: 0; font: 400 clamp(26px, 8.4vw, 36px)/1 var(--f-titre); letter-spacing: 0.04em; }
+.planche span { font: 400 13px/1 var(--f-jeu); color: var(--or-vif); letter-spacing: 0.08em; }
+.distance { justify-self: center; display: inline-flex; gap: 8px; align-items: center; font: 800 14px var(--f-texte); padding: 6px 10px; border: 2px dashed var(--bleu); color: var(--bleu); background: var(--case); }
+.distance b { font: 800 15px var(--f-chiffre); font-variant-numeric: tabular-nums; }
+
+/* ---------- Vitrine : le paquet scellé ---------- */
+.vitrine { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px; align-items: center; padding: 18px 16px 16px; background:
+  radial-gradient(var(--trame) 0.9px, transparent 1.2px) 0 0 / 6px 6px, var(--case); }
+.vitrine .presentoir { position: relative; width: 132px; display: grid; justify-items: center; }
+/* Socle : une ombre d'encre sous le paquet. */
+.vitrine .presentoir::after { content: ''; width: 110px; height: 12px; margin-top: 8px; border-radius: 50%; background: radial-gradient(closest-side, rgba(17, 17, 17, 0.35), transparent); }
+.vitrine .presentoir .paquet { animation: flotte 3.6s ease-in-out infinite; }
+@keyframes flotte { 0%, 100% { translate: 0 0; } 50% { translate: 0 -5px; } }
+.vitrine .presentoir.envoi .paquet { animation: tremble 0.24s linear infinite; }
+@keyframes tremble { 25% { translate: -2px 0; rotate: -1deg; } 75% { translate: 2px 0; rotate: 1deg; } }
+.infos { display: grid; gap: 10px; min-width: 0; }
+.infos .prix { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.infos .prix b { font: 800 40px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.infos .prix b small { font: 600 18px var(--f-texte); margin-left: 3px; }
+.infos .prix s { font: 800 20px/1 var(--f-chiffre); color: var(--encre-2); text-decoration-thickness: 3px; text-decoration-color: var(--rouge); }
+.infos .prix s[hidden] { display: none; }
+.infos .quoi { font: 800 16px/1.25 var(--f-texte); }
+.infos dl { margin: 0; display: grid; gap: 6px; }
+.infos dl div { display: flex; justify-content: space-between; gap: 8px; border-top: 1.5px solid var(--encre); padding-top: 6px; font: 600 14px/1.25 var(--f-texte); }
+.infos dt { color: var(--encre-2); }
+.infos dd { margin: 0; font: 800 15px var(--f-chiffre); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.infos dd.vide { color: var(--rouge); }
+.krach-fin { font: 800 14px/1.25 var(--f-texte); color: var(--rouge); }
+.krach-fin[hidden] { display: none; }
+.krach-fin b { font: 800 15px var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.acheter { grid-column: 1 / -1; min-height: 58px; border: 0; background: var(--encre); color: var(--case); font: 400 19px/1.1 var(--f-titre); letter-spacing: 0.01em; padding: 8px 14px; box-shadow: 0 5px 0 -1px rgba(17, 17, 17, 0.3); }
+.acheter:active:not(:disabled) { translate: 0 3px; box-shadow: none; }
+/* Désactivé à opacité pleine : le bouton porte la raison (stock, limite, jenny). */
+.acheter:disabled { background: var(--case-2); color: var(--encre); border: var(--trait) solid var(--encre); box-shadow: none; font: 800 16px/1.25 var(--f-texte); }
+.acheter.qr { background: var(--case); color: var(--encre); border: var(--trait) solid var(--encre); }
+
+/* Le tampon du Krach, frappé de travers sur le paquet. */
+.tampon-krach { position: absolute; z-index: 3; left: -6px; top: 34%; width: 146px; rotate: -16deg; pointer-events: none; }
+.tampon-krach[hidden] { display: none; }
+.tampon-krach svg { width: 100%; height: auto; overflow: visible; }
+.tampon-krach.frappe { animation: frapper 0.34s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes frapper { from { scale: 2.2; opacity: 0; } 65% { scale: 0.93; opacity: 1; } }
+
+/* ---------- Le paquet : sachet métallisé marine et or, sertis en dents de scie ---------- */
+.paquet { --pw: 112px; position: relative; width: var(--pw); aspect-ratio: 63 / 100; display: grid; grid-template-rows: 9% 1fr 9%; filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.28)); }
+.paquet .serti { background: repeating-linear-gradient(90deg, #8f6614 0 2px, #e9c56a 2px 4px), #c99a2a; clip-path: var(--dents); }
+.paquet .serti.haut { --dents: polygon(0 100%, 0 30%, 5% 0, 10% 30%, 15% 0, 20% 30%, 25% 0, 30% 30%, 35% 0, 40% 30%, 45% 0, 50% 30%, 55% 0, 60% 30%, 65% 0, 70% 30%, 75% 0, 80% 30%, 85% 0, 90% 30%, 95% 0, 100% 30%, 100% 100%); }
+.paquet .serti.bas { --dents: polygon(0 0, 100% 0, 100% 70%, 95% 100%, 90% 70%, 85% 100%, 80% 70%, 75% 100%, 70% 70%, 65% 100%, 60% 70%, 55% 100%, 50% 70%, 45% 100%, 40% 70%, 35% 100%, 30% 70%, 25% 100%, 20% 70%, 15% 100%, 10% 70%, 5% 100%, 0 70%); }
+.paquet .corps { position: relative; overflow: hidden; container-type: inline-size; display: grid; grid-template-rows: auto 1fr auto; justify-items: center; padding: 9cqi 6cqi 7cqi; color: var(--or-vif);
+  background: linear-gradient(115deg, rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0.22) 42%, rgba(255, 255, 255, 0) 54%), linear-gradient(#22396a, var(--marine) 55%, var(--marine-2));
+  box-shadow: inset 0 0 0 2.5cqi var(--marine), inset 0 0 0 3.6cqi var(--or), inset 0 0 0 5.4cqi var(--marine), inset 0 0 0 6cqi rgba(215, 178, 90, 0.6); }
+/* Reflet qui passe sur le métal. */
+.paquet .corps::after { content: ''; position: absolute; inset: -20% -60%; background: linear-gradient(105deg, transparent 42%, rgba(255, 255, 255, 0.28) 50%, transparent 58%); animation: reflet 4.5s ease-in-out infinite; }
+@keyframes reflet { 0%, 55% { translate: -60% 0; } 85%, 100% { translate: 60% 0; } }
+.paquet .marque { font: 400 10.5cqi/1 var(--f-titre); letter-spacing: 0.08em; color: var(--case); }
+.paquet .embleme { width: 64cqi; align-self: center; }
+.paquet .embleme svg { width: 100%; height: auto; display: block; }
+.paquet .nombre { display: grid; justify-items: center; gap: 2cqi; }
+.paquet .nombre b { font: 400 16cqi/1 var(--f-titre); color: var(--or-vif); }
+.paquet .nombre span { font: 800 8cqi/1 var(--f-texte); letter-spacing: 0.14em; text-transform: uppercase; color: var(--case); }
+
+/* ---------- Revente ---------- */
+.revente .tete { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.revente .tete span { margin-left: auto; font: 600 13px/1.2 var(--f-texte); color: var(--encre-2); }
+.revente h3 { margin: 0; font: 400 13px/1 var(--f-titre); letter-spacing: 0.12em; text-transform: uppercase; }
+.grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 14px 10px; }
+.choix { position: relative; border: 0; padding: 0; background: none; display: grid; gap: 6px; justify-items: center; text-align: center; }
+.choix .gi-carte { width: 100%; filter: drop-shadow(0 4px 0 rgba(17, 17, 17, 0.18)); transition: translate 0.2s var(--sortie); }
+.choix:active:not(:disabled) .gi-carte { translate: 0 -4px; }
+.choix .rachat { font: 800 15px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; padding: 4px 7px; border: 2px solid var(--encre); background: var(--case); }
+.choix:disabled .gi-carte { opacity: 0.45; filter: grayscale(1); }
+.choix:disabled .rachat { border-style: dashed; font: 600 12px/1 var(--f-texte); color: var(--encre-2); }
+.choix.faux .gi-carte { filter: grayscale(1) contrast(0.85); }
+.choix.faux .gi-carte::after { content: 'CONTREFAÇON'; position: absolute; left: 50%; top: 52%; translate: -50% -50%; rotate: -20deg; font: 400 9px/1 var(--f-titre); letter-spacing: 0.04em; color: var(--rouge); border: 2px solid var(--rouge); padding: 3px 4px; background: rgba(251, 251, 247, 0.85); white-space: nowrap; }
+.choix.part { animation: partir 0.5s ease-in forwards; }
+@keyframes partir { to { opacity: 0; scale: 0.6; translate: 0 -20px; } }
+.revente.ferme .grille { opacity: 0.45; pointer-events: none; }
+
+/* ---------- Carte de Greed Island (copie de @gq/ui) ---------- */
+.gi-carte { container-type: inline-size; aspect-ratio: 63 / 88; width: 100%; position: relative; color: var(--encre); }
+.gi-carte .c-cadre { position: absolute; inset: 0; border-radius: 4.5cqi; padding: 5cqi; background: var(--cadre, var(--rouge)); box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35); display: grid; grid-template-rows: auto 1fr auto; gap: 3cqi; }
+.gi-carte.f-sort { --cadre: var(--bleu); }
+.gi-carte.f-objet { --cadre: var(--jaune); }
+.gi-carte.f-designee .c-txt { font-style: italic; }
+.gi-carte .c-tete { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 3cqi; background: var(--case); border-radius: 2cqi; padding: 2.5cqi 3cqi; box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); }
+.gi-carte .c-num { font: 800 9cqi/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.gi-carte .c-num.long { font-size: 7.4cqi; }
+.gi-carte .c-nom { font: 800 6.4cqi/1.1 var(--f-texte); text-align: center; text-wrap: balance; hyphens: auto; overflow-wrap: break-word; }
+.gi-carte .c-nom.long { font-size: 5.6cqi; }
+.gi-rang { font: 400 7cqi/1 var(--f-titre); padding: 1.6cqi 2.4cqi; border-radius: 1.6cqi; white-space: nowrap; color: var(--encre); background: var(--matiere, var(--case)); box-shadow: 0 0 0 0.6cqi var(--encre); }
+.gi-carte .c-art { border-radius: 2cqi; background: #f4f2ea radial-gradient(var(--trame) 0.9px, transparent 1.1px) 0 0 / 5px 5px; box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); display: grid; place-items: center; overflow: hidden; min-height: 0; }
+.gi-carte .c-filigrane { font: 400 30cqi/1 var(--f-titre); color: transparent; -webkit-text-stroke: 0.9cqi rgba(17, 17, 17, 0.55); letter-spacing: -0.02em; }
+.gi-carte .c-txt { margin: 0; background: var(--case); border-radius: 2cqi; padding: 3cqi 3.5cqi; font: 400 5.6cqi/1.3 var(--f-texte); box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); }
+.r-SS { --matiere: linear-gradient(125deg, #9c7a1c 0%, #f6dc85 28%, #c39a2c 50%, #fbe7a6 72%, #a8841f 100%); }
+.r-S  { --matiere: linear-gradient(125deg, #8d949b 0%, #f1f3f5 35%, #aab1b8 60%, #e9ecef 100%); }
+.r-A  { --matiere: linear-gradient(125deg, #c97a4a 0%, #f2b48a 45%, #d88a58 100%); }
+.r-B  { --matiere: linear-gradient(125deg, #6fb596 0%, #b6e0cc 50%, #82c2a6 100%); }
+.r-C  { --matiere: linear-gradient(125deg, #9eb0c4 0%, #d6dfea 50%, #aebfd1 100%); }
+.r-D, .r-sort, .r-objet { --matiere: var(--case); }
+@container (max-width: 130px) {
+  .gi-carte .c-nom, .gi-carte .c-txt { display: none; }
+  .gi-carte .c-tete { grid-template-columns: 1fr auto; padding: 4cqi; }
+  .gi-carte .c-num { font-size: 17cqi; }
+  .gi-carte .gi-rang { font-size: 13cqi; padding: 2.5cqi 4cqi; }
+  .gi-carte .gi-rang .lim, .gi-carte .r-sort, .gi-carte .r-objet { display: none; }
+  .gi-carte.f-sort .c-tete, .gi-carte.f-objet .c-tete { grid-template-columns: 1fr; }
+  .gi-carte .c-cadre { padding: 6cqi; gap: 5cqi; grid-template-rows: auto 1fr; }
+}
+.gi-carte.dos .c-cadre { background: #15233f; box-shadow: inset 0 0 0 1.2cqi #15233f, inset 0 0 0 2.2cqi var(--or), inset 0 0 0 3.4cqi #15233f, inset 0 0 0 4cqi var(--or); place-items: center; grid-template-rows: 1fr; }
+.gi-carte.dos svg { width: 58%; height: auto; }
+
+/* ---------- Fiche de revente ---------- */
+.fiche { position: fixed; z-index: 55; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(12, 12, 14, 0.82); }
+.fiche[hidden] { display: none; }
+.fiche .f-boite { width: min(100%, 320px); display: grid; gap: 14px; justify-items: center; animation: fiche 0.4s var(--sortie); }
+@keyframes fiche { from { scale: 0.6; opacity: 0; translate: 0 40px; } }
+.fiche .f-carte { position: relative; width: min(64vw, 240px, calc((100dvh - 290px) * 63 / 88)); }
+.fiche .f-carte .gi-carte { filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.6)); }
+.fiche .ou { margin: 0; font: 600 14px/1.3 var(--f-texte); color: #d9dbe0; text-align: center; text-wrap: balance; }
+.fiche .f-actions { width: 100%; display: grid; grid-template-columns: 1fr 1.6fr; gap: 10px; }
+.fiche .f-actions button { min-height: 56px; font: 400 17px/1 var(--f-titre); border: 3px solid #f6f6f2; }
+.fiche .garder { background: transparent; color: #f6f6f2; }
+.fiche .vendre { background: #f6f6f2; color: var(--nuit); }
+.fiche .vendre:disabled { opacity: 0.7; }
+/* Le tampon de Masadora sur la carte vendue. */
+.fiche .tampon { position: absolute; z-index: 3; left: 50%; top: 46%; width: 78%; translate: -50% -50%; rotate: -14deg; pointer-events: none; visibility: hidden; }
+.fiche .tampon svg { width: 100%; height: auto; overflow: visible; }
+.fiche .tampon.pose { visibility: visible; animation: frapper 0.34s cubic-bezier(.3, 1.6, .5, 1); }
+.piece { position: fixed; z-index: 80; left: 0; top: 0; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; pointer-events: none; background: radial-gradient(circle at 35% 30%, #fff6cf 0, #f7dc8a 30%, #c99a2a 70%, #8f6614 100%); box-shadow: 0 0 0 1.5px #6e500f, 0 2px 4px rgba(0, 0, 0, 0.4); display: grid; place-items: center; font: 800 10px/1 var(--f-chiffre); color: #6b4f0d; }
+
+/* ---------- Boîte du jeu ---------- */
+.gi-annonce { position: fixed; z-index: 70; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 70px); width: min(calc(100% - 24px), 440px); transform: translate(-50%, calc(-100% - 120px)); visibility: hidden; transition: transform 0.45s var(--sortie), visibility 0s 0.45s; background: var(--nuit); color: #f6f6f2; border-radius: 6px; box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f6f6f2, inset 0 0 0 8px var(--nuit), inset 0 0 0 9px #f6f6f2, 0 16px 30px -14px rgba(0, 0, 0, 0.6); padding: 22px 22px 18px; display: grid; gap: 8px; }
+.gi-annonce.visible { transform: translate(-50%, 0); visibility: visible; transition: transform 0.45s var(--sortie), visibility 0s; }
+.a-qui { justify-self: start; font: 400 15px/1 var(--f-jeu); background: #f6f6f2; color: var(--nuit); padding: 4px 8px; }
+.t-sort .a-qui { background: var(--bleu-vif); }
+.gi-annonce .a-texte { font: 400 20px/1.4 var(--f-jeu); margin: 0; }
+.gi-annonce .a-actions { display: flex; gap: 10px; }
+.gi-annonce .a-actions button { background: #f6f6f2; color: var(--nuit); border: 0; font: 400 16px var(--f-jeu); padding: 10px 14px; min-height: 44px; }
+.gi-dialogue { background: var(--nuit); color: #f6f6f2; border-radius: 6px; box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f6f6f2, inset 0 0 0 8px var(--nuit), inset 0 0 0 9px #f6f6f2, 0 10px 24px -10px rgba(0, 0, 0, 0.6); padding: 18px 20px 16px; display: grid; gap: 10px; }
+.gi-dialogue .a-texte { font: 400 19px/1.45 var(--f-jeu); margin: 0; min-height: 1.45em; }
+
+/* ---------- Cinématique : ouverture du paquet ---------- */
+.cine { --pw: min(46vw, 196px); --cw: min(38vw, 164px, calc((100dvh - 400px) * 63 / 88)); position: fixed; inset: 0; z-index: 65; pointer-events: none; overflow: hidden; visibility: hidden; }
+.cine.joue { visibility: visible; pointer-events: auto; cursor: pointer; }
+.cine .nuit { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 42%, #1c3366 0, #0d1730 46%, #04060c 92%); opacity: 0; }
+.cine .lignes { position: absolute; inset: -30%; opacity: 0; }
+.cine .lignes svg { width: 100%; height: 100%; }
+.cine canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* Rayons qui sortent de l'ouverture. */
+.cine .rayons { position: absolute; left: 50%; top: var(--ouverture, 30%); width: 150vmax; height: 150vmax; margin: -75vmax 0 0 -75vmax; opacity: 0; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, rgba(191, 214, 255, 0.5) 0deg 4deg, rgba(191, 214, 255, 0) 4deg 15deg);
+  -webkit-mask: radial-gradient(closest-side, #000 0, rgba(0, 0, 0, 0.6) 30%, transparent 70%); mask: radial-gradient(closest-side, #000 0, rgba(0, 0, 0, 0.6) 30%, transparent 70%); }
+.cine .scene { position: absolute; left: 50%; top: 46%; width: 0; height: 0; }
+.cine .scene > * { position: absolute; will-change: transform; }
+.cine .c-paquet { left: calc(var(--pw) / -2); top: calc(var(--pw) * -50 / 63); z-index: 2; opacity: 0; }
+.cine .c-paquet .paquet { --pw: min(46vw, 196px); }
+.cine .c-paquet.embrase .paquet { filter: drop-shadow(0 0 10px #cfe0ff) drop-shadow(0 0 28px #6f9bff); }
+.cine .c-paquet .haut-volant { position: absolute; left: 0; right: 0; top: 0; height: 14%; z-index: 3; }
+/* La déchirure : une ligne de lumière qui court le long du serti. */
+.cine .dechirure { position: absolute; z-index: 4; left: 4%; right: 4%; top: 12.5%; height: 3px; background: #fff; box-shadow: 0 0 8px 2px #cfe0ff, 0 0 22px 6px #6f9bff; transform-origin: left; scale: 0 1; opacity: 0; }
+.cine .c-carte { z-index: 1; width: var(--cw); left: calc(var(--cw) / -2); top: calc(var(--cw) * 88 / 63 / -2); perspective: 1100px; opacity: 0; }
+.cine .retourne { position: relative; transform-style: preserve-3d; }
+.cine .retourne > .gi-carte { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.cine .retourne > .gi-carte:not(.dos) .c-cadre { box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35), 0 18px 30px rgba(0, 0, 0, 0.55); }
+.cine .retourne > .dos { position: absolute; inset: 0; transform: rotateY(180deg); }
+.cine .flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+.cine .dialogue { pointer-events: none; position: absolute; left: 50%; bottom: max(18px, env(safe-area-inset-bottom, 0px)); width: min(calc(100% - 24px), 440px); translate: -50% 0; opacity: 0; }
+.cine .dialogue .a-indice { margin: 0; font: 600 14px/1.3 var(--f-texte); color: #c3c6cc; opacity: 0; transition: opacity 0.3s; }
+.cine .dialogue .a-indice.visible { opacity: 1; }
+.cine .passer { pointer-events: none; position: absolute; bottom: max(16px, env(safe-area-inset-bottom, 0px)); left: 50%; translate: -50% 0; font: 600 13px var(--f-texte); color: rgba(235, 238, 242, 0.75); white-space: nowrap; opacity: 0; transition: opacity 0.25s; }
+.cine.intro .passer { opacity: 1; transition-delay: 0.6s; }
+
+@media (max-width: 359px) {
+  .vitrine { grid-template-columns: 1fr; justify-items: center; }
+  .infos { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Encre des tampons : bord mangé et manques. -->
+    <filter id="encre" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" result="grain"/>
+      <feDisplacementMap in="SourceGraphic" in2="grain" scale="3.2" result="bord"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.22" numOctaves="2" seed="11" result="taches"/>
+      <feColorMatrix in="taches" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2.3 2.2" result="masque"/>
+      <feComposite in="bord" in2="masque" operator="in"/>
+    </filter>
+  </defs>
+</svg>
+
+<div class="app">
+  <div class="proto" role="group" aria-label="Commandes du prototype">
+    <p>Prototype : tu es Gon, à Masadora. L’achat ouvre le paquet ; touche une carte pour la revendre.</p>
+    <div class="rang"><span>Présence</span>
+      <button data-presence="qr" aria-pressed="true">QR scanné</button>
+      <button data-presence="non" aria-pressed="false">pas encore scanné</button>
+      <button data-presence="retour" aria-pressed="false">à distance (Retour)</button>
+    </div>
+    <div class="rang"><span>Boutique</span>
+      <button id="p-krach" aria-pressed="false">Krach −50 %</button>
+      <button id="p-stock">vider le stock</button>
+      <button id="p-pauvre">Gon n’a que 30 J</button>
+      <button id="p-refus" aria-pressed="false">le serveur refuse l’achat</button>
+    </div>
+  </div>
+
+  <header class="barre" aria-label="État de la partie">
+    <span class="chrono">1:24:10</span>
+    <span class="liaison"><i class="pastille"></i>En ligne</span>
+    <span class="jenny" id="jenny"><span id="mes-jenny">120</span><small>J</small></span>
+  </header>
+
+  <div class="tete-ville">
+    <button class="retour"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Accueil</button>
+    <div class="enseigne"><div class="planche"><h1>MASADORA</h1><span>la ville des cartes de sort</span></div></div>
+    <span class="distance" id="distance" hidden>Visite à distance (Retour) · <b id="dist-reste">8:12</b></span>
+  </div>
+
+  <section class="case vitrine" aria-labelledby="t-paquet">
+    <div class="presentoir" id="presentoir">
+      <div class="paquet" id="paquet"></div>
+      <span class="tampon-krach" id="tampon-krach" hidden></span>
+    </div>
+    <div class="infos">
+      <div>
+        <h2 id="t-paquet" class="quoi" style="font:800 16px/1.25 var(--f-texte)">Paquet de 3 sorts au hasard</h2>
+      </div>
+      <div class="prix"><b id="prix">50<small>J</small></b><s id="prix-avant" hidden>50 J</s></div>
+      <p class="krach-fin" id="krach-fin" hidden>Fin du Krach dans <b id="krach-reste">12:04</b></p>
+      <dl>
+        <div><dt>Reste cette vague</dt><dd id="stock">4 paquets</dd></div>
+        <div><dt>Vague suivante</dt><dd id="vague">13:21</dd></div>
+        <div><dt>Tes achats</dt><dd id="achats">1 / 2</dd></div>
+      </dl>
+    </div>
+    <button class="acheter" id="acheter">Acheter un paquet · 50 J</button>
+  </section>
+
+  <section class="case revente" id="revente" aria-labelledby="t-revente">
+    <div class="tete"><h2 id="t-revente">Revendre</h2><span>Masadora reprend toute carte, sauf les SS</span></div>
+    <p class="aide" id="revente-aide" hidden>Scanne le QR de la boutique pour revendre.</p>
+    <h3>Cartes</h3>
+    <div class="grille" id="g-cartes"></div>
+    <h3>Objets</h3>
+    <div class="grille" id="g-objets"></div>
+    <p class="aide">Rachat : D 5 J · C 10 J · B 20 J · A 40 J · S 80 J · contrefaçon 1 J. Une carte posée sur une table d’échange n’apparaît pas ici.</p>
+  </section>
+</div>
+
+<nav class="onglets" aria-label="Navigation">
+  <button data-onglet="accueil" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 3l9 8M6 9.5V21h12V9.5M10 21v-6h4v6"/></svg>Accueil</button>
+  <button data-onglet="scan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5M7 12h10"/></svg>Scanner</button>
+  <button data-onglet="livre"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2zM5 19a2 2 0 0 1 2-2h12M9 7h6"/></svg>Book</button>
+  <button data-onglet="sorts" id="onglet-sorts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 2.6 6.6L21 9.5l-5 4.4 1.6 6.6L12 17l-5.6 3.5L8 13.9 3 9.5l6.4-.9z"/></svg>Sorts</button>
+  <button data-onglet="echanges"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg>Échanges</button>
+</nav>
+
+<div class="fiche" id="fiche" hidden role="dialog" aria-modal="true" aria-labelledby="f-ou">
+  <div class="f-boite">
+    <div class="f-carte" id="f-carte"><div id="f-visuel"></div><span class="tampon" id="f-tampon" aria-hidden="true"></span></div>
+    <p class="ou" id="f-ou"></p>
+    <div class="f-actions"><button class="garder" id="f-garder">Garder</button><button class="vendre" id="f-vendre">Revendre</button></div>
+  </div>
+</div>
+
+<div class="gi-annonce" id="annonce" role="alert">
+  <span class="a-qui" id="an-qui">Masadora</span>
+  <p class="a-texte" id="an-texte"></p>
+  <div class="a-actions"><button id="an-fermer">Fermer</button></div>
+</div>
+
+<!-- Cinématique -->
+<div class="cine" id="cine" aria-hidden="true">
+  <div class="nuit" id="c-nuit"></div>
+  <div class="lignes" id="c-lignes"></div>
+  <div class="rayons" id="c-rayons"></div>
+  <canvas id="fx"></canvas>
+  <div class="scene" id="scene">
+    <div class="c-paquet" id="c-paquet"></div>
+  </div>
+  <div class="flash" id="c-flash"></div>
+  <div class="dialogue gi-dialogue t-sort" id="c-dialogue" role="status">
+    <span class="a-qui">Paquet ouvert</span>
+    <p class="a-texte" id="c-texte"></p>
+    <p class="a-indice" id="c-indice">Touche pour ranger dans tes sorts</p>
+  </div>
+  <span class="passer">Touche pour passer</span>
+</div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const DOS_SVG = '<svg viewBox="0 0 100 100" fill="none" stroke="#d7b25a" aria-hidden="true"><circle cx="50" cy="50" r="42" stroke-width="2.5"/><circle cx="50" cy="50" r="34" stroke-width="1"/><path d="m50 8 8 34 34 8-34 8-8 34-8-34-34-8 34-8z" stroke-width="2"/><circle cx="50" cy="50" r="9" stroke-width="2.5"/></svg>';
+
+// ---------- Données du prototype (dans l'app : GET /boutique, GET /livre, POST /boutique/achat et /revente) ----------
+const SORTS = [
+  ['1007', 'Vol', 'Prend 1 carte au hasard dans les emplacements fixes d’un joueur proche.'],
+  ['1006', 'Pickpocket', 'Prend 1 carte au hasard dans les emplacements libres d’un joueur proche.'],
+  ['1008', 'Échange', 'Donne 1 carte choisie à un joueur proche et lui en prend 1 au hasard.'],
+  ['—', 'Gel', 'Un joueur proche ne peut plus scanner pendant 3 min.'],
+  ['1003', 'Mur défensif', 'Annule le prochain sort offensif reçu.'],
+  ['1027', 'Trace', 'Montre la zone de la dernière position d’un joueur.'],
+  ['1030', 'Guide', 'Montre la zone d’une balise rare active.'],
+  ['1010', 'Mimétisme', 'Copie une carte de ton Book.'],
+  ['1024', 'Pénétration', 'Rend leur vraie apparence aux cartes modifiées d’une page de ton Book.'],
+  ['1001', 'Voyance', 'Montre les emplacements libres d’un joueur déjà croisé.'],
+  ['1002', 'Clairvoyance', 'Montre les emplacements fixes d’un joueur déjà croisé.'],
+  ['1039', 'Accompagnement', 'Montre la position d’un joueur déjà croisé pendant 3 min et le gèle 3 min.'],
+  ['1009', 'Retour', 'Utilise à distance une ville déjà visitée pendant 10 min.'],
+].map(([num, nom, txt]) => ({ num, nom, txt, genre: 'sort' }));
+const LIM = { SS: 1, S: 2, A: 3, B: 5, C: 8, D: 12 };
+const REVENTE = { SS: null, S: 80, A: 40, B: 20, C: 10, D: 5 };
+const C = (id, num, nom, rang, txt, ou, extra = {}) => ({ id, num, nom, rang, lim: LIM[rang], txt, genre: 'designee', ou, ...extra });
+// `vraie` : ce que Masadora reconnaîtra (le joueur ne le sait pas). `connue` : contrefaçon déjà démasquée.
+const MES = [
+  C('m1', '079', 'Le diamant arc-en-ciel', 'C', 'Le diamant des demandes en mariage : la réponse est toujours oui.', 'Page libre'),
+  C('m2', '022', 'Toraemon', 'C', 'Une bête rare qui fourre des trésors dans sa poche à quatre dimensions.', 'Page libre', { vraie: 'copie' }),
+  C('m3', '025', 'Le dé du risque', 'D', 'Un dé de dix-neuf étoiles et une tête de mort. La tête de mort efface tout.', 'Page libre'),
+  C('m4', '019', 'L’oreiller de l’esprit joueur', 'B', 'Un oreiller qui laisse l’esprit vagabonder pendant le sommeil, 24 heures au plus.', 'Emplacement 019 de ton Book'),
+  C('m5', '074', 'L’aigue-marine philosophale', 'A', 'Une aigue-marine qui entoure son porteur d’amis brillants et fidèles toute sa vie.', 'Emplacement 074 de ton Book'),
+  C('m6', '080', 'La pierre flottante', 'S', 'Une pierre nourrie par le soleil, qui fait flotter une personne.', 'Emplacement 080 de ton Book'),
+  C('m7', '011', 'Contrefaçon de La balance d’or', 'D', 'Une copie démasquée. Masadora la reprend 1 J.', 'Page libre', { connue: true }),
+  C('m8', '002', 'La pièce du roi', 'SS', 'Une pièce frappée pour le roi de l’île. Introuvable ailleurs.', 'Emplacement 002 de ton Book'),
+];
+const OBJETS = [
+  { id: 'o1', num: '1040', nom: 'Pépite d’or', txt: 'Une pépite brute. Masadora la reprend 30 J.', genre: 'objet', ou: 'Section Objets', prix: 30 },
+  { id: 'o2', num: '1032', nom: 'Loterie', txt: 'Gratte le ticket : de 0 à 100 jenny.', genre: 'objet', ou: 'Section Objets', prix: 10 },
+];
+const S = { presence: 'qr', krach: false, krachReste: 724, stock: 4, vague: 801, achats: 1, max: 2, prixBase: 50, refus: false, retourReste: 492 };
+const prix = () => Math.ceil(S.prixBase * (S.krach ? 0.5 : 1));
+const prixRevente = (c) => (c.genre === 'objet' ? c.prix : c.connue ? 1 : REVENTE[c.rang]);
+
+// ---------- Outils ----------
+const vibrer = (p) => navigator.vibrate?.(p);
+const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.max(0, s) % 60).padStart(2, '0')}`;
+const centre = (el) => { const b = el.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2]; };
+const jenny = () => +$('#mes-jenny').textContent;
+function carteHTML(c) {
+  const coin = c.genre === 'sort' ? '<span class="gi-rang r-sort">Sort</span>' : c.genre === 'objet' ? '<span class="gi-rang r-objet">Objet</span>' : `<span class="gi-rang r-${c.rang}">${c.rang}<span class="lim">-${c.lim}</span></span>`;
+  return `<div class="gi-carte f-${c.genre}"><div class="c-cadre"><div class="c-tete"><span class="c-num${c.num.length > 3 ? ' long' : ''}">${c.num}</span><span class="c-nom${c.nom.length > 10 ? ' long' : ''}">${c.nom}</span>${coin}</div><div class="c-art"><span class="c-filigrane">${c.num.slice(-3)}</span></div><p class="c-txt">${c.txt}</p></div></div>`;
+}
+const DOS = `<div class="gi-carte dos"><div class="c-cadre">${DOS_SVG}</div></div>`;
+const PAQUET = `<div class="serti haut"></div><div class="corps"><span class="marque">MASADORA</span><span class="embleme">${DOS_SVG}</span><span class="nombre"><b>×3</b><span>cartes de sort</span></span></div><div class="serti bas"></div>`;
+$('#paquet').innerHTML = PAQUET;
+function flotte(texte, genre) {
+  const f = document.createElement('span'); f.className = `flotte ${genre}`; f.textContent = texte;
+  $('#jenny').append(f);
+  f.animate([{ opacity: 0, translate: '0 -6px' }, { opacity: 1, translate: '0 4px', offset: 0.15 }, { opacity: 1, offset: 0.8 }, { opacity: 0, translate: '0 10px' }], { duration: 1700, easing: 'ease-out' }).finished.then(() => f.remove());
+}
+
+// ---------- Tampons ----------
+const tampon = (mots, taille = 17) => `<svg viewBox="-80 -36 160 72" aria-hidden="true"><g filter="url(#encre)" fill="none" stroke="#e0463c">
+  <rect x="-76" y="-32" width="152" height="64" rx="5" stroke-width="5"/><rect x="-68" y="-25" width="136" height="50" rx="2" stroke-width="1.5"/>
+  ${mots.map((m, i) => `<text y="${mots.length === 1 ? 7 : -4 + i * 20}" text-anchor="middle" fill="#e0463c" stroke="none" style="font: 400 ${i ? 14 : taille}px 'Dela Gothic One', 'Arial Black', sans-serif; letter-spacing: .5px">${m}</text>`).join('')}
+</g></svg>`;
+$('#tampon-krach').innerHTML = tampon(['KRACH', '−50 %'], 22);
+
+// ---------- Vitrine ----------
+function dessinerVitrine() {
+  const p = prix();
+  $('#prix').innerHTML = `${p}<small>J</small>`;
+  $('#prix-avant').hidden = !S.krach;
+  $('#krach-fin').hidden = !S.krach;
+  $('#krach-reste').textContent = mmss(S.krachReste);
+  $('#stock').textContent = S.stock ? `${S.stock} paquet${S.stock > 1 ? 's' : ''}` : 'épuisé';
+  $('#stock').classList.toggle('vide', !S.stock);
+  $('#vague').textContent = mmss(S.vague);
+  $('#achats').textContent = `${S.achats} / ${S.max}`;
+  $('#achats').classList.toggle('vide', S.achats >= S.max);
+  const b = $('#acheter');
+  b.classList.toggle('qr', S.presence === 'non');
+  if (envoi) return;
+  if (S.presence === 'non') { b.disabled = false; b.textContent = 'Scanner le QR de la boutique'; }
+  else if (!S.stock) { b.disabled = true; b.textContent = `Plus de paquets : vague suivante dans ${mmss(S.vague)}`; }
+  else if (S.achats >= S.max) { b.disabled = true; b.textContent = `Tes ${S.max} paquets de la vague : suivante dans ${mmss(S.vague)}`; }
+  else if (jenny() < p) { b.disabled = true; b.textContent = `Il te manque ${p - jenny()} J`; }
+  else { b.disabled = false; b.textContent = `Acheter un paquet · ${p} J`; }
+  $('#distance').hidden = S.presence !== 'retour';
+  $('#dist-reste').textContent = mmss(S.retourReste);
+  $('#revente').classList.toggle('ferme', S.presence === 'non');
+  $('#revente-aide').hidden = S.presence !== 'non';
+}
+function dessinerRevente() {
+  const tuile = (c) => {
+    const p = prixRevente(c);
+    return `<button class="choix${c.connue ? ' faux' : ''}" data-id="${c.id}" ${p === null ? 'disabled' : ''} aria-label="${c.nom}, ${p === null ? 'invendable' : `rachat ${p} jenny`}">${carteHTML(c)}<span class="rachat">${p === null ? 'invendable' : `${p} J`}</span></button>`;
+  };
+  $('#g-cartes').innerHTML = MES.map(tuile).join('');
+  $('#g-objets').innerHTML = OBJETS.map(tuile).join('');
+}
+dessinerRevente();
+let envoi = false;
+dessinerVitrine();
+setInterval(() => {
+  if (S.krach && --S.krachReste <= 0) { S.krach = false; S.krachReste = 900; majBoutons(); }
+  if (--S.vague <= 0) { S.vague = 1200; S.stock = 4; S.achats = 0; }
+  if (S.presence === 'retour' && --S.retourReste <= 0) { S.presence = 'non'; S.retourReste = 600; majBoutons(); }
+  dessinerVitrine();
+}, 1000);
+
+// ---------- Annonce ----------
+function annoncer(t, qui = 'Masadora') { $('#an-qui').textContent = qui; $('#an-texte').textContent = t; $('#annonce').classList.add('visible'); $('#an-fermer').focus({ preventScroll: true }); }
+$('#an-fermer').addEventListener('click', () => $('#annonce').classList.remove('visible'));
+
+// ---------- Achat ----------
+$('#acheter').addEventListener('click', async () => {
+  if (S.presence === 'non') { S.presence = 'qr'; majBoutons(); dessinerVitrine(); annoncer('QR de Masadora lu : tu es à la boutique.'); return; }
+  const p = prix();
+  envoi = true; const b = $('#acheter'); b.disabled = true; b.textContent = 'Envoi…';
+  $('#presentoir').classList.add('envoi');
+  await new Promise((r) => setTimeout(r, 650)); // la requête part au toucher
+  $('#presentoir').classList.remove('envoi'); envoi = false;
+  if (S.refus) { S.stock = 0; dessinerVitrine(); vibrer([60, 60, 60]); annoncer(`Plus de paquets pour cette vague : la suivante arrive dans ${mmss(S.vague)}. Rien n’a été dépensé.`); return; }
+  $('#mes-jenny').textContent = jenny() - p; flotte(`−${p} J`, 'perte');
+  S.stock--; S.achats++;
+  dessinerVitrine();
+  const tirage = Array.from({ length: 3 }, () => SORTS[Math.floor(Math.random() * SORTS.length)]);
+  await ouverture(tirage);
+  dessinerVitrine();
+});
+
+// ---------- Revente ----------
+let enVente = null;
+function ouvrirFiche(c) {
+  enVente = c;
+  const p = prixRevente(c);
+  $('#f-visuel').innerHTML = carteHTML(c);
+  $('#f-tampon').classList.remove('pose'); $('#f-tampon').innerHTML = '';
+  $('#f-ou').textContent = c.genre === 'objet' ? `${c.ou}. Masadora le reprend ${p} J.` : c.ou.startsWith('Emplacement') ? `${c.ou} : il redeviendra vide. Masadora la reprend ${p} J.` : `${c.ou}. Masadora la reprend ${p} J.`;
+  const v = $('#f-vendre'); v.disabled = false; v.textContent = `Revendre ${p} J`;
+  $('#fiche').hidden = false; v.focus({ preventScroll: true });
+}
+function fermerFiche() { $('#fiche').hidden = true; enVente = null; }
+document.querySelectorAll('.grille').forEach((g) => g.addEventListener('click', (e) => {
+  const b = e.target.closest('.choix'); if (!b || b.disabled) return;
+  ouvrirFiche([...MES, ...OBJETS].find((x) => x.id === b.dataset.id));
+}));
+$('#f-garder').addEventListener('click', fermerFiche);
+$('#fiche').addEventListener('click', (e) => { if (e.target === $('#fiche')) fermerFiche(); });
+addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#fiche').hidden) fermerFiche(); });
+$('#f-vendre').addEventListener('click', async () => {
+  const c = enVente; if (!c) return;
+  const v = $('#f-vendre'); v.disabled = true; v.textContent = 'Envoi…';
+  await new Promise((r) => setTimeout(r, 450));
+  // Le serveur dit ce que Masadora a reconnu (RG-8.9).
+  const copie = c.vraie === 'copie';
+  const p = copie ? 1 : prixRevente(c);
+  const t = $('#f-tampon');
+  t.innerHTML = copie ? tampon(['CONTRE-', 'FAÇON'], 18) : tampon(['VENDU', `${p} J`], 24);
+  t.classList.add('pose'); vibrer(copie ? [60, 60, 60] : 40);
+  await new Promise((r) => setTimeout(r, copie ? 900 : 600));
+  // Les pièces quittent la carte et tombent dans la barre.
+  const [x0, y0] = centre($('#f-carte')), [x1, y1] = centre($('#mes-jenny'));
+  const n = Math.min(8, 1 + Math.round(Math.log2(1 + p / 5) * 2));
+  fermerFiche();
+  const tuile = document.querySelector(`.choix[data-id="${c.id}"]`); tuile?.classList.add('part');
+  await Promise.all(Array.from({ length: n }, (_, i) => {
+    const el = document.createElement('i'); el.className = 'piece'; el.textContent = 'J'; document.body.append(el);
+    const dx = (Math.random() - 0.5) * 120, haut = 80 + Math.random() * 80;
+    return el.animate([
+      { transform: `translate(${x0 + dx * 0.3}px,${y0}px) scale(.6)`, opacity: 0 },
+      { transform: `translate(${x0 + dx}px,${y0 - haut}px) scale(1.1)`, opacity: 1, offset: 0.35 },
+      { transform: `translate(${x1}px,${y1}px) scale(.7)`, opacity: 1 },
+    ], { duration: reduit ? 1 : 760, delay: reduit ? 0 : i * 70, easing: 'cubic-bezier(.5,0,.7,1)', fill: 'both' }).finished.then(() => { el.remove(); vibrer(8); });
+  }));
+  $('#mes-jenny').textContent = jenny() + p; flotte(`+${p} J`, 'gain');
+  const liste = c.genre === 'objet' ? OBJETS : MES; liste.splice(liste.indexOf(c), 1);
+  dessinerRevente(); dessinerVitrine();
+  if (copie) annoncer(`Masadora a reconnu une contrefaçon : ${c.nom} reprise 1 J.`);
+});
+
+// ---------- Effets (canvas) ----------
+const cv = $('#fx'), ctx = cv.getContext('2d');
+let dpr = 1, parts = [], ondes = [], image = 0, dernier = 0;
+function taille() { dpr = Math.min(1.5, devicePixelRatio || 1); cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; }
+addEventListener('resize', taille); taille();
+const lueurs = {};
+function lueur(col) {
+  if (lueurs[col]) return lueurs[col];
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d'), rg = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  rg.addColorStop(0, col); rg.addColorStop(0.35, col + '99'); rg.addColorStop(1, col + '00');
+  g.fillStyle = rg; g.fillRect(0, 0, 64, 64); return (lueurs[col] = c);
+}
+const MAX_PARTS = 320;
+function etincelles(x, y, n, col, force = 1, haut = false) {
+  lancerBoucle();
+  n = Math.min(n, MAX_PARTS - parts.length);
+  for (let i = 0; i < n; i++) {
+    const a = haut ? -Math.PI / 2 + (Math.random() - 0.5) * 1.6 : Math.random() * Math.PI * 2, v = (240 + Math.random() * 620) * force;
+    parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, col, vie: 0, max: 0.45 + Math.random() * 0.7, t: 2 + Math.random() * 4, g: 60 });
+  }
+}
+function onde(x, y, col, max = 1.4) { lancerBoucle(); ondes.push({ x, y, col, vie: 0, max: 0.55, rmax: Math.max(innerWidth, innerHeight) * 0.55 * max }); }
+function boucle(now) {
+  const dt = Math.max(0, Math.min(0.05, (now - dernier) / 1000)); dernier = now;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, innerWidth, innerHeight);
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i]; p.vie += dt;
+    const a = 1 - p.vie / p.max; if (a <= 0) { parts.splice(i, 1); continue; }
+    p.vx *= 0.94; p.vy = p.vy * 0.94 + p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+    const t = p.t * (0.4 + a * 0.8), l = lueur(p.col);
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a;
+    ctx.drawImage(l, p.x - t * 3, p.y - t * 3, t * 6, t * 6);
+  }
+  for (let i = ondes.length - 1; i >= 0; i--) {
+    const o = ondes[i]; o.vie += dt; const k = o.vie / o.max; if (k >= 1) { ondes.splice(i, 1); continue; }
+    const r = o.rmax * (1 - Math.pow(1 - k, 3));
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (1 - k) * 0.9; ctx.strokeStyle = o.col; ctx.lineWidth = 10 * (1 - k) + 1;
+    ctx.beginPath(); ctx.arc(o.x, o.y, r, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  image = parts.length || ondes.length ? requestAnimationFrame(boucle) : 0;
+}
+const lancerBoucle = () => { if (!image && !reduit) { dernier = performance.now(); image = requestAnimationFrame(boucle); } };
+
+// Lignes de concentration de la nuit.
+(function () {
+  let s = 23; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  let d = '';
+  for (let i = 0; i < 130; i++) {
+    const a = r() * Math.PI * 2, r0 = 40 + r() * 26, w = 0.004 + r() * 0.014;
+    const p = (ang, rad) => `${(Math.cos(ang) * rad).toFixed(1)} ${(Math.sin(ang) * rad).toFixed(1)}`;
+    d += `M${p(a, r0)}L${p(a - w, 170)}L${p(a + w, 170)}Z`;
+  }
+  $('#c-lignes').innerHTML = `<svg viewBox="-100 -100 200 200" preserveAspectRatio="xMidYMid slice"><path d="${d}" fill="#cfe0ff"/></svg>`;
+})();
+
+// ---------- Cinématique : le paquet arrive, se déchire, trois sorts en sortent ----------
+let anims = [], attentes = new Set(), saute = false, phase = 'repos', attenteToucher = null, revelA = 0;
+// L'opacité finale est aussi posée en style (leçon des pages ⑧ et ⑪ : sur certains téléphones, le `fill` ne tient pas).
+const A = (el, k, o) => {
+  const a = el.animate(k, { fill: 'both', easing: 'cubic-bezier(.16,1,.3,1)', ...o, duration: reduit || saute ? 1 : o.duration, delay: reduit || saute ? 0 : o.delay || 0 });
+  anims.push(a);
+  const fin = k[k.length - 1];
+  if (fin.opacity !== undefined) el.style.opacity = String(fin.opacity);
+  return a;
+};
+function pause(ms) {
+  return new Promise((res) => {
+    if (saute || reduit) return res();
+    const f = () => { clearTimeout(t); attentes.delete(f); res(); };
+    const t = setTimeout(f, ms); attentes.add(f);
+  });
+}
+const finAnim = (a) => a.finished.catch(() => {});
+function sauter() { if (saute) return; saute = true; [...attentes].forEach((f) => f()); anims.forEach((a) => { try { a.finish(); } catch {} }); }
+function taper(el, texte) {
+  el.textContent = '';
+  if (reduit || saute) { el.textContent = texte; return Promise.resolve(); }
+  return new Promise((res) => { let n = 0; const pas = () => { if (saute) { el.textContent = texte; return res(); } el.textContent = texte.slice(0, ++n); n >= texte.length ? res() : setTimeout(pas, 22); }; pas(); });
+}
+const cine = $('#cine');
+function toucher() { return new Promise((res) => { attenteToucher = res; }); }
+cine.addEventListener('pointerdown', () => {
+  if (phase === 'intro') sauter();
+  else if (phase === 'revele' && !attenteToucher) sauter();
+  else if (phase === 'revele' && attenteToucher && performance.now() - revelA > 350) { const r = attenteToucher; attenteToucher = null; r(); }
+});
+addEventListener('keydown', (e) => { if (cine.classList.contains('joue') && ['Enter', ' ', 'Escape'].includes(e.key)) { e.preventDefault(); cine.dispatchEvent(new PointerEvent('pointerdown')); } });
+const enListe = (noms) => (noms.length > 1 ? `${noms.slice(0, -1).join(', ')} et ${noms[noms.length - 1]}` : noms[0]);
+
+async function ouverture(sorts) {
+  saute = false; phase = 'intro'; anims.forEach((a) => a.cancel()); anims = []; parts = []; ondes = [];
+  const nuit = $('#c-nuit'), lignes = $('#c-lignes'), rayons = $('#c-rayons'), flash = $('#c-flash'), dlg = $('#c-dialogue'), scene = $('#scene');
+  const cp = $('#c-paquet');
+  cp.innerHTML = `<div class="paquet">${PAQUET}</div><span class="dechirure"></span>`;
+  scene.querySelectorAll('.c-carte').forEach((e) => e.remove());
+  scene.insertAdjacentHTML('beforeend', sorts.map((s) => `<div class="c-carte"><div class="retourne" style="transform:rotateY(180deg)">${carteHTML(s)}${DOS}</div></div>`).join(''));
+  const cartes = [...scene.querySelectorAll('.c-carte')];
+  cartes.forEach((c) => (c.style.zIndex = c === cartes[1] ? '1' : '0'));
+  [nuit, lignes, rayons, flash, dlg, cp, ...cartes].forEach((e) => (e.style.opacity = '0'));
+  cp.classList.remove('embrase');
+  $('#c-indice').classList.remove('visible'); $('#c-texte').textContent = '';
+  cine.classList.add('joue', 'intro');
+  vibrer([30, 40, 60]);
+
+  // Géométrie : le paquet de la vitrine → le centre de la scène.
+  const vb = $('#paquet').getBoundingClientRect();
+  const sb = scene.getBoundingClientRect();
+  const pw = cp.querySelector('.paquet').getBoundingClientRect().width || 196, ph = pw * 100 / 63;
+  const k0 = vb.width / pw;
+  const dx0 = vb.left + vb.width / 2 - sb.left, dy0 = vb.top + vb.height / 2 - sb.top;
+  const yPaquet = 0; // le paquet est centré sur la scène
+  cine.style.setProperty('--ouverture', `${sb.top - ph * 0.41}px`);
+
+  // 1. La nuit tombe ; le paquet quitte la vitrine et vient au centre.
+  A(nuit, [{ opacity: 0 }, { opacity: 1 }], { duration: 320 });
+  A(lignes, [{ opacity: 0, scale: 1.3 }, { opacity: 0.2, scale: 1 }], { duration: 500 });
+  A(cp, [
+    { opacity: 1, transform: `translate(${dx0}px,${dy0}px) scale(${k0})` },
+    { opacity: 1, transform: 'translate(0,0) scale(1.08) rotate(-3deg)', offset: 0.75 },
+    { opacity: 1, transform: 'translate(0,0) scale(1)' },
+  ], { duration: 620, easing: 'cubic-bezier(.3,0,.2,1)' });
+  await pause(640);
+  // 2. Il tremble, la lumière monte dedans.
+  cp.classList.add('embrase');
+  const [px, py] = centre(cp);
+  A(cp.querySelector('.paquet'), [{ translate: '0 0' }, { translate: '-4px 0', rotate: '-2deg' }, { translate: '4px 0', rotate: '2deg' }, { translate: '-3px 0', rotate: '-1deg' }, { translate: '3px 0', rotate: '1deg' }, { translate: '0 0', rotate: '0deg' }], { duration: 420, easing: 'linear', iterations: 1 });
+  vibrer([20, 30, 20, 30, 20]);
+  etincelles(px, py, 24, '#8fb2ff', 0.4);
+  await pause(460);
+  // 3. La déchirure court le long du serti, le haut du sachet saute.
+  const dech = cp.querySelector('.dechirure');
+  A(dech, [{ opacity: 1, scale: '0 1' }, { opacity: 1, scale: '1 1' }], { duration: 300, easing: 'cubic-bezier(.5,0,.5,1)' });
+  await pause(300);
+  const haut = cp.querySelector('.serti.haut');
+  A(haut, [{ transform: 'translate(0,0) rotate(0)', opacity: 1 }, { transform: `translate(${pw * 0.7}px,${-ph * 0.5}px) rotate(38deg)`, opacity: 0 }], { duration: 620, easing: 'cubic-bezier(.2,.6,.4,1)' });
+  A(dech, [{ opacity: 1 }, { opacity: 0 }], { duration: 260 });
+  A(flash, [{ opacity: 0.6 }, { opacity: 0 }], { duration: 300, easing: 'ease-out' });
+  const yOuv = py - ph * 0.42;
+  onde(px, yOuv, '#cfe0ff', 1.1); etincelles(px, yOuv, 70, '#ffffff', 0.9, true); etincelles(px, yOuv, 40, '#8fb2ff', 0.8, true);
+  A(rayons, [{ opacity: 0, rotate: '0deg', scale: 0.4 }, { opacity: 0.9, rotate: '12deg', scale: 1 }], { duration: 700 });
+  vibrer(80);
+  // 4. Trois cartes montent du sachet, de dos ; le sachet tombe.
+  const ch = cartes[0].getBoundingClientRect().height || 160, cw = cartes[0].getBoundingClientRect().width || 116;
+  const yDedans = yPaquet + ch * 0.1, yHors = yPaquet - ph * 0.62;
+  cartes.forEach((c, i) => A(c, [{ opacity: 1, transform: `translate(0,${yDedans}px)` }, { opacity: 1, transform: `translate(${(i - 1) * 14}px,${yHors}px) rotate(${(i - 1) * 6}deg)` }], { duration: 520, delay: 120 + i * 110, easing: 'cubic-bezier(.2,.9,.3,1)' }));
+  await pause(520 + 220);
+  A(cp, [{ opacity: 1, transform: 'translate(0,0)' }, { opacity: 0, transform: `translate(0,${innerHeight * 0.45}px) rotate(8deg)` }], { duration: 560, easing: 'cubic-bezier(.55,0,.8,.4)' });
+  // 5. Elles s'ouvrent en éventail au centre.
+  const pas = Math.min(cw * 0.76, (innerWidth - 24 - cw) / 2), yEv = Math.min(-ch * 0.15, 0);
+  cartes.forEach((c, i) => A(c, [{ opacity: 1, transform: `translate(${(i - 1) * 14}px,${yHors}px) rotate(${(i - 1) * 6}deg)` }, { opacity: 1, transform: `translate(${(i - 1) * pas}px,${yEv + Math.abs(i - 1) * 14}px) rotate(${(i - 1) * 7}deg)` }], { duration: 560, easing: 'cubic-bezier(.3,1.3,.5,1)' }));
+  A(rayons, [{ opacity: 0.9, rotate: '12deg' }, { opacity: 0.45, rotate: '40deg' }], { duration: 2400, easing: 'linear' });
+  await pause(560);
+  // 6. Elles se retournent une à une.
+  phase = 'revele';
+  for (let i = 0; i < cartes.length; i++) {
+    A(cartes[i].querySelector('.retourne'), [{ transform: 'rotateY(180deg)' }, { transform: 'rotateY(0deg)' }], { duration: 520, easing: 'cubic-bezier(.3,1.3,.5,1)' });
+    await pause(260);
+    const [x, y] = centre(cartes[i]); etincelles(x, y, 26, '#cfe0ff', 0.5); vibrer(25);
+    await pause(200);
+  }
+  if (saute) anims.forEach((a) => { try { a.finish(); } catch {} });
+  cine.classList.remove('intro');
+  // 7. Le jeu nomme ce qui est sorti.
+  A(dlg, [{ opacity: 0, translate: '-50% 20px' }, { opacity: 1, translate: '-50% 0' }], { duration: 300 });
+  const n = {}; sorts.forEach((s) => (n[s.nom] = (n[s.nom] || 0) + 1));
+  await taper($('#c-texte'), `Tu as obtenu ${enListe(Object.entries(n).map(([nom, k]) => (k > 1 ? `${nom} ×${k}` : nom)))}.`);
+  $('#c-indice').classList.add('visible');
+  revelA = performance.now();
+  await toucher();
+  // 8. Les cartes filent vers l'onglet Sorts ; « +3 ».
+  phase = 'fin'; saute = false;
+  const [bx, by] = centre($('#onglet-sorts'));
+  A(dlg, [{ opacity: 1 }, { opacity: 0 }], { duration: 200 });
+  A(rayons, [{ opacity: 0.45 }, { opacity: 0 }], { duration: 300 });
+  const vols = cartes.map((c, i) => {
+    const [x, y] = centre(c);
+    return c.animate([{ translate: '0 0', scale: 1, opacity: 1 }, { translate: `${bx - x}px ${by - y}px`, scale: 0.16, opacity: 0.2 }], { duration: reduit ? 1 : 560, delay: reduit ? 0 : i * 80, easing: 'cubic-bezier(.55,0,.75,.3)', fill: 'both' });
+  });
+  vols.forEach((a) => anims.push(a));
+  A(nuit, [{ opacity: 1 }, { opacity: 0 }], { duration: 520, delay: 220 });
+  A(lignes, [{ opacity: 0.2 }, { opacity: 0 }], { duration: 300 });
+  await Promise.all(vols.map(finAnim));
+  cartes.forEach((c) => (c.style.opacity = '0'));
+  const p = document.createElement('span'); p.className = 'plus-un'; p.textContent = `+${sorts.length}`;
+  $('#onglet-sorts').append(p);
+  p.animate([{ opacity: 0, translate: '-50% 8px' }, { opacity: 1, translate: '-50% 0', offset: 0.2 }, { opacity: 1, offset: 0.8 }, { opacity: 0 }], { duration: 1600 }).finished.then(() => p.remove());
+  vibrer(30);
+  await pause(320);
+  cine.classList.remove('joue'); phase = 'repos'; anims.forEach((a) => a.cancel()); anims = [];
+}
+
+// ---------- Commandes du prototype ----------
+function majBoutons() {
+  document.querySelectorAll('[data-presence]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.presence === S.presence)));
+  $('#p-krach').setAttribute('aria-pressed', String(S.krach));
+  $('#p-refus').setAttribute('aria-pressed', String(S.refus));
+  $('#tampon-krach').hidden = !S.krach;
+}
+document.querySelectorAll('[data-presence]').forEach((b) => b.addEventListener('click', () => { S.presence = b.dataset.presence; if (S.presence === 'retour') S.retourReste = 492; majBoutons(); dessinerVitrine(); }));
+$('#p-krach').addEventListener('click', () => {
+  S.krach = !S.krach; S.krachReste = 724; majBoutons(); dessinerVitrine();
+  if (S.krach) { const t = $('#tampon-krach'); t.classList.remove('frappe'); void t.offsetWidth; t.classList.add('frappe'); vibrer(50); }
+});
+$('#p-stock').addEventListener('click', () => { S.stock = 0; dessinerVitrine(); });
+$('#p-pauvre').addEventListener('click', () => { $('#mes-jenny').textContent = 30; dessinerVitrine(); });
+$('#p-refus').addEventListener('click', () => { S.refus = !S.refus; majBoutons(); });
+</script>

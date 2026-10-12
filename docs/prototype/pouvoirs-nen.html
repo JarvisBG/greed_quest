@@ -1,0 +1,1065 @@
+<html lang="fr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pouvoirs de Nen</title>
+<meta name="description" content="Prototype de la page ⑩ : la case du Nen en tête de la page Sorts, la fiche en deux temps (Texture Surprise, Alchimie, L’épée du vol, Échange forcé) et la cinématique « aura puis effet » de chaque pouvoir.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@800&family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,800;1,400&family=Dela+Gothic+One&family=DotGothic16&display=swap">
+<style>
+/* Page ⑩ : les pouvoirs de Nen. La case du Nen ouvre la page Sorts : l'hexagone, ton type allumé à la
+   couleur de ton aura, le pouvoir, sa jauge de recharge. Utiliser un pouvoir = l'aura jaillit en
+   flammes cernées d'encre autour du médaillon (rappel de la divination), le nom du pouvoir est crié,
+   puis chaque pouvoir a sa scène : l'encre coule (Texture Surprise), le cercle de transmutation
+   (Alchimie), la lame (L'épée du vol), l'aura s'éteint (Zetsu), la pièce frappée (Fortune). */
+:root {
+  color-scheme: light;
+  --papier: #eeefe9;
+  --case: #fbfbf7;
+  --case-2: #ecece6;
+  --encre: #111111;
+  --encre-2: #3b3d40;
+  --trame: rgba(17, 17, 17, 0.16);
+  --rouge: #c0272d;
+  --bleu: #1f4a9c;
+  --bleu-vif: #8fb2ff;
+  --jaune: #d9a11a;
+  --or: #d7b25a;
+  --succes: #17713a;
+  --alerte: #b3161c;
+  --nuit: #0c0c0e;
+  --nen-renforcement: #ff5a4a;
+  --nen-emission: #ff9a3c;
+  --nen-transformation: #b07cff;
+  --nen-materialisation: #3fd3d8;
+  --nen-manipulation: #5fe07a;
+  --nen-specialisation: #ffd24a;
+  --aura: var(--nen-transformation);
+  --f-titre: 'Dela Gothic One', 'Arial Black', sans-serif;
+  --f-texte: 'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif;
+  --f-chiffre: 'Atkinson Hyperlegible Mono', ui-monospace, monospace;
+  --f-jeu: 'DotGothic16', ui-monospace, monospace;
+  --trait: 3px;
+  --sortie: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { box-sizing: border-box; }
+html, body { overflow-x: clip; }
+body { margin: 0; background: var(--papier); color: var(--encre); font: 400 17px/1.45 var(--f-texte); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+::selection { background: var(--jaune); color: var(--encre); }
+:focus-visible { outline: 3px solid var(--bleu); outline-offset: 3px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+[hidden] { display: none !important; }
+
+.app { max-width: 480px; margin: 0 auto; padding: 0 16px 104px; display: grid; gap: 10px; }
+.app > * { min-width: 0; }
+
+/* Commandes du prototype (pas dans l'app) */
+.proto { display: grid; gap: 7px; padding: 10px 12px; margin-inline: -16px; background: var(--encre); color: var(--case); }
+.proto p { margin: 0; font: 600 13px/1.3 var(--f-texte); }
+.proto .rang { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.proto .rang > span { font: 800 12px var(--f-texte); color: #b9bcc2; min-width: 44px; }
+.proto button { min-height: 36px; padding: 0 10px; border: 2px solid var(--case); background: transparent; color: var(--case); font: 700 13px var(--f-texte); }
+.proto button[aria-pressed='true'] { background: var(--case); color: var(--encre); }
+
+/* Barre d'état de l'app */
+.barre { position: sticky; top: 0; z-index: 30; margin-inline: -16px; padding: 10px 16px; background: var(--case); border-bottom: var(--trait) solid var(--encre); display: flex; align-items: center; gap: 12px; min-height: 58px; }
+.chrono { font: 800 30px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.liaison { display: flex; align-items: center; gap: 6px; font: 600 14px var(--f-texte); }
+.pastille { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--encre); background: var(--succes); display: inline-block; }
+.jenny { margin-left: auto; font: 800 22px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.jenny small { font: 600 15px var(--f-texte); margin-left: 3px; }
+
+/* Zetsu : le bandeau, sur toutes les pages, tant qu'il dure. Imprimé en trame, comme ce qui est éteint. */
+.zetsu { position: sticky; top: 58px; z-index: 29; margin-inline: -16px; display: flex; align-items: center; gap: 12px; padding: 8px 16px; border-bottom: var(--trait) solid var(--encre); background: var(--case-2) radial-gradient(rgba(17, 17, 17, 0.22) 0.9px, transparent 1.2px) 0 0 / 5px 5px; }
+.zetsu .mot { font: 400 26px/1 var(--f-titre); color: var(--case); -webkit-text-stroke: 2px var(--encre); paint-order: stroke fill; letter-spacing: 0.02em; }
+.zetsu .dit { display: grid; font: 800 15px/1.15 var(--f-texte); }
+.zetsu .dit small { font: 600 13px/1.2 var(--f-texte); color: var(--encre-2); }
+.zetsu .temps { margin-left: auto; font: 800 26px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; background: var(--case); border: 2px solid var(--encre); padding: 4px 7px; }
+
+.tete-page { display: flex; align-items: baseline; gap: 12px; padding-top: 6px; }
+.tete-page h1 { margin: 0; font: 400 30px/1 var(--f-titre); }
+.tete-page .compte { margin-left: auto; font: 600 15px var(--f-texte); color: var(--encre-2); }
+
+/* ---------- La case du Nen ---------- */
+.nen { position: relative; display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 4px 14px; align-items: center; padding: 14px 16px 16px; border: var(--trait) solid var(--encre); background: var(--case); overflow: hidden; isolation: isolate; }
+/* Le halo d'aura derrière l'hexagone : une trame de la couleur du type. */
+.nen::before { content: ''; position: absolute; z-index: -1; left: -30px; top: -30px; width: 170px; height: 170px; border-radius: 50%; background: radial-gradient(color-mix(in srgb, var(--aura) 85%, var(--encre)) 1.1px, transparent 1.5px) 0 0 / 5px 5px; -webkit-mask: radial-gradient(closest-side, #000 30%, transparent); mask: radial-gradient(closest-side, #000 30%, transparent); opacity: 0.55; }
+.nen.eteint::before { opacity: 0; }
+.nen-hexa { grid-row: span 3; align-self: start; width: 96px; height: 96px; }
+.nen-hexa svg { width: 100%; height: 100%; overflow: visible; }
+.nen-sur { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font: 600 14px/1.2 var(--f-texte); color: var(--encre-2); }
+.nen-sur [lang='ja'] { font: 400 13px/1 var(--f-titre); color: var(--encre); }
+.nen-sur .secret { font: 800 12px/1 var(--f-texte); text-transform: uppercase; letter-spacing: 0.06em; background: var(--encre); color: var(--case); padding: 3px 6px; }
+.nen h2 { margin: 0; font: 400 25px/1.05 var(--f-titre); text-wrap: balance; }
+.nen-effet { margin: 0; font: 400 15px/1.35 var(--f-texte); color: var(--encre-2); }
+.nen-charge { grid-column: 1 / -1; display: grid; gap: 6px; margin-top: 10px; }
+.nen-ligne { display: flex; align-items: baseline; gap: 10px; min-height: 30px; }
+.nen-ligne .etat { font: 800 16px/1.2 var(--f-texte); }
+.nen-ligne .pret { font: 400 22px/1 var(--f-titre); letter-spacing: 0.02em; }
+.nen-ligne .temps { margin-left: auto; font: 800 28px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+/* La jauge : l'aura remplit la case à mesure qu'elle se recharge. */
+.jauge { position: relative; height: 18px; border: 2px solid var(--encre); background: var(--case) radial-gradient(var(--trame) 0.9px, transparent 1.1px) 0 0 / 5px 5px; overflow: hidden; }
+.jauge i { position: absolute; inset: 0 auto 0 0; width: var(--rempli, 0%); background: var(--aura); border-right: 2px solid var(--encre); transition: width 1s linear; }
+.jauge i::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(-55deg, rgba(17, 17, 17, 0.14) 0 2px, transparent 2px 7px); }
+.nen.pret .jauge i { border-right: 0; }
+.nen.actif-zetsu .jauge i { background: #b9bab4; }
+.nen-tampon { position: absolute; right: 12px; top: 12px; rotate: 8deg; padding: 3px 7px; border: 3px solid var(--encre); background: var(--case); font: 400 14px/1 var(--f-titre); letter-spacing: 0.04em; }
+.nen-agir { grid-column: 1 / -1; margin-top: 12px; min-height: 58px; border: var(--trait) solid var(--encre); background: var(--encre); color: var(--case); font: 800 18px/1.15 var(--f-texte); padding: 10px 16px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.nen-agir svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.nen-annuler { grid-column: 1 / -1; justify-self: start; }
+/* Le pouvoir revient : un seul éclat d'aura, pas de clignotement en boucle. */
+.nen.revient { animation: revient 0.9s var(--sortie); }
+@keyframes revient { 0% { box-shadow: 0 0 0 0 var(--aura); } 35% { box-shadow: 0 0 0 9px var(--aura); } 100% { box-shadow: 0 0 0 0 transparent; } }
+.piece-mini { width: 30px; height: 30px; flex: none; }
+
+/* ---------- La main : les cartes de sort (page ⑧) ---------- */
+.famille { display: grid; gap: 10px; margin-top: 8px; }
+.famille-tete { display: flex; align-items: center; gap: 10px; border-bottom: var(--trait) solid var(--encre); padding-bottom: 6px; }
+.famille-tete h2 { margin: 0; font: 400 20px/1.1 var(--f-titre); }
+.main { display: grid; grid-template-columns: repeat(3, minmax(0, 124px)); justify-content: space-between; gap: 16px 12px; margin: 0; padding: 0; list-style: none; }
+.pochette { position: relative; display: grid; gap: 7px; width: 100%; padding: 0; border: 0; background: none; text-align: center; touch-action: manipulation; transition: opacity 0.25s; }
+.pochette .tas { position: relative; display: block; border-radius: 6px; transition: box-shadow 0.25s, translate 0.2s var(--sortie); }
+.pochette .tas .gi-carte + .gi-carte { position: absolute; inset: 0; }
+.pochette .tas.double .gi-carte:first-child { translate: 5px 4px; rotate: 4deg; }
+.pochette .nb { position: absolute; z-index: 2; right: -6px; top: -8px; min-width: 32px; height: 32px; padding: 0 6px; display: grid; place-items: center; border-radius: 16px; background: var(--encre); color: var(--case); font: 800 15px/1 var(--f-chiffre); box-shadow: 0 0 0 2px var(--case); }
+.pochette .nom { font: 800 15px/1.15 var(--f-texte); text-wrap: balance; overflow-wrap: anywhere; }
+.pochette .etat { display: block; font: 600 13px/1.2 var(--f-texte); color: var(--encre-2); }
+.tampon { position: absolute; z-index: 2; left: 50%; top: 52%; translate: -50% -50%; rotate: -14deg; padding: 3px 7px; border: 3px solid var(--encre); background: var(--case); font: 400 14px/1 var(--f-titre); letter-spacing: 0.04em; }
+/* Émission chargée : les offensifs portent l'aura, les autres s'effacent. */
+.emission-on .pochette:not(.off) { opacity: 0.35; pointer-events: none; }
+.emission-on .pochette.off .tas { box-shadow: 0 0 0 3px var(--encre), 0 0 0 8px var(--aura), 0 0 0 10px var(--encre); translate: 0 -3px; }
+.emission-on .pochette.off .nom::after { content: 'hors portée'; display: block; font: 600 13px/1.2 var(--f-texte); color: var(--encre-2); }
+@media (hover: hover) { .pochette:hover .tas { translate: 0 -3px; } }
+
+/* ---------- Fiche (choix en deux temps) ---------- */
+.fiche { position: fixed; inset: 0; z-index: 40; background: var(--papier); overflow-y: auto; overscroll-behavior: contain; visibility: hidden; }
+.fiche.ouverte { visibility: visible; }
+.fiche-corps { max-width: 480px; margin: 0 auto; padding: 8px 16px 120px; display: grid; gap: 14px; }
+.retour { justify-self: start; display: flex; align-items: center; gap: 4px; min-height: 48px; padding: 0 4px 0 0; border: 0; background: none; font: 800 17px var(--f-texte); }
+.retour svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.fiche-tete { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 4px 14px; align-items: center; }
+.fiche-tete .nen-hexa { width: 64px; height: 64px; grid-row: span 2; }
+.fiche-tete h1 { margin: 0; font: 400 28px/1.05 var(--f-titre); }
+.fiche-tete p { margin: 0; font: 400 15px/1.35 var(--f-texte); color: var(--encre-2); }
+.case { background: var(--case); border: var(--trait) solid var(--encre); padding: 14px 16px; display: grid; gap: 10px; }
+.case h2 { margin: 0; font: 400 20px/1.1 var(--f-titre); display: flex; align-items: baseline; gap: 10px; }
+.case h2 .n { display: inline-grid; place-items: center; width: 30px; height: 30px; flex: none; border-radius: 50%; background: var(--encre); color: var(--case); font: 800 16px/1 var(--f-chiffre); translate: 0 -2px; }
+.case p { margin: 0; }
+.case .aide { font: 400 15px/1.35 var(--f-texte); color: var(--encre-2); }
+.case.attend { background: var(--case) radial-gradient(var(--trame) 0.9px, transparent 1.1px) 0 0 / 5px 5px; }
+.case.attend > :not(h2) { display: none; }
+.case.attend h2 { color: var(--encre-2); }
+.case.attend h2::after { content: 'après ①'; margin-left: auto; font: 600 14px var(--f-texte); }
+.cibles { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.cibles button { width: 100%; min-height: 56px; display: flex; align-items: center; gap: 12px; padding: 8px 14px; border: var(--trait) solid var(--encre); background: var(--case); font: 800 19px/1.1 var(--f-texte); text-align: left; }
+.cibles button .ok { margin-left: auto; width: 26px; height: 26px; visibility: hidden; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.cibles button[aria-pressed='true'] { background: var(--encre); color: var(--case); }
+.cibles button[aria-pressed='true'] .ok { visibility: visible; }
+.mes-cartes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 10px; margin: 0; padding: 0; list-style: none; }
+.mes-cartes button { position: relative; width: 100%; min-height: 48px; display: grid; align-content: start; gap: 5px; padding: 4px; border: 0; border-radius: 6px; background: none; text-align: center; font: 700 14px/1.15 var(--f-texte); overflow-wrap: break-word; hyphens: auto; text-wrap: balance; }
+.mes-cartes .gi-carte { color: var(--encre); }
+.mes-cartes button[aria-pressed='true'] { background: var(--encre); color: var(--case); }
+.mes-cartes button:disabled { cursor: default; color: var(--encre-2); }
+.mes-cartes button:disabled .gi-carte { filter: grayscale(1) contrast(0.8) brightness(1.1); }
+.mes-cartes button:disabled .gi-carte::after { content: ''; position: absolute; inset: 0; border-radius: 4px; background: radial-gradient(rgba(17, 17, 17, 0.3) 0.9px, transparent 1.2px) 0 0 / 4px 4px; }
+.mes-cartes .pourquoi { font: 600 12.5px/1.2 var(--f-texte); }
+.mes-cartes .hasard { aspect-ratio: 63 / 88; display: grid; place-items: center; border: 3px dashed var(--encre); border-radius: 4px; background: var(--case-2); font: 400 40px/1 var(--f-titre); }
+@media (hover: hover) { .mes-cartes button:hover:not([aria-pressed='true']):not(:disabled) { background: var(--case-2); } }
+.rang-titre { grid-column: 1 / -1; margin: 6px 0 -4px; font: 800 14px/1 var(--f-texte); display: flex; align-items: center; gap: 8px; }
+.rang-titre::after { content: ''; flex: 1; border-top: 2px solid var(--encre); }
+.gi-lien { background: none; border: 0; padding: 6px 0; min-height: 44px; font: 600 16px var(--f-texte); color: var(--encre); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; }
+.pied { position: fixed; z-index: 41; left: 0; right: 0; bottom: 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--papier); border-top: var(--trait) solid var(--encre); visibility: hidden; }
+.fiche.ouverte + .pied { visibility: visible; }
+.agir { display: block; width: 100%; max-width: 448px; margin: 0 auto; min-height: 60px; border: var(--trait) solid var(--encre); background: var(--encre); color: var(--case); font: 800 19px/1.15 var(--f-texte); padding: 10px 16px; }
+.agir:disabled { background: var(--case) radial-gradient(var(--trame) 0.9px, transparent 1.1px) 0 0 / 5px 5px; color: var(--encre-2); cursor: default; }
+
+/* ---------- Onglets ---------- */
+.onglets { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, 1fr); background: var(--case); border-top: var(--trait) solid var(--encre); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.onglets button { position: relative; min-height: 64px; border: 0; border-right: 1.5px solid var(--encre); background: transparent; display: grid; justify-items: center; align-content: center; gap: 3px; font: 800 12.5px/1 var(--f-texte); padding: 6px 2px; }
+.onglets button:last-child { border-right: 0; }
+.onglets svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.onglets button[aria-current='page'] { background: var(--encre); color: var(--case); }
+/* Fortune armée : la pièce reste posée sur l'onglet Scanner jusqu'au prochain scan. */
+.onglets .fortune { position: absolute; top: 3px; left: calc(50% + 6px); width: 30px; height: 30px; pointer-events: none; }
+
+/* ---------- Carte de Greed Island (copie de @gq/ui) ---------- */
+.gi-carte { container-type: inline-size; aspect-ratio: 63 / 88; width: 100%; position: relative; }
+.gi-carte .c-cadre { position: absolute; inset: 0; border-radius: 4.5cqi; padding: 5cqi; background: var(--cadre, var(--rouge)); box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35); display: grid; grid-template-rows: auto 1fr auto; gap: 3cqi; }
+.gi-carte.f-sort { --cadre: var(--bleu); }
+.gi-carte.f-designee .c-txt { font-style: italic; }
+.gi-carte .c-tete { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 3cqi; background: var(--case); border-radius: 2cqi; padding: 2.5cqi 3cqi; box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); }
+.gi-carte .c-num { font: 800 9cqi/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.gi-carte .c-num.long { font-size: 7.4cqi; }
+.gi-carte .c-nom { font: 800 6.4cqi/1.1 var(--f-texte); text-align: center; text-wrap: balance; hyphens: auto; overflow-wrap: break-word; }
+.gi-carte .c-nom.long { font-size: 5.6cqi; }
+.gi-rang { font: 400 7cqi/1 var(--f-titre); padding: 1.6cqi 2.4cqi; border-radius: 1.6cqi; white-space: nowrap; color: var(--encre); background: var(--matiere, var(--case)); box-shadow: 0 0 0 0.6cqi var(--encre); }
+.gi-carte .c-art { border-radius: 2cqi; background: #f4f2ea radial-gradient(var(--trame) 0.9px, transparent 1.1px) 0 0 / 5px 5px; box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); display: grid; place-items: center; overflow: hidden; min-height: 0; }
+.gi-carte .c-filigrane { font: 400 30cqi/1 var(--f-titre); color: transparent; -webkit-text-stroke: 0.9cqi rgba(17, 17, 17, 0.55); letter-spacing: -0.02em; }
+.gi-carte .c-txt { margin: 0; background: var(--case); border-radius: 2cqi; padding: 3cqi 3.5cqi; font: 400 5.6cqi/1.3 var(--f-texte); box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); }
+.r-SS { --matiere: linear-gradient(125deg, #9c7a1c 0%, #f6dc85 28%, #c39a2c 50%, #fbe7a6 72%, #a8841f 100%); }
+.r-S  { --matiere: linear-gradient(125deg, #8d949b 0%, #f1f3f5 35%, #aab1b8 60%, #e9ecef 100%); }
+.r-A  { --matiere: linear-gradient(125deg, #c97a4a 0%, #f2b48a 45%, #d88a58 100%); }
+.r-B  { --matiere: linear-gradient(125deg, #6fb596 0%, #b6e0cc 50%, #82c2a6 100%); }
+.r-C  { --matiere: linear-gradient(125deg, #9eb0c4 0%, #d6dfea 50%, #aebfd1 100%); }
+.r-D, .r-sort { --matiere: var(--case); }
+@container (max-width: 130px) {
+  .gi-carte .c-nom, .gi-carte .c-txt { display: none; }
+  .gi-carte .c-tete { grid-template-columns: 1fr auto; padding: 4cqi; }
+  .gi-carte .c-num { font-size: 17cqi; }
+  .gi-carte .c-num.long { font-size: 14cqi; }
+  .gi-carte .gi-rang { font-size: 13cqi; padding: 2.5cqi 4cqi; }
+  .gi-carte .gi-rang .lim, .gi-carte .r-sort { display: none; }
+  .gi-carte.f-sort .c-tete { grid-template-columns: 1fr; }
+  .gi-carte .c-cadre { padding: 6cqi; gap: 5cqi; grid-template-rows: auto 1fr; }
+}
+.gi-carte.dos .c-cadre { background: #15233f; box-shadow: inset 0 0 0 1.2cqi #15233f, inset 0 0 0 2.2cqi var(--or), inset 0 0 0 3.4cqi #15233f, inset 0 0 0 4cqi var(--or); place-items: center; grid-template-rows: 1fr; }
+.gi-carte.dos svg { width: 58%; height: auto; }
+
+/* ---------- Boîte du jeu ---------- */
+.gi-dialogue { background: var(--nuit); color: #f6f6f2; border-radius: 6px; box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f6f6f2, inset 0 0 0 8px var(--nuit), inset 0 0 0 9px #f6f6f2, 0 10px 24px -10px rgba(0, 0, 0, 0.6); padding: 18px 20px 16px; display: grid; gap: 10px; }
+.gi-dialogue .a-qui { justify-self: start; font: 400 15px/1 var(--f-jeu); background: #f6f6f2; color: var(--nuit); padding: 4px 8px; }
+.gi-dialogue .a-qui.refus { background: #ff8c86; }
+.gi-dialogue .a-texte { font: 400 19px/1.45 var(--f-jeu); margin: 0; min-height: 1.45em; }
+
+/* ---------- Cinématique : l'aura puis l'effet ---------- */
+/* Elle reste sur la planche (papier, encre, lignes de vitesse) : seule l'aura et les cartes sont en couleur. */
+.cine { position: fixed; inset: 0; z-index: 50; pointer-events: none; overflow: hidden; visibility: hidden; }
+.cine.joue { visibility: visible; pointer-events: auto; cursor: pointer; }
+.cine .fond { position: absolute; inset: 0; background: var(--papier); opacity: 0; }
+.cine .fond.trame { background: var(--case-2) radial-gradient(rgba(17, 17, 17, 0.2) 1px, transparent 1.3px) 0 0 / 5px 5px; transition: background 0.8s; }
+.cine .lignes { position: absolute; inset: -30%; opacity: 0; }
+.cine .lignes svg { width: 100%; height: 100%; }
+.cine canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.cine .medaille { position: absolute; left: 50%; top: 30%; width: min(40vw, 172px); aspect-ratio: 1; margin: calc(min(40vw, 172px) / -2) 0 0 calc(min(40vw, 172px) / -2); border-radius: 50%; border: 5px solid var(--encre); background: radial-gradient(circle at 36% 30%, #fff 0, color-mix(in srgb, var(--aura) 60%, #fff) 26%, var(--aura) 62%, color-mix(in srgb, var(--aura) 70%, var(--encre)) 100%); display: grid; place-items: center; opacity: 0; will-change: transform; transition: filter 0.9s; }
+.cine .medaille span { font: 400 calc(min(40vw, 172px) * var(--k, 0.34))/1 var(--f-titre); color: #fff; -webkit-text-stroke: 4px var(--encre); paint-order: stroke fill; letter-spacing: -0.04em; }
+.cine .medaille.gris { filter: grayscale(1) brightness(1.15) contrast(0.7); }
+.cine .cri { position: absolute; left: 0; right: 0; top: 50%; display: grid; justify-items: center; pointer-events: none; }
+.cine .cri span { display: block; font: 400 var(--taille, 72px)/0.95 var(--f-titre); letter-spacing: -0.02em; white-space: nowrap; color: var(--aura); -webkit-text-stroke: 5px var(--encre); paint-order: stroke fill; opacity: 0; }
+.cine .cri.creux span { color: var(--case); -webkit-text-stroke: 3px var(--encre-2); transition: color 0.8s, -webkit-text-stroke 0.8s; }
+.cine .flash { position: absolute; inset: 0; background: var(--aura); opacity: 0; mix-blend-mode: multiply; }
+.cine .flash.blanc { background: #fff; mix-blend-mode: normal; }
+.cine .scene { position: absolute; left: 50%; top: 47%; width: min(50vw, 220px, calc((100dvh - 450px) * 63 / 88)); translate: -50% -50%; }
+.cine .porte { position: relative; aspect-ratio: 63 / 88; opacity: 0; will-change: transform; }
+.cine .porte > div { position: absolute; inset: 0; }
+.cine .porte .gi-carte .c-cadre { box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35), 0 14px 26px -8px rgba(0, 0, 0, 0.45); }
+.cine .tag { position: absolute; left: 50%; translate: -50% 0; top: calc(100% + 12px); font: 400 17px/1 var(--f-jeu); color: var(--case); background: var(--encre); padding: 6px 10px; white-space: nowrap; opacity: 0; }
+/* Texture Surprise : l'encre de l'aura coule sur la carte et la redessine. */
+.cine .coulure { position: absolute; inset: 0; overflow: hidden; border-radius: 10px; pointer-events: none; }
+.cine .coulure svg { position: absolute; left: -2%; width: 104%; height: 230%; top: -230%; }
+/* Alchimie : le cercle de transmutation, couché sous la carte. */
+.cine .cercle { position: absolute; left: 50%; top: 100%; width: 190%; aspect-ratio: 1; translate: -50% -50%; transform: rotateX(68deg); pointer-events: none; }
+.cine .cercle svg { width: 100%; height: 100%; overflow: visible; }
+.cine .feles { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; }
+/* L'épée du vol : la lame traverse l'écran. */
+.cine .lame { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; }
+.cine .mur { position: absolute; left: 50%; top: 56%; width: min(86vw, 380px); aspect-ratio: 1; translate: -50% -50%; opacity: 0; }
+.cine .mur svg { width: 100%; height: 100%; overflow: visible; }
+/* Fortune : la pièce. */
+.cine .piece { position: absolute; left: 50%; top: 52%; width: min(46vw, 190px); aspect-ratio: 1; margin: calc(min(46vw, 190px) / -2) 0 0 calc(min(46vw, 190px) / -2); opacity: 0; will-change: transform; }
+.cine .piece svg { width: 100%; height: 100%; overflow: visible; }
+.cine .onomato { position: absolute; left: 50%; top: 52%; font: 400 min(15vw, 64px)/1 var(--f-titre); color: var(--case); -webkit-text-stroke: 4px var(--encre); paint-order: stroke fill; opacity: 0; white-space: nowrap; }
+/* Zetsu : le décompte qui commence. */
+.cine .zetsu-temps { position: absolute; left: 50%; top: 71%; translate: -50% -50%; display: grid; justify-items: center; gap: 6px; opacity: 0; }
+.cine .zetsu-temps b { font: 800 min(22vw, 96px)/1 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
+.cine .zetsu-temps span { font: 800 17px/1.2 var(--f-texte); background: var(--case); border: 2px solid var(--encre); padding: 4px 9px; }
+.cine .dialogue { pointer-events: none; position: absolute; left: 50%; bottom: max(18px, env(safe-area-inset-bottom, 0px)); width: min(calc(100% - 24px), 440px); translate: -50% 0; opacity: 0; }
+.cine .dialogue .a-indice { margin: 0; font: 600 14px/1.3 var(--f-texte); color: #c3c6cc; opacity: 0; transition: opacity 0.3s; }
+.cine .dialogue .a-indice.visible { opacity: 1; }
+.cine .passer { pointer-events: none; position: absolute; bottom: max(16px, env(safe-area-inset-bottom, 0px)); left: 50%; translate: -50% 0; font: 600 13px var(--f-texte); color: var(--encre-2); white-space: nowrap; opacity: 0; transition: opacity 0.25s; }
+.cine.intro .passer { opacity: 1; transition-delay: 0.6s; }
+.volante { position: fixed; z-index: 60; left: 0; top: 0; pointer-events: none; will-change: transform; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+</style>
+
+<div class="app" id="app">
+  <div class="proto" role="group" aria-label="Commandes du prototype">
+    <p>Prototype : choisis ton type de Nen (et ton pouvoir secret), son état, la réponse du serveur, puis utilise le pouvoir.</p>
+    <div class="rang" id="p-types"><span>Nen</span></div>
+    <div class="rang" id="p-spe"><span>Secret</span></div>
+    <div class="rang" id="p-etat"><span>État</span></div>
+    <div class="rang" id="p-issues"><span>Issue</span></div>
+  </div>
+
+  <header class="barre" aria-label="État de la partie">
+    <span class="chrono">1:24:10</span>
+    <span class="liaison"><i class="pastille"></i>En ligne</span>
+    <span class="jenny">1 250<small>J</small></span>
+  </header>
+  <div class="zetsu" id="zetsu" role="status" hidden>
+    <span class="mot">ZETSU</span>
+    <span class="dit">Tu es invisible<small>Un sort offensif ou un échange le rompt</small></span>
+    <span class="temps" id="zetsu-n">10:00</span>
+  </div>
+
+  <div class="tete-page">
+    <h1>Sorts</h1>
+    <span class="compte">7 cartes</span>
+  </div>
+
+  <section class="nen" id="nen" aria-labelledby="nen-titre"></section>
+
+  <div id="main">
+    <section class="famille" aria-labelledby="t-off">
+      <div class="famille-tete"><h2 id="t-off">Offensifs</h2></div>
+      <ul class="main" id="main-off"></ul>
+    </section>
+    <section class="famille" aria-labelledby="t-autres">
+      <div class="famille-tete"><h2 id="t-autres">Autres sorts</h2></div>
+      <ul class="main" id="main-autres"></ul>
+    </section>
+  </div>
+</div>
+
+<div class="fiche" id="fiche" role="dialog" aria-modal="true" aria-labelledby="fiche-titre">
+  <div class="fiche-corps" id="fiche-corps"></div>
+</div>
+<div class="pied"><button class="agir" id="agir" disabled></button></div>
+
+<nav class="onglets" aria-label="Navigation">
+  <button data-onglet="accueil"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 3l9 8M6 9.5V21h12V9.5M10 21v-6h4v6"/></svg>Accueil</button>
+  <button data-onglet="scan" id="onglet-scan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5M7 12h10"/></svg>Scanner</button>
+  <button data-onglet="livre" id="onglet-livre"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2zM5 19a2 2 0 0 1 2-2h12M9 7h6"/></svg>Book</button>
+  <button data-onglet="sorts" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 2.6 6.6L21 9.5l-5 4.4 1.6 6.6L12 17l-5.6 3.5L8 13.9 3 9.5l6.4-.9z"/></svg>Sorts</button>
+  <button data-onglet="echanges"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg>Échanges</button>
+</nav>
+
+<div class="cine" id="cine" aria-hidden="true">
+  <div class="fond" id="fond"></div>
+  <div class="lignes" id="lignes"></div>
+  <canvas id="fx"></canvas>
+  <div class="medaille" id="medaille"><span id="medaille-k"></span></div>
+  <div class="cri" id="cri"></div>
+  <div class="scene" id="scene">
+    <div class="porte" id="porte"><div id="carte-a"></div><div id="carte-b"></div><div class="coulure" id="coulure"></div><svg class="feles" id="feles" viewBox="0 0 63 88" aria-hidden="true"></svg></div>
+    <div class="cercle" id="cercle"></div>
+    <span class="tag" id="tag"></span>
+  </div>
+  <div class="mur" id="mur"></div>
+  <svg class="lame" id="lame" aria-hidden="true"></svg>
+  <div class="piece" id="piece"></div>
+  <span class="onomato" id="onomato">TING !</span>
+  <div class="zetsu-temps" id="zetsu-temps"><b id="zetsu-grand">10:00</b><span>Tu es invisible</span></div>
+  <div class="flash" id="flash"></div>
+  <div class="dialogue gi-dialogue" id="dialogue" role="status">
+    <span class="a-qui" id="d-qui">Greed Island</span>
+    <p class="a-texte" id="d-texte"></p>
+    <p class="a-indice" id="d-indice">Touche pour fermer</p>
+  </div>
+  <span class="passer">Touche pour passer</span>
+</div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const DOS_SVG = '<svg viewBox="0 0 100 100" fill="none" stroke="#d7b25a" aria-hidden="true"><circle cx="50" cy="50" r="42" stroke-width="2.5"/><circle cx="50" cy="50" r="34" stroke-width="1"/><path d="m50 8 8 34 34 8-34 8-8 34-8-34-34-8 34-8z" stroke-width="2"/><circle cx="50" cy="50" r="9" stroke-width="2.5"/></svg>';
+const DOS = `<div class="gi-carte dos"><div class="c-cadre">${DOS_SVG}</div></div>`;
+
+// ---------- Données du prototype (le serveur décide dans l'app) ----------
+const MIN = 60_000;
+const NENS = {
+  renforcement: { nom: 'Renforcement', kanji: '強化系', court: '強化' },
+  transformation: { nom: 'Transformation', kanji: '変化系', court: '変化' },
+  materialisation: { nom: 'Matérialisation', kanji: '具現化系', court: '具現化' },
+  specialisation: { nom: 'Spécialisation', kanji: '特質系', court: '特質' },
+  manipulation: { nom: 'Manipulation', kanji: '操作系', court: '操作' },
+  emission: { nom: 'Émission', kanji: '放出系', court: '放出' },
+};
+const ORDRE = ['renforcement', 'transformation', 'materialisation', 'specialisation', 'manipulation', 'emission'];
+// Chaque pouvoir : son nom, son effet, sa recharge, ce que fait le bouton.
+const POUVOIRS = {
+  renforcement: { nom: 'Renforcement', effet: 'Annule le prochain sort offensif lancé sur toi.', recharge: 30, passif: 'PASSIF', pret: 'il annulera le prochain sort offensif reçu' },
+  emission: { nom: 'Émission', effet: 'Lance un sort offensif sur un joueur hors de portée.', recharge: 40, agir: 'Choisir le sort offensif' },
+  transformation: { nom: 'Texture Surprise', effet: 'Déguise un doublon en une autre carte de même rang. Pour les autres, c’est une vraie carte.', recharge: 20, agir: 'Déguiser un doublon', fiche: true },
+  materialisation: { nom: 'Matérialisation', effet: 'Un tirage bonus, rang C au plus, à chaque checkpoint réussi et toutes les 40 min.', recharge: 40, passif: 'AUTO' },
+  manipulation: { nom: 'Échange forcé', effet: 'Donne une carte choisie à un joueur proche et lui en prend une au hasard. Sans carte de sort.', recharge: 40, agir: 'Forcer un échange', fiche: true },
+  alchimie: { nom: 'Alchimie', effet: 'Change un doublon en la carte de ton choix, du même rang ou du rang au-dessus, jamais la SS.', recharge: 40, agir: 'Transmuter un doublon', fiche: true },
+  bandit: { nom: 'L’épée du vol', effet: 'Un Vol sans carte de sort, sur la carte de ton choix, jamais la SS.', recharge: 40, agir: 'Tirer l’épée', fiche: true },
+  zetsu: { nom: 'Zetsu', effet: 'Invisible 10 min : personne ne peut te viser, te voir dans les listes ni t’échanger une carte.', recharge: 40, agir: 'Disparaître 10 min' },
+  fortune: { nom: 'Fortune', effet: 'Ton prochain scan réussi donne un gain de plus.', recharge: 40, agir: 'Armer mon prochain scan' },
+};
+const SECRETS = ['alchimie', 'bandit', 'zetsu', 'fortune'];
+const LIM = { SS: 1, S: 2, A: 3, B: 5, C: 8, D: 12 };
+const RANGS = ['D', 'C', 'B', 'A', 'S', 'SS'];
+// Le catalogue de la partie (le Book le connaît) ; `n` : exemplaires en circulation (RG-8.2).
+const CAT = [
+  ['000', 'Le bonheur du détenteur', 'SS', 'Un château et sa ville de 10 000 habitants, qui vivent selon les lois de son détenteur.', 0],
+  ['001', 'Le bois secret d’un Tsubo', 'S', 'L’entrée du Jardin du Dieu de la Montagne, peuplé d’espèces uniques et dociles.', 1],
+  ['002', 'La côte d’un Tsubo', 'S', 'L’entrée de la Caverne de Poséidon, dont le chemin change à chaque visite.', 1],
+  ['005', 'La grotte des esprits', 'S', 'Une grotte d’où l’on ressort dans un lieu désolé, à l’autre bout du pays.', 2],
+  ['007', 'La pierre de grossesse', 'A', 'Deux pierres qui donnent un enfant à qui les porte un mois, même à un homme.', 1],
+  ['008', 'Le lac du mystère', 'A', 'Un étang où chaque poisson lâché devient deux le lendemain.', 3],
+  ['009', 'L’arbre de la bonne récolte', 'A', 'Un arbre chargé de tous les fruits du monde, plein à nouveau chaque matin.', 2],
+  ['012', 'Le dictionnaire d’or', 'A', 'Un dictionnaire dont un mot brille d’or chaque jour : il servira le lendemain.', 1],
+  ['003', 'Le vase de la fontaine', 'B', 'Une jarre d’où coulent sans fin 1 440 litres d’eau pure par jour.', 2],
+  ['010', 'Le rurubu d’or', 'B', 'Un guide doré qui dit où et quand rencontrer les personnes de son type.', 5],
+  ['013', 'Le carnet du bonheur', 'B', 'Un carnet où s’épargnent les petites chances du quotidien, changées en argent.', 1],
+  ['019', 'L’oreiller de l’esprit joueur', 'B', 'Un oreiller qui laisse l’esprit vagabonder pendant le sommeil, 24 heures au plus.', 3],
+  ['014', 'Les ciseaux coupe-liens', 'C', 'Des ciseaux qui coupent à jamais le lien avec la personne d’une photo découpée.', 4],
+  ['021', 'Les lunettes squelettes', 'C', 'Des lunettes qui voient à travers tout, sauf un paquet de sorts de Masadora.', 8],
+  ['022', 'Toraemon', 'C', 'Une bête rare qui fourre des trésors dans sa poche à quatre dimensions.', 5],
+  ['026', 'Les sept nains au travail', 'C', 'Sept nains qui abattent tout le travail pendant le sommeil de leur maître.', 3],
+  ['030', 'Coussin connexion', 'C', 'Un coussin : qui s’y assied rend un service à son propriétaire.', 2],
+  ['011', 'La balance d’or', 'D', 'Une balance d’or qui, face à deux choix, penche toujours vers le meilleur.', 6],
+  ['020', 'Le mètre de pulsions spirituelles', 'D', 'Une horloge qui règle l’état d’esprit comme on règle l’heure.', 4],
+  ['023', 'Le livre infini', 'D', 'Un livre qui raconte une histoire différente à chaque ouverture.', 3],
+  ['025', 'Le dé du risque', 'D', 'Un dé de dix-neuf étoiles et une tête de mort. La tête de mort efface tout.', 7],
+].map(([num, nom, rang, txt, n]) => ({ num, nom, rang, txt, n }));
+const carte = (num) => CAT.find((c) => c.num === num);
+// Tes doublons (cartes hors de leur emplacement désigné) et tes cartes à donner.
+const DOUBLONS = ['025', '022', '019', '002'].map(carte);
+const A_DONNER = ['025', '022', '019', '011', '014', '003'].map(carte);
+const PORTEE = ['Kirua', 'Biscuit', 'Goreinu'];
+const OFFENSIFS = [['vol', '1007', 'Vol', 2], ['gel', '', 'Gel', 1], ['echange_force', '1008', 'Échange', 1]];
+const AUTRES = [['radar', '1027', 'Trace', 1], ['revelation', '1030', 'Guide', 1], ['barriere', '1003', 'Mur défensif', 1]];
+
+// Réponses possibles du serveur, par pouvoir.
+const ISSUES = {
+  defaut: ['Réussi', 'Refus'],
+  alchimie: ['Réussi', 'Contrefaçon', 'Refus'],
+  bandit: ['Carte visée', 'Pas cette carte', 'Mur défensif', 'Rien à prendre', 'Refus'],
+};
+const REFUS = {
+  transformation: 'Ce doublon est engagé dans un échange en cours : finis ou annule l’échange d’abord.',
+  alchimie: 'Cette carte a atteint sa limite (RG-8.2) : choisis-en une autre. Ton pouvoir n’est pas utilisé.',
+  bandit: 'Kirua n’est plus à portée (30 m environ). Ton pouvoir n’est pas utilisé.',
+  manipulation: 'Kirua n’est plus à portée (30 m environ). Ton pouvoir n’est pas utilisé.',
+  zetsu: 'La partie est en pause : ton pouvoir n’est pas utilisé.',
+  fortune: 'La partie est en pause : ton pouvoir n’est pas utilisé.',
+  emission: 'La partie est en pause : ton pouvoir n’est pas utilisé.',
+};
+
+let type = 'transformation', secret = 'alchimie', issue = 'Réussi';
+// Recharge (fin et durée), Zetsu (fin), Fortune armée, mode Émission.
+let rechargeFin = 0, rechargeTotal = 20 * MIN, zetsuFin = 0, fortune = false, emissionOn = false;
+const cle = () => (type === 'specialisation' ? secret : type);
+const P = () => POUVOIRS[cle()];
+
+// ---------- Outils ----------
+let anims = [], attentes = new Set(), saute = false, phase = 'repos', attenteToucher = null;
+const A = (el, k, o) => { const a = el.animate(k, { fill: 'forwards', easing: 'cubic-bezier(.16,1,.3,1)', ...o, duration: reduit ? 1 : o.duration }); anims.push(a); return a; };
+function pause(ms) {
+  return new Promise((res) => {
+    if (saute || reduit) return res();
+    const f = () => { clearTimeout(t); attentes.delete(f); res(); };
+    const t = setTimeout(f, ms); attentes.add(f);
+  });
+}
+const finAnim = (a) => a.finished.catch(() => {});
+function sauter() { if (saute) return; saute = true; [...attentes].forEach((f) => f()); }
+function viderAnims() { anims.forEach((a) => a.cancel()); anims = []; }
+const centre = (el) => { const b = el.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2]; };
+const vibrer = (p) => navigator.vibrate?.(p);
+const mmss = (ms) => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+const enPhrase = (nom) => nom.replace(/^(Les|Le|La)(?=\s)|^L’/, (m) => m.toLowerCase());
+function carteHTML(c) {
+  const coin = c.genre === 'sort' ? '<span class="gi-rang r-sort">Sort</span>' : `<span class="gi-rang r-${c.rang}">${c.rang}<span class="lim">-${LIM[c.rang]}</span></span>`;
+  const fil = c.genre === 'sort' ? 'S' : c.num;
+  const num = c.num || '—';
+  return `<div class="gi-carte f-${c.genre ?? 'designee'}"><div class="c-cadre"><div class="c-tete"><span class="c-num${num.length > 3 ? ' long' : ''}">${num}</span><span class="c-nom${c.nom.length > 10 ? ' long' : ''}">${c.nom}</span>${coin}</div><div class="c-art"><span class="c-filigrane">${fil}</span></div><p class="c-txt">${c.txt ?? ''}</p></div></div>`;
+}
+function taper(el, texte) {
+  el.textContent = '';
+  if (reduit || saute) { el.textContent = texte; return Promise.resolve(); }
+  return new Promise((res) => {
+    let n = 0;
+    const pas = () => { if (saute) { el.textContent = texte; return res(); } el.textContent = texte.slice(0, ++n); n >= texte.length ? res() : setTimeout(pas, 20); };
+    pas();
+  });
+}
+const couleur = (t) => getComputedStyle(document.documentElement).getPropertyValue(`--nen-${t}`).trim();
+
+// L'hexagone du Nen (même ordre que la divination) : ton type allumé à sa couleur, les autres imprimés en trame.
+function hexaSVG(t, eteint = false) {
+  const R = 36, pts = ORDRE.map((_, i) => { const a = -Math.PI / 2 + (i * Math.PI) / 3; return [Math.cos(a) * R, Math.sin(a) * R]; });
+  const moi = ORDRE.indexOf(t);
+  const court = NENS[t].court;
+  return `<svg viewBox="-50 -50 100 100" aria-hidden="true">
+    <defs><pattern id="hx-trame" width="3" height="3" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r=".6" fill="#111" opacity=".35"/></pattern></defs>
+    <path d="M${pts.map((p) => p.map((v) => v.toFixed(1)).join(' ')).join('L')}Z" fill="url(#hx-trame)" stroke="#111" stroke-width="2.4" stroke-linejoin="round"/>
+    ${pts.map(([x, y]) => `<line x1="0" y1="0" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#111" stroke-width=".9" opacity=".5"/>`).join('')}
+    ${pts.map(([x, y], i) => i === moi ? '' : `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6.5" fill="#fbfbf7" stroke="#111" stroke-width="1.6"/>`).join('')}
+    <circle cx="${pts[moi][0].toFixed(1)}" cy="${pts[moi][1].toFixed(1)}" r="13" fill="${eteint ? '#c9cac4' : `var(--nen-${t})`}" stroke="#111" stroke-width="2.8"/>
+    <circle r="15" fill="#fbfbf7" stroke="#111" stroke-width="1.6"/>
+    <text x="0" y="${court.length > 2 ? 4 : 5.5}" text-anchor="middle" font-family="Dela Gothic One, sans-serif" font-size="${court.length > 2 ? 8.5 : 12}" fill="#111">${court}</text>
+  </svg>`;
+}
+const PIECE_SVG = `<svg viewBox="-50 -50 100 100" aria-hidden="true">
+  <circle r="47" fill="#a8841f" stroke="#111" stroke-width="4"/>
+  <circle r="40" fill="url(#pc-or)" stroke="#111" stroke-width="2"/>
+  <defs><linearGradient id="pc-or" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbe7a6"/><stop offset=".45" stop-color="#e2bd4f"/><stop offset="1" stop-color="#b38b22"/></linearGradient></defs>
+  ${Array.from({ length: 36 }, (_, i) => { const a = (i / 36) * Math.PI * 2; return `<line x1="${(Math.cos(a) * 42).toFixed(1)}" y1="${(Math.sin(a) * 42).toFixed(1)}" x2="${(Math.cos(a) * 46).toFixed(1)}" y2="${(Math.sin(a) * 46).toFixed(1)}" stroke="#111" stroke-width="1.4"/>`; }).join('')}
+  <text y="13" text-anchor="middle" font-family="Dela Gothic One, sans-serif" font-size="38" fill="#fbfbf7" stroke="#111" stroke-width="5" paint-order="stroke">運</text>
+</svg>`;
+const PIECE_PLUS = `<svg viewBox="-50 -50 100 100" aria-hidden="true"><circle r="46" fill="#e2bd4f" stroke="#111" stroke-width="7"/><text y="15" text-anchor="middle" font-family="Atkinson Hyperlegible Mono, monospace" font-weight="800" font-size="44" fill="#111">+1</text></svg>`;
+
+// ---------- Commandes du prototype ----------
+function boutons(id, liste, actuel, quand) {
+  const r = $(id); r.querySelectorAll('button').forEach((b) => b.remove());
+  r.insertAdjacentHTML('beforeend', liste.map(([k, t]) => `<button data-k="${k}" aria-pressed="${k === actuel}">${t}</button>`).join(''));
+  r.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { quand(b.dataset.k); }));
+}
+function dessinerProto() {
+  boutons('#p-types', ORDRE.map((t) => [t, NENS[t].nom]), type, (k) => { type = k; rechargeFin = 0; zetsuFin = 0; fortune = false; emissionOn = false; majType(); });
+  $('#p-spe').hidden = type !== 'specialisation';
+  boutons('#p-spe', SECRETS.map((s) => [s, POUVOIRS[s].nom]), secret, (k) => { secret = k; rechargeFin = 0; zetsuFin = 0; fortune = false; majType(); });
+  const etats = [['pret', 'Prêt'], ['recharge', 'Recharge (20 s)']];
+  if (cle() === 'zetsu') etats.push(['actif', 'Zetsu en cours']);
+  if (cle() === 'fortune') etats.push(['actif', 'Fortune armée']);
+  const etat = zetsuFin > Date.now() || fortune ? 'actif' : rechargeFin > Date.now() ? 'recharge' : 'pret';
+  boutons('#p-etat', etats, etat, (k) => {
+    zetsuFin = 0; fortune = false; rechargeFin = 0;
+    if (k === 'recharge') { rechargeTotal = 20_000; rechargeFin = Date.now() + 20_000; }
+    if (k === 'actif' && cle() === 'zetsu') zetsuFin = Date.now() + 10 * MIN;
+    if (k === 'actif' && cle() === 'fortune') fortune = true;
+    tout();
+  });
+  const issues = ISSUES[cle()] ?? ISSUES.defaut;
+  if (!issues.includes(issue)) issue = issues[0];
+  $('#p-issues').hidden = !P().agir;
+  boutons('#p-issues', issues.map((i) => [i, i]), issue, (k) => { issue = k; dessinerProto(); });
+}
+function majType() {
+  document.documentElement.style.setProperty('--aura', `var(--nen-${type})`);
+  tout();
+}
+
+// ---------- La case du Nen ----------
+const ICONE_AGIR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>';
+function dessinerNen() {
+  const p = P(), k = cle(), maintenant = Date.now();
+  const enRecharge = rechargeFin > maintenant, zetsu = zetsuFin > maintenant;
+  const etat = zetsu ? 'actif-zetsu' : fortune ? 'actif-fortune' : enRecharge ? 'recharge' : 'pret';
+  const nen = $('#nen');
+  const avant = nen.dataset.etat;
+  nen.className = `nen ${etat === 'pret' ? 'pret' : etat}${zetsu ? ' eteint' : ''}`;
+  nen.dataset.etat = etat;
+  let charge, agir = '';
+  if (zetsu) {
+    charge = `<div class="nen-ligne"><span class="etat">Tu es invisible</span><span class="temps" data-tic="zetsu">${mmss(zetsuFin - maintenant)}</span></div>
+      <div class="jauge" aria-hidden="true"><i style="--rempli:${(((zetsuFin - maintenant) / (10 * MIN)) * 100).toFixed(1)}%"></i></div>
+      <p class="nen-effet">Un sort offensif ou une proposition d’échange le rompt. Il revient 40 min après l’avoir lancé.</p>`;
+  } else if (fortune) {
+    charge = `<div class="nen-ligne">${PIECE_SVG.replace('<svg', '<svg class="piece-mini"')}<span class="etat">Armée : ton prochain scan réussi donne un gain de plus</span></div>`;
+  } else if (enRecharge) {
+    const reste = rechargeFin - maintenant;
+    const dit = p.passif === 'AUTO' ? 'Prochain tirage bonus' : 'Se recharge';
+    charge = `<div class="nen-ligne"><span class="etat">${dit}</span><span class="temps" data-tic="recharge">${mmss(reste)}</span></div>
+      <div class="jauge" role="progressbar" aria-label="Recharge" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round((1 - reste / rechargeTotal) * 100)}"><i style="--rempli:${((1 - reste / rechargeTotal) * 100).toFixed(1)}%"></i></div>`;
+  } else {
+    const dit = p.passif === 'AUTO' ? 'Le tirage bonus arrive tout seul dans ton Book' : p.pret ?? '';
+    charge = `<div class="nen-ligne"><span class="pret">PRÊT</span>${dit ? `<span class="etat" style="font-weight:600;font-size:15px">${dit}</span>` : ''}</div>
+      <div class="jauge" aria-hidden="true"><i style="--rempli:100%"></i></div>`;
+    if (emissionOn) agir = `<p class="nen-effet" style="grid-column:1/-1;margin-top:10px;font-weight:800;color:var(--encre)">Émission chargée : touche un sort offensif, tous les joueurs de la partie seront à portée.</p><button class="gi-lien nen-annuler" id="nen-annuler">Annuler</button>`;
+    else if (p.agir) agir = `<button class="nen-agir" id="nen-agir">${p.agir}${ICONE_AGIR}</button>`;
+  }
+  const sur = type === 'specialisation'
+    ? `<span lang="ja">${NENS[type].kanji}</span>Spécialisation<span class="secret">Pouvoir secret</span>`
+    : `<span lang="ja">${NENS[type].kanji}</span>${p.nom === NENS[type].nom ? 'Ton pouvoir de Nen' : NENS[type].nom}`;
+  nen.innerHTML = `<div class="nen-hexa">${hexaSVG(type, zetsu)}</div>
+    <p class="nen-sur">${sur}</p>
+    <h2 id="nen-titre">${p.nom}</h2>
+    <p class="nen-effet">${p.effet}</p>
+    ${p.passif && (!enRecharge || p.passif === 'AUTO') ? `<span class="nen-tampon">${p.passif}</span>` : ''}
+    <div class="nen-charge">${charge}</div>${agir}`;
+  $('#nen-agir')?.addEventListener('click', utiliser);
+  $('#nen-annuler')?.addEventListener('click', () => { emissionOn = false; tout(); });
+  // Le pouvoir revient : un éclat d'aura, une vibration.
+  if (avant === 'recharge' && etat === 'pret' && !reduit) { nen.classList.remove('revient'); void nen.offsetWidth; nen.classList.add('revient'); vibrer([20, 60, 20]); }
+}
+function dessinerMain() {
+  const poch = (off) => ([k, num, nom, n]) => `<li><button class="pochette${off ? ' off' : ''}" data-sort="${k}" aria-label="${nom}${n > 1 ? `, ${n} exemplaires` : ''}">
+    <span class="tas${n > 1 ? ' double' : ''}">${n > 1 ? carteHTML({ genre: 'sort', num, nom }) : ''}${carteHTML({ genre: 'sort', num, nom })}${n > 1 ? `<span class="nb">×${n}</span>` : ''}${k === 'barriere' ? '<span class="tampon">PASSIF</span>' : ''}</span>
+    <span class="nom">${nom}</span></button></li>`;
+  $('#main-off').innerHTML = OFFENSIFS.map(poch(true)).join('');
+  $('#main-autres').innerHTML = AUTRES.map(poch(false)).join('');
+  $('#main').classList.toggle('emission-on', emissionOn);
+}
+function dessinerZetsu() {
+  const z = zetsuFin > Date.now();
+  $('#zetsu').hidden = !z;
+  if (z) $('#zetsu-n').textContent = mmss(zetsuFin - Date.now());
+  const scan = $('#onglet-scan');
+  scan.querySelector('.fortune')?.remove();
+  if (fortune) scan.insertAdjacentHTML('beforeend', PIECE_PLUS.replace('<svg', '<svg class="fortune"'));
+  scan.setAttribute('aria-label', fortune ? 'Scanner, Fortune armée : un gain de plus' : 'Scanner');
+}
+function tout() { dessinerProto(); dessinerNen(); dessinerMain(); dessinerZetsu(); }
+// Une seconde : les décomptes avancent, la jauge se remplit.
+setInterval(() => {
+  const m = Date.now();
+  if (zetsuFin && zetsuFin <= m) { zetsuFin = 0; tout(); return; }
+  if (rechargeFin && rechargeFin <= m) { rechargeFin = 0; tout(); return; }
+  if (rechargeFin) {
+    const reste = rechargeFin - m;
+    document.querySelectorAll('[data-tic="recharge"]').forEach((e) => (e.textContent = mmss(reste)));
+    const i = $('#nen .jauge i'); if (i) i.style.setProperty('--rempli', `${((1 - reste / rechargeTotal) * 100).toFixed(1)}%`);
+  }
+  if (zetsuFin) {
+    const reste = zetsuFin - m;
+    document.querySelectorAll('[data-tic="zetsu"]').forEach((e) => (e.textContent = mmss(reste)));
+    $('#zetsu-n').textContent = mmss(reste);
+    const i = $('#nen .jauge i'); if (i) i.style.setProperty('--rempli', `${((reste / (10 * MIN)) * 100).toFixed(1)}%`);
+  }
+}, 1000);
+// Émission : un sort offensif touché pendant que l'Émission est chargée.
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('.pochette');
+  if (b && emissionOn && b.classList.contains('off')) jouer({ k: 'emission', sort: b.querySelector('.nom').textContent });
+});
+
+// ---------- Utiliser ----------
+function utiliser() {
+  const k = cle();
+  if (k === 'emission') { emissionOn = true; tout(); $('#main-off').scrollIntoView({ behavior: reduit ? 'auto' : 'smooth', block: 'center' }); return; }
+  if (P().fiche) return ouvrirFiche(k);
+  jouer({ k });
+}
+
+// ---------- Fiche en deux temps ----------
+const fiche = $('#fiche'), corps = $('#fiche-corps'), agirBtn = $('#agir');
+let choix = null;
+const CHECK = '<svg class="ok" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>';
+function grilleCartes(cartes, choisi, opts = {}) {
+  return `<ul class="mes-cartes">${cartes.map((c) => {
+    if (c.titre) return `<li class="rang-titre">${c.titre}</li>`;
+    if (c.hasard) return `<li><button data-v="hasard" aria-pressed="${choisi === 'hasard'}"><span class="hasard" aria-hidden="true">?</span>Au hasard</button></li>`;
+    const plein = opts.limite && c.n >= LIM[c.rang];
+    return `<li><button data-v="${c.num}" aria-pressed="${choisi === c.num}"${plein ? ' disabled' : ''} aria-label="${c.num} ${c.nom}, rang ${c.rang}${plein ? ', limite atteinte' : ''}">${carteHTML(c)}<span>${c.nom}</span>${plein ? `<span class="pourquoi">limite atteinte (${c.n}/${LIM[c.rang]})</span>` : ''}</button></li>`;
+  }).join('')}</ul>`;
+}
+// Les cartes possibles, par rang. Texture Surprise : même rang (un doublon S peut aussi imiter la SS) ;
+// Alchimie : même rang ou le rang au-dessus, jamais la SS.
+function possibles(k, d) {
+  const i = RANGS.indexOf(d.rang);
+  const rangs = k === 'transformation' ? (d.rang === 'S' ? ['S', 'SS'] : [d.rang]) : [d.rang, RANGS[i + 1]].filter((r) => r && r !== 'SS');
+  return rangs.flatMap((r) => [{ titre: `Rang ${r}` }, ...CAT.filter((c) => c.rang === r && c.num !== d.num)]);
+}
+function ouvrirFiche(k) {
+  choix = { k, a: null, b: null };
+  fiche.classList.add('ouverte'); fiche.scrollTop = 0;
+  dessinerFiche();
+  if (!reduit) fiche.animate([{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: 'cubic-bezier(.16,1,.3,1)' });
+  $('#fermer').focus({ preventScroll: true });
+}
+function fermerFiche() { fiche.classList.remove('ouverte'); choix = null; $('#nen-agir')?.focus({ preventScroll: true }); }
+function dessinerFiche() {
+  const { k, a, b } = choix, p = POUVOIRS[k];
+  let un, deux, bouton;
+  if (k === 'transformation' || k === 'alchimie') {
+    const d = a && carte(a);
+    un = `<div class="case"><h2><span class="n">1</span>Ton doublon</h2><p class="aide">Une carte hors de son emplacement désigné.${k === 'alchimie' ? ' Il sort du jeu.' : ''}</p>${grilleCartes(DOUBLONS, a)}</div>`;
+    deux = `<div class="case${d ? '' : ' attend'}" id="deux"><h2><span class="n">2</span>${k === 'transformation' ? 'Son nouvel aspect' : 'La carte voulue'}</h2>
+      ${d ? `<p class="aide">${k === 'transformation' ? `Une carte de rang ${d.rang}${d.rang === 'S' ? ', ou la SS pour bluffer' : ''}. Elle comptera comme une contrefaçon.` : `Rang ${d.rang} ou ${RANGS[RANGS.indexOf(d.rang) + 1] === 'SS' ? 'S' : `rang ${RANGS[RANGS.indexOf(d.rang) + 1]}`}, sous sa limite.`}</p>${grilleCartes(possibles(k, d), b, { limite: k === 'alchimie' })}` : ''}</div>`;
+    bouton = !a ? 'Choisis un doublon' : !b ? (k === 'transformation' ? 'Choisis son nouvel aspect' : 'Choisis la carte voulue') : (k === 'transformation' ? `Déguiser en ${enPhrase(carte(b).nom)}` : `Transmuter en ${enPhrase(carte(b).nom)}`);
+  } else if (k === 'bandit') {
+    un = `<div class="case"><h2><span class="n">1</span>Cible</h2><p class="aide">Joueurs à portée, 30 m environ</p><ul class="cibles">${PORTEE.map((n) => `<li><button data-c="${n}" aria-pressed="${a === n}">${n}${CHECK}</button></li>`).join('')}</ul></div>`;
+    const cat = [{ hasard: true }, ...RANGS.slice(0, 5).reverse().flatMap((r) => [{ titre: `Rang ${r}` }, ...CAT.filter((c) => c.rang === r)])];
+    deux = `<div class="case${a ? '' : ' attend'}" id="deux"><h2><span class="n">2</span>La carte visée</h2>${a ? `<p class="aide">Si ${a} en a un exemplaire prenable, l’épée le prend ; sinon, une carte au hasard. Jamais la SS.</p>${grilleCartes(cat, b)}` : ''}</div>`;
+    bouton = !a ? 'Choisis une cible' : !b ? 'Choisis la carte visée' : `Frapper ${a}`;
+  } else {
+    un = `<div class="case"><h2><span class="n">1</span>Carte à donner</h2>${grilleCartes(A_DONNER, a)}</div>`;
+    deux = `<div class="case${a ? '' : ' attend'}" id="deux"><h2><span class="n">2</span>Cible</h2>${a ? `<p class="aide">Joueurs à portée, 30 m environ</p><ul class="cibles">${PORTEE.map((n) => `<li><button data-c="${n}" aria-pressed="${b === n}">${n}${CHECK}</button></li>`).join('')}</ul>` : ''}</div>`;
+    bouton = !a ? 'Choisis la carte à donner' : !b ? 'Choisis une cible' : `Échanger avec ${b}`;
+  }
+  corps.innerHTML = `<button class="retour" id="fermer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>Sorts</button>
+    <div class="fiche-tete"><div class="nen-hexa">${hexaSVG(type)}</div><h1 id="fiche-titre">${p.nom}</h1><p>${p.effet}</p></div>${un}${deux}`;
+  agirBtn.textContent = bouton;
+  agirBtn.disabled = !(a && b);
+  $('#fermer').addEventListener('click', fermerFiche);
+  corps.querySelectorAll('.case').forEach((c, i) => c.querySelectorAll('[data-v], [data-c]').forEach((btn) => btn.addEventListener('click', () => {
+    const v = btn.dataset.v ?? btn.dataset.c;
+    if (i === 0) { const change = choix.a !== v; choix.a = v; if (change) choix.b = null; dessinerFiche(); if (change) $('#deux').scrollIntoView({ behavior: reduit ? 'auto' : 'smooth', block: 'start' }); }
+    else { choix.b = v; dessinerFiche(); }
+    corps.querySelector(`[data-v="${v}"], [data-c="${v}"]`)?.focus({ preventScroll: true });
+  })));
+}
+agirBtn.addEventListener('click', () => { if (choix?.a && choix.b) jouer({ ...choix }); });
+
+// ---------- Effets (canvas) : l'aura en flammes cernées d'encre ----------
+const cv = $('#fx'), g = cv.getContext('2d');
+let dpr = 1, image = 0, aura = { amp: 0, cible: 0, x: 0, y: 0, r: 0, gris: 0 }, miettes = [];
+function taille() { dpr = Math.min(1.5, devicePixelRatio || 1); cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; }
+addEventListener('resize', taille); taille();
+const N = 17, PHASES = Array.from({ length: N }, (_, i) => [Math.sin(i * 12.9898) * 43758.5453 % 1, 0.7 + (i * 0.37) % 0.6]);
+function langues(t, x, y, R, amp, k) {
+  // Une langue de flamme par angle, plus longue vers le haut, balayée par le vent de l'aura.
+  g.beginPath();
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2 + t * 0.00018;
+    const [ph, f] = PHASES[i];
+    const haut = Math.max(0, -Math.sin(a));
+    const len = R * amp * k * (0.38 + 0.3 * Math.sin(t * 0.007 * f + ph * 6.28) + 0.22 * Math.sin(t * 0.013 * f + i)) * (1 + 1.1 * haut);
+    const d = (Math.PI / N) * 1.25;
+    const b1 = [x + Math.cos(a - d) * R * 0.92, y + Math.sin(a - d) * R * 0.92];
+    const b2 = [x + Math.cos(a + d) * R * 0.92, y + Math.sin(a + d) * R * 0.92];
+    const sway = Math.sin(t * 0.005 * f + ph * 9) * 0.25;
+    const tip = [x + Math.cos(a + sway) * (R + len), y + Math.sin(a + sway) * (R + len) - len * 0.45];
+    const c1 = [x + Math.cos(a - d * 0.4) * (R + len * 0.55), y + Math.sin(a - d * 0.4) * (R + len * 0.55) - len * 0.1];
+    const c2 = [x + Math.cos(a + d * 0.9) * (R + len * 0.45), y + Math.sin(a + d * 0.9) * (R + len * 0.45) - len * 0.1];
+    g.moveTo(...b1); g.quadraticCurveTo(...c1, ...tip); g.quadraticCurveTo(...c2, ...b2); g.closePath();
+  }
+  g.moveTo(x + R, y); g.arc(x, y, R, 0, Math.PI * 2);
+}
+function boucle(t) {
+  image = 0;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, innerWidth, innerHeight);
+  aura.amp += (aura.cible - aura.amp) * 0.08;
+  const med = $('#medaille');
+  if (aura.amp > 0.01 && med.style.opacity !== '0') {
+    const b = med.getBoundingClientRect();
+    aura.x = b.left + b.width / 2; aura.y = b.top + b.height / 2; aura.r = b.width / 2;
+    const coul = aura.gris ? '#c9cac4' : couleur(type);
+    // Contour d'encre (tracé d'abord, recouvert ensuite par l'aplat : seul le bord extérieur reste).
+    langues(t, aura.x, aura.y, aura.r, aura.amp, 1);
+    g.lineJoin = 'round'; g.lineWidth = 7; g.strokeStyle = '#111'; g.stroke();
+    g.fillStyle = coul; g.fill();
+    langues(t + 900, aura.x, aura.y, aura.r * 0.98, aura.amp, 0.55);
+    g.fillStyle = 'rgba(255,255,255,0.55)'; g.fill();
+  }
+  // Miettes : étincelles d'aura ou poussière d'une contrefaçon.
+  miettes = miettes.filter((m) => (m.v -= 0.016) > 0);
+  for (const m of miettes) {
+    m.x += m.vx; m.y += m.vy; m.vy += m.gr;
+    g.globalAlpha = Math.min(1, m.v * 2);
+    g.fillStyle = m.c; g.strokeStyle = '#111'; g.lineWidth = 1.5;
+    g.beginPath(); g.arc(m.x, m.y, m.s, 0, Math.PI * 2); g.fill(); if (m.bord) g.stroke();
+  }
+  g.globalAlpha = 1;
+  if (phase !== 'repos' || miettes.length) image = requestAnimationFrame(boucle);
+}
+const lancerBoucle = () => { if (!image) image = requestAnimationFrame(boucle); };
+function eclats(x, y, n, c, force = 1, gr = 0.06, bord = true) {
+  if (reduit) return;
+  for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, v = (1.5 + Math.random() * 5) * force; miettes.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 1.5, gr, s: 2 + Math.random() * 4, v: 0.6 + Math.random() * 0.5, c, bord }); }
+  lancerBoucle();
+}
+
+// ---------- La cinématique ----------
+const cine = $('#cine'), fond = $('#fond'), lignes = $('#lignes'), medaille = $('#medaille'), cri = $('#cri'), porte = $('#porte');
+const carteA = $('#carte-a'), carteB = $('#carte-b'), coulure = $('#coulure'), cercle = $('#cercle'), tag = $('#tag'), lame = $('#lame'), mur = $('#mur');
+const piece = $('#piece'), onomato = $('#onomato'), zetsuTemps = $('#zetsu-temps'), flash = $('#flash'), feles = $('#feles');
+const dialogue = $('#dialogue'), dQui = $('#d-qui'), dTexte = $('#d-texte'), dIndice = $('#d-indice');
+// Lignes de vitesse : des rayons d'encre vers le médaillon.
+lignes.innerHTML = `<svg viewBox="-100 -100 200 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${Array.from({ length: 90 }, (_, i) => {
+  const a = (i / 90) * Math.PI * 2 + Math.sin(i * 7.3) * 0.03, r0 = 34 + ((i * 37) % 23), w = 0.5 + ((i * 13) % 7) / 6;
+  return `<path d="M${(Math.cos(a - 0.004 * w) * 160).toFixed(1)} ${(Math.sin(a - 0.004 * w) * 160).toFixed(1)}L${(Math.cos(a) * r0).toFixed(1)} ${(Math.sin(a) * r0).toFixed(1)}L${(Math.cos(a + 0.004 * w) * 160).toFixed(1)} ${(Math.sin(a + 0.004 * w) * 160).toFixed(1)}Z" fill="#111"/>`;
+}).join('')}</svg>`;
+function toucher() { return new Promise((res) => { attenteToucher = res; }); }
+let revelA = 0;
+cine.addEventListener('pointerdown', () => {
+  if (phase === 'intro') sauter();
+  else if (phase === 'revele' && attenteToucher && performance.now() - revelA > 350) { const r = attenteToucher; attenteToucher = null; r(); }
+});
+addEventListener('keydown', (e) => { if (cine.classList.contains('joue') && ['Enter', ' ', 'Escape'].includes(e.key)) { e.preventDefault(); cine.dispatchEvent(new Event('pointerdown')); } });
+function secouer(el, px) {
+  if (!px || reduit) return;
+  el.animate([{ transform: 'translate(0,0)' }, { transform: `translate(${-px}px, ${px * 0.6}px)` }, { transform: `translate(${px * 0.8}px, ${-px * 0.6}px)` }, { transform: `translate(${-px * 0.4}px, ${px * 0.3}px)` }, { transform: 'translate(0,0)' }], { duration: 220, easing: 'linear', composite: 'add' });
+}
+// Le serveur (simulé) : la requête part au toucher, la cinématique attend sa réponse après le cri.
+function serveur(c) { return new Promise((res) => setTimeout(() => res(issue), 260)); }
+// Le cri, coupé en lignes courtes pour rester grand.
+function poserCri(nom) {
+  const mots = nom.toUpperCase().split(' '), lignesCri = [];
+  for (const m of mots) { const l = lignesCri.at(-1); if (l && (l + ' ' + m).length <= 8) lignesCri[lignesCri.length - 1] = l + ' ' + m; else lignesCri.push(m); }
+  const plus = Math.max(...lignesCri.map((l) => l.length));
+  const t = Math.min(104, (Math.min(innerWidth, 480) * 0.9) / (plus * 0.86 + 0.3));
+  cri.innerHTML = lignesCri.map((l) => `<span style="--taille:${t.toFixed(0)}px">${l}</span>`).join('');
+  cri.classList.remove('creux');
+}
+async function dire(texte, refus = false, qui = 'Greed Island') {
+  dQui.textContent = qui; dQui.classList.toggle('refus', refus);
+  dIndice.classList.remove('visible');
+  A(dialogue, [{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }], { duration: 280 });
+  await taper(dTexte, texte);
+  phase = 'revele'; revelA = performance.now(); cine.classList.remove('intro');
+  dIndice.classList.add('visible');
+  await toucher();
+}
+
+async function jouer(c) {
+  const k = c.k, p = POUVOIRS[k];
+  const reponse = serveur(c);
+  fiche.classList.remove('ouverte');
+  saute = false; phase = 'intro';
+  viderAnims(); miettes = [];
+  cine.classList.add('joue', 'intro');
+  [medaille, porte, tag, lame, mur, piece, onomato, zetsuTemps, flash, dialogue, coulure, cercle, feles].forEach((e) => (e.style.opacity = '0'));
+  porte.style.clipPath = ''; porte.style.filter = ''; carteA.style.opacity = '1'; carteB.style.opacity = '0';
+  fond.classList.remove('trame'); medaille.classList.remove('gris'); aura.gris = 0;
+  medaille.style.transform = ''; dTexte.textContent = '';
+  $('#medaille-k').textContent = NENS[type].court; medaille.style.setProperty('--k', NENS[type].court.length > 2 ? 0.25 : 0.34);
+  poserCri(k === 'emission' ? 'Émission' : p.nom);
+  aura.amp = 0; aura.cible = 0; lancerBoucle();
+
+  // 1. La planche se vide, les lignes de vitesse convergent ; le médaillon de ton type frappe, l'aura jaillit.
+  fond.style.opacity = '1';
+  A(fond, [{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: 'ease-out' });
+  A(lignes, [{ opacity: 0, transform: 'scale(1.5)' }, { opacity: 0.85, transform: 'scale(1)' }], { duration: 600 });
+  medaille.style.opacity = '1';
+  A(medaille, [{ transform: 'scale(.2)', opacity: 0 }, { transform: 'scale(1.12)', opacity: 1, offset: 0.65 }, { transform: 'scale(1)', opacity: 1 }], { duration: 420 });
+  await pause(200);
+  aura.cible = 1; vibrer(15);
+  await pause(320);
+  // 2. Le nom du pouvoir, crié.
+  for (const [i, s] of [...cri.children].entries()) {
+    A(s, [{ opacity: 0, transform: 'scale(2.4)' }, { opacity: 1, transform: 'scale(.95)', offset: 0.7 }, { opacity: 1, transform: 'scale(1)' }], { duration: 300, delay: i * 140, easing: 'cubic-bezier(.5,0,.75,0)' });
+  }
+  await pause(260 + (cri.children.length - 1) * 140);
+  if (!saute) { vibrer(25); secouer(cri, 6); eclats(...centre(medaille), 26, couleur(type), 1.1); }
+  await pause(620);
+
+  const r = await reponse;
+  if (r === 'Refus') return refuser(k);
+  // 3. Le médaillon monte en haut de la planche, l'aura le suit ; la scène du pouvoir commence.
+  const haut = Math.max(70, innerHeight * 0.13) - innerHeight * 0.3;
+  if (k !== 'zetsu') {
+    [...cri.children].forEach((s) => A(s, [{ opacity: 1 }, { opacity: 0, transform: 'scale(1.08)' }], { duration: 260 }));
+    A(medaille, [{ transform: 'none' }, { transform: `translateY(${haut}px) scale(.5)` }], { duration: 480 });
+    aura.cible = 0.7;
+    await pause(380);
+  }
+  const scenes = { transformation, alchimie, bandit, zetsu, fortune: pieceFortune, manipulation: echange, emission };
+  await scenes[k](c, r);
+  await fin(k);
+}
+
+async function refuser(k) {
+  aura.cible = 0;
+  cri.classList.add('creux');
+  A(medaille, [{ transform: 'none', opacity: 1 }, { transform: 'scale(.9)', opacity: 0.35 }], { duration: 500 });
+  await pause(300);
+  await dire(REFUS[k] ?? 'Refusé.', true, 'Refusé');
+  return fin(k, true);
+}
+
+// Texture Surprise : l'encre de l'aura descend sur la carte, la recouvre, et laisse l'autre carte en se retirant.
+async function transformation(c) {
+  const d = carte(c.a), cible = carte(c.b);
+  carteA.innerHTML = carteHTML(d); carteB.innerHTML = carteHTML(cible);
+  coulure.innerHTML = `<svg viewBox="0 0 100 230" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0H100V196C96 196 95 214 91 214S86 188 82 188 78 222 72 222 67 192 61 192 57 206 52 206 47 186 42 186 38 226 31 226 26 194 21 194 17 210 12 210 6 190 0 190Z" fill="${couleur(type)}" stroke="#111" stroke-width="2.4" vector-effect="non-scaling-stroke"/><path d="M0 22C14 30 22 14 38 24S66 30 80 18 96 26 100 22V0H0Z" fill="#fff" opacity=".35"/></svg>`;
+  porte.style.opacity = '1';
+  await finAnim(A(porte, [{ transform: 'translateY(40px) rotate(-3deg)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 420 }));
+  await pause(250);
+  coulure.style.opacity = '1';
+  const svg = coulure.firstElementChild;
+  vibrer(12);
+  await finAnim(A(svg, [{ transform: 'translateY(0)' }, { transform: 'translateY(100%)' }], { duration: 950, easing: 'cubic-bezier(.55,0,.7,.4)' }));
+  carteA.style.opacity = '0'; carteB.style.opacity = '1';
+  await pause(150);
+  await finAnim(A(svg, [{ transform: 'translateY(100%)' }, { transform: 'translateY(205%)' }], { duration: 750, easing: 'cubic-bezier(.3,.6,.4,1)' }));
+  if (!saute) { const [x, y] = centre(porte); eclats(x, y, 20, couleur(type), 0.8); vibrer(20); }
+  tag.textContent = 'Pour les autres : une vraie carte';
+  A(tag, [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 260 });
+  await dire(`Ton doublon ${enPhrase(d.nom)} a maintenant l’apparence de ${enPhrase(cible.nom)}. Pour les autres, c’est une vraie carte, jusqu’à ce qu’une Pénétration la démasque.`);
+}
+
+// Alchimie : le cercle se trace sous la carte, elle y fond, la carte voulue en remonte.
+async function alchimie(c, r) {
+  const d = carte(c.a), voulue = carte(c.b);
+  carteA.innerHTML = carteHTML(d); carteB.innerHTML = DOS;
+  const or = couleur('specialisation');
+  const hexa = (rr, rot) => Array.from({ length: 3 }, (_, i) => { const a = rot + (i * 2 * Math.PI) / 3; return [Math.cos(a) * rr, Math.sin(a) * rr]; });
+  const tri = (pts) => `M${pts.map((q) => q.map((v) => v.toFixed(1)).join(' ')).join('L')}Z`;
+  cercle.innerHTML = `<svg viewBox="-100 -100 200 200" aria-hidden="true"><circle r="96" fill="${or}" opacity=".35"/>
+    <g fill="none" stroke="#111" stroke-linecap="round">
+      <circle class="tr" r="94" stroke-width="3.5"/><circle class="tr" r="82" stroke-width="1.6"/>
+      <path class="tr" d="${tri(hexa(80, -Math.PI / 2))}" stroke-width="2.4"/><path class="tr" d="${tri(hexa(80, Math.PI / 2))}" stroke-width="2.4"/>
+      <circle class="tr" r="38" stroke-width="2"/>
+      ${Array.from({ length: 6 }, (_, i) => { const a = -Math.PI / 2 + (i * Math.PI) / 3; return `<circle class="tr" cx="${(Math.cos(a) * 88).toFixed(1)}" cy="${(Math.sin(a) * 88).toFixed(1)}" r="7" stroke-width="2" fill="#fbfbf7"/>`; }).join('')}
+    </g></svg>`;
+  porte.style.opacity = '1';
+  A(porte, [{ transform: 'translateY(40px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 420 });
+  await pause(250);
+  cercle.style.opacity = '1';
+  cercle.querySelectorAll('.tr').forEach((el, i) => { const L = el.getTotalLength?.() ?? 600; el.style.strokeDasharray = L; A(el, [{ strokeDashoffset: L }, { strokeDashoffset: 0 }], { duration: 700, delay: i * 70, easing: 'cubic-bezier(.3,0,.2,1)' }); });
+  await pause(900);
+  vibrer(15);
+  // La carte s'enfonce dans le cercle : elle descend et son bas disparaît sous la ligne.
+  const fondre = (jusqua, ms) => A(porte, [{ transform: 'translateY(0)', clipPath: 'inset(0 0 0 0)' }, { transform: `translateY(${jusqua}%)`, clipPath: `inset(0 0 ${jusqua}% 0)` }], { duration: ms, easing: 'cubic-bezier(.5,0,.75,0)' });
+  if (r === 'Contrefaçon') {
+    await finAnim(fondre(38, 700));
+    // L'alchimie bute : la fausse carte se fend, perd ses couleurs et tombe en poussière.
+    secouer(porte, 7); vibrer([30, 40, 30]);
+    feles.innerHTML = '<path d="M30 0l-4 14 7 6-6 12 8 9-5 14M33 20l12 4M27 32l-14 3M34 41l11 9" fill="none" stroke="#111" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>';
+    feles.style.opacity = '1';
+    A(feles, [{ opacity: 0 }, { opacity: 1 }], { duration: 120 });
+    porte.style.filter = 'grayscale(1) contrast(.85)';
+    cercle.querySelectorAll('.tr').forEach((el) => A(el, [{ opacity: 1 }, { opacity: 0.15 }], { duration: 700 }));
+    await pause(700);
+    const b = porte.getBoundingClientRect();
+    for (let i = 0; i < 70 && !reduit; i++) miettes.push({ x: b.left + Math.random() * b.width, y: b.top + Math.random() * b.height * 0.62, vx: (Math.random() - 0.5) * 1.6, vy: Math.random() * 0.6, gr: 0.16, s: 1.5 + Math.random() * 3, v: 0.7 + Math.random() * 0.6, c: '#8e8f8a', bord: false });
+    lancerBoucle();
+    A(porte, [{ opacity: 1 }, { opacity: 0 }], { duration: 380 });
+    aura.cible = 0.3;
+    await pause(600);
+    return dire('L’alchimie échoue : ce doublon était une contrefaçon. Il disparaît, et ton pouvoir est utilisé.', true, 'Échec');
+  }
+  await finAnim(fondre(100, 900));
+  if (!saute) { A(flash, [{ opacity: 0.6 }, { opacity: 0 }], { duration: 420, easing: 'ease-out' }); const [x, y] = centre(cercle); eclats(x, y, 34, or, 1.2); vibrer(30); }
+  // La carte voulue remonte du cercle, de dos, puis se retourne.
+  carteA.style.opacity = '0'; carteB.style.opacity = '1';
+  await finAnim(A(porte, [{ transform: 'translateY(100%)', clipPath: 'inset(0 0 100% 0)' }, { transform: 'translateY(0)', clipPath: 'inset(0 0 0 0)' }], { duration: 760 }));
+  await finAnim(A(porte, [{ transform: 'rotateY(0)' }, { transform: 'rotateY(90deg)' }], { duration: 160, easing: 'ease-in' }));
+  carteB.innerHTML = carteHTML(voulue);
+  await finAnim(A(porte, [{ transform: 'rotateY(-90deg)' }, { transform: 'rotateY(0)' }], { duration: 260 }));
+  cercle.querySelectorAll('.tr').forEach((el) => A(el, [{ opacity: 1 }, { opacity: 0.25 }], { duration: 600 }));
+  tag.textContent = 'Provenance : Alchimie';
+  A(tag, [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 260 });
+  await dire(`Ton doublon ${enPhrase(d.nom)} est devenu ${enPhrase(voulue.nom)}. Elle part dans ton Book.`);
+}
+
+// L'épée du vol : la lame traverse la planche ; la carte prise jaillit de la coupure.
+async function bandit(c, r) {
+  const W = innerWidth, H = innerHeight, y1 = H * 0.36, y2 = H * 0.74;
+  lame.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const d = `M${W + 40} ${y1}L-40 ${y2}`;
+  lame.innerHTML = `<path d="${d}" stroke="${couleur(type)}" stroke-width="30" stroke-linecap="round" opacity=".55"/><path d="${d}" stroke="#111" stroke-width="15" stroke-linecap="round"/><path d="${d}" stroke="#fff" stroke-width="7" stroke-linecap="round"/>`;
+  const L = Math.hypot(W + 80, y2 - y1);
+  lame.querySelectorAll('path').forEach((p) => { p.style.strokeDasharray = L; });
+  lame.style.opacity = '1';
+  if (r === 'Mur défensif') {
+    // La lame bute sur le Mur défensif de la cible : elle s'arrête au milieu, le mur se fend.
+    mur.innerHTML = `<svg viewBox="-100 -100 200 200" aria-hidden="true"><path d="M0-92 80-46V46L0 92-80 46V-46Z" fill="rgba(143,178,255,.22)" stroke="#1f4a9c" stroke-width="5"/><path d="M0-92 80-46V46L0 92-80 46V-46Z" fill="none" stroke="#111" stroke-width="2" transform="scale(1.06)"/></svg>`;
+    mur.style.opacity = '1';
+    A(mur, [{ opacity: 0, transform: 'scale(.7)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 260 });
+    await pause(200);
+    lame.querySelectorAll('path').forEach((p) => A(p, [{ strokeDashoffset: L }, { strokeDashoffset: L * 0.5 }], { duration: 170, easing: 'cubic-bezier(.5,0,1,1)' }));
+    await pause(170);
+    secouer(mur, 9); vibrer([40, 30, 40]);
+    if (!saute) eclats(W / 2, (y1 + y2) / 2, 30, '#8fb2ff', 1.3);
+    A(lame, [{ opacity: 1 }, { opacity: 0 }], { duration: 300, delay: 120 });
+    await pause(500);
+    return dire('Kirua avait un Mur défensif : il a arrêté ton épée, et il est perdu. Ton pouvoir est utilisé.', false);
+  }
+  await finAnim(A(lame, [{ opacity: 1 }], { duration: 1 }));
+  lame.querySelectorAll('path').forEach((p) => A(p, [{ strokeDashoffset: L }, { strokeDashoffset: 0 }], { duration: 170, easing: 'cubic-bezier(.5,0,1,1)' }));
+  await pause(170);
+  if (!saute) { A(flash, [{ opacity: 0.5 }, { opacity: 0 }], { duration: 260 }); secouer(fond, 10); vibrer(35); }
+  A(lame, [{ opacity: 1 }, { opacity: 0 }], { duration: 420, delay: 160 });
+  if (r === 'Rien à prendre') { await pause(500); return dire(`Ton épée a fendu le vide : ${c.a} n’a aucune carte à prendre. Ton pouvoir est utilisé.`); }
+  const visee = c.b !== 'hasard' && r === 'Carte visée';
+  const prise = visee ? carte(c.b) : carte('030');
+  carteA.innerHTML = DOS; carteB.innerHTML = '';
+  porte.style.opacity = '1';
+  if (!saute) eclats(W / 2, (y1 + y2) / 2, 24, couleur(type), 1);
+  await finAnim(A(porte, [{ transform: 'scale(.2) rotate(-30deg)', opacity: 0 }, { transform: 'scale(1.05) rotate(4deg)', opacity: 1, offset: 0.7 }, { transform: 'none', opacity: 1 }], { duration: 440 }));
+  await finAnim(A(porte, [{ transform: 'rotateY(0)' }, { transform: 'rotateY(90deg)' }], { duration: 150, easing: 'ease-in' }));
+  carteA.innerHTML = carteHTML(prise);
+  await finAnim(A(porte, [{ transform: 'rotateY(-90deg)' }, { transform: 'rotateY(0)' }], { duration: 240 }));
+  tag.textContent = `Prise à ${c.a}`;
+  A(tag, [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 260 });
+  const texte = visee || c.b === 'hasard'
+    ? `Tu as pris ${enPhrase(prise.nom)} à ${c.a}.`
+    : `${c.a} n’avait pas ${enPhrase(carte(c.b).nom)} à prendre : ton épée a pris une carte au hasard, ${enPhrase(prise.nom)}.`;
+  await dire(texte);
+}
+
+// Zetsu : l'aura rentre et s'éteint, la planche passe en trame, le décompte commence.
+async function zetsu() {
+  aura.cible = 0;
+  await pause(500);
+  medaille.classList.add('gris'); aura.gris = 1; cri.classList.add('creux');
+  fond.classList.add('trame');
+  A(lignes, [{ opacity: 0.85 }, { opacity: 0 }], { duration: 900 });
+  vibrer([10, 80, 10]);
+  await pause(700);
+  zetsuTemps.style.opacity = '1';
+  A(zetsuTemps, [{ opacity: 0, transform: 'scale(.9)' }, { opacity: 1, transform: 'none' }], { duration: 400 });
+  await dire('Personne ne peut plus te viser ni te voir. Lancer un sort offensif ou proposer un échange le rompt.');
+}
+
+// Fortune : une pièce tombe en tournoyant et se frappe d'un « +1 ».
+async function pieceFortune() {
+  piece.innerHTML = PIECE_SVG;
+  piece.style.opacity = '1';
+  await finAnim(A(piece, [
+    { transform: `translateY(${-innerHeight * 0.6}px) rotateY(0)` },
+    { transform: 'translateY(0) rotateY(1440deg) scale(1, .86)', offset: 0.82 },
+    { transform: 'translateY(-14px) rotateY(1440deg) scale(1)', offset: 0.92 },
+    { transform: 'translateY(0) rotateY(1440deg)' },
+  ], { duration: 1100, easing: 'cubic-bezier(.4,0,.6,1)' }));
+  vibrer(30);
+  onomato.style.opacity = '1';
+  A(onomato, [{ opacity: 0, transform: 'translate(0%, -230%) rotate(-10deg) scale(1.6)' }, { opacity: 1, transform: 'translate(2%, -245%) rotate(-10deg) scale(1)' }], { duration: 260 });
+  if (!saute) { const [x, y] = centre(piece); eclats(x, y, 22, '#e2bd4f', 1); }
+  await pause(380);
+  piece.innerHTML = PIECE_SVG + `<div style="position:absolute;inset:18%;opacity:0" id="frappe">${PIECE_PLUS}</div>`;
+  const fr = $('#frappe');
+  A(fr, [{ opacity: 0, transform: 'scale(2.2) rotate(-14deg)' }, { opacity: 1, transform: 'scale(1) rotate(-8deg)' }], { duration: 240, easing: 'cubic-bezier(.5,0,.75,0)' });
+  await pause(240);
+  if (!saute) { secouer(piece, 6); vibrer(25); }
+  await dire('Fortune : ton prochain scan réussi donne un gain de plus. La pièce t’attend sur le Scanner.');
+}
+
+// Échange forcé (Manipulation) : ta carte part, celle de la cible arrive et se retourne.
+async function echange(c) {
+  const donnee = carte(c.a), recue = carte('014');
+  carteA.innerHTML = carteHTML(donnee); carteB.innerHTML = DOS;
+  carteB.style.opacity = '0';
+  porte.style.opacity = '1';
+  await finAnim(A(porte, [{ transform: 'translateY(40px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 380 }));
+  await pause(200);
+  await finAnim(A(carteA, [{ transform: 'none', opacity: 1 }, { transform: `translateX(${innerWidth}px) rotate(18deg)`, opacity: 1 }], { duration: 420, easing: 'cubic-bezier(.5,0,.75,0)' }));
+  carteB.style.opacity = '1';
+  vibrer(20);
+  await finAnim(A(carteB, [{ transform: `translateX(${-innerWidth}px) rotate(-18deg)` }, { transform: 'none' }], { duration: 440 }));
+  await finAnim(A(carteB, [{ transform: 'rotateY(0)' }, { transform: 'rotateY(90deg)' }], { duration: 150, easing: 'ease-in' }));
+  carteB.innerHTML = carteHTML(recue);
+  await finAnim(A(carteB, [{ transform: 'rotateY(-90deg)' }, { transform: 'rotateY(0)' }], { duration: 240 }));
+  tag.textContent = `Reçue de ${c.b}`;
+  A(tag, [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 260 });
+  await dire(`Tu as donné ${enPhrase(donnee.nom)} à ${c.b} et reçu ${enPhrase(recue.nom)}.`);
+}
+
+// Émission : l'aura s'étire vers l'horizon ; la suite est la fiche du sort (page ⑧), tous les joueurs à portée.
+async function emission(c) {
+  aura.cible = 1.6;
+  if (!saute) { A(lignes, [{ transform: 'scale(1)' }, { transform: 'scale(.82)' }], { duration: 600 }); vibrer(20); }
+  await pause(500);
+  await dire(`Émission : ton ${c.sort} porte jusqu’à l’autre bout de l’île. Dans l’app, la fiche du sort s’ouvre ensuite avec tous les joueurs de la partie en cible (page ⑧).`);
+}
+
+// Fin : la planche revient ; l'état du pouvoir suit la réponse du serveur.
+async function fin(k, refus = false) {
+  phase = 'sortie';
+  aura.cible = 0;
+  if (!refus) {
+    emissionOn = false;
+    if (k === 'zetsu') zetsuFin = Date.now() + 10 * MIN;
+    if (k === 'fortune') fortune = true;
+    // Recharge réelle (le prototype la ramène à 20 s pour la voir revenir).
+    rechargeTotal = 20_000;
+    rechargeFin = k === 'zetsu' || k === 'fortune' ? 0 : Date.now() + 20_000;
+  }
+  if (k === 'fortune' && !refus) {
+    // La pièce s'envole vers l'onglet Scanner et y reste.
+    const de = piece.getBoundingClientRect(), vers = $('#onglet-scan').getBoundingClientRect();
+    const v = document.createElement('div'); v.className = 'volante'; v.innerHTML = PIECE_PLUS; v.style.width = `${de.width}px`; v.style.height = `${de.width}px`;
+    document.body.append(v); piece.style.opacity = '0';
+    A(cine, [{ opacity: 1 }, { opacity: 0 }], { duration: 300 });
+    await finAnim(A(v, [{ transform: `translate(${de.left}px, ${de.top}px)` }, { transform: `translate(${vers.left + vers.width / 2 + 6}px, ${vers.top + 3}px) scale(${30 / de.width})` }], { duration: 620, easing: 'cubic-bezier(.5,0,.3,1)' }));
+    v.remove();
+  } else if ((k === 'alchimie' || k === 'bandit' || k === 'manipulation') && !refus && porte.style.opacity !== '0') {
+    // La carte reçue part dans le Book.
+    const vers = $('#onglet-livre').getBoundingClientRect(), de = porte.getBoundingClientRect();
+    A(cine, [{ opacity: 1 }, { opacity: 0 }], { duration: 380, delay: 200 });
+    await finAnim(A(porte, [{ transform: 'none' }, { transform: `translate(${vers.left + vers.width / 2 - (de.left + de.width / 2)}px, ${vers.top - (de.top + de.height / 2)}px) scale(.12) rotate(10deg)` }], { duration: 520, easing: 'cubic-bezier(.5,0,.75,0)' }));
+  } else {
+    await finAnim(A(cine, [{ opacity: 1 }, { opacity: 0 }], { duration: 320 }));
+  }
+  viderAnims();
+  cine.classList.remove('joue', 'intro');
+  cine.style.opacity = '';
+  phase = 'repos';
+  choix = null;
+  tout();
+  if (k === 'zetsu' && !refus && !reduit) $('#zetsu').animate([{ transform: 'translateY(-100%)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 360, easing: 'cubic-bezier(.16,1,.3,1)' });
+  $('#nen-agir')?.focus({ preventScroll: true });
+}
+
+majType();
+</script>

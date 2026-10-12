@@ -49,12 +49,16 @@ export const CIBLE_CROISEE: readonly SpellType[] = ['regard', 'clairvoyance', 'a
 export interface ReponseSort {
   sort: SpellType;
   resultat: 'reussi' | 'bloque' | 'sans_effet';
-  protection?: 'barriere' | 'renforcement' | null;
+  protection?: 'barriere' | 'renforcement' | 'voile' | null;
   /** Carte prise (Vol, Pickpocket, Échange) : complète, pour la retourner chez le lanceur (page ⑧). */
   recu?: ({ itemId: string; carteId?: string; nom?: string } & Partial<Carte>) | null;
   zone?: string | null;
+  /** Trace (page ⑨) : âge de la dernière position de la cible, en minutes. */
+  ageMin?: number | null;
   copie?: { itemId: string; carteId: string; contrefacon: boolean };
   contrefacons?: string[];
+  /** Pénétration (RG-8.9) : ce que chaque contrefaçon démasquée était ; `vraie` = la vraie carte d'un doublon déguisé. */
+  demasquees?: { itemId: string; nature: 'copie' | 'deguise'; vraie: Carte | null }[];
   /** Retour : ville ouverte à distance. */
   ville?: 'masadora' | 'antokiba';
   /** Accompagnement : position de la cible (au seul lanceur). */
@@ -63,7 +67,10 @@ export interface ReponseSort {
   cartes?: { carteId: string; numero: number; nom: string; rang: string; n: number; contrefacon: boolean }[];
 }
 
-const PROTECTION = { barriere: 'son Mur défensif', renforcement: 'son Renforcement' } as const;
+const PROTECTION = { barriere: 'son Mur défensif', renforcement: 'son Renforcement', voile: 'son Voile d’ombre' } as const;
+
+/** « il y a 3 min », « il y a moins d’une minute ». */
+export const ilYa = (min: number) => (min < 1 ? 'il y a moins d’une minute' : `il y a ${min} min`);
 
 /** « Tu as volé le diamant… » : l'article du nom de carte passe en minuscule au milieu d'une phrase. */
 export const enPhrase = (nom: string) => nom.replace(/^(Les|Le|La)(?=\s)|^L['’]/, (m) => m.toLowerCase());
@@ -85,7 +92,8 @@ export function resumeSort(r: ReponseSort, cible: string | null, noms: (itemId: 
     case 'gel':
       return `${qui} est gelé : plus de scan pendant 3 min.`;
     case 'radar':
-      return r.zone ? `Dernière position connue de ${qui} : zone ${r.zone}.` : `Position de ${qui} inconnue.`;
+      if (!r.zone) return `Position de ${qui} inconnue : aucune position reçue dans une zone.`;
+      return r.ageMin != null ? `${qui} était dans la zone ${r.zone} ${ilYa(r.ageMin)}.` : `Dernière position connue de ${qui} : zone ${r.zone}.`;
     case 'revelation':
       return r.zone ? `Une balise rare est active en zone ${r.zone}.` : 'Aucune balise rare active pour le moment.';
     case 'duplication':
@@ -197,12 +205,18 @@ export function familles(dispo: SortDisponible[]): { offensifs: SortDisponible[]
  * Page ⑧ : ce que la comète rapporte. `butin` = la carte prise revient et se retourne ; `mur` = elle se brise
  * sur la protection de la cible ; `gel` = le givre ; `vision` = le Book de la cible (Voyance, Clairvoyance) ;
  * `copie` = la carte choisie se dédouble (Mimétisme) ; `texte` = la boîte du jeu seule.
+ * Page ⑨ : `ile` = la carte de l'île se déroule, la comète tombe sur la zone (Trace, Guide) ou sur la cible
+ * (Accompagnement) ; `penetration` = ta page balayée par la lumière ; `envol` = Retour, envol vers la ville.
  */
-export type IssueLancer = 'butin' | 'mur' | 'gel' | 'vision' | 'copie' | 'texte';
+export type IssueLancer = 'butin' | 'mur' | 'gel' | 'vision' | 'copie' | 'ile' | 'penetration' | 'envol' | 'texte';
 
 export function issueLancer(r: ReponseSort): IssueLancer {
   if (r.resultat === 'bloque') return 'mur';
+  // Page ⑨ : Trace (même sans position connue), Guide et Accompagnement tombent sur la carte de l'île.
+  if (r.sort === 'radar' || r.sort === 'revelation' || (r.sort === 'accompagnement' && r.resultat === 'reussi')) return 'ile';
   if (r.resultat !== 'reussi') return 'texte';
+  if (r.sort === 'analyse') return 'penetration';
+  if (r.sort === 'retour' && r.ville) return 'envol';
   if (r.sort === 'gel') return 'gel';
   if (r.sort === 'regard' || r.sort === 'clairvoyance') return 'vision';
   if (r.sort === 'duplication' && r.copie) return 'copie';

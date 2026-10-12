@@ -82,6 +82,11 @@ describe('sorts côté app (RG-10)', () => {
     expect(resumeSort({ sort: 'vol', resultat: 'reussi', recu: { itemId: 'x', nom: 'Couronne' } }, 'Kirua', nom)).toBe('Tu as volé Couronne à Kirua.');
     expect(resumeSort({ sort: 'vol', resultat: 'bloque', protection: 'barriere' }, 'Kirua', nom)).toBe('Kirua était protégé : sort bloqué par son Mur défensif.');
     expect(resumeSort({ sort: 'radar', resultat: 'reussi', zone: 'Forêt' }, 'Kirua', nom)).toBe('Dernière position connue de Kirua : zone Forêt.');
+    // Page ⑨ : l'âge de la position (jamais la position elle-même, RG-10.12).
+    expect(resumeSort({ sort: 'radar', resultat: 'reussi', zone: 'Forêt', ageMin: 3 }, 'Hisoka', nom)).toBe('Hisoka était dans la zone Forêt il y a 3 min.');
+    expect(resumeSort({ sort: 'radar', resultat: 'reussi', zone: 'Forêt', ageMin: 0 }, 'Hisoka', nom)).toBe('Hisoka était dans la zone Forêt il y a moins d’une minute.');
+    expect(resumeSort({ sort: 'radar', resultat: 'sans_effet', zone: null }, 'Hisoka', nom)).toBe('Position de Hisoka inconnue : aucune position reçue dans une zone.');
+    expect(resumeSort({ sort: 'radar', resultat: 'bloque', protection: 'voile' }, 'Hisoka', nom)).toBe('Hisoka était protégé : sort bloqué par son Voile d’ombre.');
     expect(resumeSort({ sort: 'analyse', resultat: 'reussi', contrefacons: ['a'] }, null, nom)).toBe('Contrefaçon : Épée.');
     expect(resumeSort({ sort: 'duplication', resultat: 'reussi', copie: { itemId: 'c', carteId: 'x', contrefacon: true } }, null, nom)).toMatch(/contrefaçon/);
   });
@@ -125,7 +130,14 @@ describe('sorts côté app (RG-10)', () => {
     expect(issueLancer({ sort: 'gel', resultat: 'reussi' })).toBe('gel');
     expect(issueLancer({ sort: 'clairvoyance', resultat: 'reussi', cartes: [] })).toBe('vision');
     expect(issueLancer({ sort: 'duplication', resultat: 'reussi', copie: { itemId: 'c', carteId: 'x', contrefacon: false } })).toBe('copie');
-    expect(issueLancer({ sort: 'radar', resultat: 'reussi', zone: 'Forêt' })).toBe('texte');
+    // Page ⑨.
+    expect(issueLancer({ sort: 'radar', resultat: 'reussi', zone: 'Forêt' })).toBe('ile');
+    expect(issueLancer({ sort: 'radar', resultat: 'sans_effet', zone: null })).toBe('ile');
+    expect(issueLancer({ sort: 'revelation', resultat: 'reussi', zone: null })).toBe('ile');
+    expect(issueLancer({ sort: 'accompagnement', resultat: 'reussi' })).toBe('ile');
+    expect(issueLancer({ sort: 'accompagnement', resultat: 'bloque', protection: 'barriere' })).toBe('mur');
+    expect(issueLancer({ sort: 'analyse', resultat: 'reussi', contrefacons: [] })).toBe('penetration');
+    expect(issueLancer({ sort: 'retour', resultat: 'reussi', ville: 'masadora' })).toBe('envol');
   });
 
   it('page ⑧ : la vision montre le Book de la cible par pages de 10', () => {

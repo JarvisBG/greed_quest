@@ -31,6 +31,8 @@ export interface Plan {
   zones: ZonePlan[];
   /** Ta position, si elle tombe sur le plan (ou tout près). */
   moi: { x: number; y: number; r: number } | null;
+  /** Point du terrain → point du plan (Accompagnement : la cible, au seul lanceur). */
+  projeter: (p: { lat: number; lng: number }) => [number, number];
 }
 
 /** Largeur fixe du plan : le dessin garde la même allure quelle que soit la taille du terrain. */
@@ -75,7 +77,7 @@ export function construirePlan(
   position: { lat: number; lng: number; precisionM: number } | null,
 ): Plan {
   const tous = zones.flatMap((z) => z.polygone);
-  if (tous.length === 0) return { largeur: LARGEUR, hauteur: LARGEUR * 0.75, zones: [], moi: null };
+  if (tous.length === 0) return { largeur: LARGEUR, hauteur: LARGEUR * 0.75, zones: [], moi: null, projeter: () => [LARGEUR / 2, LARGEUR * 0.375] };
   const lat0 = (Math.min(...tous.map((p) => p.lat)) + Math.max(...tous.map((p) => p.lat))) / 2;
   const kx = M_PAR_DEGRE_LNG * Math.cos((lat0 * Math.PI) / 180);
   const metres = (p: { lat: number; lng: number }): [number, number] => [p.lng * kx, -p.lat * M_PAR_DEGRE_LAT];
@@ -121,7 +123,74 @@ export function construirePlan(
     const tol = m * echelle * 0.5;
     if (x >= -tol && x <= LARGEUR + tol && y >= -tol && y <= hauteur + tol) moi = { x, y, r: Math.max(6, position.precisionM * echelle) };
   }
-  return { largeur: LARGEUR, hauteur, zones: zs, moi };
+  return { largeur: LARGEUR, hauteur, zones: zs, moi, projeter: plan };
+}
+
+/** Le point est-il dans le polygone (lancer de rayon) ? */
+export function dansPolygone([x, y]: readonly [number, number], pts: readonly (readonly [number, number])[]): boolean {
+  let dedans = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const [xi, yi] = pts[i]!;
+    const [xj, yj] = pts[j]!;
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) dedans = !dedans;
+  }
+  return dedans;
+}
+
+const premierDedans = (z: ZonePlan, l: [number, number][]) => l.find((q) => dansPolygone(q, z.points)) ?? z.centre;
+
+/**
+ * Page ⑨, Trace : des pas d'encre dans la zone, sous son nom, du plus ancien au plus récent (le dernier est le
+ * point d'impact de la comète). Décor seulement : la zone est tout ce que le sort apprend (RG-10.12).
+ */
+export function cheminDeTrace(z: ZonePlan, n = 4): { pas: { x: number; y: number; angle: number; cote: 1 | -1 }[]; etiquette: [number, number] } {
+  const [cx, cy] = z.centre;
+  // On marche vers le nord-est ; le chemin raccourcit jusqu'à ce que chaque pas tienne dans la zone.
+  const [ux, uy] = [0.93, -0.37];
+  const angle = (Math.atan2(uy, ux) * 180) / Math.PI + 90;
+  const chemin = (fin: [number, number], l: number) => {
+    const debut: [number, number] = [fin[0] - ux * l, fin[1] - uy * l];
+    const pas = Array.from({ length: n }, (_, i) => {
+      const t = n > 1 ? i / (n - 1) : 1;
+      const cote: 1 | -1 = i % 2 ? 1 : -1;
+      return { x: debut[0] + (fin[0] - debut[0]) * t - uy * 6 * cote, y: debut[1] + (fin[1] - debut[1]) * t + ux * 6 * cote, angle, cote };
+    });
+    return { pas, etiquette: [debut[0], Math.max(debut[1], fin[1]) + 14] as [number, number] };
+  };
+  const fins: [number, number][] = [
+    [cx + 14, cy + 24],
+    [cx, cy + 20],
+    [cx, cy],
+  ];
+  for (const fin of fins)
+    for (let l = 100; l >= 16; l -= 6) {
+      const c = chemin(fin, l);
+      if (c.pas.every((q) => dansPolygone([q.x, q.y], z.points))) return c;
+    }
+  return chemin(z.centre, 0);
+}
+
+/** Page ⑨, Guide : pied de la colonne de lumière, à côté du nom de la zone pour qu'il reste lisible (RG-6.5 : jamais la balise). */
+export function piedDeGuide(z: ZonePlan): [number, number] {
+  const [cx, cy] = z.centre;
+  return premierDedans(z, [
+    [cx + 34, cy + 30],
+    [cx - 34, cy + 30],
+    [cx + 34, cy + 22],
+    [cx, cy + 32],
+    [cx, cy + 26],
+  ]);
+}
+
+/** Suivi d'Accompagnement : vue carrée sur toi et la cible, marge de 45 unités, jamais plus serrée que `min`. */
+export function cadrageSuivi(a: readonly [number, number], b: readonly [number, number], min = 210): { x: number; y: number; w: number; h: number } {
+  const cote = Math.max(min, Math.abs(a[0] - b[0]) + 90, Math.abs(a[1] - b[1]) + 90);
+  return { x: (a[0] + b[0]) / 2 - cote / 2, y: (a[1] + b[1]) / 2 - cote / 2, w: cote, h: cote };
+}
+
+/** Les deux points sont-ils encore bien dans la vue (à 22 unités du bord) ? Sinon on recadre. */
+export function resteCadre(v: { x: number; y: number; w: number; h: number }, ...pts: readonly (readonly [number, number])[]): boolean {
+  return pts.every(([x, y]) => x > v.x + 22 && x < v.x + v.w - 22 && y > v.y + 22 && y < v.y + v.h - 22);
 }
 
 /**

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cadrer, construirePlan, LARGEUR, niveauBalises, ZOOM_MAX, zoomerVue, type ZoneRecue } from './carte';
+import { cadrageSuivi, cadrer, cheminDeTrace, construirePlan, dansPolygone, LARGEUR, niveauBalises, piedDeGuide, resteCadre, ZOOM_MAX, zoomerVue, type ZoneRecue } from './carte';
 
 const LAT = 48.85;
 const LNG = 2.35;
@@ -76,5 +76,42 @@ describe('carte de l’île', () => {
     expect(zoomerVue({ cx: 210, cy: 160, z: 1 }, 2, 100, 100)).toEqual({ cx: 155, cy: 130, z: 2 });
     expect(zoomerVue({ cx: 210, cy: 160, z: 4 }, 10, 210, 160).z).toBe(ZOOM_MAX);
     expect(zoomerVue({ cx: 210, cy: 160, z: 2 }, 0.1, 210, 160).z).toBe(1);
+  });
+});
+
+describe('page ⑨ : sorts sur la carte de l’île', () => {
+  const zones = [carre('a', 'sauvage', 0, 0, 200), carre('b', 'sauvage', 220, 0, 60), carre('c', 'masadora', 0, 220, 200)];
+  const plan = construirePlan(zones, {}, null);
+
+  it('Accompagnement : la position de la cible se projette sur le plan comme les zones', () => {
+    const [x, y] = plan.projeter({ lat: LAT - 100 * dLat, lng: LNG + 100 * dLng });
+    expect(dansPolygone([x, y], plan.zones[0]!.points)).toBe(true);
+    expect(dansPolygone([x, y], plan.zones[1]!.points)).toBe(false);
+  });
+
+  it('RG-10.12 Trace : les pas restent dans la zone, même petite ; l’étiquette passe dessous', () => {
+    for (const z of plan.zones) {
+      const t = cheminDeTrace(z);
+      expect(t.pas).toHaveLength(4);
+      expect(t.pas.every((p) => dansPolygone([p.x, p.y], z.points))).toBe(true);
+      expect(t.etiquette[1]).toBeGreaterThan(Math.min(...t.pas.map((p) => p.y)));
+    }
+  });
+
+  it('RG-6.5 Guide : le pied de la colonne est dans la zone, à côté de son nom', () => {
+    for (const z of plan.zones) {
+      const p = piedDeGuide(z);
+      expect(dansPolygone(p, z.points)).toBe(true);
+      expect(p).not.toEqual(z.centre);
+    }
+  });
+
+  it('suivi : vue carrée sur les deux points, recadrée quand l’un approche du bord', () => {
+    const v = cadrageSuivi([100, 100], [140, 160]);
+    expect(v.w).toBe(v.h);
+    expect(v.w).toBeGreaterThanOrEqual(210);
+    expect(resteCadre(v, [100, 100], [140, 160])).toBe(true);
+    expect(resteCadre(v, [100, 100], [v.x + v.w - 5, 160])).toBe(false);
+    expect(cadrageSuivi([0, 0], [400, 0]).w).toBe(490);
   });
 });

@@ -9,7 +9,7 @@ import { positionActuelle } from './geo';
 import { connectRealtime, type EtatConnexion } from './realtime';
 import { rejouerFile, scanner, type IssueScan } from './scan';
 import { messageFin, termine, type EvenementEchange, type VueEchange } from './echanges';
-import { texteSortRecu } from './sorts';
+import { ilYaRecu, issueRecu, texteSortRecu, type SortRecu } from './sorts';
 import type { SuiviCible } from './accompagnement';
 import { partieFromUrl, type Session } from './session';
 import { creerSuivi, type Suivi } from './suivi';
@@ -56,6 +56,27 @@ export interface Alerte {
   qui: string;
   texte: string;
   voir?: 'echanges';
+  /** Durée d'affichage (ms), plus longue pour une liste (rattrapage). */
+  duree?: number;
+}
+
+/** Page ⑪ : repère du dernier sort reçu vu par l'app, par joueur (rattrapage au retour). */
+const cleRepere = (joueurId: string) => `gq-sorts-recus-${joueurId}`;
+function lireRepere(joueurId: string): number | null {
+  try {
+    const v = localStorage.getItem(cleRepere(joueurId));
+    return v === null ? null : Number(v);
+  } catch {
+    return null;
+  }
+}
+function noterRepere(joueurId: string, n: number | undefined) {
+  if (n === undefined) return;
+  try {
+    if ((lireRepere(joueurId) ?? -1) < n) localStorage.setItem(cleRepere(joueurId), String(n));
+  } catch {
+    // stockage indisponible : le rattrapage repartira du repère du serveur
+  }
 }
 
 /** Évènements annoncés en boîte de dialogue, en plus du fil des notifications. */
@@ -116,6 +137,10 @@ export function useJeu() {
   }, []);
   const majJenny = useCallback((jenny: number) => setMoi((m) => (m ? { ...m, jenny } : m)), []);
   const ajouterJenny = useCallback((montant: number) => setMoi((m) => (m ? { ...m, jenny: m.jenny + montant } : m)), []);
+  /** Page ⑪ : sorts reçus qui frappent, en attente de leur cinématique (joués un par un, au niveau de l'App). */
+  const [sortsRecus, setSortsRecus] = useState<SortRecu[]>([]);
+  /** Qui t'a gelé (Gel, Accompagnement), pour le bandeau ; inconnu après un rechargement. */
+  const [gelePar, setGelePar] = useState<{ pseudo: string; accompagnement: boolean } | null>(null);
   /** RG-7.5 : tirages reçus au rejeu de la file, en attente de leur cinématique (l'app les joue un par un). */
   const [rejoues, setRejoues] = useState<Extract<IssueScan, { type: 'ok' }>[]>([]);
 
@@ -190,12 +215,31 @@ export function useJeu() {
     }
   }, [sess, notifier]);
 
+  /** Page ⑪ (RG-10.5) : sorts reçus pendant que l'app était fermée ou hors ligne, en une seule boîte. */
+  const rattraper = useCallback(async () => {
+    if (!sess) return;
+    const avant = lireRepere(sess.joueurId);
+    try {
+      const r = await api.get<{ repere: number; maintenant: number; recus: SortRecu[] }>(`/parties/${sess.partieId}/sorts-recus${avant === null ? '' : `?apres=${avant}`}`);
+      noterRepere(sess.joueurId, Math.max(r.repere, ...r.recus.map((x) => x.n ?? 0)));
+      if (avant === null || r.recus.length === 0) return;
+      const lignes = r.recus.map((x) => `▸ ${texteSortRecu(x)} (${ilYaRecu(x.heureJeu, r.maintenant)})`);
+      setAlerte({ n: Date.now(), genre: 'sort', qui: 'Pendant ton absence', texte: lignes.join('\n'), duree: 6000 + 3000 * lignes.length });
+      navigator.vibrate?.([200, 100, 200]);
+    } catch {
+      // hors ligne : on réessaiera au retour du réseau
+    }
+  }, [sess]);
+
   useEffect(() => {
     if (!sess) return;
     const t = connectRealtime(API_URL, sess.token, {
       etat: (e) => {
         setConnexion(e);
-        if (e === 'en_ligne') void rejouer();
+        if (e === 'en_ligne') {
+          void rejouer();
+          void rattraper();
+        }
       },
       evenement: (nom, data) => {
         setVersion((v) => v + 1);
@@ -222,11 +266,16 @@ export function useJeu() {
           return;
         }
         if (nom === 'sort_recu') {
-          // RG-10.5 : alerte immédiate à la cible.
-          const texte = texteSortRecu(data as Parameters<typeof texteSortRecu>[0]);
+          // RG-10.5 : alerte immédiate à la cible. Page ⑪ : cinématique pour les sorts qui frappent, boîte sinon.
+          const d = data as SortRecu;
+          const texte = texteSortRecu(d);
           notifier(texte);
-          setAlerte({ n: Date.now(), genre: 'sort', qui: 'Sort', texte });
-          navigator.vibrate?.([200, 100, 200]);
+          noterRepere(sess.joueurId, d.n);
+          if (d.resultat === 'reussi' && d.lanceur && (d.sort === 'gel' || d.sort === 'accompagnement')) setGelePar({ pseudo: d.lanceur, accompagnement: d.sort === 'accompagnement' });
+          if (issueRecu(d) === 'boite') {
+            setAlerte({ n: Date.now(), genre: 'sort', qui: 'Sort reçu', texte });
+            navigator.vibrate?.([200, 100, 200]);
+          } else setSortsRecus((l) => [...l, d]);
           void rafraichir();
           return;
         }
@@ -381,6 +430,11 @@ export function useJeu() {
     partieRecueA,
     alerte,
     fermerAlerte: () => setAlerte(null),
+    sortRecu: sortsRecus[0] ?? null,
+    gelePar,
+    /** Refus en clair, sans requête (onglet Scanner pendant un gel). */
+    annoncer: (texte: string) => setAlerte({ n: Date.now(), genre: 'sort', qui: 'Greed Island', texte }),
+    finSortRecu: () => setSortsRecus((l) => l.slice(1)),
     echange,
     setEchange,
     finEchange,

@@ -62,7 +62,7 @@ const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const tailleCri = (mot: string) => `${Math.min(150, (Math.min(innerWidth, 480) * 0.92) / (mot.length * 0.86 + 0.4)).toFixed(0)}px`;
 
 // Coque d'alvéoles du Mur défensif et ses fêlures, dessinées une fois.
-const ALVEOLES = (() => {
+export const ALVEOLES = (() => {
   const hex = (cx: number, cy: number, r: number) =>
     Array.from({ length: 6 }, (_, i) => {
       const a = (Math.PI / 3) * i + Math.PI / 6;
@@ -82,7 +82,7 @@ const ALVEOLES = (() => {
 })();
 const FELURES = ['M0 0 L-9 -14 L-6 -27 L-17 -40 L-14 -58', 'M0 0 L13 -8 L26 -6 L35 -19 L52 -24', 'M0 0 L15 10 L18 26 L33 34 L40 50', 'M0 0 L-12 9 L-28 7 L-37 20 L-54 26', 'M0 0 L-3 16 L-14 30 L-10 46', 'M-6 -27 L6 -36', 'M26 -6 L30 6'];
 // Givre : branches cristallines, posées aux quatre coins.
-const GIVRE = (() => {
+export const GIVRE = (() => {
   let s = 7;
   const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
   const branche = (x: number, y: number, a: number, l: number, n: number): string => {
@@ -100,7 +100,7 @@ const GIVRE = (() => {
   for (let i = 0; i < 6; i++) d += branche(0, 0, (Math.PI / 2) * (i / 5) + (r() - 0.5) * 0.15, 26 + r() * 14, 4);
   return d;
 })();
-const COINS_GIVRE = ['hg', 'hd', 'bg', 'bd'] as const;
+export const COINS_GIVRE = ['hg', 'hd', 'bg', 'bd'] as const;
 
 export function Lancer({ demande, onRangement, onFini }: { demande: DemandeLancer; onRangement: (r: ReponseSort) => void; onFini: (f: FinLancer) => void }) {
   const calme = useRef(matchMedia('(prefers-reduced-motion: reduce)').matches).current;

@@ -17,8 +17,11 @@ import { Raid } from './ecrans/Raid';
 import { Scan } from './ecrans/scan/Scan';
 import { Tirage, useTirages } from './ecrans/scan/Tirage';
 import { ADistance } from './ecrans/sorts/ADistance';
+import { BandeauGel, styleGivre, useGel } from './ecrans/sorts/BandeauGel';
 import { BandeauZetsu } from './ecrans/sorts/BandeauZetsu';
 import { PieceFortune } from './ecrans/sorts/CaseNen';
+import { minSec } from './ecrans/sorts/FicheSort';
+import { SortRecu } from './ecrans/sorts/SortRecu';
 import { Sorts } from './ecrans/sorts/Sorts';
 import { api, session } from './lib/client';
 import { creerEveil, eveilDisponible, preferenceEveil } from './lib/eveil';
@@ -85,6 +88,10 @@ export function App() {
 
   const moi = jeu.moi;
   const partie = jeu.partie;
+  /** Page ⑪ : gel subi (Gel, Accompagnement), pour le bandeau, l'onglet Scanner givré et la cinématique. */
+  const gel = useGel(moi);
+  const moiRef = useRef(moi);
+  moiRef.current = moi;
   // Parcours d'arrivée : kit → Examen (RG-5.3, peut attendre) → test de Nen (RG-5.4) → accueil.
   let ecran: 'kit' | 'examen' | 'nen' | 'accueil' = 'accueil';
   if (jeu.phase === 'en_jeu' && moi) {
@@ -132,6 +139,7 @@ export function App() {
       </header>
       )}
       {enJeu && ecran === 'accueil' && <BandeauZetsu moi={moi} />}
+      {enJeu && ecran === 'accueil' && <BandeauGel moi={moi} par={jeu.gelePar} />}
 
       {jeu.alerte && (
         <Annonce
@@ -140,6 +148,7 @@ export function App() {
           qui={jeu.alerte.qui}
           texte={jeu.alerte.texte}
           onFermer={jeu.fermerAlerte}
+          {...(jeu.alerte.duree ? { dureeMs: jeu.alerte.duree } : {})}
           {...(jeu.alerte.voir
             ? {
                 action: (
@@ -322,7 +331,11 @@ export function App() {
               key={o.id}
               data-onglet={o.id}
               aria-current={onglet === o.id ? 'page' : undefined}
+              className={o.id === 'scan' && gel > 0 ? 'gele' : undefined}
+              style={o.id === 'scan' && gel > 0 ? styleGivre : undefined}
               onClick={() => {
+                // Page ⑪ : gelé, le Scanner reste fermé ; le refus est dit en clair.
+                if (o.id === 'scan' && gel > 0) return jeu.annoncer(`Tu es gelé : plus de scan pendant encore ${minSec(gel)}.`);
                 if (o.id === 'scan') setBaliseLien(null);
                 if (o.id === 'accueil') setSous(null);
                 setOnglet(o.id);
@@ -331,6 +344,7 @@ export function App() {
               <o.icone />
               {o.nom}
               {o.id === 'echanges' && jeu.echange && <span className="point" aria-label="échange en cours" />}
+              {o.id === 'scan' && gel > 0 && <span className="gel-t" aria-label={`gelé encore ${minSec(gel)}`}>{minSec(gel)}</span>}
               {o.id === 'scan' && moi?.specialisation.fortuneArmee && (
                 <span className="onglet-fortune" role="img" aria-label="Fortune armée : un gain de plus">
                   <PieceFortune plus />
@@ -341,6 +355,19 @@ export function App() {
         </nav>
       )}
       {tirages.courant && <Tirage key={tirages.courant.id} demande={tirages.courant} onFini={tirages.terminer} />}
+      {/* Page ⑪ : sorts reçus qui frappent, un par un, après un tirage en cours. */}
+      {!tirages.courant && jeu.sortRecu && jeu.partieId && (
+        <SortRecu
+          key={`${jeu.sortRecu.n ?? ''}-${jeu.sortRecu.sort}-${jeu.sortRecu.heureJeu ?? ''}`}
+          recu={jeu.sortRecu}
+          partieId={jeu.partieId}
+          geleMs={() => {
+            const m = moiRef.current;
+            return m ? Math.max(m.delais.gel, m.accompagne) - (Date.now() - m.recuA) : 0;
+          }}
+          onFini={jeu.finSortRecu}
+        />
+      )}
     </div>
   );
 }

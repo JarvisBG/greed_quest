@@ -88,8 +88,6 @@ export function Accueil({
     .filter((e) => e.type !== 'raid' && e.zoneId)
     .map((e) => ({ zoneId: e.zoneId!, texte: `${LIBELLE_ZONE[e.type] ?? 'Évènement'} · ${Math.max(1, Math.ceil((e.resteMs - (maintenant - evenements.recuA)) / 60_000))} min` }));
   const pouvoir = etatPouvoir(moi, ecoule);
-  const gel = Math.max(0, moi.delais.gel - ecoule);
-  const suivi = Math.max(0, moi.accompagne - ecoule);
   const retour = moi.retour && moi.retour.resteMs - ecoule > 0 ? { ville: moi.retour.ville, reste: moi.retour.resteMs - ecoule } : null;
 
   return (
@@ -100,12 +98,7 @@ export function Accueil({
           <p>Tu ne peux plus jouer pour l’instant. Va voir un PNJ ou le Game Master.</p>
         </section>
       )}
-      {(gel > 0 || suivi > 0) && (
-        <section className="gi-case gel" role="status">
-          <h2 className="sous-titre">{suivi > 0 ? 'Accompagnement : tu es suivi' : 'Gel : tu ne peux plus scanner'}</h2>
-          <p className="temps">{formatChrono(Math.max(gel, suivi))}</p>
-        </section>
-      )}
+      {/* Gel subi (Gel, Accompagnement) : bandeau givré sur toutes les pages (BandeauGel, page ⑪). */}
 
       <section className="gi-case profil">
         <h1 className="pseudo">{moi.pseudo}</h1>

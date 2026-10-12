@@ -1225,3 +1225,52 @@ dialog.fiche[open] { animation: monte 0.35s var(--sortie); }
 .ancien .chrono { font-size: 18px; }
 .ancien .titre-enchere { display: flex; gap: 8px; align-items: center; margin: 0; }
 .ancien .titre-enchere .chrono { margin-left: auto; }
+
+/* ---------- Page ⑪ : sort reçu, côté cible (prototype validé le 2026-10-12 : docs/prototype/sort-recu.html) ---------- */
+/* La nuit de la cible, plus froide, éclairée du coin du lanceur ; une alerte rouge bat aux bords. */
+.recu-nuit { background: radial-gradient(ellipse at 70% 30%, #1a2448 0, #0d1120 46%, #050608 92%); }
+.recu-alarme { position: absolute; inset: 0; box-shadow: inset 0 0 0 6px rgba(255, 70, 70, 0.9), inset 0 0 90px 30px rgba(220, 30, 40, 0.55); opacity: 0; pointer-events: none; }
+/* D'où vient le sort : le lanceur, en haut à droite, d'où part la comète. */
+.recu-lanceur { position: absolute; z-index: 5; top: max(16px, env(safe-area-inset-top, 0px)); right: 16px; display: grid; justify-items: end; gap: 4px; opacity: 0; pointer-events: none; }
+.recu-lanceur b { font: 400 19px/1 var(--f-jeu); color: var(--nuit); background: #f6f6f2; padding: 6px 10px; }
+.recu-lanceur small { font: 400 14px/1 var(--f-jeu); color: #c3c6cc; }
+/* Le cri du lanceur, entendu de loin : plus petit qu'au lancer. */
+.recu-cri { top: max(70px, calc(50% - 40vh)); z-index: 5; }
+.recu-cri .on { font-size: min(18vw, 84px); }
+.recu-issue { position: absolute; z-index: 5; left: 0; right: 0; top: max(70px, calc(50% - 40vh)); text-align: center; font: 400 var(--taille, 110px)/1 var(--f-titre); letter-spacing: -0.02em; color: transparent; -webkit-text-stroke: 3px rgba(233, 236, 242, 0.8); opacity: 0; pointer-events: none; }
+.recu-issue.rouge { -webkit-text-stroke-color: #ff8c86; }
+/* Ta page du Book, éclairée dans la nuit. */
+.recu-livre { position: absolute; left: 50%; top: 50%; width: min(84vw, 340px, calc((100dvh - 320px) * 0.5)); translate: -50% -46%; opacity: 0; pointer-events: none; }
+.recu-livre .page { box-shadow: inset 16px 0 16px -12px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 255, 255, 0.25), 0 20px 50px rgba(0, 0, 0, 0.6); }
+.recu-livre .poche { position: relative; }
+.recu-volee { position: absolute; z-index: 2; left: 50%; top: 50%; translate: -50% -50%; rotate: -14deg; padding: 2px 4px; border: 2px solid var(--rouge); color: var(--rouge); background: rgba(251, 251, 247, 0.85); font: 400 11px/1 var(--f-titre); letter-spacing: 0.04em; white-space: nowrap; opacity: 0; }
+.recu-arrachee { position: absolute; z-index: 4; left: 0; top: 0; opacity: 0; pointer-events: none; will-change: transform; }
+.recu-arrachee .gi-carte .c-cadre { box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35), 0 18px 30px rgba(0, 0, 0, 0.55); }
+.recu-recue { width: min(50vw, 220px, calc((100dvh - 330px) * 63 / 88)); }
+/* Ta coque d'alvéoles se lève devant toi. */
+.recu-mur { top: 46%; }
+/* Toi, au centre : la cible du gel et de l'Accompagnement. */
+.recu-toi { position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; background: #f6f6f2; box-shadow: 0 0 0 4px var(--nuit), 0 0 0 7px #f6f6f2, 0 0 30px 10px rgba(143, 178, 255, 0.5); opacity: 0; pointer-events: none; transition: background 0.5s, box-shadow 0.5s; }
+.recu-toi.gele { background: #dff0ff; box-shadow: 0 0 0 4px var(--nuit), 0 0 0 7px #dff0ff, 0 0 40px 16px rgba(223, 240, 255, 0.6); }
+.recu-toi span { position: absolute; left: 50%; top: 40px; translate: -50% 0; font: 400 16px/1 var(--f-jeu); color: #f6f6f2; white-space: nowrap; }
+.recu-viseur { position: absolute; left: 50%; top: 50%; width: 150px; height: 150px; margin: -75px 0 0 -75px; opacity: 0; pointer-events: none; }
+.recu-viseur svg { width: 100%; height: 100%; overflow: visible; fill: none; stroke: #ff8c86; stroke-width: 2.4; stroke-linecap: round; }
+.recu-oeil { position: absolute; left: 50%; top: calc(50% - 128px); translate: -50% 0; font: 400 16px/1 var(--f-jeu); color: var(--nuit); background: #ff8c86; padding: 6px 10px; white-space: nowrap; opacity: 0; pointer-events: none; }
+.recu-decompte { position: absolute; left: 0; right: 0; top: calc(50% + 70px); text-align: center; font: 800 64px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; color: #dff0ff; opacity: 0; pointer-events: none; }
+.recu .lancer-dialogue { z-index: 6; }
+.recu .lancer-dialogue .a-qui { background: #8fb2ff; }
+.recu-moins-un { position: fixed; z-index: 40; font: 400 22px/1 var(--f-titre); color: var(--case); background: var(--rouge); border: var(--trait) solid var(--encre); padding: 3px 8px; pointer-events: none; }
+/* Rattrapage : une ligne par sort reçu pendant l'absence. */
+.gi-annonce .a-texte { white-space: pre-line; }
+/* Page ⑪ : bandeau du gel subi, sous la barre, sur toutes les pages, givré (même armature que celui du Zetsu). */
+.gel-bandeau { position: sticky; top: calc(58px + env(safe-area-inset-top, 0px)); z-index: 29; margin-inline: -16px; display: flex; align-items: center; gap: 12px; padding: 8px 16px; border-bottom: var(--trait) solid var(--encre); background: #e3eef7; overflow: hidden; animation: zetsu-arrive 0.36s var(--sortie); }
+.gel-bandeau::before { content: ''; position: absolute; inset: 0; background: var(--givre-motif) left -20px top -30px / 150px 150px no-repeat, var(--givre-motif) right -30px bottom -50px / 170px 170px no-repeat; opacity: 0.9; pointer-events: none; }
+.gel-bandeau > * { position: relative; }
+.gel-bandeau .mot { font: 400 26px/1 var(--f-titre); color: var(--case); -webkit-text-stroke: 2px var(--encre); paint-order: stroke fill; letter-spacing: 0.02em; }
+.gel-bandeau .dit { display: grid; font: 800 15px/1.15 var(--f-texte); min-width: 0; }
+.gel-bandeau .dit small { font: 600 13px/1.2 var(--f-texte); color: var(--encre-2); }
+.gel-bandeau .temps { margin-left: auto; font: 800 26px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; background: var(--case); border: 2px solid var(--encre); padding: 4px 7px; }
+/* Onglet Scanner givré pendant le gel, avec le décompte. */
+.onglets button.gele { overflow: hidden; background: #e3eef7; color: var(--encre-2); }
+.onglets button.gele::before { content: ''; position: absolute; inset: 0; opacity: 0.55; background: var(--givre-motif) left -12px top -14px / 70px 70px no-repeat, var(--givre-motif) right -18px bottom -22px / 76px 76px no-repeat; pointer-events: none; }
+.onglets button .gel-t { position: absolute; top: 4px; right: 4px; font: 800 11px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; background: var(--case); border: 1.5px solid var(--encre); padding: 2px 3px; color: var(--encre); }

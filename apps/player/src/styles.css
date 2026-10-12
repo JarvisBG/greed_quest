@@ -1482,3 +1482,141 @@ dialog.fiche[open] { animation: monte 0.35s var(--sortie); }
 .ech-trade-dialogue { z-index: 6; }
 .ech-trade-dialogue .a-qui { background: #ffd877 !important; }
 .ech-plus { position: fixed; z-index: 40; font: 400 22px/1 var(--f-titre); color: var(--encre); background: var(--case); border: var(--trait) solid var(--encre); padding: 3px 8px; pointer-events: none; }
+
+/* ---------- Page ⑬ : Masadora (prototype docs/prototype/masadora.html) ---------- */
+/* Planche claire : une enseigne suspendue, le paquet scellé en vitrine, la revente en grille de cartes dessous. */
+.masadora { --marine: #15233f; --marine-2: #0b1426; --or-vif: #ffd877; display: grid; gap: 14px; padding-block: 0 12px; }
+.masadora > * { min-width: 0; }
+.barre .jenny { position: relative; }
+.mas-flotte { position: absolute; right: 0; top: 100%; font: 800 18px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; padding: 4px 7px; background: var(--case); border: 2px solid var(--encre); pointer-events: none; white-space: nowrap; }
+.mas-flotte.gain { color: var(--succes); }
+.mas-flotte.perte { color: var(--rouge); }
+.mas-case { background: var(--case); border: var(--trait) solid var(--encre); padding: 14px 16px; display: grid; gap: 12px; }
+.mas-case h2 { margin: 0; font: 400 20px/1.1 var(--f-titre); }
+.mas-case p { margin: 0; }
+.masadora .aide { font: 400 15px/1.35 var(--f-texte); color: var(--encre-2); margin: 0; }
+.mas-erreur { margin: 0; padding: 10px 14px; border: var(--trait) solid var(--alerte); background: var(--case); color: var(--alerte); font: 600 15px/1.3 var(--f-texte); }
+.mas-secondaire { min-height: 48px; border: var(--trait) solid var(--encre); background: var(--case); font: 800 15px var(--f-texte); }
+
+/* En-tête : retour et enseigne suspendue (deux chaînes, planche noire au double filet, elle se balance). */
+.mas-tete { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding-top: 8px; }
+.mas-retour { min-height: 44px; padding: 0 12px 0 8px; border: var(--trait) solid var(--encre); background: var(--case); color: var(--encre); font: 800 15px var(--f-texte); display: inline-flex; align-items: center; gap: 4px; justify-self: start; }
+.mas-retour svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.mas-retour:active { background: var(--encre); color: var(--case); }
+.masadora .enseigne { justify-self: center; position: relative; padding-top: 22px; transform-origin: 50% 0; animation: mas-balance 5s ease-in-out infinite; }
+@keyframes mas-balance { 0%, 100% { rotate: -1.6deg; } 50% { rotate: 0.6deg; } }
+.masadora .enseigne::before, .masadora .enseigne::after { content: ''; position: absolute; top: 0; width: 4px; height: 24px; background: repeating-linear-gradient(var(--encre) 0 5px, transparent 5px 7px); border-inline: 1px solid var(--encre); }
+.masadora .enseigne::before { left: 18%; }
+.masadora .enseigne::after { right: 18%; }
+.masadora .planche { background: var(--encre); color: var(--case); padding: 10px 18px 9px; border-radius: 3px; box-shadow: inset 0 0 0 3px var(--encre), inset 0 0 0 5px var(--case), 0 6px 0 -2px rgba(17, 17, 17, 0.25); display: grid; justify-items: center; gap: 4px; }
+.masadora .planche h1 { margin: 0; font: 400 clamp(26px, 8.4vw, 36px)/1 var(--f-titre); letter-spacing: 0.04em; }
+.masadora .planche span { font: 400 13px/1 var(--f-jeu); color: var(--or-vif); letter-spacing: 0.08em; }
+.masadora .distance { justify-self: center; display: inline-flex; gap: 8px; align-items: center; font: 800 14px var(--f-texte); padding: 6px 10px; border: 2px dashed var(--bleu); color: var(--bleu); background: var(--case); }
+.masadora .distance b { font: 800 15px var(--f-chiffre); font-variant-numeric: tabular-nums; }
+
+/* Vitrine : le paquet scellé, sur un présentoir tramé. */
+.masadora .vitrine { position: relative; grid-template-columns: auto minmax(0, 1fr); gap: 16px; align-items: center; padding: 18px 16px 16px; background: radial-gradient(var(--trame) 0.9px, transparent 1.2px) 0 0 / 6px 6px, var(--case); }
+.masadora .presentoir { position: relative; width: 132px; display: grid; justify-items: center; }
+.masadora .presentoir::after { content: ''; width: 110px; height: 12px; margin-top: 8px; border-radius: 50%; background: radial-gradient(closest-side, rgba(17, 17, 17, 0.35), transparent); }
+.masadora .presentoir .mas-paquet { animation: mas-flotte 3.6s ease-in-out infinite; }
+@keyframes mas-flotte { 0%, 100% { translate: 0 0; } 50% { translate: 0 -5px; } }
+.masadora .presentoir.envoi .mas-paquet { animation: mas-tremble 0.24s linear infinite; }
+@keyframes mas-tremble { 25% { translate: -2px 0; rotate: -1deg; } 75% { translate: 2px 0; rotate: 1deg; } }
+.masadora .infos { display: grid; gap: 10px; min-width: 0; }
+.masadora .infos .quoi { font: 800 16px/1.25 var(--f-texte); }
+.masadora .infos .prix { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.masadora .infos .prix b { font: 800 40px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.masadora .infos .prix b small { font: 600 18px var(--f-texte); margin-left: 3px; }
+.masadora .infos .prix s { font: 800 20px/1 var(--f-chiffre); color: var(--encre-2); text-decoration-thickness: 3px; text-decoration-color: var(--rouge); }
+.masadora .infos dl { margin: 0; display: grid; gap: 6px; }
+.masadora .infos dl div { display: flex; justify-content: space-between; gap: 8px; border-top: 1.5px solid var(--encre); padding-top: 6px; font: 600 14px/1.25 var(--f-texte); }
+.masadora .infos dt { color: var(--encre-2); }
+.masadora .infos dd { margin: 0; font: 800 15px var(--f-chiffre); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.masadora .infos dd.vide { color: var(--rouge); }
+.masadora .krach-fin { font: 800 14px/1.25 var(--f-texte); color: var(--rouge); }
+.masadora .krach-fin b { font: 800 15px var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.masadora .acheter { grid-column: 1 / -1; min-height: 58px; border: 0; background: var(--encre); color: var(--case); font: 400 19px/1.1 var(--f-titre); letter-spacing: 0.01em; padding: 8px 14px; box-shadow: 0 5px 0 -1px rgba(17, 17, 17, 0.3); }
+.masadora .acheter:active:not(:disabled) { translate: 0 3px; box-shadow: none; }
+/* Désactivé à opacité pleine : le bouton porte la raison (stock, limite, jenny). */
+.masadora .acheter:disabled { background: var(--case-2); color: var(--encre); border: var(--trait) solid var(--encre); box-shadow: none; font: 800 16px/1.25 var(--f-texte); }
+.masadora .acheter.qr { background: var(--case); color: var(--encre); border: var(--trait) solid var(--encre); }
+/* Le tampon du Krach, frappé de travers sur le paquet. */
+.masadora .tampon-krach { position: absolute; z-index: 3; left: -6px; top: 34%; width: 146px; rotate: -16deg; pointer-events: none; }
+.masadora .tampon-krach svg, .mas-fiche .mas-tampon svg { width: 100%; height: auto; overflow: visible; }
+.masadora .tampon-krach.frappe, .mas-fiche .mas-tampon.pose { animation: mas-frapper 0.34s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes mas-frapper { from { scale: 2.2; opacity: 0; } 65% { scale: 0.93; opacity: 1; } }
+
+/* Le paquet : sachet métallisé marine et or, sertis en dents de scie. */
+.mas-paquet { --pw: 112px; position: relative; width: var(--pw); aspect-ratio: 63 / 100; display: grid; grid-template-rows: 9% 1fr 9%; filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.28)); }
+.mas-paquet .serti { background: repeating-linear-gradient(90deg, #8f6614 0 2px, #e9c56a 2px 4px), #c99a2a; clip-path: var(--dents); }
+.mas-paquet .serti.haut { --dents: polygon(0 100%, 0 30%, 5% 0, 10% 30%, 15% 0, 20% 30%, 25% 0, 30% 30%, 35% 0, 40% 30%, 45% 0, 50% 30%, 55% 0, 60% 30%, 65% 0, 70% 30%, 75% 0, 80% 30%, 85% 0, 90% 30%, 95% 0, 100% 30%, 100% 100%); }
+.mas-paquet .serti.bas { --dents: polygon(0 0, 100% 0, 100% 70%, 95% 100%, 90% 70%, 85% 100%, 80% 70%, 75% 100%, 70% 70%, 65% 100%, 60% 70%, 55% 100%, 50% 70%, 45% 100%, 40% 70%, 35% 100%, 30% 70%, 25% 100%, 20% 70%, 15% 100%, 10% 70%, 5% 100%, 0 70%); }
+.mas-paquet .corps { position: relative; overflow: hidden; container-type: inline-size; display: grid; grid-template-rows: auto 1fr auto; justify-items: center; padding: 9cqi 6cqi 7cqi; color: #ffd877;
+  background: linear-gradient(115deg, rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0.22) 42%, rgba(255, 255, 255, 0) 54%), linear-gradient(#22396a, #15233f 55%, #0b1426);
+  box-shadow: inset 0 0 0 2.5cqi #15233f, inset 0 0 0 3.6cqi var(--or), inset 0 0 0 5.4cqi #15233f, inset 0 0 0 6cqi rgba(215, 178, 90, 0.6); }
+/* Reflet qui passe sur le métal. */
+.mas-paquet .corps::after { content: ''; position: absolute; inset: -20% -60%; background: linear-gradient(105deg, transparent 42%, rgba(255, 255, 255, 0.28) 50%, transparent 58%); animation: mas-reflet 4.5s ease-in-out infinite; }
+@keyframes mas-reflet { 0%, 55% { translate: -60% 0; } 85%, 100% { translate: 60% 0; } }
+.mas-paquet .marque { font: 400 10.5cqi/1 var(--f-titre); letter-spacing: 0.08em; color: var(--case); }
+.mas-paquet .embleme { width: 64cqi; align-self: center; }
+.mas-paquet .embleme svg { width: 100%; height: auto; display: block; }
+.mas-paquet .nombre { display: grid; justify-items: center; gap: 2cqi; }
+.mas-paquet .nombre b { font: 400 16cqi/1 var(--f-titre); color: #ffd877; }
+.mas-paquet .nombre span { font: 800 8cqi/1 var(--f-texte); letter-spacing: 0.14em; text-transform: uppercase; color: var(--case); }
+
+/* Revente : grille de cartes, prix de rachat sous chacune. */
+.masadora .revente .tete { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.masadora .revente .tete span { margin-left: auto; font: 600 13px/1.2 var(--f-texte); color: var(--encre-2); }
+.masadora .revente h3 { margin: 0; font: 400 13px/1 var(--f-titre); letter-spacing: 0.12em; text-transform: uppercase; }
+.masadora .grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 14px 10px; }
+.masadora .choix { position: relative; border: 0; padding: 0; background: none; display: grid; gap: 6px; justify-items: center; text-align: center; color: var(--encre); }
+.masadora .choix .gi-carte { width: 100%; filter: drop-shadow(0 4px 0 rgba(17, 17, 17, 0.18)); transition: translate 0.2s var(--sortie, ease-out); }
+.masadora .choix:active:not(:disabled) .gi-carte { translate: 0 -4px; }
+.masadora .choix .rachat { font: 800 15px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; padding: 4px 7px; border: 2px solid var(--encre); background: var(--case); }
+.masadora .choix:disabled .gi-carte { opacity: 0.45; filter: grayscale(1); }
+.masadora .choix:disabled .rachat { border-style: dashed; font: 600 12px/1 var(--f-texte); color: var(--encre-2); }
+.masadora .choix.faux::after { content: 'CONTREFAÇON'; position: absolute; left: 50%; top: 40%; translate: -50% -50%; rotate: -20deg; font: 400 9px/1 var(--f-titre); letter-spacing: 0.04em; color: var(--rouge); border: 2px solid var(--rouge); padding: 3px 4px; background: rgba(251, 251, 247, 0.85); white-space: nowrap; pointer-events: none; }
+.masadora .choix.part { animation: mas-partir 0.5s ease-in forwards; }
+@keyframes mas-partir { to { opacity: 0; scale: 0.6; translate: 0 -20px; } }
+.masadora .revente.ferme .grille { opacity: 0.45; pointer-events: none; }
+
+/* Fiche de revente : la carte en grand, Garder / Revendre ; le tampon de Masadora sur la carte vendue. */
+.mas-fiche { position: fixed; z-index: 55; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(12, 12, 14, 0.82); }
+.mas-fiche .f-boite { width: min(100%, 320px); display: grid; gap: 14px; justify-items: center; animation: mas-fiche 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes mas-fiche { from { scale: 0.6; opacity: 0; translate: 0 40px; } }
+.mas-fiche .f-carte { position: relative; width: min(64vw, 240px, calc((100dvh - 290px) * 63 / 88)); }
+.mas-fiche .f-carte .gi-carte { filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.6)); }
+.mas-fiche .ou { margin: 0; font: 600 14px/1.3 var(--f-texte); color: #d9dbe0; text-align: center; text-wrap: balance; }
+.mas-fiche .f-actions { width: 100%; display: grid; grid-template-columns: 1fr 1.6fr; gap: 10px; }
+.mas-fiche .f-actions button { min-height: 56px; font: 400 17px/1 var(--f-titre); border: 3px solid #f6f6f2; }
+.mas-fiche .garder { background: transparent; color: #f6f6f2; }
+.mas-fiche .vendre { background: #f6f6f2; color: var(--nuit); }
+.mas-fiche .vendre:disabled { opacity: 0.7; }
+.mas-fiche .mas-tampon { position: absolute; z-index: 3; left: 50%; top: 46%; width: 78%; translate: -50% -50%; rotate: -14deg; pointer-events: none; }
+.mas-piece { position: fixed; z-index: 80; left: 0; top: 0; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; pointer-events: none; background: radial-gradient(circle at 35% 30%, #fff6cf 0, #f7dc8a 30%, #c99a2a 70%, #8f6614 100%); box-shadow: 0 0 0 1.5px #6e500f, 0 2px 4px rgba(0, 0, 0, 0.4); display: grid; place-items: center; font: 800 10px/1 var(--f-chiffre); color: #6b4f0d; font-style: normal; }
+
+/* Cinématique : ouverture du paquet, dans la nuit bleue des sorts. */
+.mas-ouverture { --cw: min(38vw, 164px, calc((100dvh - 400px) * 63 / 88)); z-index: 65; }
+.mo-nuit { background: radial-gradient(ellipse at 50% 42%, #1c3366 0, #0d1730 46%, #04060c 92%); }
+.mo-rayons { position: absolute; left: 50%; top: 30%; width: 150vmax; height: 150vmax; margin: -75vmax 0 0 -75vmax; opacity: 0; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, rgba(191, 214, 255, 0.5) 0deg 4deg, rgba(191, 214, 255, 0) 4deg 15deg);
+  -webkit-mask: radial-gradient(closest-side, #000 0, rgba(0, 0, 0, 0.6) 30%, transparent 70%); mask: radial-gradient(closest-side, #000 0, rgba(0, 0, 0, 0.6) 30%, transparent 70%); }
+.mo-scene { position: absolute; left: 50%; top: 46%; width: 0; height: 0; z-index: 3; }
+.mo-scene > * { position: absolute; will-change: transform; }
+.mo-paquet { --pw: min(46vw, 196px); left: calc(var(--pw) / -2); top: calc(var(--pw) * -50 / 63); z-index: 2; opacity: 0; }
+.mo-paquet .mas-paquet { --pw: min(46vw, 196px); }
+.mo-paquet.embrase .mas-paquet { filter: drop-shadow(0 0 10px #cfe0ff) drop-shadow(0 0 28px #6f9bff); }
+/* La déchirure : une ligne de lumière qui court le long du serti. */
+.mo-dechirure { position: absolute; z-index: 4; left: 4%; right: 4%; top: 12.5%; height: 3px; background: #fff; box-shadow: 0 0 8px 2px #cfe0ff, 0 0 22px 6px #6f9bff; transform-origin: left; scale: 0 1; opacity: 0; }
+.mo-carte { z-index: 1; width: var(--cw); left: calc(var(--cw) / -2); top: calc(var(--cw) * 88 / 63 / -2); perspective: 1100px; opacity: 0; }
+.mo-carte .lancer-retourne > .gi-carte:not(.dos) .c-cadre { box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35), 0 18px 30px rgba(0, 0, 0, 0.55); }
+.mo-dialogue { z-index: 6; }
+.mo-dialogue .a-qui { background: #8fb2ff !important; }
+
+@media (max-width: 359px) {
+  .masadora .vitrine { grid-template-columns: 1fr; justify-items: center; }
+  .masadora .infos { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .masadora .enseigne, .masadora .presentoir .mas-paquet, .mas-paquet .corps::after { animation: none; }
+}

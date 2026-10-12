@@ -448,8 +448,8 @@ export function useJeu() {
     fermerAlerte: () => setAlerte(null),
     sortRecu: sortsRecus[0] ?? null,
     gelePar,
-    /** Refus en clair, sans requête (onglet Scanner pendant un gel). */
-    annoncer: (texte: string) => setAlerte({ n: Date.now(), genre: 'sort', qui: 'Greed Island', texte }),
+    /** Refus en clair, sans requête (onglet Scanner pendant un gel) ; `qui` : la voix (« Masadora », page ⑬). */
+    annoncer: (texte: string, qui = 'Greed Island') => setAlerte({ n: Date.now(), genre: 'sort', qui, texte }),
     finSortRecu: () => setSortsRecus((l) => l.slice(1)),
     echange,
     /** Page ⑫ : session à jour (réponse d'une action, ou évènement). */

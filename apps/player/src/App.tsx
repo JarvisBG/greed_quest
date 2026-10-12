@@ -1,7 +1,6 @@
 import { Annonce } from '@gq/ui';
 import { useEffect, useRef, useState } from 'react';
 import { Accueil, useEvenements, type SousEcran } from './ecrans/Accueil';
-import { Boutique } from './ecrans/Boutique';
 import { Chrono } from './ecrans/Chrono';
 import { Encheres } from './ecrans/Encheres';
 import { Echanges } from './ecrans/echanges/Echanges';
@@ -14,6 +13,7 @@ import { Inscription, type Kit as KitRecu } from './ecrans/Inscription';
 import { Kit } from './ecrans/Kit';
 import { Book } from './ecrans/book/Book';
 import { Licence } from './ecrans/licence/Licence';
+import { Masadora } from './ecrans/masadora/Masadora';
 import { Nen } from './ecrans/Nen';
 import { Raid } from './ecrans/Raid';
 import { Scan } from './ecrans/scan/Scan';
@@ -260,18 +260,17 @@ export function App() {
               <Licence partieId={partie.id} joueurId={moi.id} pseudo={moi.pseudo} nen={moi.nen} secret={jeu.licenceSecret} onRetour={() => setSous(null)} />
             )}
             {ecran === 'accueil' && onglet === 'accueil' && sous === 'boutique' && (
-              <div className="ancien">
-                {retourActif(moi, 'masadora') && moi.retour && <ADistance resteMs={moi.retour.resteMs} recuA={moi.recuA} />}
-                <Boutique
-                  partieId={partie.id}
-                  jenny={moi.jenny}
-                  version={jeu.version}
-                  positionAction={jeu.positionAction}
-                  apresAction={jeu.apresAction}
-                  onRetour={() => setSous(null)}
-                  aDistance={retourActif(moi, 'masadora')}
-                />
-              </div>
+              <Masadora
+                partieId={partie.id}
+                jenny={moi.jenny}
+                version={jeu.version}
+                positionAction={jeu.positionAction}
+                apresAction={jeu.apresAction}
+                majJenny={jeu.majJenny}
+                annoncer={jeu.annoncer}
+                onRetour={() => setSous(null)}
+                retour={retourActif(moi, 'masadora') && moi.retour ? { resteMs: moi.retour.resteMs, recuA: moi.recuA } : null}
+              />
             )}
             {ecran === 'accueil' && onglet === 'accueil' && sous === 'encheres' && (
               <div className="ancien">

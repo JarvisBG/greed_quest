@@ -1,0 +1,786 @@
+<title>Enchères d’Antokiba</title>
+<meta name="description" content="Prototype de la page ⑭ : la salle des ventes d’Antokiba (lot sous le projecteur, meilleure offre, décompte, vignettes des lots), la palette qu’on lève pour surenchérir, les surenchères des autres, et la cinématique « ADJUGÉ ! » du gagnant.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@800&family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,800;1,400&family=Dela+Gothic+One&family=DotGothic16&display=swap">
+<style>
+/* Page ⑭ : Antokiba, la ville des enchères. Planche claire de l'app (papier, encre, cases) ; une enseigne
+   suspendue comme à Masadora ; la salle des ventes est la seule case sombre : le lot posé sur un pupitre
+   sous un projecteur. Le grand moment : « ADJUGÉ ! », le marteau du commissaire-priseur, dans la nuit
+   chaude de la salle. Thème clair unique (jeu au soleil), comme les autres pages. */
+:root {
+  color-scheme: light;
+  --papier: #eeefe9;
+  --case: #fbfbf7;
+  --case-2: #ecece6;
+  --encre: #111111;
+  --encre-2: #3b3d40;
+  --trame: rgba(17, 17, 17, 0.16);
+  --rouge: #c0272d;
+  --bleu: #1f4a9c;
+  --bleu-vif: #8fb2ff;
+  --jaune: #d9a11a;
+  --or: #d7b25a;
+  --or-vif: #ffd877;
+  --succes: #17713a;
+  --nuit: #0c0c0e;
+  /* La salle : bois sombre et velours bordeaux sous la lumière du projecteur. */
+  --salle: #1b100c;
+  --velours: #5a1420;
+  --bois: #6b3f22;
+  --bois-clair: #a8693a;
+  --lumiere: #fff1c9;
+  --sceau: #e0463c;
+  --f-titre: 'Dela Gothic One', 'Arial Black', sans-serif;
+  --f-texte: 'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif;
+  --f-chiffre: 'Atkinson Hyperlegible Mono', ui-monospace, monospace;
+  --f-jeu: 'DotGothic16', ui-monospace, monospace;
+  --trait: 3px;
+  --sortie: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { overflow-x: clip; }
+body { margin: 0; background: var(--papier); color: var(--encre); font: 400 17px/1.45 var(--f-texte); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 3px solid var(--bleu); outline-offset: 3px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { cursor: default; }
+
+.app { max-width: 480px; margin: 0 auto; padding: 0 16px 104px; display: grid; gap: 14px; }
+.app > * { min-width: 0; }
+
+/* Commandes du prototype (pas dans l'app) */
+.proto { display: grid; gap: 7px; padding: 10px 12px; margin-inline: -16px; background: var(--encre); color: var(--case); }
+.proto p { margin: 0; font: 600 13px/1.3 var(--f-texte); }
+.proto .rang { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.proto .rang > span { font: 800 12px var(--f-texte); color: #b9bcc2; min-width: 58px; }
+.proto button { min-height: 36px; padding: 0 10px; border: 2px solid var(--case); background: transparent; color: var(--case); font: 700 13px var(--f-texte); }
+.proto button[aria-pressed='true'] { background: var(--case); color: var(--encre); }
+
+/* Barre d'état de l'app */
+.barre { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; margin-inline: -16px; padding: 10px 16px; background: var(--case); border-bottom: var(--trait) solid var(--encre); display: flex; align-items: center; gap: 12px; min-height: 58px; }
+.chrono { font: 800 30px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.liaison { display: flex; align-items: center; gap: 6px; font: 600 14px var(--f-texte); }
+.pastille { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--encre); background: var(--succes); display: inline-block; }
+.jenny { margin-left: auto; font: 800 22px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.jenny small { font: 600 15px var(--f-texte); margin-left: 3px; }
+
+/* ---------- Onglets ---------- */
+.onglets { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, 1fr); background: var(--case); border-top: var(--trait) solid var(--encre); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.onglets button { position: relative; min-height: 64px; border: 0; border-right: 1.5px solid var(--encre); background: transparent; display: grid; justify-items: center; align-content: center; gap: 3px; font: 800 12.5px/1 var(--f-texte); padding: 6px 2px; }
+.onglets button:last-child { border-right: 0; }
+.onglets svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.onglets button[aria-current='page'] { background: var(--encre); color: var(--case); }
+.onglets .plus-un { position: absolute; top: -30px; left: 50%; translate: -50% 0; font: 400 22px/1 var(--f-titre); color: var(--encre); background: var(--case); border: var(--trait) solid var(--encre); padding: 3px 8px; pointer-events: none; }
+.jenny { position: relative; }
+.flotte { position: absolute; right: 0; top: 100%; font: 800 18px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; padding: 4px 7px; background: var(--case); border: 2px solid var(--encre); pointer-events: none; white-space: nowrap; }
+.flotte.gain { color: var(--succes); }
+.flotte.perte { color: var(--rouge); }
+
+.aide { font: 400 15px/1.35 var(--f-texte); color: var(--encre-2); margin: 0; }
+.case { background: var(--case); border: var(--trait) solid var(--encre); padding: 14px 16px; display: grid; gap: 12px; }
+.case h2 { margin: 0; font: 400 20px/1.1 var(--f-titre); }
+.case p { margin: 0; }
+
+/* ---------- En-tête : retour et enseigne suspendue ---------- */
+.tete-ville { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding-top: 8px; }
+.retour { min-height: 44px; padding: 0 12px 0 8px; border: var(--trait) solid var(--encre); background: var(--case); font: 800 15px var(--f-texte); display: inline-flex; align-items: center; gap: 4px; justify-self: start; }
+.retour svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.enseigne { justify-self: center; position: relative; padding-top: 22px; transform-origin: 50% 0; animation: balance 5s ease-in-out infinite; }
+@keyframes balance { 0%, 100% { rotate: -1.6deg; } 50% { rotate: 0.6deg; } }
+/* Deux chaînes, puis la planche noire au double filet. */
+.enseigne::before, .enseigne::after { content: ''; position: absolute; top: 0; width: 4px; height: 24px; background: repeating-linear-gradient(var(--encre) 0 5px, transparent 5px 7px); border-inline: 1px solid var(--encre); }
+.enseigne::before { left: 18%; }
+.enseigne::after { right: 18%; }
+.planche { background: var(--encre); color: var(--case); padding: 10px 18px 9px; border-radius: 3px; box-shadow: inset 0 0 0 3px var(--encre), inset 0 0 0 5px var(--case), 0 6px 0 -2px rgba(17, 17, 17, 0.25); display: grid; justify-items: center; gap: 4px; }
+.planche h1 { margin: 0; font: 400 clamp(26px, 8.4vw, 36px)/1 var(--f-titre); letter-spacing: 0.04em; }
+.planche span { font: 400 13px/1 var(--f-jeu); color: var(--or-vif); letter-spacing: 0.08em; }
+.distance { justify-self: center; display: inline-flex; gap: 8px; align-items: center; font: 800 14px var(--f-texte); padding: 6px 10px; border: 2px dashed var(--bleu); color: var(--bleu); background: var(--case); }
+.distance b { font: 800 15px var(--f-chiffre); font-variant-numeric: tabular-nums; }
+
+/* ---------- Carte de Greed Island (copie de @gq/ui) ---------- */
+.gi-carte { container-type: inline-size; aspect-ratio: 63 / 88; width: 100%; position: relative; color: var(--encre); }
+.gi-carte .c-cadre { position: absolute; inset: 0; border-radius: 4.5cqi; padding: 5cqi; background: var(--cadre, var(--rouge)); box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35); display: grid; grid-template-rows: auto 1fr auto; gap: 3cqi; }
+.gi-carte.f-sort { --cadre: var(--bleu); }
+.gi-carte.f-objet { --cadre: var(--jaune); }
+.gi-carte.f-designee .c-txt { font-style: italic; }
+.gi-carte .c-tete { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 3cqi; background: var(--case); border-radius: 2cqi; padding: 2.5cqi 3cqi; box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); }
+.gi-carte .c-num { font: 800 9cqi/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.gi-carte .c-num.long { font-size: 7.4cqi; }
+.gi-carte .c-nom { font: 800 6.4cqi/1.1 var(--f-texte); text-align: center; text-wrap: balance; hyphens: auto; overflow-wrap: break-word; }
+.gi-carte .c-nom.long { font-size: 5.6cqi; }
+.gi-rang { font: 400 7cqi/1 var(--f-titre); padding: 1.6cqi 2.4cqi; border-radius: 1.6cqi; white-space: nowrap; color: var(--encre); background: var(--matiere, var(--case)); box-shadow: 0 0 0 0.6cqi var(--encre); }
+.gi-carte .c-art { border-radius: 2cqi; background: #f4f2ea radial-gradient(var(--trame) 0.9px, transparent 1.1px) 0 0 / 5px 5px; box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); display: grid; place-items: center; overflow: hidden; min-height: 0; }
+.gi-carte .c-filigrane { font: 400 30cqi/1 var(--f-titre); color: transparent; -webkit-text-stroke: 0.9cqi rgba(17, 17, 17, 0.55); letter-spacing: -0.02em; }
+.gi-carte .c-txt { margin: 0; background: var(--case); border-radius: 2cqi; padding: 3cqi 3.5cqi; font: 400 5.6cqi/1.3 var(--f-texte); box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); }
+.r-SS { --matiere: linear-gradient(125deg, #9c7a1c 0%, #f6dc85 28%, #c39a2c 50%, #fbe7a6 72%, #a8841f 100%); }
+.r-S  { --matiere: linear-gradient(125deg, #8d949b 0%, #f1f3f5 35%, #aab1b8 60%, #e9ecef 100%); }
+.r-A  { --matiere: linear-gradient(125deg, #c97a4a 0%, #f2b48a 45%, #d88a58 100%); }
+.r-B  { --matiere: linear-gradient(125deg, #6fb596 0%, #b6e0cc 50%, #82c2a6 100%); }
+.r-C  { --matiere: linear-gradient(125deg, #9eb0c4 0%, #d6dfea 50%, #aebfd1 100%); }
+.r-D, .r-sort, .r-objet { --matiere: var(--case); }
+@container (max-width: 130px) {
+  .gi-carte .c-nom, .gi-carte .c-txt { display: none; }
+  .gi-carte .c-tete { grid-template-columns: 1fr auto; padding: 4cqi; }
+  .gi-carte .c-num { font-size: 17cqi; }
+  .gi-carte .gi-rang { font-size: 13cqi; padding: 2.5cqi 4cqi; }
+  .gi-carte .gi-rang .lim, .gi-carte .r-sort, .gi-carte .r-objet { display: none; }
+  .gi-carte.f-sort .c-tete, .gi-carte.f-objet .c-tete { grid-template-columns: 1fr; }
+  .gi-carte .c-cadre { padding: 6cqi; gap: 5cqi; grid-template-rows: auto 1fr; }
+}
+.gi-carte.dos .c-cadre { background: #15233f; box-shadow: inset 0 0 0 1.2cqi #15233f, inset 0 0 0 2.2cqi var(--or), inset 0 0 0 3.4cqi #15233f, inset 0 0 0 4cqi var(--or); place-items: center; grid-template-rows: 1fr; }
+.gi-carte.dos svg { width: 58%; height: auto; }
+
+/* ---------- Boîte du jeu ---------- */
+.gi-annonce { position: fixed; z-index: 70; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 70px); width: min(calc(100% - 24px), 440px); transform: translate(-50%, calc(-100% - 120px)); visibility: hidden; transition: transform 0.45s var(--sortie), visibility 0s 0.45s; background: var(--nuit); color: #f6f6f2; border-radius: 6px; box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f6f6f2, inset 0 0 0 8px var(--nuit), inset 0 0 0 9px #f6f6f2, 0 16px 30px -14px rgba(0, 0, 0, 0.6); padding: 22px 22px 18px; display: grid; gap: 8px; }
+.gi-annonce.visible { transform: translate(-50%, 0); visibility: visible; transition: transform 0.45s var(--sortie), visibility 0s; }
+.a-qui { justify-self: start; font: 400 15px/1 var(--f-jeu); background: #f6f6f2; color: var(--nuit); padding: 4px 8px; }
+.t-sort .a-qui { background: var(--bleu-vif); }
+.gi-annonce .a-texte { font: 400 20px/1.4 var(--f-jeu); margin: 0; }
+.gi-annonce .a-actions { display: flex; gap: 10px; }
+.gi-annonce .a-actions button { background: #f6f6f2; color: var(--nuit); border: 0; font: 400 16px var(--f-jeu); padding: 10px 14px; min-height: 44px; }
+.gi-dialogue { background: var(--nuit); color: #f6f6f2; border-radius: 6px; box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f6f6f2, inset 0 0 0 8px var(--nuit), inset 0 0 0 9px #f6f6f2, 0 10px 24px -10px rgba(0, 0, 0, 0.6); padding: 18px 20px 16px; display: grid; gap: 10px; }
+.gi-dialogue .a-texte { font: 400 19px/1.45 var(--f-jeu); margin: 0; min-height: 1.45em; }
+.t-vente .a-qui { background: var(--or-vif); }
+
+/* ---------- La salle des ventes : le lot sous le projecteur ---------- */
+.salle { position: relative; overflow: hidden; border: var(--trait) solid var(--encre); color: #f3ead2; padding: 14px 16px 16px; display: grid; gap: 12px;
+  background: radial-gradient(ellipse 60% 55% at 50% 30%, rgba(255, 241, 201, 0.22), rgba(255, 241, 201, 0) 70%), radial-gradient(rgba(255, 255, 255, 0.03) 0.8px, transparent 1.2px) 0 0 / 4px 4px, linear-gradient(#2a1712, var(--salle) 60%, #120a07); }
+/* Rideau de velours sur les côtés. */
+.salle::before, .salle::after { content: ''; position: absolute; top: 0; bottom: 0; width: 22px; background: repeating-linear-gradient(90deg, #3d0c15 0 5px, var(--velours) 5px 10px, #74202d 10px 12px, var(--velours) 12px 16px); box-shadow: inset 0 -30px 30px rgba(0, 0, 0, 0.5); pointer-events: none; }
+.salle::before { left: 0; }
+.salle::after { right: 0; }
+.salle > * { position: relative; z-index: 1; margin-inline: 12px; }
+.salle .lot-tete { display: flex; align-items: baseline; gap: 10px; }
+.salle .lot-tete h2 { margin: 0; font: 400 13px/1 var(--f-titre); letter-spacing: 0.14em; text-transform: uppercase; color: var(--or-vif); }
+.salle .lot-tete span { margin-left: auto; font: 600 13px var(--f-texte); color: #c9bda0; }
+/* La scène : projecteur au-dessus, pupitre de bois, le lot dessus. */
+.scene-lot { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px; align-items: end; }
+.pupitre { position: relative; width: 132px; display: grid; justify-items: center; padding-top: 14px; }
+.pupitre .cone { position: absolute; left: 50%; top: -60px; width: 220px; height: 260px; translate: -50% 0; pointer-events: none; background: linear-gradient(rgba(255, 241, 201, 0.32), rgba(255, 241, 201, 0.05) 85%, transparent); clip-path: polygon(42% 0, 58% 0, 100% 100%, 0 100%); }
+.pupitre .lot { position: relative; width: 112px; filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.55)); animation: respire 4s ease-in-out infinite; }
+@keyframes respire { 0%, 100% { translate: 0 0; } 50% { translate: 0 -3px; } }
+.pupitre .socle { width: 132px; height: 34px; margin-top: 6px; background: linear-gradient(var(--bois-clair), var(--bois) 40%, #3e2312); clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%); box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.2); display: grid; place-items: center; font: 400 10px/1 var(--f-titre); letter-spacing: 0.16em; color: var(--or-vif); }
+/* Ce que dit le commissaire-priseur. */
+.offre { display: grid; gap: 8px; min-width: 0; }
+.offre .libelle { font: 600 12px/1 var(--f-texte); letter-spacing: 0.1em; text-transform: uppercase; color: #c9bda0; }
+.offre .montant { font: 800 46px/0.95 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: -0.03em; color: var(--lumiere); }
+.offre .montant small { font: 600 18px var(--f-texte); margin-left: 4px; color: #c9bda0; letter-spacing: 0; }
+.offre .montant.bondit { animation: bondit 0.4s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes bondit { from { scale: 1.25; color: var(--or-vif); } }
+.offre .qui { font: 800 15px/1.25 var(--f-texte); color: #f3ead2; }
+.offre .qui b { color: var(--or-vif); }
+.decompte { display: inline-flex; align-items: baseline; gap: 6px; justify-self: start; font: 600 12px/1 var(--f-texte); letter-spacing: 0.08em; text-transform: uppercase; color: #c9bda0; }
+.decompte b { font: 800 24px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--lumiere); letter-spacing: 0; }
+.decompte.presse b { color: #ff8c86; animation: presse 1s steps(2) infinite; }
+@keyframes presse { 50% { opacity: 0.55; } }
+/* L'état de ta place dans l'enchère. */
+.etat { justify-self: stretch; display: flex; align-items: center; gap: 10px; padding: 8px 10px; font: 800 15px/1.2 var(--f-texte); border: 1.5px solid rgba(243, 234, 210, 0.35); }
+.etat.mene { border-color: #7fd39a; color: #b9f1c9; background: rgba(23, 113, 58, 0.25); }
+.etat.depasse { border-color: #ff8c86; color: #ffc1bd; background: rgba(192, 39, 45, 0.22); }
+.etat[hidden] { display: none; }
+/* Palettes : la tienne se lève quand tu enchéris ; celles des autres surgissent dans la salle. */
+.palette { --c: #f3ead2; position: relative; width: 46px; height: 62px; flex: none; }
+.palette .rond { position: absolute; left: 0; top: 0; width: 46px; height: 40px; border-radius: 50%; background: var(--c); border: 2px solid #111; display: grid; place-items: center; font: 800 15px/1 var(--f-chiffre); color: #111; font-variant-numeric: tabular-nums; }
+.palette .manche { position: absolute; left: 20px; top: 38px; width: 6px; height: 24px; background: linear-gradient(90deg, #6b3f22, #a8693a); border: 1.5px solid #111; border-top: 0; }
+.palette.moi { --c: var(--or-vif); }
+.palette.leve { animation: lever 0.5s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes lever { from { translate: 0 22px; rotate: -12deg; } }
+.salle-palettes { position: absolute; z-index: 2; inset: 0; pointer-events: none; }
+.salle-palettes .surgit { position: absolute; display: grid; justify-items: center; gap: 2px; font: 400 12px/1 var(--f-jeu); color: #f3ead2; }
+/* Lots en vente : vignettes. */
+.lots { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 8px; scrollbar-width: none; }
+.lots::-webkit-scrollbar { display: none; }
+.vignette { flex: none; width: 74px; border: 0; padding: 0; background: none; display: grid; gap: 4px; justify-items: center; font: 800 12px var(--f-chiffre); font-variant-numeric: tabular-nums; color: #c9bda0; }
+.vignette .gi-carte { width: 100%; opacity: 0.7; transition: opacity 0.2s, translate 0.2s; }
+.vignette[aria-pressed='true'] .gi-carte { opacity: 1; translate: 0 -4px; }
+.vignette[aria-pressed='true'] .gi-carte .c-cadre { box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35), 0 0 0 3px var(--or-vif); }
+.vignette[aria-pressed='true'] { color: var(--or-vif); }
+.vignette .mene { color: #7fd39a; }
+.vignette .depasse { color: #ff8c86; }
+/* Tampon de fin de lot : ADJUGÉ à un autre, ou INVENDU. */
+.tampon-lot { position: absolute; z-index: 3; left: 50%; top: 40%; width: 150px; translate: -50% -50%; rotate: -14deg; pointer-events: none; }
+.tampon-lot svg { width: 100%; height: auto; overflow: visible; }
+.tampon-lot.frappe { animation: frapper 0.34s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes frapper { from { scale: 2.2; opacity: 0; } 65% { scale: 0.93; opacity: 1; } }
+.lot-fini .pupitre .lot { filter: grayscale(0.7) brightness(0.6); animation: none; }
+
+/* ---------- Ta surenchère ---------- */
+.encherir { display: grid; gap: 10px; }
+.encherir .ligne { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pas { display: flex; gap: 6px; }
+.pas button { min-height: 44px; min-width: 56px; padding: 0 10px; border: var(--trait) solid var(--encre); background: var(--case); font: 800 16px var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.pas button[aria-pressed='true'] { background: var(--encre); color: var(--case); }
+.encherir .limite { margin-left: auto; font: 600 14px var(--f-texte); color: var(--encre-2); white-space: nowrap; }
+.encherir .limite b { font: 800 15px var(--f-chiffre); color: var(--encre); }
+.lever { position: relative; min-height: 60px; border: 0; background: var(--encre); color: var(--case); font: 400 19px/1.1 var(--f-titre); letter-spacing: 0.01em; padding: 8px 14px; box-shadow: 0 5px 0 -1px rgba(17, 17, 17, 0.3); display: flex; align-items: center; justify-content: center; gap: 12px; }
+.lever:active:not(:disabled) { translate: 0 3px; box-shadow: none; }
+.lever:disabled { background: var(--case-2); color: var(--encre); border: var(--trait) solid var(--encre); box-shadow: none; font: 800 16px/1.25 var(--f-texte); }
+.lever.qr { background: var(--case); color: var(--encre); border: var(--trait) solid var(--encre); }
+.lever.envoi { opacity: 0.85; }
+.lever .mini { width: 22px; height: 30px; flex: none; }
+.lever .mini .rond { width: 22px; height: 19px; font-size: 0; }
+.lever .mini .manche { left: 9px; top: 18px; width: 4px; height: 12px; }
+.regle { font: 400 14px/1.35 var(--f-texte); color: var(--encre-2); margin: 0; }
+.vide-salle { display: grid; gap: 8px; justify-items: center; text-align: center; padding: 18px 8px; }
+.vide-salle p { margin: 0; font: 400 18px/1.4 var(--f-jeu); }
+.vide-salle small { font: 600 14px var(--f-texte); color: #c9bda0; }
+
+/* ---------- Accueil (seulement pour montrer la pastille hors de la page) ---------- */
+.mini-accueil { display: grid; gap: 10px; }
+.villes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.villes button { position: relative; min-height: 54px; border: var(--trait) solid var(--encre); background: var(--case); font: 400 17px/1 var(--f-titre); }
+.villes .pastille-rouge { position: absolute; top: -9px; right: -9px; min-width: 22px; height: 22px; padding: 0 5px; border-radius: 11px; background: var(--rouge); color: #fff; border: 2px solid var(--case); font: 800 12px/18px var(--f-chiffre); }
+
+/* ---------- Cinématique « ADJUGÉ ! » ---------- */
+.cine { --cw: min(46vw, 196px, calc((100dvh - 380px) * 63 / 88)); position: fixed; inset: 0; z-index: 65; pointer-events: none; overflow: hidden; visibility: hidden; }
+.cine.joue { visibility: visible; pointer-events: auto; cursor: pointer; }
+.cine .nuit { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 40%, #3a1a14 0, #1a0d0a 46%, #050303 92%); opacity: 0; }
+.cine .lignes { position: absolute; inset: -30%; opacity: 0; }
+.cine .lignes svg { width: 100%; height: 100%; }
+.cine canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.cine .projecteur { position: absolute; left: 50%; top: -6%; width: min(120vw, 620px); height: 70%; translate: -50% 0; opacity: 0; pointer-events: none; background: linear-gradient(rgba(255, 241, 201, 0.4), rgba(255, 241, 201, 0.06) 85%, transparent); clip-path: polygon(44% 0, 56% 0, 82% 100%, 18% 100%); }
+.cine .c-lot { position: absolute; left: 50%; top: 40%; width: var(--cw); translate: -50% -50%; perspective: 1100px; opacity: 0; }
+.cine .c-lot .gi-carte .c-cadre { box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35), 0 18px 30px rgba(0, 0, 0, 0.55); }
+.cine .c-lot .tourne { transform-style: preserve-3d; }
+.cine .c-lot.embrase .gi-carte { filter: drop-shadow(0 0 12px #ffd877) drop-shadow(0 0 28px #ff9a3c); }
+.cine .socle-c { position: absolute; left: 50%; top: calc(40% + var(--cw) * 88 / 63 / 2 + 6px); width: calc(var(--cw) * 1.25); height: 30px; translate: -50% 0; opacity: 0; background: linear-gradient(var(--bois-clair), var(--bois) 40%, #3e2312); clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%); }
+/* Le marteau du commissaire-priseur. */
+.cine .marteau { position: absolute; left: 50%; top: 40%; width: min(52vw, 230px); opacity: 0; transform-origin: 88% 88%; pointer-events: none; }
+.cine .marteau svg { width: 100%; height: auto; overflow: visible; display: block; }
+.cine .cri { position: absolute; left: 0; right: 0; top: max(18px, calc(40% - var(--cw) * 88 / 63 / 2 - 110px)); text-align: center; font: 400 min(17vw, 92px)/0.92 var(--f-titre); letter-spacing: -0.03em; white-space: nowrap; color: #fff; -webkit-text-stroke: 3px var(--sceau); paint-order: stroke fill; opacity: 0; rotate: -5deg; }
+.cine .prix-paye { position: absolute; left: 50%; top: calc(40% + var(--cw) * 88 / 63 / 2 + 46px); translate: -50% 0; font: 800 34px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--or-vif); opacity: 0; white-space: nowrap; }
+.cine .flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+.cine .dialogue { pointer-events: none; position: absolute; left: 50%; bottom: max(18px, env(safe-area-inset-bottom, 0px)); width: min(calc(100% - 24px), 440px); translate: -50% 0; opacity: 0; }
+.cine .dialogue .a-qui { background: var(--or-vif); }
+.cine .dialogue .a-indice { margin: 0; font: 600 14px/1.3 var(--f-texte); color: #c3c6cc; opacity: 0; transition: opacity 0.3s; }
+.cine .dialogue .a-indice.visible { opacity: 1; }
+.cine .passer { pointer-events: none; position: absolute; bottom: max(16px, env(safe-area-inset-bottom, 0px)); left: 50%; translate: -50% 0; font: 600 13px var(--f-texte); color: rgba(235, 238, 242, 0.75); white-space: nowrap; opacity: 0; transition: opacity 0.25s; }
+.cine.intro .passer { opacity: 1; transition-delay: 0.6s; }
+
+@media (max-width: 359px) {
+  .scene-lot { grid-template-columns: 1fr; justify-items: center; }
+  .offre { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Encre des tampons : bord mangé et manques. -->
+    <filter id="encre" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" result="grain"/>
+      <feDisplacementMap in="SourceGraphic" in2="grain" scale="3.2" result="bord"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.22" numOctaves="2" seed="11" result="taches"/>
+      <feColorMatrix in="taches" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2.3 2.2" result="masque"/>
+      <feComposite in="bord" in2="masque" operator="in"/>
+    </filter>
+  </defs>
+</svg>
+
+<div class="app">
+  <div class="proto" role="group" aria-label="Commandes du prototype">
+    <p>Prototype : tu es Gon, à Antokiba. Kirua et Biscuit enchérissent contre toi ; le PNJ ouvre et clôt les lots.</p>
+    <div class="rang"><span>Présence</span>
+      <button data-presence="qr" aria-pressed="false">QR scanné</button>
+      <button data-presence="non" aria-pressed="true">pas encore scanné</button>
+      <button data-presence="retour" aria-pressed="false">à distance (Retour)</button>
+    </div>
+    <div class="rang"><span>Salle</span>
+      <button id="p-kirua">Kirua surenchérit</button>
+      <button id="p-biscuit">Biscuit surenchérit</button>
+      <button id="p-ailleurs">… pendant que tu es à l’accueil</button>
+    </div>
+    <div class="rang"><span>PNJ</span>
+      <button id="p-ouvrir">ouvre un 2e lot</button>
+      <button id="p-fin">clôt le lot affiché</button>
+      <button id="p-fin10">reste 10 s</button>
+      <button id="p-vide">salle vide</button>
+    </div>
+  </div>
+
+  <header class="barre" aria-label="État de la partie">
+    <span class="chrono">1:24:10</span>
+    <span class="liaison"><i class="pastille"></i>En ligne</span>
+    <span class="jenny" id="jenny"><span id="mes-jenny">120</span><small>J</small></span>
+  </header>
+
+  <div id="page-antokiba" style="display:grid;gap:14px">
+    <div class="tete-ville">
+      <button class="retour" id="retour"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Accueil</button>
+      <div class="enseigne"><div class="planche"><h1>ANTOKIBA</h1><span>la ville des enchères</span></div></div>
+      <span class="distance" id="distance" hidden>Visite à distance (Retour) · <b id="dist-reste">8:12</b></span>
+    </div>
+
+    <section class="salle" id="salle" aria-labelledby="t-lot" aria-live="polite">
+      <div class="lot-tete"><h2 id="t-lot">Lot en vente</h2><span id="lot-num">lot 1 sur 1</span></div>
+      <div class="scene-lot" id="scene-lot">
+        <div class="pupitre">
+          <span class="cone" aria-hidden="true"></span>
+          <button class="lot" id="lot" aria-label="Voir la carte en grand" style="border:0;padding:0;background:none"></button>
+          <span class="socle" aria-hidden="true">ANTOKIBA</span>
+          <span class="tampon-lot" id="tampon-lot" hidden></span>
+        </div>
+        <div class="offre">
+          <span class="libelle" id="o-libelle">Meilleure offre</span>
+          <span class="montant" id="o-montant">24<small>J</small></span>
+          <span class="qui" id="o-qui">par <b>Kirua</b></span>
+          <span class="decompte" id="decompte">Fin dans <b id="o-reste">2:41</b></span>
+        </div>
+      </div>
+      <div class="etat" id="etat" hidden></div>
+      <div class="lots" id="lots" hidden></div>
+      <div class="salle-palettes" id="palettes" aria-hidden="true"></div>
+      <div class="vide-salle" id="vide" hidden>
+        <p>Pas d’enchère en ce moment.</p>
+        <small>Le commissaire-priseur annonce les lots sur place ; tu seras prévenu.</small>
+      </div>
+    </section>
+
+    <section class="case encherir" id="encherir" aria-labelledby="t-encherir">
+      <h2 id="t-encherir">Ta palette</h2>
+      <div class="ligne">
+        <span class="pas" id="pas" role="group" aria-label="Au-dessus de la meilleure offre"></span>
+        <span class="limite">Tu as <b id="limite">120 J</b></span>
+      </div>
+      <button class="lever" id="lever"></button>
+      <p class="regle">Seul le gagnant paie, à la fin. Si ses jenny ne suffisent plus, l’offre précédente d’un autre joueur l’emporte.</p>
+    </section>
+  </div>
+
+  <div id="page-accueil" class="mini-accueil" hidden>
+    <div class="tete-page"><h1 style="margin:0;font:400 30px/1 var(--f-titre)">Accueil</h1></div>
+    <section class="case">
+      <h2>Les villes</h2>
+      <div class="villes">
+        <button>Masadora</button>
+        <button id="v-antokiba">Antokiba<span class="pastille-rouge" id="pastille-ant" hidden>1</span></button>
+      </div>
+      <p class="aide">Ici, l’accueil n’est montré que pour la pastille d’Antokiba.</p>
+    </section>
+  </div>
+</div>
+
+<nav class="onglets" aria-label="Navigation">
+  <button data-onglet="accueil" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 3l9 8M6 9.5V21h12V9.5M10 21v-6h4v6"/></svg>Accueil</button>
+  <button data-onglet="scan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5M7 12h10"/></svg>Scanner</button>
+  <button data-onglet="livre" id="onglet-livre"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2zM5 19a2 2 0 0 1 2-2h12M9 7h6"/></svg>Book</button>
+  <button data-onglet="sorts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 2.6 6.6L21 9.5l-5 4.4 1.6 6.6L12 17l-5.6 3.5L8 13.9 3 9.5l6.4-.9z"/></svg>Sorts</button>
+  <button data-onglet="echanges"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg>Échanges</button>
+</nav>
+
+<div class="fiche-lot" id="fiche" hidden style="position:fixed;z-index:55;inset:0;display:grid;place-items:center;padding:16px;background:rgba(5,4,4,.8)">
+  <div style="width:min(72vw,280px);display:grid;gap:14px"><div id="fiche-carte"></div><p style="margin:0;text-align:center;font:600 14px var(--f-texte);color:#e9e9e4">Touche pour fermer</p></div>
+</div>
+
+<div class="gi-annonce t-vente" id="annonce" role="alert">
+  <span class="a-qui" id="an-qui">Antokiba</span>
+  <p class="a-texte" id="an-texte"></p>
+  <div class="a-actions"><button id="an-voir" hidden>Voir</button><button id="an-fermer">Fermer</button></div>
+</div>
+
+<!-- Cinématique -->
+<div class="cine" id="cine" aria-hidden="true">
+  <div class="nuit" id="c-nuit"></div>
+  <div class="lignes" id="c-lignes"></div>
+  <div class="projecteur" id="c-proj"></div>
+  <canvas id="fx"></canvas>
+  <div class="socle-c" id="c-socle"></div>
+  <div class="c-lot" id="c-lot"><div class="tourne" id="c-tourne"></div></div>
+  <div class="marteau" id="c-marteau"></div>
+  <div class="cri" id="c-cri">ADJUGÉ !</div>
+  <div class="prix-paye" id="c-prix"></div>
+  <div class="flash" id="c-flash"></div>
+  <div class="dialogue gi-dialogue" id="c-dialogue" role="status">
+    <span class="a-qui">Antokiba</span>
+    <p class="a-texte" id="c-texte"></p>
+    <p class="a-indice" id="c-indice">Touche pour ranger dans ton Book</p>
+  </div>
+  <span class="passer">Touche pour passer</span>
+</div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---------- Données du prototype (dans l'app : GET /encheres, POST /encheres/:id/inscription et /offre, évènements enchere, enchere_close, enchere_gagnee) ----------
+const LIM = { SS: 1, S: 2, A: 3, B: 5, C: 8, D: 12 };
+const C = (num, nom, rang, txt) => ({ num, nom, rang, lim: LIM[rang], txt, genre: 'designee' });
+const CATALOGUE = [
+  C('080', 'La pierre flottante', 'S', 'Une pierre nourrie par le soleil, qui fait flotter une personne.'),
+  C('012', 'Le dictionnaire d’or', 'A', 'Un dictionnaire dont un mot brille d’or chaque jour : il servira le lendemain.'),
+  C('002', 'La pièce du roi', 'SS', 'Une pièce frappée pour le roi de l’île. Introuvable ailleurs.'),
+];
+let n = 0;
+const lot = (carte, depart, resteS, offre = null) => ({ id: 'e' + ++n, carte, depart, reste: resteS, offre, inscrit: false, mesOffres: 0, fini: null });
+const S = { presence: 'non', lots: [lot(CATALOGUE[0], 10, 161, { montant: 24, pseudo: 'Kirua' })], vu: 0, pas: 1, ailleurs: false, envoi: false, retourReste: 492 };
+const MOI = 'Gon';
+const courant = () => S.lots[S.vu] || null;
+const minOffre = (l) => (l.offre ? l.offre.montant + 1 : l.depart); // RG-11.4 : au moins 1 J au-dessus
+
+// ---------- Outils ----------
+const vibrer = (p) => navigator.vibrate?.(p);
+const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.max(0, s) % 60).padStart(2, '0')}`;
+const centre = (el) => { const b = el.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2]; };
+const jenny = () => +$('#mes-jenny').textContent;
+const enPhrase = (nom) => nom.replace(/^(Les|Le|La)(?=\s)|^L’/, (m) => m.toLowerCase());
+function carteHTML(c) {
+  return `<div class="gi-carte f-${c.genre}"><div class="c-cadre"><div class="c-tete"><span class="c-num">${c.num}</span><span class="c-nom${c.nom.length > 10 ? ' long' : ''}">${c.nom}</span><span class="gi-rang r-${c.rang}">${c.rang}<span class="lim">-${c.lim}</span></span></div><div class="c-art"><span class="c-filigrane">${c.num}</span></div><p class="c-txt">${c.txt}</p></div></div>`;
+}
+const palette = (num, moi = false) => `<span class="palette${moi ? ' moi' : ''}"><span class="rond">${num}</span><span class="manche"></span></span>`;
+const tampon = (mots) => `<svg viewBox="-80 -36 160 72" aria-hidden="true"><g filter="url(#encre)" fill="none" stroke="#e0463c">
+  <rect x="-76" y="-32" width="152" height="64" rx="5" stroke-width="5"/><rect x="-68" y="-25" width="136" height="50" rx="2" stroke-width="1.5"/>
+  ${mots.map((m, i) => `<text y="${mots.length === 1 ? 7 : -4 + i * 20}" text-anchor="middle" fill="#e0463c" stroke="none" style="font: 400 ${i ? 13 : 19}px 'Dela Gothic One', 'Arial Black', sans-serif; letter-spacing: .5px">${m}</text>`).join('')}
+</g></svg>`;
+function flotte(texte, genre) {
+  const f = document.createElement('span'); f.className = `flotte ${genre}`; f.textContent = texte;
+  $('#jenny').append(f);
+  f.animate([{ opacity: 0, translate: '0 -6px' }, { opacity: 1, translate: '0 4px', offset: 0.15 }, { opacity: 1, offset: 0.8 }, { opacity: 0, translate: '0 10px' }], { duration: 1700, easing: 'ease-out' }).finished.then(() => f.remove());
+}
+function annoncer(t, voir = false) {
+  $('#an-texte').textContent = t; $('#an-voir').hidden = !voir;
+  $('#annonce').classList.add('visible'); (voir ? $('#an-voir') : $('#an-fermer')).focus({ preventScroll: true });
+}
+$('#an-fermer').addEventListener('click', () => $('#annonce').classList.remove('visible'));
+$('#an-voir').addEventListener('click', () => { $('#annonce').classList.remove('visible'); allerAntokiba(); });
+
+// ---------- La salle ----------
+let lotDessine = null;
+function dessiner() {
+  const l = courant();
+  $('#vide').hidden = !!l;
+  $('#scene-lot').hidden = !l; $('.lot-tete').hidden = !l;
+  $('#distance').hidden = S.presence !== 'retour';
+  $('#dist-reste').textContent = mmss(S.retourReste);
+  $('#encherir').hidden = !l || !!l?.fini;
+  if (!l) { $('#lots').hidden = true; $('#etat').hidden = true; return; }
+  if (lotDessine !== l.id) { $('#lot').innerHTML = carteHTML(l.carte); lotDessine = l.id; }
+  $('#lot-num').textContent = `lot ${S.vu + 1} sur ${S.lots.length}`;
+  $('#salle').classList.toggle('lot-fini', !!l.fini);
+  const t = $('#tampon-lot');
+  if (l.fini && t.hidden) { t.hidden = false; t.innerHTML = tampon(l.fini === 'invendu' ? ['INVENDU'] : ['ADJUGÉ', `${l.fini.pseudo} · ${l.fini.montant} J`]); t.classList.remove('frappe'); void t.offsetWidth; t.classList.add('frappe'); }
+  if (!l.fini) t.hidden = true;
+  // Ce que dit le commissaire-priseur.
+  $('#o-libelle').textContent = l.fini ? (l.fini === 'invendu' ? 'Aucune offre' : 'Adjugé') : l.offre ? 'Meilleure offre' : 'Prix de départ';
+  $('#o-montant').innerHTML = `${l.fini && l.fini !== 'invendu' ? l.fini.montant : l.offre ? l.offre.montant : l.depart}<small>J</small>`;
+  $('#o-qui').innerHTML = l.fini ? (l.fini === 'invendu' ? 'La carte retourne au stock du PNJ.' : `à <b>${l.fini.pseudo === MOI ? 'toi' : l.fini.pseudo}</b>`) : l.offre ? `par <b>${l.offre.pseudo === MOI ? 'toi' : l.offre.pseudo}</b>` : 'Personne n’a encore levé sa palette.';
+  $('#decompte').hidden = !!l.fini;
+  $('#o-reste').textContent = mmss(l.reste);
+  $('#decompte').classList.toggle('presse', l.reste <= 30);
+  // Ta place dans l'enchère.
+  const e = $('#etat');
+  const mene = l.offre?.pseudo === MOI;
+  e.hidden = !!l.fini || !l.mesOffres;
+  e.className = `etat ${mene ? 'mene' : 'depasse'}`;
+  e.innerHTML = mene ? `${palette(l.offre.montant, true)}<span>Tu mènes. Si personne ne surenchérit, la carte est à toi.</span>` : `${palette(l.offre?.montant ?? '', false)}<span>${l.offre?.pseudo} a surenchéri : ${l.offre?.montant} J. À toi de jouer.</span>`;
+  // Vignettes des lots.
+  $('#lots').hidden = S.lots.length < 2;
+  $('#lots').innerHTML = S.lots.map((x, i) => {
+    const etat = x.fini ? (x.fini === 'invendu' ? 'invendu' : 'adjugé') : x.offre?.pseudo === MOI ? '<span class="mene">tu mènes</span>' : x.mesOffres ? '<span class="depasse">dépassé</span>' : mmss(x.reste);
+    return `<button class="vignette" data-lot="${i}" aria-pressed="${i === S.vu}" aria-label="Lot ${i + 1} : ${x.carte.nom}">${carteHTML(x.carte)}<span>${etat}</span></button>`;
+  }).join('');
+  dessinerPalette();
+}
+function dessinerPalette() {
+  const l = courant(); if (!l || l.fini) return;
+  const b = $('#lever');
+  const cible = minOffre(l) + (l.offre ? S.pas - 1 : 0);
+  $('#pas').innerHTML = [1, 5, 10].map((p) => `<button data-pas="${p}" aria-pressed="${S.pas === p}" ${!l.offre ? 'disabled' : ''}>+${p}</button>`).join('');
+  $('#pas').hidden = !l.offre || (S.presence === 'non' && !l.inscrit);
+  $('#limite').textContent = `${jenny()} J`;
+  b.className = 'lever';
+  if (S.envoi) { b.disabled = true; b.classList.add('envoi'); b.innerHTML = `${palette('', true).replace('palette', 'palette mini')}<span>La palette se lève…</span>`; return; }
+  if (S.presence === 'non' && !l.inscrit) { b.disabled = false; b.classList.add('qr'); b.textContent = 'Participer · scanner le QR d’Antokiba'; return; }
+  if (l.offre?.pseudo === MOI) { b.disabled = true; b.textContent = `Tu mènes à ${l.offre.montant} J`; return; }
+  if (cible > jenny()) { b.disabled = true; b.textContent = minOffre(l) > jenny() ? `Il te faudrait ${minOffre(l)} J : tu en as ${jenny()}` : `${cible} J, c’est plus que tes ${jenny()} J`; return; }
+  b.disabled = false;
+  b.innerHTML = `${palette('', true).replace('palette', 'palette mini')}<span>Lever la palette · ${cible} J</span>`;
+}
+$('#pas').addEventListener('click', (e) => { const b = e.target.closest('[data-pas]'); if (!b || b.disabled) return; S.pas = +b.dataset.pas; dessinerPalette(); });
+$('#lots').addEventListener('click', (e) => { const b = e.target.closest('[data-lot]'); if (!b) return; S.vu = +b.dataset.lot; S.pas = 1; dessiner(); });
+$('#lot').addEventListener('click', () => { $('#fiche-carte').innerHTML = carteHTML(courant().carte); $('#fiche').hidden = false; });
+$('#fiche').addEventListener('click', () => ($('#fiche').hidden = true));
+
+// Le montant change : il bondit ; une palette surgit dans la salle.
+function surgir(pseudo, montant) {
+  const p = document.createElement('span'); p.className = 'surgit';
+  p.innerHTML = `${palette(montant, pseudo === MOI)}<span>${pseudo === MOI ? 'toi' : pseudo}</span>`;
+  const salle = $('#salle').getBoundingClientRect();
+  p.style.left = `${pseudo === MOI ? salle.width - 80 : 20 + Math.random() * 40}px`;
+  p.style.top = '34px';
+  $('#palettes').append(p);
+  p.animate([{ translate: '0 40px', rotate: '-14deg', opacity: 0 }, { translate: '0 0', rotate: '0deg', opacity: 1, offset: 0.25 }, { opacity: 1, offset: 0.75 }, { translate: '0 -10px', opacity: 0 }], { duration: reduit ? 1 : 1500, easing: 'cubic-bezier(.3,1.4,.5,1)' }).finished.then(() => p.remove());
+  const m = $('#o-montant'); m.classList.remove('bondit'); void m.offsetWidth; m.classList.add('bondit');
+}
+
+// ---------- Participer, lever la palette ----------
+$('#lever').addEventListener('click', async () => {
+  const l = courant(); if (!l || S.envoi) return;
+  if (S.presence === 'non' && !l.inscrit) {
+    // Dans l'app : la caméra s'ouvre sur le QR du lieu (ou saisie du code). Ici, le QR est lu tout de suite.
+    l.inscrit = true; S.presence = 'qr'; majPresence(); dessiner();
+    annoncer('Te voilà inscrit à l’enchère. Lève ta palette quand tu veux.');
+    return;
+  }
+  const montant = minOffre(l) + (l.offre ? S.pas - 1 : 0);
+  S.envoi = true; dessinerPalette();
+  // La requête part au toucher ; la palette se lève quand le serveur accepte.
+  await new Promise((r) => setTimeout(r, reduit ? 0 : 450));
+  S.envoi = false;
+  l.offre = { montant, pseudo: MOI }; l.mesOffres++; l.inscrit = true;
+  vibrer(20);
+  surgir(MOI, montant);
+  dessiner();
+  const pal = $('#etat .palette'); pal?.classList.add('leve');
+  // Les bots répondent parfois.
+  bot(l, 'Kirua', 1600);
+});
+function bot(l, pseudo, delai) {
+  setTimeout(() => {
+    if (l.fini || l.offre?.pseudo !== MOI || Math.random() < 0.35) return;
+    surencherir(l, pseudo, l.offre.montant + 1 + Math.floor(Math.random() * 3));
+  }, delai);
+}
+function surencherir(l, pseudo, montant) {
+  if (l.fini) return;
+  const depasse = l.offre?.pseudo === MOI;
+  l.offre = { montant, pseudo };
+  if (S.ailleurs) {
+    if (depasse) { $('#pastille-ant').hidden = false; vibrer(80); annoncer(`${pseudo} a surenchéri : ${montant} J sur ${enPhrase(l.carte.nom)} (${mmss(l.reste)}).`, true); }
+    return;
+  }
+  if (courant() === l) surgir(pseudo, montant);
+  if (depasse) vibrer([40, 40, 40]);
+  dessiner();
+}
+$('#p-kirua').addEventListener('click', () => { const l = courant(); if (l) surencherir(l, 'Kirua', (l.offre?.montant ?? l.depart - 1) + 2); });
+$('#p-biscuit').addEventListener('click', () => { const l = courant(); if (l) surencherir(l, 'Biscuit', (l.offre?.montant ?? l.depart - 1) + 5); });
+$('#p-ailleurs').addEventListener('click', () => {
+  const l = S.lots.find((x) => !x.fini);
+  if (!l) return;
+  if (l.offre?.pseudo !== MOI) { l.offre = { montant: Math.max(minOffre(l), 1), pseudo: MOI }; l.mesOffres++; l.inscrit = true; }
+  allerAccueil();
+  setTimeout(() => surencherir(l, 'Kirua', l.offre.montant + 2), 900);
+});
+
+// ---------- Accueil / Antokiba (pour la pastille) ----------
+function allerAccueil() { S.ailleurs = true; $('#page-antokiba').hidden = true; $('#page-accueil').hidden = false; scrollTo(0, 0); }
+function allerAntokiba() {
+  S.ailleurs = false; $('#pastille-ant').hidden = true;
+  $('#page-antokiba').hidden = false; $('#page-accueil').hidden = true;
+  const i = S.lots.findIndex((x) => !x.fini && x.mesOffres && x.offre?.pseudo !== MOI); if (i >= 0) S.vu = i;
+  dessiner(); scrollTo(0, 0);
+}
+$('#retour').addEventListener('click', allerAccueil);
+$('#v-antokiba').addEventListener('click', allerAntokiba);
+
+// ---------- PNJ : lots, clôture ----------
+$('#p-ouvrir').addEventListener('click', () => { const c = CATALOGUE[S.lots.length % CATALOGUE.length]; S.lots.push(lot(c, c.rang === 'SS' ? 60 : 15, 180)); S.vu = S.lots.length - 1; S.pas = 1; dessiner(); annoncer(`Nouveau lot : ${enPhrase(c.nom)}, départ ${S.lots.at(-1).depart} J.`); });
+$('#p-fin10').addEventListener('click', () => { const l = courant(); if (l && !l.fini) { l.reste = 10; dessiner(); } });
+$('#p-fin').addEventListener('click', () => { const l = courant(); if (l && !l.fini) cloturer(l); });
+$('#p-vide').addEventListener('click', () => { S.lots = []; S.vu = 0; dessiner(); });
+function cloturer(l) {
+  // RG-11.4 / 11.5 : seul le gagnant paie ; sans offre, la carte retourne au stock.
+  if (!l.offre) { l.fini = 'invendu'; dessiner(); retirerPlusTard(l); return; }
+  l.fini = { ...l.offre };
+  if (l.offre.pseudo === MOI) { adjuge(l); return; }
+  dessiner();
+  if (l.mesOffres) annoncer(`Adjugé à ${l.offre.pseudo} pour ${l.offre.montant} J. Tu ne paies rien.`);
+  retirerPlusTard(l);
+}
+function retirerPlusTard(l) {
+  setTimeout(() => { const i = S.lots.indexOf(l); if (i < 0) return; S.lots.splice(i, 1); S.vu = Math.min(S.vu, Math.max(0, S.lots.length - 1)); lotDessine = null; if (!S.ailleurs) dessiner(); }, 4000);
+}
+setInterval(() => {
+  for (const l of S.lots) if (!l.fini) { l.reste--; if (l.reste <= 0) cloturer(l); }
+  if (S.presence === 'retour') S.retourReste = Math.max(0, S.retourReste - 1);
+  if (!S.ailleurs && !cine.classList.contains('joue')) {
+    const l = courant();
+    if (l && !l.fini) { $('#o-reste').textContent = mmss(l.reste); $('#decompte').classList.toggle('presse', l.reste <= 30); }
+    $('#dist-reste').textContent = mmss(S.retourReste);
+    document.querySelectorAll('.vignette span').forEach((s, i) => { const x = S.lots[i]; if (x && !x.fini && !x.mesOffres) s.textContent = mmss(x.reste); });
+  }
+}, 1000);
+
+// ---------- Présence ----------
+function majPresence() { document.querySelectorAll('[data-presence]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.presence === S.presence)); }
+document.querySelectorAll('[data-presence]').forEach((b) => b.addEventListener('click', () => { S.presence = b.dataset.presence; if (S.presence !== 'non') S.lots.forEach((l) => (l.inscrit = true)); else S.lots.forEach((l) => (l.inscrit = false)); majPresence(); dessiner(); }));
+
+// ---------- Effets (canvas) ----------
+const cv = $('#fx'), ctx = cv.getContext('2d');
+let dpr = 1, parts = [], ondes = [], image = 0, dernier = 0;
+function taille() { dpr = Math.min(1.5, devicePixelRatio || 1); cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; }
+addEventListener('resize', taille); taille();
+const lueurs = {};
+function lueur(col) {
+  if (lueurs[col]) return lueurs[col];
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d'), rg = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  rg.addColorStop(0, col); rg.addColorStop(0.35, col + '99'); rg.addColorStop(1, col + '00');
+  g.fillStyle = rg; g.fillRect(0, 0, 64, 64); return (lueurs[col] = c);
+}
+const MAX_PARTS = 320;
+function etincelles(x, y, n, col, force = 1, haut = false) {
+  lancerBoucle();
+  n = Math.min(n, MAX_PARTS - parts.length);
+  for (let i = 0; i < n; i++) {
+    const a = haut ? -Math.PI / 2 + (Math.random() - 0.5) * 1.6 : Math.random() * Math.PI * 2, v = (240 + Math.random() * 620) * force;
+    parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, col, vie: 0, max: 0.45 + Math.random() * 0.7, t: 2 + Math.random() * 4, g: 60 });
+  }
+}
+function onde(x, y, col, max = 1.4) { lancerBoucle(); ondes.push({ x, y, col, vie: 0, max: 0.55, rmax: Math.max(innerWidth, innerHeight) * 0.55 * max }); }
+function boucle(now) {
+  const dt = Math.max(0, Math.min(0.05, (now - dernier) / 1000)); dernier = now;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, innerWidth, innerHeight);
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i]; p.vie += dt;
+    const a = 1 - p.vie / p.max; if (a <= 0) { parts.splice(i, 1); continue; }
+    p.vx *= 0.94; p.vy = p.vy * 0.94 + p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+    const t = p.t * (0.4 + a * 0.8), l = lueur(p.col);
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a;
+    ctx.drawImage(l, p.x - t * 3, p.y - t * 3, t * 6, t * 6);
+  }
+  for (let i = ondes.length - 1; i >= 0; i--) {
+    const o = ondes[i]; o.vie += dt; const k = o.vie / o.max; if (k >= 1) { ondes.splice(i, 1); continue; }
+    const r = o.rmax * (1 - Math.pow(1 - k, 3));
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (1 - k) * 0.9; ctx.strokeStyle = o.col; ctx.lineWidth = 10 * (1 - k) + 1;
+    ctx.beginPath(); ctx.arc(o.x, o.y, r, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  image = parts.length || ondes.length ? requestAnimationFrame(boucle) : 0;
+}
+const lancerBoucle = () => { if (!image && !reduit) { dernier = performance.now(); image = requestAnimationFrame(boucle); } };
+
+// Lignes de concentration de la nuit.
+(function () {
+  let s = 29; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  let d = '';
+  for (let i = 0; i < 130; i++) {
+    const a = r() * Math.PI * 2, r0 = 40 + r() * 26, w = 0.004 + r() * 0.014;
+    const p = (ang, rad) => `${(Math.cos(ang) * rad).toFixed(1)} ${(Math.sin(ang) * rad).toFixed(1)}`;
+    d += `M${p(a, r0)}L${p(a - w, 170)}L${p(a + w, 170)}Z`;
+  }
+  $('#c-lignes').innerHTML = `<svg viewBox="-100 -100 200 200" preserveAspectRatio="xMidYMid slice"><path d="${d}" fill="#ffe2b8"/></svg>`;
+})();
+// Le marteau : tête de bois cerclée de laiton, manche, vu de profil.
+$('#c-marteau').innerHTML = `<svg viewBox="0 0 220 220" aria-hidden="true">
+  <defs><linearGradient id="bois" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c58450"/><stop offset=".45" stop-color="#8a4e27"/><stop offset="1" stop-color="#4a2611"/></linearGradient>
+  <linearGradient id="laiton" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe7a6"/><stop offset=".5" stop-color="#c99a2a"/><stop offset="1" stop-color="#7a5a12"/></linearGradient></defs>
+  <rect x="86" y="70" width="16" height="140" rx="6" fill="url(#bois)" stroke="#1a0d06" stroke-width="3" transform="rotate(-45 94 140)"/>
+  <g transform="rotate(-45 110 70)"><rect x="40" y="38" width="140" height="64" rx="14" fill="url(#bois)" stroke="#1a0d06" stroke-width="4"/>
+  <rect x="58" y="36" width="14" height="68" rx="3" fill="url(#laiton)" stroke="#1a0d06" stroke-width="2.5"/><rect x="148" y="36" width="14" height="68" rx="3" fill="url(#laiton)" stroke="#1a0d06" stroke-width="2.5"/></g>
+</svg>`;
+
+// ---------- Cinématique « ADJUGÉ ! » ----------
+let anims = [], attentes = new Set(), saute = false, phase = 'repos', attenteToucher = null, revelA = 0;
+// L'opacité finale est aussi posée en style (leçon des pages ⑧ et ⑪ : sur certains téléphones, le `fill` ne tient pas).
+const A = (el, k, o) => {
+  const a = el.animate(k, { fill: 'both', easing: 'cubic-bezier(.16,1,.3,1)', ...o, duration: reduit || saute ? 1 : o.duration, delay: reduit || saute ? 0 : o.delay || 0 });
+  anims.push(a);
+  const fin = k[k.length - 1];
+  if (fin.opacity !== undefined) el.style.opacity = String(fin.opacity);
+  return a;
+};
+function pause(ms) {
+  return new Promise((res) => {
+    if (saute || reduit) return res();
+    const f = () => { clearTimeout(t); attentes.delete(f); res(); };
+    const t = setTimeout(f, ms); attentes.add(f);
+  });
+}
+const finAnim = (a) => a.finished.catch(() => {});
+function sauter() { if (saute) return; saute = true; [...attentes].forEach((f) => f()); anims.forEach((a) => { try { a.finish(); } catch {} }); }
+function taper(el, texte) {
+  el.textContent = '';
+  if (reduit || saute) { el.textContent = texte; return Promise.resolve(); }
+  return new Promise((res) => { let n = 0; const pas = () => { if (saute) { el.textContent = texte; return res(); } el.textContent = texte.slice(0, ++n); n >= texte.length ? res() : setTimeout(pas, 22); }; pas(); });
+}
+const cine = $('#cine');
+function toucher() { return new Promise((res) => { attenteToucher = res; }); }
+cine.addEventListener('pointerdown', () => {
+  if (phase === 'intro') sauter();
+  else if (phase === 'revele' && !attenteToucher) sauter();
+  else if (phase === 'revele' && attenteToucher && performance.now() - revelA > 350) { const r = attenteToucher; attenteToucher = null; r(); }
+});
+addEventListener('keydown', (e) => { if (cine.classList.contains('joue') && ['Enter', ' ', 'Escape'].includes(e.key)) { e.preventDefault(); cine.dispatchEvent(new PointerEvent('pointerdown')); } });
+const enListe = (noms) => (noms.length > 1 ? `${noms.slice(0, -1).join(', ')} et ${noms[noms.length - 1]}` : noms[0]);
+
+async function adjuge(l) {
+  saute = false; phase = 'intro'; anims.forEach((a) => a.cancel()); anims = []; parts = []; ondes = [];
+  const nuit = $('#c-nuit'), lignes = $('#c-lignes'), proj = $('#c-proj'), socle = $('#c-socle'), clot = $('#c-lot'), tourne = $('#c-tourne'), marteau = $('#c-marteau'), cri = $('#c-cri'), prix = $('#c-prix'), flash = $('#c-flash'), dlg = $('#c-dialogue');
+  [nuit, lignes, proj, socle, clot, marteau, cri, prix, flash, dlg].forEach((e) => (e.style.opacity = '0'));
+  clot.classList.remove('embrase');
+  tourne.innerHTML = carteHTML(l.carte);
+  prix.textContent = `${l.fini.montant} J`;
+  $('#c-indice').classList.remove('visible'); $('#c-texte').textContent = '';
+  cine.classList.add('joue', 'intro');
+  vibrer([30, 40, 30]);
+  // 1. La salle s'éteint ; le projecteur tombe sur le lot posé sur son socle.
+  A(nuit, [{ opacity: 0 }, { opacity: 1 }], { duration: 320 });
+  A(proj, [{ opacity: 0 }, { opacity: 1 }], { duration: 380, delay: 200 });
+  A(socle, [{ opacity: 0, translate: '-50% 20px' }, { opacity: 1, translate: '-50% 0' }], { duration: 420, delay: 160 });
+  A(clot, [{ opacity: 0, transform: 'translateY(30px) scale(.9)' }, { opacity: 1, transform: 'none' }], { duration: 480, delay: 160 });
+  await pause(700);
+  // 2. Le marteau se lève au-dessus du lot…
+  const [cx, cy] = centre(clot);
+  const mw = marteau.offsetWidth;
+  const pose = (r) => `translate(${cx - mw * 0.88 + mw * 0.52}px, ${cy - mw * 0.88 - 34}px) rotate(${r}deg)`;
+  marteau.style.left = '0'; marteau.style.top = '0';
+  A(marteau, [{ opacity: 0, transform: pose(-70) }, { opacity: 1, transform: pose(-42) }], { duration: 420, easing: 'cubic-bezier(.2,.8,.3,1)' });
+  await pause(520);
+  // 3. … et s'abat : onde, secousse, éclair, « ADJUGÉ ! ».
+  A(marteau, [{ transform: pose(-42) }, { transform: pose(12) }], { duration: 140, easing: 'cubic-bezier(.6,0,1,.6)' });
+  await pause(140);
+  A(marteau, [{ transform: pose(12) }, { transform: pose(2) }], { duration: 260, easing: 'cubic-bezier(.3,1.6,.5,1)' });
+  A(flash, [{ opacity: 0.8 }, { opacity: 0 }], { duration: 320, easing: 'ease-out' });
+  onde(cx, cy + clot.offsetHeight / 2, '#ffe2b8', 1.2); etincelles(cx, cy + clot.offsetHeight / 2, 70, '#ffd877', 0.9); etincelles(cx, cy + clot.offsetHeight / 2, 30, '#ffffff', 0.7);
+  vibrer(120);
+  if (!reduit) { try { $('#cine').animate([{ translate: '0 0' }, { translate: '-6px 4px' }, { translate: '5px -3px' }, { translate: '-2px 2px' }, { translate: '0 0' }], { duration: 240 }); } catch {} }
+  A(cri, [{ opacity: 0, scale: 2.4 }, { opacity: 1, scale: 1 }], { duration: 300, easing: 'cubic-bezier(.3,1.5,.5,1)' });
+  A(lignes, [{ opacity: 0, scale: 1.3 }, { opacity: 0.22, scale: 1 }], { duration: 400 });
+  await pause(700);
+  // 4. Le marteau se retire ; la carte s'élève, s'embrase et tourne une fois sur elle-même ; le prix payé.
+  A(marteau, [{ opacity: 1, transform: pose(2) }, { opacity: 0, transform: pose(-60) }], { duration: 380 });
+  clot.classList.add('embrase');
+  A(tourne, [{ transform: 'rotateY(0)' }, { transform: 'rotateY(360deg)' }], { duration: 900, easing: 'cubic-bezier(.45,0,.2,1)' });
+  A(clot, [{ transform: 'none' }, { transform: 'translateY(-14px) scale(1.06)' }], { duration: 900 });
+  A(prix, [{ opacity: 0, translate: '-50% 14px' }, { opacity: 1, translate: '-50% 0' }], { duration: 420, delay: 600 });
+  await pause(1100);
+  cine.classList.remove('intro');
+  // 5. Le jeu dit ce qui s'est passé ; les jenny ne partent que maintenant (seul le gagnant paie).
+  phase = 'revele';
+  $('#mes-jenny').textContent = jenny() - l.fini.montant; flotte(`−${l.fini.montant} J`, 'perte');
+  A(dlg, [{ opacity: 0, translate: '-50% 20px' }, { opacity: 1, translate: '-50% 0' }], { duration: 300 });
+  await taper($('#c-texte'), `Adjugé ! Tu as remporté ${enPhrase(l.carte.nom)} pour ${l.fini.montant} J.`);
+  $('#c-indice').classList.add('visible');
+  revelA = performance.now();
+  await toucher();
+  // 6. La carte file dans l'onglet Book : « +1 ».
+  phase = 'fin';
+  const [bx, by] = centre($('#onglet-livre'));
+  const [x, y] = centre(clot);
+  A(dlg, [{ opacity: 1 }, { opacity: 0 }], { duration: 200 });
+  A(prix, [{ opacity: 1 }, { opacity: 0 }], { duration: 200 });
+  A(cri, [{ opacity: 1 }, { opacity: 0 }], { duration: 200 });
+  A(socle, [{ opacity: 1 }, { opacity: 0 }], { duration: 240 });
+  const vol = A(clot, [{ transform: 'translateY(-14px) scale(1.06)', opacity: 1 }, { transform: `translate(${bx - x}px,${by - y}px) scale(.16) rotate(-14deg)`, opacity: 0.2 }], { duration: 560, easing: 'cubic-bezier(.55,0,.75,.3)' });
+  A(nuit, [{ opacity: 1 }, { opacity: 0 }], { duration: 520, delay: 200 });
+  A(proj, [{ opacity: 1 }, { opacity: 0 }], { duration: 300 });
+  A(lignes, [{ opacity: 0.22 }, { opacity: 0 }], { duration: 300 });
+  await finAnim(vol);
+  const p = document.createElement('span'); p.className = 'plus-un'; p.textContent = '+1';
+  $('#onglet-livre').append(p);
+  p.animate([{ opacity: 0, translate: '-50% 8px' }, { opacity: 1, translate: '-50% 0', offset: 0.2 }, { opacity: 1, offset: 0.8 }, { opacity: 0 }], { duration: 1600 }).finished.then(() => p.remove());
+  vibrer(30);
+  await pause(320);
+  cine.classList.remove('joue'); phase = 'repos'; anims.forEach((a) => a.cancel()); anims = [];
+  const i = S.lots.indexOf(l); if (i >= 0) S.lots.splice(i, 1);
+  S.vu = Math.min(S.vu, Math.max(0, S.lots.length - 1)); lotDessine = null;
+  dessiner();
+}
+
+majPresence();
+dessiner();
+</script>

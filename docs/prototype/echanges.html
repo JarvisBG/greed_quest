@@ -1,0 +1,1026 @@
+<title>Échanges entre joueurs</title>
+<meta name="description" content="Prototype de la page ⑫ : proposer un échange ou une vente à un joueur à portée, invitation en appel plein écran, table face à face avec appui long et tampons « VALIDÉ », fins refusé / annulé / expiré et cinématique « TRADE ! » des comètes croisées.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@800&family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,800;1,400&family=Dela+Gothic+One&family=DotGothic16&display=swap">
+<style>
+/* Page ⑫ : les échanges. Planche claire de l'app (papier, encre, cases) ; la proposition reçue prend
+   l'écran comme un appel ; la table met les deux parts face à face, la sienne posée à l'envers de son
+   côté. On valide par un appui long qui pose un tampon. La fin conclue reprend la nuit des sorts :
+   « TRADE ! », deux comètes qui se croisent. Thème clair unique (jeu au soleil), comme les autres pages. */
+:root {
+  color-scheme: light;
+  --papier: #eeefe9;
+  --case: #fbfbf7;
+  --case-2: #ecece6;
+  --encre: #111111;
+  --encre-2: #3b3d40;
+  --trame: rgba(17, 17, 17, 0.16);
+  --rouge: #c0272d;
+  --bleu: #1f4a9c;
+  --bleu-vif: #8fb2ff;
+  --jaune: #d9a11a;
+  --or: #d7b25a;
+  --or-vif: #ffd877;
+  --succes: #17713a;
+  --nuit: #0c0c0e;
+  --tapis: #dcdad1;
+  --f-titre: 'Dela Gothic One', 'Arial Black', sans-serif;
+  --f-texte: 'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif;
+  --f-chiffre: 'Atkinson Hyperlegible Mono', ui-monospace, monospace;
+  --f-jeu: 'DotGothic16', ui-monospace, monospace;
+  --trait: 3px;
+  --sortie: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { box-sizing: border-box; }
+html, body { overflow-x: clip; }
+body { margin: 0; background: var(--papier); color: var(--encre); font: 400 17px/1.45 var(--f-texte); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 3px solid var(--bleu); outline-offset: 3px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { cursor: default; }
+
+.app { max-width: 480px; margin: 0 auto; padding: 0 16px 104px; display: grid; gap: 12px; }
+.app > * { min-width: 0; }
+
+/* Commandes du prototype (pas dans l'app) */
+.proto { display: grid; gap: 7px; padding: 10px 12px; margin-inline: -16px; background: var(--encre); color: var(--case); }
+.proto p { margin: 0; font: 600 13px/1.3 var(--f-texte); }
+.proto .rang { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.proto .rang > span { font: 800 12px var(--f-texte); color: #b9bcc2; min-width: 58px; }
+.proto button { min-height: 36px; padding: 0 10px; border: 2px solid var(--case); background: transparent; color: var(--case); font: 700 13px var(--f-texte); }
+.proto button:active { background: var(--case); color: var(--encre); }
+/* Par-dessus la table ou l'appel : un bouton ramène les commandes en haut de l'écran. */
+.proto.flottant { position: fixed; z-index: 90; top: 0; left: 0; right: 0; margin: 0; padding-top: max(10px, env(safe-area-inset-top, 0px)); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+.proto-btn { position: fixed; z-index: 91; left: 0; top: calc(env(safe-area-inset-top, 0px) + 72px); min-height: 40px; padding: 0 10px; border: 2px solid var(--case); border-left: 0; background: var(--encre); color: var(--case); font: 800 13px var(--f-texte); }
+.proto-btn[hidden] { display: none; }
+
+/* Barre d'état de l'app */
+.barre { position: sticky; top: 0; z-index: 30; margin-inline: -16px; padding: 10px 16px; background: var(--case); border-bottom: var(--trait) solid var(--encre); display: flex; align-items: center; gap: 12px; min-height: 58px; }
+.chrono { font: 800 30px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.liaison { display: flex; align-items: center; gap: 6px; font: 600 14px var(--f-texte); }
+.pastille { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--encre); background: var(--succes); display: inline-block; }
+.jenny { margin-left: auto; font: 800 22px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.jenny small { font: 600 15px var(--f-texte); margin-left: 3px; }
+
+.tete-page { display: flex; align-items: baseline; gap: 12px; padding-top: 6px; }
+.tete-page h1 { margin: 0; font: 400 30px/1 var(--f-titre); }
+.case { background: var(--case); border: var(--trait) solid var(--encre); padding: 14px 16px; display: grid; gap: 10px; }
+.case h2 { margin: 0; font: 400 20px/1.1 var(--f-titre); }
+.case p { margin: 0; }
+.aide { font: 400 15px/1.35 var(--f-texte); color: var(--encre-2); }
+
+/* ---------- Page Échanges : joueurs à portée ---------- */
+.joueurs { list-style: none; margin: 0; padding: 0; display: grid; }
+.joueur { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: center; padding: 12px 0; border-top: 1.5px solid var(--encre); }
+.joueur:first-child { border-top: 0; padding-top: 2px; }
+.joueur .tete { grid-row: span 2; width: 44px; height: 44px; border-radius: 50%; border: var(--trait) solid var(--encre); display: grid; place-items: center; font: 400 20px/1 var(--f-titre); background: var(--case-2); }
+.joueur .qui { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.joueur .qui b { font: 800 18px/1.1 var(--f-texte); }
+.joueur .qui span { font: 800 14px var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--encre-2); }
+.joueur .actions { display: flex; gap: 8px; }
+.joueur .actions button { min-height: 42px; padding: 0 10px; border: var(--trait) solid var(--encre); background: var(--case); font: 800 14px var(--f-texte); white-space: nowrap; }
+.joueur .actions button.plein { background: var(--encre); color: var(--case); }
+.joueur .actions button:active:not(:disabled) { translate: 0 2px; }
+.joueur.indispo .tete, .joueur.indispo .qui { opacity: 0.55; }
+.joueur .attente { font: 600 14px/1.3 var(--f-texte); color: var(--encre-2); }
+.joueur .attente b { font: 800 14px var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--encre); }
+.dernier { display: flex; justify-content: space-between; gap: 10px; font: 600 15px/1.3 var(--f-texte); }
+.dernier span:last-child { color: var(--encre-2); white-space: nowrap; }
+
+/* ---------- Onglets ---------- */
+.onglets { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, 1fr); background: var(--case); border-top: var(--trait) solid var(--encre); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.onglets button { position: relative; min-height: 64px; border: 0; border-right: 1.5px solid var(--encre); background: transparent; display: grid; justify-items: center; align-content: center; gap: 3px; font: 800 12.5px/1 var(--f-texte); padding: 6px 2px; }
+.onglets button:last-child { border-right: 0; }
+.onglets svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.onglets button[aria-current='page'] { background: var(--encre); color: var(--case); }
+.onglets .plus-un { position: absolute; top: -30px; left: 50%; translate: -50% 0; font: 400 22px/1 var(--f-titre); color: var(--encre); background: var(--case); border: var(--trait) solid var(--encre); padding: 3px 8px; pointer-events: none; }
+
+/* ---------- Carte de Greed Island (copie de @gq/ui) ---------- */
+.gi-carte { container-type: inline-size; aspect-ratio: 63 / 88; width: 100%; position: relative; color: var(--encre); }
+.gi-carte .c-cadre { position: absolute; inset: 0; border-radius: 4.5cqi; padding: 5cqi; background: var(--cadre, var(--rouge)); box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35); display: grid; grid-template-rows: auto 1fr auto; gap: 3cqi; }
+.gi-carte.f-sort { --cadre: var(--bleu); }
+.gi-carte.f-objet { --cadre: var(--jaune); }
+.gi-carte.f-designee .c-txt { font-style: italic; }
+.gi-carte .c-tete { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 3cqi; background: var(--case); border-radius: 2cqi; padding: 2.5cqi 3cqi; box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); }
+.gi-carte .c-num { font: 800 9cqi/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.gi-carte .c-num.long { font-size: 7.4cqi; }
+.gi-carte .c-nom { font: 800 6.4cqi/1.1 var(--f-texte); text-align: center; text-wrap: balance; hyphens: auto; overflow-wrap: break-word; }
+.gi-carte .c-nom.long { font-size: 5.6cqi; }
+.gi-rang { font: 400 7cqi/1 var(--f-titre); padding: 1.6cqi 2.4cqi; border-radius: 1.6cqi; white-space: nowrap; color: var(--encre); background: var(--matiere, var(--case)); box-shadow: 0 0 0 0.6cqi var(--encre); }
+.gi-carte .c-art { border-radius: 2cqi; background: #f4f2ea radial-gradient(var(--trame) 0.9px, transparent 1.1px) 0 0 / 5px 5px; box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); display: grid; place-items: center; overflow: hidden; min-height: 0; }
+.gi-carte .c-filigrane { font: 400 30cqi/1 var(--f-titre); color: transparent; -webkit-text-stroke: 0.9cqi rgba(17, 17, 17, 0.55); letter-spacing: -0.02em; }
+.gi-carte .c-txt { margin: 0; background: var(--case); border-radius: 2cqi; padding: 3cqi 3.5cqi; font: 400 5.6cqi/1.3 var(--f-texte); box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); }
+.r-SS { --matiere: linear-gradient(125deg, #9c7a1c 0%, #f6dc85 28%, #c39a2c 50%, #fbe7a6 72%, #a8841f 100%); }
+.r-S  { --matiere: linear-gradient(125deg, #8d949b 0%, #f1f3f5 35%, #aab1b8 60%, #e9ecef 100%); }
+.r-A  { --matiere: linear-gradient(125deg, #c97a4a 0%, #f2b48a 45%, #d88a58 100%); }
+.r-B  { --matiere: linear-gradient(125deg, #6fb596 0%, #b6e0cc 50%, #82c2a6 100%); }
+.r-C  { --matiere: linear-gradient(125deg, #9eb0c4 0%, #d6dfea 50%, #aebfd1 100%); }
+.r-D, .r-sort, .r-objet { --matiere: var(--case); }
+@container (max-width: 130px) {
+  .gi-carte .c-nom, .gi-carte .c-txt { display: none; }
+  .gi-carte .c-tete { grid-template-columns: 1fr auto; padding: 4cqi; }
+  .gi-carte .c-num { font-size: 17cqi; }
+  .gi-carte .gi-rang { font-size: 13cqi; padding: 2.5cqi 4cqi; }
+  .gi-carte .gi-rang .lim, .gi-carte .r-sort, .gi-carte .r-objet { display: none; }
+  .gi-carte.f-sort .c-tete, .gi-carte.f-objet .c-tete { grid-template-columns: 1fr; }
+  .gi-carte .c-cadre { padding: 6cqi; gap: 5cqi; grid-template-rows: auto 1fr; }
+}
+.gi-carte.dos .c-cadre { background: #15233f; box-shadow: inset 0 0 0 1.2cqi #15233f, inset 0 0 0 2.2cqi var(--or), inset 0 0 0 3.4cqi #15233f, inset 0 0 0 4cqi var(--or); place-items: center; grid-template-rows: 1fr; }
+.gi-carte.dos svg { width: 58%; height: auto; }
+
+/* ---------- Boîte du jeu ---------- */
+.gi-annonce { position: fixed; z-index: 70; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 70px); width: min(calc(100% - 24px), 440px); transform: translate(-50%, calc(-100% - 120px)); visibility: hidden; transition: transform 0.45s var(--sortie), visibility 0s 0.45s; background: var(--nuit); color: #f6f6f2; border-radius: 6px; box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f6f6f2, inset 0 0 0 8px var(--nuit), inset 0 0 0 9px #f6f6f2, 0 16px 30px -14px rgba(0, 0, 0, 0.6); padding: 22px 22px 18px; display: grid; gap: 8px; }
+.gi-annonce.visible { transform: translate(-50%, 0); visibility: visible; transition: transform 0.45s var(--sortie), visibility 0s; }
+.a-qui { justify-self: start; font: 400 15px/1 var(--f-jeu); background: #f6f6f2; color: var(--nuit); padding: 4px 8px; }
+.t-echange .a-qui { background: var(--or-vif); }
+.gi-annonce .a-texte { font: 400 20px/1.4 var(--f-jeu); margin: 0; }
+.gi-annonce .a-actions { display: flex; gap: 10px; }
+.gi-annonce .a-actions button { background: #f6f6f2; color: var(--nuit); border: 0; font: 400 16px var(--f-jeu); padding: 10px 14px; min-height: 44px; }
+.gi-dialogue { background: var(--nuit); color: #f6f6f2; border-radius: 6px; box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f6f6f2, inset 0 0 0 8px var(--nuit), inset 0 0 0 9px #f6f6f2, 0 10px 24px -10px rgba(0, 0, 0, 0.6); padding: 18px 20px 16px; display: grid; gap: 10px; }
+.gi-dialogue .a-texte { font: 400 19px/1.45 var(--f-jeu); margin: 0; min-height: 1.45em; }
+
+/* ---------- Attente de la réponse (côté de celui qui propose) ---------- */
+.attente-rep { position: fixed; inset: 0; z-index: 45; background: rgba(238, 239, 233, 0.94); display: grid; place-items: center; padding: 16px; }
+.attente-rep[hidden] { display: none; }
+.attente-rep .boite { width: min(100%, 400px); display: grid; justify-items: center; gap: 14px; text-align: center; }
+.attente-rep .anneau { position: relative; width: 132px; height: 132px; }
+.attente-rep .anneau .tete { position: absolute; inset: 18px; border-radius: 50%; border: var(--trait) solid var(--encre); display: grid; place-items: center; font: 400 44px/1 var(--f-titre); background: var(--case); }
+.anneau svg { position: absolute; inset: 0; width: 100%; height: 100%; rotate: -90deg; }
+.anneau circle { fill: none; stroke-width: 6; }
+.attente-rep .anneau .fond { stroke: var(--case-2); }
+.attente-rep .anneau .reste { stroke: var(--encre); stroke-linecap: butt; }
+.attente-rep p { margin: 0; font: 800 19px/1.3 var(--f-texte); text-wrap: balance; }
+.attente-rep small { font: 600 15px/1.3 var(--f-texte); color: var(--encre-2); }
+.attente-rep .secs { font: 800 15px var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.btn-ligne { min-height: 46px; padding: 0 18px; border: var(--trait) solid var(--encre); background: var(--case); font: 800 16px var(--f-texte); }
+
+/* ---------- Appel entrant : la proposition prend l'écran ---------- */
+.appel { position: fixed; inset: 0; z-index: 60; display: grid; grid-template-rows: 1fr auto; grid-template-columns: minmax(0, 1fr); padding: max(28px, env(safe-area-inset-top, 0px)) 16px max(20px, env(safe-area-inset-bottom, 0px)); background: radial-gradient(ellipse at 50% 32%, #3a2c10 0, #17120a 45%, #070605 90%); color: #f6f6f2; overflow: hidden; }
+.appel[hidden] { display: none; }
+.appel .lignes { position: absolute; inset: -30%; opacity: 0.16; pointer-events: none; animation: tourne 40s linear infinite; }
+.appel .lignes svg { width: 100%; height: 100%; }
+@keyframes tourne { to { rotate: 360deg; } }
+.appel .haut { position: relative; display: grid; justify-items: center; align-content: center; gap: 14px; text-align: center; }
+.appel .cri { font: 400 min(13.5vw, 72px)/0.95 var(--f-titre); letter-spacing: -0.03em; color: #fff; -webkit-text-stroke: 3px var(--or); paint-order: stroke fill; rotate: -4deg; white-space: nowrap; }
+.appel .anneau { position: relative; width: 150px; height: 150px; }
+.appel .anneau .fond { stroke: rgba(255, 216, 119, 0.18); }
+.appel .anneau .reste { stroke: var(--or-vif); }
+.appel .anneau .tete { position: absolute; inset: 16px; border-radius: 50%; background: #f6f6f2; color: var(--nuit); display: grid; place-items: center; font: 400 52px/1 var(--f-titre); box-shadow: 0 0 0 5px var(--nuit), 0 0 50px 8px rgba(255, 216, 119, 0.35); }
+.appel .anneau.sonne .tete { animation: sonne 1.2s ease-in-out infinite; }
+@keyframes sonne { 0%, 60%, 100% { scale: 1; } 15% { scale: 1.06; } 30% { scale: 0.98; } 45% { scale: 1.03; } }
+.appel .nom { font: 400 22px/1 var(--f-jeu); background: #f6f6f2; color: var(--nuit); padding: 6px 12px; }
+.appel .phrase { margin: 0; max-width: 30ch; font: 400 20px/1.4 var(--f-jeu); text-wrap: balance; }
+.appel .phrase b { font-weight: 400; color: var(--or-vif); }
+.appel .secs { font: 800 15px var(--f-chiffre); font-variant-numeric: tabular-nums; color: #c3c6cc; }
+.appel .vendue { width: 116px; }
+.appel .vendue[hidden] { display: none; }
+.appel .bas { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: min(100%, 420px); justify-self: center; }
+.appel .bas button { min-height: 60px; border: 3px solid #f6f6f2; font: 400 19px/1 var(--f-titre); letter-spacing: 0.01em; }
+.appel .refuser { background: transparent; color: #f6f6f2; }
+.appel .accepter { background: var(--or-vif); color: var(--nuit); border-color: var(--or-vif) !important; }
+.appel .bas button:active { translate: 0 2px; }
+
+/* ---------- La table ---------- */
+.table { position: fixed; z-index: 40; inset: 0; display: grid; grid-template-rows: auto 1fr auto 1fr auto; background: var(--tapis); }
+.table[hidden] { display: none; }
+.t-barre { display: flex; align-items: center; gap: 10px; padding: max(10px, env(safe-area-inset-top, 0px)) 16px 10px; background: var(--case); border-bottom: var(--trait) solid var(--encre); }
+.t-barre .titre { display: grid; gap: 3px; min-width: 0; }
+.t-barre h1 { margin: 0; font: 400 21px/1.05 var(--f-titre); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t-barre .mode { justify-self: start; font: 800 12px/1 var(--f-texte); letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 6px; background: var(--encre); color: var(--case); }
+.t-barre .mode.vente { background: var(--or-vif); color: var(--encre); box-shadow: inset 0 0 0 2px var(--encre); }
+.t-barre .reste { margin-left: auto; display: grid; justify-items: end; font: 600 12px/1.1 var(--f-texte); color: var(--encre-2); }
+.t-barre .reste b { font: 800 19px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--encre); }
+.t-barre .annuler { min-height: 40px; padding: 0 12px; border: var(--trait) solid var(--encre); background: var(--case); font: 800 14px var(--f-texte); }
+
+/* Une part posée sur la table. */
+.part { position: relative; display: grid; align-content: center; gap: 10px; padding: 14px 16px; min-height: 0; overflow: hidden; }
+.part .etiquette { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.part .etiquette b { font: 400 17px/1 var(--f-titre); }
+.part .resume { font: 600 14px/1.25 var(--f-texte); color: var(--encre-2); font-variant-numeric: tabular-nums; }
+.posees { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; min-height: 98px; }
+.posees:empty { display: none; }
+.posee { position: relative; width: 66px; flex: none; border: 0; padding: 0; background: none; }
+.posee .gi-carte .c-cadre { box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35), 0 4px 0 rgba(17, 17, 17, 0.25); }
+.posee .retirer { position: absolute; top: -7px; right: -7px; width: 24px; height: 24px; border-radius: 50%; background: var(--encre); color: var(--case); display: grid; place-items: center; font: 800 15px/1 var(--f-texte); }
+.posee.arrive { animation: poser 0.42s var(--sortie); }
+@keyframes poser { from { translate: 0 22px; rotate: -8deg; opacity: 0; } }
+.chez-lui .posee.arrive { animation-name: poser-lui; }
+@keyframes poser-lui { from { translate: 0 -22px; rotate: 8deg; opacity: 0; } }
+/* Sa part est posée à l'envers, de son côté de la table. Toucher une carte la montre à l'endroit. */
+.chez-lui .posees { flex-direction: row-reverse; align-items: flex-start; }
+.chez-lui .posee .gi-carte { rotate: 180deg; }
+.ajouter { width: 66px; aspect-ratio: 63 / 88; border: 2.5px dashed var(--encre); border-radius: 4px; background: rgba(251, 251, 247, 0.6); display: grid; place-content: center; justify-items: center; gap: 2px; font: 800 13px/1.1 var(--f-texte); }
+.ajouter span { font: 400 30px/1 var(--f-titre); }
+.vide-lui { font: 600 15px/1.3 var(--f-texte); color: var(--encre-2); align-self: center; }
+
+/* Pile de jenny : des pièces empilées, un chiffre en face. */
+.pile { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pile[hidden] { display: none; }
+.pieces { position: relative; width: 46px; height: 44px; flex: none; }
+.pieces i { position: absolute; left: 3px; width: 40px; height: 14px; border-radius: 50%; background: linear-gradient(#f3d27a, #c99a2a); box-shadow: 0 0 0 2px var(--encre); }
+.pieces i::after { content: 'J'; position: absolute; inset: 0; display: grid; place-items: center; font: 800 9px/1 var(--f-chiffre); color: #6b4f0d; }
+.pile .montant { font: 800 26px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; min-width: 4ch; }
+.pile .montant small { font: 600 15px var(--f-texte); margin-left: 2px; }
+.pile .note { font: 600 13px/1.2 var(--f-texte); color: var(--encre-2); flex-basis: 100%; }
+.pile .note[hidden] { display: none; }
+.montants { display: flex; gap: 6px; flex-wrap: wrap; }
+.montants button { min-height: 38px; min-width: 46px; padding: 0 9px; border: 2px solid var(--encre); background: var(--case); font: 800 14px var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.montants button:active:not(:disabled) { background: var(--encre); color: var(--case); }
+.montants button:disabled { opacity: 0.35; }
+
+/* Bord de la table : les deux noms et l'état des validations. */
+.bord { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 16px; background: var(--encre); color: var(--case); font: 800 13px/1.2 var(--f-texte); }
+.bord .fleches { font: 400 18px/1 var(--f-titre); color: var(--or-vif); }
+.bord .etat { display: inline-flex; align-items: center; gap: 6px; }
+.bord .etat i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--case); }
+.bord .etat.ok i { background: var(--or-vif); border-color: var(--or-vif); }
+
+/* Le tampon « VALIDÉ », posé de travers sur la part ; il tombe quand une part change. */
+.tampon { position: absolute; z-index: 3; right: 14px; top: 50%; padding: 6px 10px; border: 4px solid var(--rouge); border-radius: 4px; color: var(--rouge); background: rgba(251, 251, 247, 0.7); font: 400 26px/1 var(--f-titre); letter-spacing: 0.04em; rotate: -12deg; translate: 0 -50%; pointer-events: none; mix-blend-mode: multiply; visibility: hidden; }
+.chez-lui .tampon { right: auto; left: 14px; rotate: 168deg; }
+.tampon.pose { visibility: visible; animation: tamponner 0.32s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes tamponner { from { scale: 1.9; opacity: 0; } 70% { scale: 0.94; opacity: 1; } }
+.tampon.tombe { visibility: visible; animation: tomber 0.5s ease-in forwards; }
+@keyframes tomber { to { translate: 0 60px; rotate: 30deg; opacity: 0; } }
+.chez-lui .tampon.tombe { animation-name: tomber-lui; }
+@keyframes tomber-lui { to { translate: 0 -60px; rotate: 150deg; opacity: 0; } }
+
+/* Bas de la table : valider par un appui long. */
+.t-bas { display: grid; gap: 6px; padding: 10px 16px max(12px, env(safe-area-inset-bottom, 0px)); background: var(--case); border-top: var(--trait) solid var(--encre); }
+.maintenir { position: relative; overflow: hidden; min-height: 58px; border: var(--trait) solid var(--encre); background: var(--encre); color: var(--case); font: 400 18px/1 var(--f-titre); touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.maintenir .remplit { position: absolute; inset: 0; background: var(--rouge); transform-origin: left; scale: 0 1; }
+.maintenir span { position: relative; }
+.maintenir:disabled { background: var(--case-2); color: var(--encre-2); }
+.maintenir.fait { background: var(--case); color: var(--encre); }
+.t-bas .indice { margin: 0; min-height: 1.3em; font: 600 14px/1.3 var(--f-texte); color: var(--encre-2); text-align: center; }
+
+/* ---------- Tiroir de mes cartes ---------- */
+.voile { position: fixed; inset: 0; z-index: 48; background: rgba(17, 17, 17, 0.45); }
+.voile[hidden], .tiroir[hidden], .fiche[hidden] { display: none; }
+.tiroir { position: fixed; z-index: 49; left: 0; right: 0; bottom: 0; max-height: 78dvh; display: grid; grid-template-rows: auto 1fr auto; background: var(--case); border-top: var(--trait) solid var(--encre); animation: monter 0.32s var(--sortie); }
+@keyframes monter { from { translate: 0 100%; } }
+.tiroir .t-tete { display: flex; align-items: baseline; gap: 10px; padding: 14px 16px 10px; border-bottom: 1.5px solid var(--encre); }
+.tiroir .t-tete h2 { margin: 0; font: 400 20px/1 var(--f-titre); }
+.tiroir .t-tete span { margin-left: auto; font: 800 14px var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--encre-2); }
+.tiroir .defile { overflow-y: auto; padding: 12px 16px 16px; display: grid; gap: 14px; overscroll-behavior: contain; }
+.tiroir h3 { margin: 0; font: 800 13px/1 var(--f-texte); letter-spacing: 0.08em; text-transform: uppercase; color: var(--encre-2); }
+.grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 10px; }
+.choix { position: relative; border: 0; padding: 0; background: none; display: grid; gap: 4px; justify-items: center; font: 600 12px/1.15 var(--f-texte); text-align: center; color: var(--encre); }
+.choix .gi-carte { width: 100%; }
+.choix[aria-pressed='true'] .gi-carte { outline: 3px solid var(--encre); outline-offset: 3px; border-radius: 3px; }
+.choix[aria-pressed='true']::after { content: '✓'; position: absolute; top: -6px; right: -6px; width: 24px; height: 24px; border-radius: 50%; background: var(--encre); color: var(--case); display: grid; place-items: center; font: 800 14px/1 var(--f-texte); }
+.choix .ou { color: var(--encre-2); }
+.tiroir .t-pied { padding: 10px 16px max(12px, env(safe-area-inset-bottom, 0px)); border-top: 1.5px solid var(--encre); display: grid; gap: 8px; }
+.tiroir .prix { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.tiroir .prix[hidden] { display: none; }
+.tiroir .prix label { font: 800 15px var(--f-texte); }
+.btn-plein { min-height: 52px; border: var(--trait) solid var(--encre); background: var(--encre); color: var(--case); font: 400 17px/1 var(--f-titre); }
+.btn-plein:disabled { background: var(--case-2); color: var(--encre-2); }
+
+/* Fiche : une carte en grand, à l'endroit. */
+.fiche { position: fixed; z-index: 55; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(17, 17, 17, 0.7); }
+.fiche .f-boite { width: min(72vw, 280px); display: grid; gap: 12px; }
+.fiche p { margin: 0; text-align: center; font: 600 14px var(--f-texte); color: #e9e9e4; }
+
+/* ---------- Cinématique « TRADE ! » ---------- */
+.cine { position: fixed; inset: 0; z-index: 65; pointer-events: none; overflow: hidden; visibility: hidden; }
+.cine.joue { visibility: visible; pointer-events: auto; cursor: pointer; }
+/* La nuit de l'échange : chaude, entre l'or des deux comètes. */
+.cine .nuit { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, #33270d 0, #15110a 46%, #050404 92%); opacity: 0; }
+.cine .lignes { position: absolute; inset: -30%; opacity: 0; }
+.cine .lignes svg { width: 100%; height: 100%; }
+.cine canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.cine .cri { position: absolute; left: 0; right: 0; top: 50%; translate: 0 -50%; text-align: center; font: 400 min(19vw, 104px)/0.92 var(--f-titre); letter-spacing: -0.03em; white-space: nowrap; color: #fff; -webkit-text-stroke: 3px var(--or); paint-order: stroke fill; opacity: 0; }
+.cine .eventail { position: absolute; left: 50%; display: flex; justify-content: center; opacity: 0; will-change: transform; }
+.cine .eventail .gi-carte, .cine .eventail .jeton { width: 96px; flex: none; margin-inline: -18px; }
+.cine .eventail .gi-carte .c-cadre { box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35), 0 14px 24px rgba(0, 0, 0, 0.5); }
+.cine .moi-ev { bottom: 13%; translate: -50% 0; }
+.cine .lui-ev { top: 13%; translate: -50% 0; }
+.cine .embrase { filter: drop-shadow(0 0 12px #ffd877) drop-shadow(0 0 26px #ff9a3c) brightness(1.15); }
+.cine .orbe { position: absolute; left: 0; top: 0; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; opacity: 0; will-change: transform; background: radial-gradient(closest-side, #fff 0, #fff 22%, #ffe9b0 40%, rgba(255, 190, 80, 0.55) 62%, rgba(255, 160, 40, 0) 100%); }
+.cine .orbe.froide { background: radial-gradient(closest-side, #fff 0, #fff 22%, #cfe0ff 40%, rgba(120, 160, 255, 0.55) 62%, rgba(80, 120, 255, 0) 100%); }
+.cine .flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+/* Ce que tu reçois : de dos, puis retourné, au centre. */
+.cine .recues { position: absolute; left: 50%; top: 44%; translate: -50% -50%; display: flex; gap: 10px; justify-content: center; width: min(92vw, 440px); flex-wrap: wrap; }
+.cine .recue { width: min(30vw, 128px, calc((100dvh - 360px) * 63 / 88)); perspective: 1100px; opacity: 0; }
+.cine .retourne { position: relative; transform-style: preserve-3d; }
+.cine .retourne > .gi-carte { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.cine .retourne > .gi-carte:not(.dos) .c-cadre { box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35), 0 18px 30px rgba(0, 0, 0, 0.55); }
+.cine .retourne > .dos { position: absolute; inset: 0; transform: rotateY(180deg); }
+.cine .jeton { width: 96px; aspect-ratio: 63 / 88; display: grid; place-content: center; justify-items: center; gap: 6px; border-radius: 6px; background: #2a2110; box-shadow: inset 0 0 0 3px var(--or); color: var(--or-vif); font: 800 22px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.cine .jeton .pieces { scale: 1.2; }
+.cine .gain { width: 100%; text-align: center; font: 800 40px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--or-vif); opacity: 0; }
+.cine .dialogue { pointer-events: none; position: absolute; left: 50%; bottom: max(18px, env(safe-area-inset-bottom, 0px)); width: min(calc(100% - 24px), 440px); translate: -50% 0; opacity: 0; }
+.cine .dialogue .a-indice { margin: 0; font: 600 14px/1.3 var(--f-texte); color: #c3c6cc; opacity: 0; transition: opacity 0.3s; }
+.cine .dialogue .a-indice.visible { opacity: 1; }
+.cine .passer { pointer-events: none; position: absolute; bottom: max(16px, env(safe-area-inset-bottom, 0px)); left: 50%; translate: -50% 0; font: 600 13px var(--f-texte); color: rgba(235, 238, 242, 0.75); white-space: nowrap; opacity: 0; transition: opacity 0.25s; }
+.cine.intro .passer { opacity: 1; transition-delay: 0.6s; }
+.volant { position: fixed; z-index: 66; left: 0; top: 0; pointer-events: none; will-change: transform; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+@media (max-height: 640px) {
+  .posees { min-height: 84px; }
+  .posee, .ajouter { width: 56px; }
+  .part { gap: 6px; padding-block: 8px; }
+}
+</style>
+
+<button class="proto-btn" id="proto-btn" hidden aria-expanded="false">Prototype</button>
+<div class="app">
+  <div class="proto" role="group" aria-label="Commandes du prototype">
+    <p>Prototype : tu es Gon. Propose depuis la liste, ou fais-toi appeler. À la table, Leolio est joué ici.</p>
+    <div class="rang"><span>Appel reçu</span>
+      <button id="p-appel">Leolio propose un échange</button>
+      <button id="p-vente">Leolio te vend une carte</button>
+    </div>
+    <div class="rang"><span>Leolio</span>
+      <button id="p-pose">pose une carte</button>
+      <button id="p-jenny">ajoute 20 J</button>
+      <button id="p-retire">retire une carte</button>
+      <button id="p-valide">valide</button>
+    </div>
+    <div class="rang"><span>Fins</span>
+      <button id="p-refuse">refuse ta proposition</button>
+      <button id="p-annule">annule</button>
+      <button id="p-expire">3 min sans action</button>
+    </div>
+  </div>
+
+  <header class="barre" aria-label="État de la partie">
+    <span class="chrono">1:24:10</span>
+    <span class="liaison"><i class="pastille"></i>En ligne</span>
+    <span class="jenny"><span id="mes-jenny">250</span><small>J</small></span>
+  </header>
+
+  <div class="tete-page"><h1>Échanges</h1></div>
+  <section class="case" aria-labelledby="t-portee">
+    <h2 id="t-portee">Joueurs à portée</h2>
+    <ul class="joueurs" id="joueurs"></ul>
+    <p class="aide">À portée de sort : environ 50 m. Une part peut être des cartes, des jenny ou les deux ; chacun doit donner quelque chose.</p>
+  </section>
+  <section class="case" aria-labelledby="t-derniers">
+    <h2 id="t-derniers">Derniers échanges</h2>
+    <div id="derniers" style="display:grid;gap:8px">
+      <div class="dernier"><span>Kurapika : 2 cartes contre 1 carte</span><span>il y a 4 min</span></div>
+    </div>
+  </section>
+</div>
+
+<nav class="onglets" aria-label="Navigation">
+  <button data-onglet="accueil"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 3l9 8M6 9.5V21h12V9.5M10 21v-6h4v6"/></svg>Accueil</button>
+  <button data-onglet="scan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5M7 12h10"/></svg>Scanner</button>
+  <button data-onglet="livre" id="onglet-livre"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2zM5 19a2 2 0 0 1 2-2h12M9 7h6"/></svg>Book</button>
+  <button data-onglet="sorts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 2.6 6.6L21 9.5l-5 4.4 1.6 6.6L12 17l-5.6 3.5L8 13.9 3 9.5l6.4-.9z"/></svg>Sorts</button>
+  <button data-onglet="echanges" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg>Échanges</button>
+</nav>
+
+<!-- Attente de la réponse -->
+<div class="attente-rep" id="attente" hidden role="dialog" aria-modal="true" aria-labelledby="att-texte">
+  <div class="boite">
+    <div class="anneau"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="fond" cx="50" cy="50" r="46"/><circle class="reste" id="att-reste" cx="50" cy="50" r="46" pathLength="100" stroke-dasharray="100 100"/></svg><span class="tete" id="att-tete">L</span></div>
+    <p id="att-texte">Proposition envoyée à Leolio</p>
+    <small><span class="secs" id="att-secs">60</span> s pour répondre</small>
+    <button class="btn-ligne" id="att-annuler">Annuler la proposition</button>
+  </div>
+</div>
+
+<!-- Appel entrant -->
+<div class="appel" id="appel" hidden role="alertdialog" aria-modal="true" aria-labelledby="ap-cri" aria-describedby="ap-phrase">
+  <div class="lignes" id="ap-lignes" aria-hidden="true"></div>
+  <div class="haut">
+    <div class="cri" id="ap-cri">ÉCHANGE !</div>
+    <div class="anneau sonne"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="fond" cx="50" cy="50" r="46"/><circle class="reste" id="ap-reste" cx="50" cy="50" r="46" pathLength="100" stroke-dasharray="100 100"/></svg><span class="tete" id="ap-tete">L</span></div>
+    <span class="nom" id="ap-nom">Leolio</span>
+    <div class="vendue" id="ap-carte" hidden></div>
+    <p class="phrase" id="ap-phrase">Leolio te propose un échange.</p>
+    <span class="secs"><span id="ap-secs">60</span> s</span>
+  </div>
+  <div class="bas">
+    <button class="refuser" id="ap-refuser">Refuser</button>
+    <button class="accepter" id="ap-accepter">Accepter</button>
+  </div>
+</div>
+
+<!-- La table -->
+<div class="table" id="table" hidden role="dialog" aria-modal="true" aria-labelledby="t-titre">
+  <div class="t-barre">
+    <div class="titre"><h1 id="t-titre">Avec Leolio</h1><span class="mode" id="t-mode">Échange</span></div>
+    <span class="reste">sans action<b id="t-reste">3:00</b></span>
+    <button class="annuler" id="t-annuler">Annuler</button>
+  </div>
+  <section class="part chez-lui" id="part-lui" aria-label="Part de Leolio">
+    <div class="etiquette"><b>Leolio donne</b><span class="resume" id="res-lui">rien pour l’instant</span></div>
+    <div class="posees" id="posees-lui"></div>
+    <div class="pile" id="pile-lui" hidden><span class="pieces" id="pieces-lui"></span><span class="montant"><span id="j-lui">0</span><small>J</small></span></div>
+    <span class="tampon" id="tampon-lui" aria-hidden="true">VALIDÉ</span>
+  </section>
+  <div class="bord" aria-live="polite">
+    <span class="etat" id="etat-lui"><i></i>Leolio</span>
+    <span class="fleches" aria-hidden="true">⇅</span>
+    <span class="etat" id="etat-moi">Toi<i></i></span>
+  </div>
+  <section class="part chez-moi" id="part-moi" aria-label="Ta part">
+    <div class="etiquette"><b>Tu donnes</b><span class="resume" id="res-moi">rien pour l’instant</span></div>
+    <div class="posees" id="posees-moi"></div>
+    <div class="pile">
+      <span class="pieces" id="pieces-moi"></span><span class="montant"><span id="j-moi">0</span><small>J</small></span>
+      <span class="montants" id="montants"></span>
+      <span class="note" id="note-prix" hidden></span>
+    </div>
+    <span class="tampon" id="tampon-moi" aria-hidden="true">VALIDÉ</span>
+  </section>
+  <div class="t-bas">
+    <button class="maintenir" id="maintenir"><i class="remplit" id="remplit"></i><span id="m-texte">Maintiens pour valider</span></button>
+    <p class="indice" id="indice" aria-live="polite"></p>
+  </div>
+</div>
+
+<!-- Tiroir de mes cartes -->
+<div class="voile" id="voile" hidden></div>
+<div class="tiroir" id="tiroir" hidden role="dialog" aria-modal="true" aria-labelledby="ti-titre">
+  <div class="t-tete"><h2 id="ti-titre">Tes cartes</h2><span id="ti-compte">0 / 30</span></div>
+  <div class="defile" id="ti-defile"></div>
+  <div class="t-pied">
+    <div class="prix" id="ti-prix" hidden><label for="prix-val">Ton prix</label><span class="montant" style="font:800 24px var(--f-chiffre)"><span id="prix-val">50</span> J</span><span class="montants" id="prix-montants"></span></div>
+    <button class="btn-plein" id="ti-ok">Poser sur la table</button>
+  </div>
+</div>
+
+<div class="fiche" id="fiche" hidden><div class="f-boite"><div id="fiche-carte"></div><p>Touche pour fermer</p></div></div>
+
+<div class="gi-annonce t-echange" id="annonce" role="alert">
+  <span class="a-qui">Échange</span>
+  <p class="a-texte" id="an-texte"></p>
+  <div class="a-actions"><button id="an-fermer">Fermer</button></div>
+</div>
+
+<!-- Cinématique -->
+<div class="cine" id="cine" aria-hidden="true">
+  <div class="nuit" id="c-nuit"></div>
+  <div class="lignes" id="c-lignes"></div>
+  <canvas id="fx"></canvas>
+  <div class="eventail lui-ev" id="ev-lui"></div>
+  <div class="eventail moi-ev" id="ev-moi"></div>
+  <div class="recues" id="recues"></div>
+  <div class="cri" id="c-cri">TRADE !</div>
+  <div class="orbe" id="orbe-moi"></div>
+  <div class="orbe" id="orbe-lui"></div>
+  <div class="flash" id="c-flash"></div>
+  <div class="dialogue gi-dialogue t-echange" id="c-dialogue" role="status">
+    <span class="a-qui">Échange conclu</span>
+    <p class="a-texte" id="c-texte"></p>
+    <p class="a-indice" id="c-indice">Touche pour ranger dans ton Book</p>
+  </div>
+  <span class="passer">Touche pour passer</span>
+</div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const DOS_SVG = '<svg viewBox="0 0 100 100" fill="none" stroke="#d7b25a" aria-hidden="true"><circle cx="50" cy="50" r="42" stroke-width="2.5"/><circle cx="50" cy="50" r="34" stroke-width="1"/><path d="m50 8 8 34 34 8-34 8-8 34-8-34-34-8 34-8z" stroke-width="2"/><circle cx="50" cy="50" r="9" stroke-width="2.5"/></svg>';
+
+// ---------- Données du prototype (dans l'app : GET /echanges/courant et l'évènement `echange`) ----------
+const LIM = { SS: 1, S: 2, A: 3, B: 5, C: 8, D: 12 };
+const C = (num, nom, rang, txt, genre = 'designee') => ({ num, nom, rang, lim: LIM[rang], txt, genre });
+const CATALOGUE = {
+  '079': C('079', 'Le diamant arc-en-ciel', 'C', 'Le diamant des demandes en mariage : la réponse est toujours oui.'),
+  '022': C('022', 'Toraemon', 'C', 'Une bête rare qui fourre des trésors dans sa poche à quatre dimensions.'),
+  '025': C('025', 'Le dé du risque', 'D', 'Un dé de dix-neuf étoiles et une tête de mort. La tête de mort efface tout.'),
+  '026': C('026', 'Les sept nains au travail', 'C', 'Sept nains qui abattent tout le travail pendant le sommeil de leur maître.'),
+  '011': C('011', 'La balance d’or', 'D', 'Une balance d’or qui, face à deux choix, penche toujours vers le meilleur.'),
+  '019': C('019', 'L’oreiller de l’esprit joueur', 'B', 'Un oreiller qui laisse l’esprit vagabonder pendant le sommeil, 24 heures au plus.'),
+  '074': C('074', 'L’aigue-marine philosophale', 'A', 'Une aigue-marine qui entoure son porteur d’amis brillants et fidèles toute sa vie.'),
+  '080': C('080', 'La pierre flottante', 'S', 'Une pierre nourrie par le soleil, qui fait flotter une personne.'),
+  '012': C('012', 'Le dictionnaire d’or', 'A', 'Un dictionnaire dont un mot brille d’or chaque jour : il servira le lendemain.'),
+  '073': C('073', 'Le jade des ténèbres', 'B', 'Un jade béni par le Diable, qui détourne le malheur sur un autre.'),
+  '1007': { num: '1007', nom: 'Vol', genre: 'sort', txt: 'Prend 1 carte au hasard dans les emplacements fixes d’un joueur proche.' },
+  '1001': { num: '1001', nom: 'Voyance', genre: 'sort', txt: 'Montre les emplacements libres d’un joueur déjà croisé.' },
+  '1032': { num: '1032', nom: 'Loterie', genre: 'objet', txt: 'Gratte le ticket : de 0 à 100 jenny.' },
+  '1035': { num: '1035', nom: 'Solidité', genre: 'objet', txt: 'Protège ton Book d’un vol pendant 10 min.' },
+};
+// Ma réserve : les cartes que je peux poser (une carte engagée ailleurs n'apparaît pas, RG-11).
+const MES = [
+  ['m1', '079', 'libre'], ['m2', '022', 'libre'], ['m3', '025', 'libre'], ['m4', '025', 'libre'], ['m5', '026', 'libre'],
+  ['m6', '011', 'libre'], ['m7', '019', 'emplacement 019'], ['m8', '074', 'emplacement 074'],
+  ['m9', '1007', 'sort'], ['m10', '1001', 'sort'], ['m11', '1032', 'objet'], ['m12', '1035', 'objet'],
+].map(([id, num, ou]) => ({ id, ou, ...CATALOGUE[num] }));
+const SES_CARTES = ['080', '012', '073', '019'].map((num, i) => ({ id: 'l' + i, ...CATALOGUE[num] }));
+
+const JOUEURS = [
+  { nom: 'Leolio', dist: 18 },
+  { nom: 'Biscuit', dist: 42 },
+  { nom: 'Kurapika', dist: 30, attente: 372 },
+  { nom: 'Kirua', dist: 74, loin: true },
+];
+
+// ---------- Outils ----------
+const vibrer = (p) => navigator.vibrate?.(p);
+const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.max(0, s) % 60).padStart(2, '0')}`;
+const enPhrase = (nom) => nom.replace(/^(Les|Le|La)(?=\s)|^L’/, (m) => m.toLowerCase());
+const centre = (el) => { const b = el.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2]; };
+function carteHTML(c) {
+  const coin = c.genre === 'sort' ? '<span class="gi-rang r-sort">Sort</span>' : c.genre === 'objet' ? '<span class="gi-rang r-objet">Objet</span>' : `<span class="gi-rang r-${c.rang}">${c.rang}<span class="lim">-${c.lim}</span></span>`;
+  return `<div class="gi-carte f-${c.genre}"><div class="c-cadre"><div class="c-tete"><span class="c-num${c.num.length > 3 ? ' long' : ''}">${c.num}</span><span class="c-nom${c.nom.length > 10 ? ' long' : ''}">${c.nom}</span>${coin}</div><div class="c-art"><span class="c-filigrane">${c.num.slice(-3)}</span></div><p class="c-txt">${c.txt}</p></div></div>`;
+}
+const DOS = `<div class="gi-carte dos"><div class="c-cadre">${DOS_SVG}</div></div>`;
+// Résumé factuel d'une part : « 3 cartes · 1 S, 2 C · 20 J » (pas de verdict, pas de balance).
+function resume(cartes, jenny) {
+  if (!cartes.length && !jenny) return 'rien pour l’instant';
+  const bouts = [];
+  if (cartes.length) {
+    bouts.push(`${cartes.length} carte${cartes.length > 1 ? 's' : ''}`);
+    const n = {};
+    for (const c of cartes) { const k = c.genre === 'sort' ? 'sort' : c.genre === 'objet' ? 'objet' : c.rang; n[k] = (n[k] || 0) + 1; }
+    const ordre = ['SS', 'S', 'A', 'B', 'C', 'D', 'sort', 'objet'];
+    bouts.push(ordre.filter((k) => n[k]).map((k) => k === 'sort' || k === 'objet' ? `${n[k]} ${k}${n[k] > 1 ? 's' : ''}` : `${n[k]} ${k}`).join(', '));
+  }
+  if (jenny) bouts.push(`${jenny} J`);
+  return bouts.join(' · ');
+}
+function pieces(el, jenny) {
+  const n = jenny ? Math.min(6, 1 + Math.floor(Math.log2(1 + jenny / 10))) : 0;
+  el.innerHTML = Array.from({ length: n }, (_, i) => `<i style="bottom:${i * 5}px"></i>`).join('');
+}
+
+// ---------- Lignes de concentration (appel et cinématique) ----------
+(function () {
+  let s = 23; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  let d = '';
+  for (let i = 0; i < 130; i++) {
+    const a = r() * Math.PI * 2, r0 = 40 + r() * 26, w = 0.004 + r() * 0.014;
+    const p = (ang, rad) => `${(Math.cos(ang) * rad).toFixed(1)} ${(Math.sin(ang) * rad).toFixed(1)}`;
+    d += `M${p(a, r0)}L${p(a - w, 170)}L${p(a + w, 170)}Z`;
+  }
+  const svg = (col) => `<svg viewBox="-100 -100 200 200" preserveAspectRatio="xMidYMid slice"><path d="${d}" fill="${col}"/></svg>`;
+  $('#ap-lignes').innerHTML = svg('#ffd877');
+  $('#c-lignes').innerHTML = svg('#ffe9b8');
+})();
+
+// ---------- Page Échanges ----------
+let dernierAvec = null;
+function dessinerJoueurs() {
+  $('#joueurs').innerHTML = JOUEURS.map((j, i) => {
+    const indispo = j.loin || j.attente;
+    let bas;
+    if (j.loin) bas = `<span class="attente">Trop loin pour échanger</span>`;
+    else if (j.attente) bas = `<span class="attente">Déjà échangé il y a moins de 10 min · de nouveau dans <b>${mmss(j.attente)}</b></span>`;
+    else bas = `<span class="actions"><button class="plein" data-proposer="${i}">Échanger</button><button data-vendre="${i}">Vendre une carte</button></span>`;
+    return `<li class="joueur${indispo ? ' indispo' : ''}"><span class="tete" aria-hidden="true">${j.nom[0]}</span><span class="qui"><b>${j.nom}</b><span>${j.dist} m</span></span>${bas}</li>`;
+  }).join('');
+}
+dessinerJoueurs();
+setInterval(() => { for (const j of JOUEURS) if (j.attente) j.attente--; if (!$('#table').hidden || !$('#appel').hidden) return; dessinerJoueurs(); }, 1000);
+$('#joueurs').addEventListener('click', (e) => {
+  const p = e.target.closest('[data-proposer]'), v = e.target.closest('[data-vendre]');
+  if (p) proposer(JOUEURS[+p.dataset.proposer].nom, null);
+  if (v) { autre = JOUEURS[+v.dataset.vendre].nom; ouvrirTiroir('vente'); }
+});
+
+// ---------- Annonce ----------
+function annoncer(t) { $('#an-texte').textContent = t; $('#annonce').classList.add('visible'); $('#an-fermer').focus({ preventScroll: true }); }
+$('#an-fermer').addEventListener('click', () => $('#annonce').classList.remove('visible'));
+
+// ---------- Proposer (côté Gon) ----------
+let autre = 'Leolio', minuteur = null;
+function anneau(el, secsEl, total, fin) {
+  clearInterval(minuteur);
+  let reste = total;
+  const maj = () => { el.setAttribute('stroke-dasharray', `${(reste / total) * 100} 100`); secsEl.textContent = reste; };
+  maj();
+  minuteur = setInterval(() => { reste--; maj(); if (reste <= 0) { clearInterval(minuteur); fin(); } }, 1000);
+}
+let reponseAuto = null;
+function proposer(nom, vente) {
+  autre = nom;
+  $('#att-tete').textContent = nom[0];
+  $('#att-texte').textContent = vente ? `${nom} lit ton offre : ${enPhrase(vente.carte.nom)} pour ${vente.prix} J` : `Proposition envoyée à ${nom}`;
+  $('#attente').hidden = false;
+  anneau($('#att-reste'), $('#att-secs'), 60, () => { $('#attente').hidden = true; annoncer(`${nom} n’a pas répondu à temps.`); });
+  // Le bot accepte au bout de 2,5 s (bouton « refuse ta proposition » pour l'autre issue).
+  clearTimeout(reponseAuto);
+  reponseAuto = setTimeout(() => { $('#attente').hidden = true; clearInterval(minuteur); ouvrirTable({ vente, jeVends: !!vente }); if (!vente) setTimeout(() => botPose(), 1400); }, 2500);
+}
+$('#att-annuler').addEventListener('click', () => { clearTimeout(reponseAuto); clearInterval(minuteur); $('#attente').hidden = true; });
+$('#p-refuse').addEventListener('click', () => {
+  if ($('#attente').hidden) { proposer('Leolio', null); clearTimeout(reponseAuto); setTimeout(refus, 900); return; }
+  clearTimeout(reponseAuto); refus();
+});
+function refus() { clearInterval(minuteur); $('#attente').hidden = true; annoncer(`${autre} a refusé ton échange.`); }
+
+// ---------- Appel entrant (côté Gon) ----------
+let appelVente = null;
+function appeler(vente) {
+  fermerTout();
+  autre = 'Leolio'; appelVente = vente;
+  $('#ap-cri').textContent = vente ? 'VENTE !' : 'ÉCHANGE !';
+  $('#ap-tete').textContent = 'L'; $('#ap-nom').textContent = 'Leolio';
+  $('#ap-carte').hidden = !vente;
+  if (vente) {
+    $('#ap-carte').innerHTML = carteHTML(vente.carte);
+    $('#ap-phrase').innerHTML = `Leolio te vend ${enPhrase(vente.carte.nom)} pour <b>${vente.prix} J</b>.`;
+  } else $('#ap-phrase').textContent = 'Leolio te propose un échange.';
+  $('#appel').hidden = false;
+  $('#ap-accepter').focus({ preventScroll: true });
+  vibrer([300, 150, 300, 150, 300]);
+  anneau($('#ap-reste'), $('#ap-secs'), 60, () => { $('#appel').hidden = true; annoncer('Tu n’as pas répondu à Leolio : la proposition a expiré.'); });
+}
+$('#p-appel').addEventListener('click', () => appeler(null));
+$('#p-vente').addEventListener('click', () => appeler({ carte: SES_CARTES[0], prix: 80 }));
+$('#ap-refuser').addEventListener('click', () => { clearInterval(minuteur); vibrer(0); $('#appel').hidden = true; });
+$('#ap-accepter').addEventListener('click', () => {
+  clearInterval(minuteur); vibrer(0); $('#appel').hidden = true;
+  ouvrirTable({ vente: appelVente, jeVends: false });
+  if (!appelVente) setTimeout(() => botPose(), 1200);
+});
+
+// ---------- La table ----------
+const T = { moi: { cartes: [], jenny: 0, valide: false }, lui: { cartes: [], jenny: 0, valide: false }, vente: null, jeVends: false, reste: 180 };
+let horloge = null;
+function ouvrirTable({ vente, jeVends }) {
+  fermerTout();
+  Object.assign(T, { moi: { cartes: [], jenny: 0, valide: false }, lui: { cartes: [], jenny: 0, valide: false }, vente, jeVends, reste: 180 });
+  if (vente && jeVends) T.moi.cartes = [vente.carte];
+  if (vente && !jeVends) { T.lui.cartes = [vente.carte]; T.moi.jenny = vente.prix; }
+  $('#t-titre').textContent = `Avec ${autre}`;
+  $('#t-mode').textContent = vente ? `Vente · ${vente.prix} J demandés` : 'Échange';
+  $('#t-mode').classList.toggle('vente', !!vente);
+  document.querySelectorAll('#part-lui .etiquette b').forEach((b) => (b.textContent = `${autre} donne`));
+  $('#etat-lui').lastChild.textContent = autre;
+  $('#tampon-lui').className = 'tampon'; $('#tampon-moi').className = 'tampon';
+  $('#table').hidden = false;
+  dessinerTable(true);
+  clearInterval(horloge);
+  horloge = setInterval(() => { T.reste--; $('#t-reste').textContent = mmss(T.reste); if (T.reste <= 0) finir('expire'); }, 1000);
+  // Vente : l'acheteur dit oui au prix demandé en posant ses jenny (bot), puis valide.
+  if (vente && jeVends) setTimeout(() => { T.lui.jenny = vente.prix; dessinerTable(); setTimeout(() => valider('lui'), 1300); }, 1500);
+}
+function dessinerTable(tout = false, nouvelle = null) {
+  const posee = (c, moi) => `<button class="posee${c === nouvelle ? ' arrive' : ''}" data-carte="${c.id}" aria-label="${c.nom}${moi ? ', toucher pour retirer' : ''}">${carteHTML(c)}${moi && !(T.vente && T.jeVends) ? '<span class="retirer" aria-hidden="true">×</span>' : ''}</button>`;
+  $('#posees-lui').innerHTML = T.lui.cartes.map((c) => posee(c, false)).join('') || `<span class="vide-lui">${autre} compose sa part…</span>`;
+  const peutAjouter = !(T.vente && T.jeVends) && !(T.vente && !T.jeVends);
+  $('#posees-moi').innerHTML = T.moi.cartes.map((c) => posee(c, true)).join('') + (peutAjouter ? '<button class="ajouter" id="ajouter"><span>+</span>Carte</button>' : '');
+  $('#res-lui').textContent = resume(T.lui.cartes, T.lui.jenny);
+  $('#res-moi').textContent = resume(T.moi.cartes, T.moi.jenny);
+  $('#pile-lui').hidden = !T.lui.jenny && !(T.vente && T.jeVends);
+  $('#j-lui').textContent = T.lui.jenny; pieces($('#pieces-lui'), T.lui.jenny);
+  $('#j-moi').textContent = T.moi.jenny; pieces($('#pieces-moi'), T.moi.jenny);
+  $('#montants').innerHTML = [-10, 10, 50, 100].map((d) => `<button data-j="${d}" ${d < 0 && T.moi.jenny <= 0 ? 'disabled' : ''} ${d > 0 && T.moi.jenny + d > +$('#mes-jenny').textContent ? 'disabled' : ''}>${d > 0 ? '+' : '−'}${Math.abs(d)}</button>`).join('');
+  // Vente : le vendeur ne touche pas aux jenny ; l'acheteur peut baisser ou monter le prix (contre-proposition).
+  $('#montants').hidden = !!(T.vente && T.jeVends);
+  const note = $('#note-prix');
+  if (T.vente && !T.jeVends) { note.hidden = false; note.textContent = T.moi.jenny === T.vente.prix ? `Prix demandé : ${T.vente.prix} J` : `Ta contre-proposition : ${T.moi.jenny} J (prix demandé ${T.vente.prix} J)`; }
+  else if (T.vente && T.jeVends) { note.hidden = false; note.textContent = `Ton prix : ${T.vente.prix} J`; }
+  else note.hidden = true;
+  if (T.vente && T.jeVends && !T.lui.jenny) { $('#j-lui').textContent = '…'; }
+  $('#etat-lui').classList.toggle('ok', T.lui.valide);
+  $('#etat-moi').classList.toggle('ok', T.moi.valide);
+  majBouton();
+}
+function majBouton() {
+  const b = $('#maintenir'), vide = (p) => !p.cartes.length && !p.jenny;
+  b.classList.toggle('fait', T.moi.valide);
+  let indice = '';
+  if (T.moi.valide) { $('#m-texte').textContent = 'Validé'; b.disabled = true; indice = T.lui.valide ? '' : `En attente de ${autre}. Toute modification retire les deux tampons.`; }
+  else if (vide(T.moi)) { $('#m-texte').textContent = 'Maintiens pour valider'; b.disabled = true; indice = 'Pose une carte ou des jenny : chacun doit donner quelque chose.'; }
+  else if (vide(T.lui)) { $('#m-texte').textContent = 'Maintiens pour valider'; b.disabled = true; indice = `${autre} n’a encore rien posé.`; }
+  else { $('#m-texte').textContent = 'Maintiens pour valider'; b.disabled = false; indice = T.lui.valide ? `${autre} a validé. À toi.` : ''; }
+  $('#indice').textContent = indice;
+}
+// Toute modification d'une part fait tomber les deux tampons (RG-11.1 amendé).
+function modifie() {
+  T.reste = 180; $('#t-reste').textContent = mmss(T.reste);
+  for (const k of ['moi', 'lui']) if (T[k].valide) { T[k].valide = false; const t = $(`#tampon-${k}`); t.className = 'tampon'; void t.offsetWidth; t.classList.add('tombe'); }
+}
+function valider(qui) {
+  if (T[qui].valide) return;
+  T[qui].valide = true; T.reste = 180;
+  const t = $(`#tampon-${qui}`); t.className = 'tampon'; void t.offsetWidth; t.classList.add('pose');
+  vibrer(qui === 'moi' ? 40 : 20);
+  dessinerTable();
+  if (T.moi.valide && T.lui.valide) setTimeout(() => finir('conclu'), 650);
+}
+$('#montants').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-j]'); if (!b || b.disabled) return;
+  T.moi.jenny = Math.max(0, T.moi.jenny + +b.dataset.j); modifie(); dessinerTable();
+});
+$('#posees-moi').addEventListener('click', (e) => {
+  if (e.target.closest('#ajouter')) return ouvrirTiroir('table');
+  const p = e.target.closest('[data-carte]'); if (!p || (T.vente)) return;
+  T.moi.cartes = T.moi.cartes.filter((c) => c.id !== p.dataset.carte); modifie(); dessinerTable();
+});
+$('#posees-lui').addEventListener('click', (e) => {
+  const p = e.target.closest('[data-carte]'); if (!p) return;
+  $('#fiche-carte').innerHTML = carteHTML(T.lui.cartes.find((c) => c.id === p.dataset.carte));
+  $('#fiche').hidden = false;
+});
+$('#fiche').addEventListener('click', () => ($('#fiche').hidden = true));
+$('#t-annuler').addEventListener('click', () => finir('annule-moi'));
+
+// Appui long : 0,7 s pour poser le tampon ; relâcher avant annule.
+(function () {
+  const b = $('#maintenir'), r = $('#remplit');
+  let a = null;
+  const debut = (e) => {
+    if (b.disabled || a) return;
+    e.preventDefault?.();
+    a = r.animate([{ scale: '0 1' }, { scale: '1 1' }], { duration: reduit ? 300 : 700, easing: 'linear', fill: 'forwards' });
+    a.onfinish = () => { a = null; r.getAnimations().forEach((x) => x.cancel()); valider('moi'); };
+  };
+  const fin = () => { if (!a) return; a.onfinish = null; a.reverse(); const x = a; a = null; x.onfinish = () => x.cancel(); $('#indice').textContent = 'Garde le doigt appuyé jusqu’au bout.'; };
+  b.addEventListener('pointerdown', debut);
+  b.addEventListener('pointerup', fin); b.addEventListener('pointerleave', fin); b.addEventListener('pointercancel', fin);
+  b.addEventListener('contextmenu', (e) => e.preventDefault());
+  b.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) { e.preventDefault(); debut(e); } });
+  b.addEventListener('keyup', (e) => { if (e.key === 'Enter' || e.key === ' ') fin(); });
+})();
+
+// ---------- Leolio (bot du prototype) ----------
+function botPose() {
+  if ($('#table').hidden) return;
+  const libre = SES_CARTES.find((c) => !T.lui.cartes.includes(c)); if (!libre) return;
+  T.lui.cartes.push(libre); modifie(); dessinerTable(false, libre);
+}
+$('#p-pose').addEventListener('click', botPose);
+$('#p-jenny').addEventListener('click', () => { if ($('#table').hidden) return; T.lui.jenny += 20; modifie(); dessinerTable(); });
+$('#p-retire').addEventListener('click', () => { if ($('#table').hidden || !T.lui.cartes.length) return; T.lui.cartes.pop(); modifie(); dessinerTable(); });
+$('#p-valide').addEventListener('click', () => { if ($('#table').hidden || (!T.lui.cartes.length && !T.lui.jenny)) return; valider('lui'); });
+$('#p-annule').addEventListener('click', () => { if (!$('#table').hidden) finir('annule'); });
+$('#p-expire').addEventListener('click', () => { if (!$('#table').hidden) finir('expire'); });
+
+// ---------- Tiroir ----------
+let tiroirMode = 'table', choisis = new Set(), prix = 50;
+function ouvrirTiroir(mode) {
+  tiroirMode = mode;
+  choisis = new Set(mode === 'table' ? T.moi.cartes.map((c) => c.id) : []);
+  $('#ti-titre').textContent = mode === 'vente' ? `Que vends-tu à ${autre} ?` : 'Tes cartes';
+  $('#ti-prix').hidden = mode !== 'vente';
+  const groupe = (titre, liste) => liste.length ? `<h3>${titre}</h3><div class="grille">${liste.map((c) => `<button class="choix" data-id="${c.id}" aria-pressed="${choisis.has(c.id)}">${carteHTML(c)}<span class="ou">${c.ou}</span></button>`).join('')}</div>` : '';
+  const vendables = MES; // tout se vend : cartes, sorts, objets
+  $('#ti-defile').innerHTML = groupe('Cartes', vendables.filter((c) => c.genre === 'designee')) + groupe('Sorts', vendables.filter((c) => c.genre === 'sort')) + groupe('Objets', vendables.filter((c) => c.genre === 'objet'));
+  majTiroir();
+  $('#voile').hidden = false; $('#tiroir').hidden = false;
+}
+function majTiroir() {
+  $('#ti-compte').textContent = tiroirMode === 'vente' ? '1 carte' : `${choisis.size} / 30`;
+  $('#prix-val').textContent = prix;
+  $('#prix-montants').innerHTML = [-10, 10, 50].map((d) => `<button data-p="${d}" ${d < 0 && prix <= 10 ? 'disabled' : ''}>${d > 0 ? '+' : '−'}${Math.abs(d)}</button>`).join('');
+  const ok = $('#ti-ok');
+  if (tiroirMode === 'vente') { const c = MES.find((x) => choisis.has(x.id)); ok.disabled = !c; ok.textContent = c ? `Proposer à ${autre} : ${prix} J` : 'Choisis la carte à vendre'; }
+  else { ok.disabled = false; ok.textContent = 'Poser sur la table'; }
+  document.querySelectorAll('#ti-defile .choix').forEach((b) => b.setAttribute('aria-pressed', choisis.has(b.dataset.id)));
+}
+$('#ti-defile').addEventListener('click', (e) => {
+  const b = e.target.closest('.choix'); if (!b) return;
+  const id = b.dataset.id;
+  if (tiroirMode === 'vente') choisis = new Set([id]);
+  else if (choisis.has(id)) choisis.delete(id);
+  else if (choisis.size < 30) choisis.add(id);
+  majTiroir();
+});
+$('#prix-montants').addEventListener('click', (e) => { const b = e.target.closest('[data-p]'); if (!b || b.disabled) return; prix = Math.max(10, prix + +b.dataset.p); majTiroir(); });
+function fermerTiroir() { $('#voile').hidden = true; $('#tiroir').hidden = true; }
+$('#voile').addEventListener('click', fermerTiroir);
+$('#ti-ok').addEventListener('click', () => {
+  if (tiroirMode === 'vente') { const c = MES.find((x) => choisis.has(x.id)); fermerTiroir(); proposer(autre, { carte: c, prix }); return; }
+  const avant = new Set(T.moi.cartes.map((c) => c.id));
+  const apres = MES.filter((c) => choisis.has(c.id));
+  const change = apres.length !== avant.size || apres.some((c) => !avant.has(c.id));
+  T.moi.cartes = apres;
+  if (change) modifie();
+  fermerTiroir(); dessinerTable(false, apres.find((c) => !avant.has(c.id)));
+});
+addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!$('#fiche').hidden) $('#fiche').hidden = true; else if (!$('#tiroir').hidden) fermerTiroir(); } });
+
+function fermerTout() {
+  clearInterval(minuteur); clearInterval(horloge); clearTimeout(reponseAuto);
+  ['#attente', '#appel', '#table', '#voile', '#tiroir', '#fiche'].forEach((s) => ($(s).hidden = true));
+  $('#annonce').classList.remove('visible');
+}
+
+// ---------- Fins ----------
+function finir(issue) {
+  clearInterval(horloge);
+  if (issue === 'conclu') return trade();
+  fermerTout();
+  vibrer(issue === 'annule-moi' ? 0 : [60, 60, 60]);
+  annoncer({
+    'annule': `${autre} a annulé l’échange. Rien n’a bougé.`,
+    'annule-moi': 'Tu as annulé l’échange. Rien n’a bougé.',
+    'expire': 'L’échange a expiré : 3 minutes sans action. Rien n’a bougé.',
+  }[issue]);
+}
+
+// ---------- Effets (canvas) ----------
+const cv = $('#fx'), ctx = cv.getContext('2d');
+let dpr = 1, parts = [], ondes = [], image = 0, dernier = 0, suivis = [];
+function taille() { dpr = Math.min(1.5, devicePixelRatio || 1); cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; }
+addEventListener('resize', taille); taille();
+const lueurs = {};
+function lueur(col) {
+  if (lueurs[col]) return lueurs[col];
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d'), rg = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  rg.addColorStop(0, col); rg.addColorStop(0.35, col + '99'); rg.addColorStop(1, col + '00');
+  g.fillStyle = rg; g.fillRect(0, 0, 64, 64); return (lueurs[col] = c);
+}
+const MAX_PARTS = 320;
+function etincelles(x, y, n, col, force = 1) {
+  lancerBoucle();
+  n = Math.min(n, MAX_PARTS - parts.length);
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, v = (240 + Math.random() * 620) * force;
+    parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, col, vie: 0, max: 0.45 + Math.random() * 0.7, t: 2 + Math.random() * 4, g: 60 });
+  }
+}
+function onde(x, y, col, max = 1.4) { lancerBoucle(); ondes.push({ x, y, col, vie: 0, max: 0.55, rmax: Math.max(innerWidth, innerHeight) * 0.55 * max }); }
+function boucle(now) {
+  const dt = Math.max(0, Math.min(0.05, (now - dernier) / 1000)); dernier = now;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, innerWidth, innerHeight);
+  for (const [el, cols] of suivis) {
+    const [ox, oy] = centre(el);
+    for (let i = 0; i < 5 && parts.length < MAX_PARTS; i++) parts.push({ x: ox + (Math.random() - 0.5) * 18, y: oy + (Math.random() - 0.5) * 18, vx: (Math.random() - 0.5) * 50, vy: (Math.random() - 0.5) * 50, col: cols[i % cols.length], vie: 0, max: 0.3 + Math.random() * 0.35, t: 3 + Math.random() * 4, g: 0 });
+  }
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i]; p.vie += dt;
+    const a = 1 - p.vie / p.max; if (a <= 0) { parts.splice(i, 1); continue; }
+    p.vx *= 0.94; p.vy = p.vy * 0.94 + p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+    const t = p.t * (0.4 + a * 0.8), l = lueur(p.col);
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a;
+    ctx.drawImage(l, p.x - t * 3, p.y - t * 3, t * 6, t * 6);
+  }
+  for (let i = ondes.length - 1; i >= 0; i--) {
+    const o = ondes[i]; o.vie += dt; const k = o.vie / o.max; if (k >= 1) { ondes.splice(i, 1); continue; }
+    const r = o.rmax * (1 - Math.pow(1 - k, 3));
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (1 - k) * 0.9; ctx.strokeStyle = o.col; ctx.lineWidth = 10 * (1 - k) + 1;
+    ctx.beginPath(); ctx.arc(o.x, o.y, r, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  image = parts.length || ondes.length || suivis.length ? requestAnimationFrame(boucle) : 0;
+}
+const lancerBoucle = () => { if (!image && !reduit) { dernier = performance.now(); image = requestAnimationFrame(boucle); } };
+
+// ---------- Cinématique « TRADE ! » : comètes croisées ----------
+let anims = [], attentes = new Set(), saute = false, phase = 'repos', attenteToucher = null, revelA = 0;
+const A = (el, k, o) => {
+  const a = el.animate(k, { fill: 'both', easing: 'cubic-bezier(.16,1,.3,1)', ...o, duration: reduit ? 1 : o.duration });
+  anims.push(a);
+  const fin = k[k.length - 1];
+  if (fin.opacity !== undefined) el.style.opacity = String(fin.opacity);
+  return a;
+};
+function pause(ms) {
+  return new Promise((res) => {
+    if (saute || reduit) return res();
+    const f = () => { clearTimeout(t); attentes.delete(f); res(); };
+    const t = setTimeout(f, ms); attentes.add(f);
+  });
+}
+const finAnim = (a) => a.finished.catch(() => {});
+function sauter() { if (saute) return; saute = true; [...attentes].forEach((f) => f()); }
+function taper(el, texte) {
+  el.textContent = '';
+  if (reduit || saute) { el.textContent = texte; return Promise.resolve(); }
+  return new Promise((res) => { let n = 0; const pas = () => { if (saute) { el.textContent = texte; return res(); } el.textContent = texte.slice(0, ++n); n >= texte.length ? res() : setTimeout(pas, 22); }; pas(); });
+}
+const cine = $('#cine');
+function toucher() { return new Promise((res) => { attenteToucher = res; }); }
+cine.addEventListener('pointerdown', () => {
+  if (phase === 'intro') sauter();
+  else if (phase === 'revele' && !attenteToucher) sauter(); // pendant le texte : l'afficher d'un coup
+  else if (phase === 'revele' && attenteToucher && performance.now() - revelA > 350) { const r = attenteToucher; attenteToucher = null; r(); }
+});
+addEventListener('keydown', (e) => { if (cine.classList.contains('joue') && ['Enter', ' ', 'Escape'].includes(e.key)) { e.preventDefault(); cine.dispatchEvent(new PointerEvent('pointerdown')); } });
+const liste = (cartes, jenny) => {
+  const b = cartes.map((c) => enPhrase(c.nom));
+  if (jenny) b.push(`${jenny} J`);
+  return b.length > 1 ? `${b.slice(0, -1).join(', ')} et ${b[b.length - 1]}` : b[0];
+};
+
+async function trade() {
+  const donne = { cartes: [...T.moi.cartes], jenny: T.moi.jenny }, recu = { cartes: [...T.lui.cartes], jenny: T.lui.jenny };
+  saute = false; phase = 'intro'; anims.forEach((a) => a.cancel()); anims = []; parts = []; ondes = []; suivis = [];
+  const nuit = $('#c-nuit'), lignes = $('#c-lignes'), cri = $('#c-cri'), flash = $('#c-flash'), dlg = $('#c-dialogue');
+  const evMoi = $('#ev-moi'), evLui = $('#ev-lui'), oMoi = $('#orbe-moi'), oLui = $('#orbe-lui'), recues = $('#recues');
+  [nuit, lignes, cri, flash, dlg, evMoi, evLui, oMoi, oLui].forEach((e) => (e.style.opacity = '0'));
+  $('#c-indice').classList.remove('visible'); $('#c-texte').textContent = '';
+  const eventail = (cartes, jenny, cote) => {
+    const n = cartes.length + (jenny ? 1 : 0);
+    const items = cartes.slice(0, 5).map((c) => carteHTML(c));
+    if (jenny) items.push(`<div class="jeton"><span class="pieces"></span>${jenny} J</div>`);
+    return items.map((h, i) => { const k = i - (Math.min(n, 6) - 1) / 2; return `<div style="rotate:${(cote === 'lui' ? 180 : 0) + k * 9}deg;translate:0 ${Math.abs(k) * 6 * (cote === 'lui' ? -1 : 1)}px">${h}</div>`; }).join('');
+  };
+  evMoi.innerHTML = eventail(donne.cartes, donne.jenny, 'moi');
+  evLui.innerHTML = eventail(recu.cartes, recu.jenny, 'lui');
+  evMoi.querySelectorAll('.pieces').forEach((p) => pieces(p, donne.jenny));
+  evLui.querySelectorAll('.pieces').forEach((p) => pieces(p, recu.jenny));
+  recues.innerHTML = recu.cartes.slice(0, 6).map((c) => `<div class="recue"><div class="retourne">${carteHTML(c)}${DOS}</div></div>`).join('') + (recu.jenny ? `<div class="gain">+${recu.jenny} J</div>` : '');
+  cine.classList.add('joue', 'intro');
+  vibrer([30, 40, 80]);
+
+  // 1. La nuit tombe, la table disparaît ; les deux parts flottent face à face.
+  A(nuit, [{ opacity: 0 }, { opacity: 1 }], { duration: 320 });
+  A(lignes, [{ opacity: 0, scale: 1.3 }, { opacity: 0.22, scale: 1 }], { duration: 500 });
+  A(evLui, [{ opacity: 0, translate: '-50% -40px' }, { opacity: 1, translate: '-50% 0' }], { duration: 480 });
+  A(evMoi, [{ opacity: 0, translate: '-50% 40px' }, { opacity: 1, translate: '-50% 0' }], { duration: 480 });
+  await pause(380);
+  $('#table').hidden = true;
+  // 2. « TRADE ! »
+  A(cri, [{ opacity: 0, scale: 2.4, rotate: '-8deg' }, { opacity: 1, scale: 1, rotate: '-4deg' }], { duration: 300, easing: 'cubic-bezier(.3,1.5,.5,1)' });
+  await pause(260); vibrer(60);
+  await pause(560);
+  A(cri, [{ opacity: 1 }, { opacity: 0, scale: 1.15 }], { duration: 260 });
+  // 3. Les deux parts s'embrasent.
+  evMoi.classList.add('embrase'); evLui.classList.add('embrase');
+  etincelles(...centre(evMoi), 40, '#ffd877', 0.6); etincelles(...centre(evLui), 40, '#cfe0ff', 0.6);
+  await pause(520);
+  // 4. Elles se ramassent en comètes : la tienne monte (or), la sienne descend (bleue).
+  const [mx, my] = centre(evMoi), [lx, ly] = centre(evLui), cx = innerWidth / 2, cy = innerHeight / 2;
+  oLui.classList.add('froide');
+  A(evMoi, [{ opacity: 1, scale: 1 }, { opacity: 0, scale: 0.2 }], { duration: 260, easing: 'ease-in' });
+  A(evLui, [{ opacity: 1, scale: 1 }, { opacity: 0, scale: 0.2 }], { duration: 260, easing: 'ease-in' });
+  A(oMoi, [{ opacity: 0, transform: `translate(${mx}px,${my}px) scale(.3)` }, { opacity: 1, transform: `translate(${mx}px,${my}px) scale(1)` }], { duration: 240 });
+  A(oLui, [{ opacity: 0, transform: `translate(${lx}px,${ly}px) scale(.3)` }, { opacity: 1, transform: `translate(${lx}px,${ly}px) scale(1)` }], { duration: 240 });
+  await pause(240);
+  if (!saute) { suivis = [[oMoi, ['#ffd877', '#ffffff', '#ffb347']], [oLui, ['#8fb2ff', '#ffffff', '#cfe0ff']]]; lancerBoucle(); }
+  // Trajectoires en S : elles se frôlent au centre.
+  const d = 900;
+  const vol = (o, x0, y0, x1, y1, dx) => A(o, [
+    { transform: `translate(${x0}px,${y0}px) scale(1)` },
+    { transform: `translate(${cx + dx}px,${(y0 + cy) / 2}px) scale(1.05)`, offset: 0.3 },
+    { transform: `translate(${cx}px,${cy}px) scale(1.25)`, offset: 0.5 },
+    { transform: `translate(${cx - dx}px,${(y1 + cy) / 2}px) scale(1.05)`, offset: 0.7 },
+    { transform: `translate(${x1}px,${y1}px) scale(1)` },
+  ], { duration: d, easing: 'cubic-bezier(.45,0,.55,1)' });
+  vol(oMoi, mx, my, lx, ly - 30, -60);
+  vol(oLui, lx, ly, cx, innerHeight * 0.44, 60);
+  // 5. Le croisement : éclair au centre.
+  await pause(d / 2);
+  A(flash, [{ opacity: 0.85 }, { opacity: 0 }], { duration: 360, easing: 'ease-out' });
+  onde(cx, cy, '#ffe9b0', 1.3); etincelles(cx, cy, 90, '#ffffff', 1); etincelles(cx, cy, 50, '#ffd877', 0.8);
+  vibrer(90);
+  await pause(d / 2);
+  suivis = [];
+  // 6. Ta comète disparaît chez lui ; la sienne éclate devant toi : ses cartes arrivent de dos.
+  A(oMoi, [{ opacity: 1 }, { opacity: 0, scale: 2 }], { duration: 260 });
+  A(oLui, [{ opacity: 1 }, { opacity: 0 }], { duration: 200 });
+  etincelles(cx, innerHeight * 0.44, 50, '#cfe0ff', 0.7);
+  phase = 'revele';
+  const lesRecues = [...recues.querySelectorAll('.recue')];
+  lesRecues.forEach((r, i) => {
+    A(r, [{ opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1 }], { duration: 380, delay: i * 90, easing: 'cubic-bezier(.3,1.4,.5,1)' });
+    A(r.querySelector('.retourne'), [{ transform: 'rotateY(180deg)' }, { transform: 'rotateY(180deg)', offset: 0.35 }, { transform: 'rotateY(0deg)' }], { duration: 1000, delay: 250 + i * 160 });
+  });
+  const gain = recues.querySelector('.gain');
+  if (gain) A(gain, [{ opacity: 0, translate: '0 16px' }, { opacity: 1, translate: '0 0' }], { duration: 420, delay: 600 + lesRecues.length * 160 });
+  if (!saute) await pause(900 + lesRecues.length * 160);
+  else { anims.forEach((a) => a.finish()); }
+  cine.classList.remove('intro');
+  // 7. Le jeu dit ce qui a bougé.
+  const nouv = +$('#mes-jenny').textContent - donne.jenny + recu.jenny;
+  $('#mes-jenny').textContent = nouv;
+  A(dlg, [{ opacity: 0, translate: '-50% 20px' }, { opacity: 1, translate: '-50% 0' }], { duration: 300 });
+  await taper($('#c-texte'), `Tu as reçu ${liste(recu.cartes, recu.jenny)}. Tu as donné ${liste(donne.cartes, donne.jenny)}.`);
+  $('#c-indice').textContent = recu.cartes.length ? 'Touche pour ranger dans ton Book' : 'Touche pour fermer';
+  $('#c-indice').classList.add('visible');
+  revelA = performance.now();
+  await toucher();
+  // 8. Les cartes filent vers l'onglet Book ; « +2 ».
+  phase = 'fin';
+  const [bx, by] = centre($('#onglet-livre'));
+  A(dlg, [{ opacity: 1 }, { opacity: 0 }], { duration: 200 });
+  if (gain) A(gain, [{ opacity: 1 }, { opacity: 0 }], { duration: 200 });
+  const vols = lesRecues.map((r, i) => {
+    const [x, y] = centre(r);
+    return A(r, [{ transform: 'translate(0,0) scale(1)', opacity: 1 }, { transform: `translate(${bx - x}px,${by - y}px) scale(.18) rotate(${i % 2 ? 14 : -14}deg)`, opacity: 0.2 }], { duration: 560, delay: i * 70, easing: 'cubic-bezier(.55,0,.75,.3)' });
+  });
+  A(nuit, [{ opacity: 1 }, { opacity: 0 }], { duration: 520, delay: 200 });
+  A(lignes, [{ opacity: 0.22 }, { opacity: 0 }], { duration: 300 });
+  await Promise.all(vols.map(finAnim));
+  if (recu.cartes.length) {
+    const p = document.createElement('span'); p.className = 'plus-un'; p.textContent = `+${recu.cartes.length}`;
+    $('#onglet-livre').append(p);
+    p.animate([{ opacity: 0, translate: '-50% 8px' }, { opacity: 1, translate: '-50% 0', offset: 0.2 }, { opacity: 1, offset: 0.8 }, { opacity: 0 }], { duration: 1600 }).finished.then(() => p.remove());
+    vibrer(30);
+  }
+  await pause(320);
+  cine.classList.remove('joue'); phase = 'repos'; anims.forEach((a) => a.cancel()); anims = [];
+  evMoi.classList.remove('embrase'); evLui.classList.remove('embrase');
+  // Retour à la page : la paire attend 10 min (RG-11.3), le dernier échange est noté.
+  const j = JOUEURS.find((x) => x.nom === autre); if (j) j.attente = 600;
+  dessinerJoueurs();
+  $('#derniers').insertAdjacentHTML('afterbegin', `<div class="dernier"><span>${autre} : ${resume(donne.cartes, donne.jenny)} contre ${resume(recu.cartes, recu.jenny)}</span><span>à l’instant</span></div>`);
+  // Ma réserve perd ce que j'ai donné.
+  for (const c of donne.cartes) { const i = MES.findIndex((x) => x.id === c.id); if (i >= 0) MES.splice(i, 1); }
+}
+
+// ---------- Commandes du prototype par-dessus les écrans plein écran ----------
+(function () {
+  const btn = $('#proto-btn'), proto = $('.proto');
+  const ouvert = () => ['#attente', '#appel', '#table'].some((x) => !$(x).hidden);
+  setInterval(() => { btn.hidden = !ouvert() || cine.classList.contains('joue'); if (btn.hidden) proto.classList.remove('flottant'); }, 250);
+  btn.addEventListener('click', () => { const f = proto.classList.toggle('flottant'); btn.setAttribute('aria-expanded', f); btn.textContent = f ? 'Fermer' : 'Prototype'; });
+  proto.addEventListener('click', (e) => { if (e.target.closest('button')) { proto.classList.remove('flottant'); btn.textContent = 'Prototype'; btn.setAttribute('aria-expanded', 'false'); } });
+})();
+</script>

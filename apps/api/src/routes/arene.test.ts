@@ -72,6 +72,27 @@ describe('Arène de Soufrabi (amendement 2026-10-09)', () => {
     expect((await entrer(kirua)).json()).toMatchObject({ ok: true });
   });
 
+  it('page ⑮ : le joueur lit l’arène (mise, chances, combat en cours, prochaine tentative, dernier combat)', async () => {
+    const moi = (j: J) => t.app.inject({ url: `/parties/${t.partieId}/arene/moi`, headers: t.bearer(j.token) });
+    expect((await t.app.inject({ url: `/parties/${t.partieId}/arene/moi`, headers: t.bearer(pnj) })).statusCode).toBe(403);
+    // Kirua a un défi en cours (entrée juste au-dessus).
+    expect((await moi(kirua)).json()).toMatchObject({ ok: true, mise: 30, delaiMin: 15, chances: { A: 50, S: 40, SS: 10 }, enCours: { mise: 30, depuisMs: 0 }, prochaineDansMs: 0 });
+    // Gon a perdu son dernier combat : 15 min depuis l'entrée.
+    const g = (await moi(gon)).json();
+    expect(g).toMatchObject({ enCours: null, prochaineDansMs: 15 * MIN, dernier: { etat: 'perdue', rang: null } });
+  });
+
+  it('page ⑮ : l’issue arrive au joueur, carte décrite comme dans le Book et délai avant la prochaine tentative', async () => {
+    const recues: { a: string; evenement: string; data: any }[] = [];
+    t.app.gq.bus.on((e) => recues.push({ a: e.a.type === 'joueur' ? e.a.id : e.a.type, evenement: e.evenement, data: e.data }));
+    const id = (await t.db.select().from(arene).where(eq(arene.joueurId, kirua.id))).find((x) => x.etat === 'en_cours')!.id;
+    t.clock.t += 2 * MIN;
+    await post(`/arene/${id}/issue`, pnj, { victoire: true });
+    const ev = recues.find((e) => e.a === kirua.id && e.evenement === 'arene');
+    expect(ev?.data).toMatchObject({ etat: 'gagnee', prochaineDansMs: 13 * MIN, gain: { kind: 'carte', numero: expect.any(Number), limite: expect.any(Number) } });
+    expect(['A', 'S', 'SS']).toContain(ev?.data.gain.rang);
+  });
+
   it('RG-3.1 : entrées, issues et annulation au journal, avec l’arbitre', async () => {
     const lignes = await t.db.select().from(journal).where(eq(journal.partieId, t.partieId));
     const arenes = lignes.filter((l) => l.action.startsWith('arene_'));

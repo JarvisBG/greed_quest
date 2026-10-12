@@ -1,7 +1,7 @@
 // Arène de Soufrabi (amendement 2026-10-09, Sivraj) : le PNJ scanne la licence du joueur, qui paie la mise ;
 // il arbitre le défi puis donne l'issue. Victoire = tirage A / S / SS (limites RG-8.2), défaite = mise perdue.
 // Livre plein : la carte gagnée déborde, comme pour un checkpoint (décision validée, PROGRESS.md).
-import { addItem, arenaReward, enterArena, layoutBook, objetDeRepli } from '@gq/engine';
+import { addItem, ARENE_DRAW_CONFIG, arenaReward, enterArena, layoutBook, objetDeRepli } from '@gq/engine';
 import { AreneAnnulation, AreneEntree, AreneIssue, RANK_POINTS } from '@gq/shared';
 import { and, desc, eq } from 'drizzle-orm';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
@@ -9,7 +9,7 @@ import { STAFF, requireRole } from '../auth/guard.js';
 import { verifyLicence } from '../core/licence.js';
 import { paramsOf } from '../core/params.js';
 import type { ActionCtx } from '../core/runner.js';
-import { catalogForDraw, limitesOf, loadBook, loadCatalogue, loadJoueur, saveBooks, updateJoueur } from '../core/state.js';
+import { catalogForDraw, limitesOf, loadBook, loadCatalogue, loadJoueur, saveBooks, updateJoueur, vueCarte } from '../core/state.js';
 import { arene, type GainArene } from '../db/schema.js';
 import { introuvable } from '../errors.js';
 import { refus, send } from '../http.js';
@@ -21,6 +21,8 @@ type PI = { Params: { partieId: string; id: string } };
 type TentativeRow = typeof arene.$inferSelect;
 
 const gameOpen = (etat: string) => etat === 'en_cours' || etat === 'phase_finale';
+/** Temps avant la prochaine tentative (délai compté depuis l'entrée, amendement 2026-10-09). */
+const prochaineDans = (entreeA: number, delaiMin: number, now: number) => Math.max(0, entreeA + delaiMin * 60_000 - now);
 
 export async function areneRoutes(app: FastifyInstance) {
   const { runner } = app.gq;
@@ -78,7 +80,8 @@ export async function areneRoutes(app: FastifyInstance) {
       if (!victoire) {
         await c.tx.update(arene).set({ etat: 'perdue', finA: c.now }).where(eq(arene.id, t.id));
         await c.log({ action: 'arene_issue', resultat: 'perdue', details: { tentativeId: t.id, joueurId: j.id, mise: t.mise } });
-        c.emit({ type: 'joueur', id: j.id }, 'arene', { id: t.id, etat: 'perdue', mise: t.mise });
+        const pd = prochaineDans(t.entreeA, (await paramsOf(c.tx, c.partie)).areneDelaiMin, c.now);
+        c.emit({ type: 'joueur', id: j.id }, 'arene', { id: t.id, etat: 'perdue', mise: t.mise, prochaineDansMs: pd });
         return { ok: true as const, joueur: j.pseudo, gain: null };
       }
       const cat = await loadCatalogue(c.tx, c.partie.id);
@@ -86,12 +89,15 @@ export async function areneRoutes(app: FastifyInstance) {
       const g = arenaReward(await catalogForDraw(c.tx, cat, c.partie.id), limitesOf(p), c.rng);
       let gain: GainArene;
       let vue: { kind: 'carte'; nom: string; rang: string } | { kind: 'jenny'; montant: number; objet?: string };
+      // Page ⑮ : la carte gagnée telle que le Book la montre (numéro, texte, limite), pour la cinématique.
+      let carte: ReturnType<typeof vueCarte> | null = null;
       const before = await loadBook(c.tx, j.id);
       if (g.kind === 'carte') {
         const after = addItem(before, { kind: 'carte', id: newId(), cardId: g.cardId, origine: { type: 'arene', tentativeId: t.id }, obtenuA: c.now });
         await saveBooks(c.tx, c.partie.id, c.now, [{ joueurId: j.id, before, after }]);
         gain = { kind: 'carte', carteId: g.cardId, rang: g.rank };
         vue = { kind: 'carte', nom: cat.nomDe(g.cardId), rang: g.rank };
+        carte = vueCarte(cat, g.cardId, limitesOf(p));
         if (RANK_POINTS[g.rank] >= RANK_POINTS.S) c.emit({ type: 'tracker' }, 'fil', { type: 'arene', pseudo: j.pseudo, carte: vue.nom, rang: g.rank, heureJeu: c.now });
         const distinctes = layoutBook(after, cat.designees).designes.filter((d) => d.slot.etat === 'plein').length;
         c.emit({ type: 'tracker' }, 'progression', { joueurId: j.id, pseudo: j.pseudo, cartes: distinctes });
@@ -111,7 +117,7 @@ export async function areneRoutes(app: FastifyInstance) {
       }
       await c.tx.update(arene).set({ etat: 'gagnee', gain, finA: c.now }).where(eq(arene.id, t.id));
       await c.log({ action: 'arene_issue', resultat: 'gagnee', details: { tentativeId: t.id, joueurId: j.id, gain } });
-      c.emit({ type: 'joueur', id: j.id }, 'arene', { id: t.id, etat: 'gagnee', gain: vue });
+      c.emit({ type: 'joueur', id: j.id }, 'arene', { id: t.id, etat: 'gagnee', gain: carte ? { ...vue, ...carte, rang: vue.kind === 'carte' ? vue.rang : null } : vue, prochaineDansMs: prochaineDans(t.entreeA, p.areneDelaiMin, c.now) });
       return { ok: true as const, joueur: j.pseudo, gain: vue };
     });
     return send(reply, r);
@@ -131,6 +137,37 @@ export async function areneRoutes(app: FastifyInstance) {
       return { ok: true as const, rembourse: t.mise };
     });
     return send(reply, r);
+  });
+
+  // Page ⑮ : ce que le joueur voit de l'arène (affiche, combat en cours, prochaine tentative, dernier combat).
+  app.get<P>('/parties/:partieId/arene/moi', async (req) => {
+    const { partieId } = req.params;
+    const s = requireRole(req, partieId, 'joueur');
+    return runner.run(partieId, { type: 'joueur', id: s.sub }, async (c) => {
+      const p = await paramsOf(c.tx, c.partie);
+      const lignes = await c.tx.select().from(arene).where(eq(arene.joueurId, s.sub)).orderBy(desc(arene.entreeA)).limit(5);
+      const enCoursRow = lignes.find((t) => t.etat === 'en_cours') ?? null;
+      // Une entrée annulée ne compte pas dans le délai (même règle qu'à l'entrée).
+      const derniere = lignes[0] && lignes[0].etat !== 'annulee' ? lignes[0] : null;
+      const finie = lignes.find((t) => t.etat === 'gagnee' || t.etat === 'perdue') ?? null;
+      const cat = finie?.gain?.kind === 'carte' ? await loadCatalogue(c.tx, partieId) : null;
+      return {
+        ok: true as const,
+        mise: p.areneMiseJ,
+        delaiMin: p.areneDelaiMin,
+        chances: ARENE_DRAW_CONFIG.rangs.standard,
+        enCours: enCoursRow ? { id: enCoursRow.id, mise: enCoursRow.mise, depuisMs: c.now - enCoursRow.entreeA } : null,
+        prochaineDansMs: derniere && !enCoursRow ? prochaineDans(derniere.entreeA, p.areneDelaiMin, c.now) : 0,
+        dernier: finie
+          ? {
+              etat: finie.etat as 'gagnee' | 'perdue',
+              ilYaMs: c.now - (finie.finA ?? finie.entreeA),
+              rang: finie.gain?.kind === 'carte' ? finie.gain.rang : null,
+              nom: finie.gain?.kind === 'carte' && cat ? cat.nomDe(finie.gain.carteId) : null,
+            }
+          : null,
+      };
+    });
   });
 
   // Défis en cours (console de l'arbitre).

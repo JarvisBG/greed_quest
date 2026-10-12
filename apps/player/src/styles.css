@@ -438,7 +438,10 @@ p { margin: 0; }
 }
 @media (hover: hover) { .ville:hover { background: var(--case-2); } }
 .ville:active { transform: translateY(2px); }
-.ville b { font: 400 clamp(14px, 4vw, 18px)/1.1 var(--f-titre); overflow-wrap: anywhere; }
+.ville { container-type: inline-size; }
+/* Trois villes côte à côte (Soufrabi, page ⑮) : le nom suit la largeur du bouton plutôt que de se couper. */
+.ville b { font: 400 min(18px, 14cqi)/1.1 var(--f-titre); white-space: nowrap; }
+@media (max-width: 420px) { .ville { padding: 8px 6px; } .ville span { font-size: 12px; } }
 .ville span { font: 600 13px/1.25 var(--f-texte); color: var(--encre-2); }
 .ville .etat-ville { font-weight: 800; color: var(--encre); }
 .ville.a-distance { background: var(--encre); color: var(--case); }

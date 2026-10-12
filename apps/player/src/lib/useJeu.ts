@@ -347,6 +347,8 @@ export function useJeu() {
           } else {
             notifier(a.etat === 'gagnee' ? 'Victoire à l’arène de Soufrabi !' : 'Défaite à l’arène de Soufrabi.');
             setIssuesArene((x) => (x.some((k) => k.id === a.id) ? x : [...x, { ...a, recuA: Date.now() }]));
+            // Le verdict remplace la boîte de l'entrée (« Que le combat commence ! ») encore ouverte.
+            setAlerte((x) => (x?.qui === 'Soufrabi' ? null : x));
           }
           void chargerArene();
           void rafraichir();

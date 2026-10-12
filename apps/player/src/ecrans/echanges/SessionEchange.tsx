@@ -459,7 +459,8 @@ function Posees({ cartes, cote, vide, ajouter, retirer, onToucher }: { cartes: P
     const larg = (el.lastElementChild as HTMLElement | null)?.offsetWidth || 64;
     setChevauche(n > 1 && n * larg + (n - 1) * 10 > w ? Math.min(0, (w - n * larg) / (n - 1)) - 2 : null);
   }, [cartes.length, !!ajouter]);
-  if (!cartes.length && !ajouter) return <span className="vide-lui">{vide}</span>;
+  // Ma part sans carte ni « + » (vente) : rien ; la sienne encore vide : « Leolio compose sa part… ».
+  if (!cartes.length && !ajouter) return vide ? <span className="vide-lui">{vide}</span> : null;
   return (
     <div ref={ref} className={`posees${chevauche !== null ? ' serre' : ''}`} style={chevauche !== null ? ({ '--chevauche': `${chevauche}px` } as CSSProperties) : undefined}>
       {ajouter && (
@@ -629,7 +630,7 @@ export function Tiroir({
           )}
           {vente ? (
             <button className="ech-btn-plein" disabled={!choisie || vente.envoi} onClick={() => choisie && vente.onProposer(choisie, prix)}>
-              {choisie ? `Proposer à ${vente.pour} : ${prix} J` : 'Choisis la carte à vendre'}
+              {vente.envoi ? `Envoi à ${vente.pour}…` : choisie ? `Proposer à ${vente.pour} : ${prix} J` : 'Choisis la carte à vendre'}
             </button>
           ) : (
             <button className="ech-btn-plein" onClick={() => onPoser?.([...choix])}>

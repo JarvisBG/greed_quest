@@ -23,7 +23,8 @@ const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 export function Echanges({ partieId, version, echange, recevoir, positionAction }: Props) {
   const [joueurs, setJoueurs] = useState<Joueur[] | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
-  const [envoi, setEnvoi] = useState(false);
+  /** Proposition en route (la position GPS peut prendre quelques secondes) : à qui. */
+  const [envoi, setEnvoi] = useState<string | null>(null);
   /** Joueur à qui l'on vend : le tiroir s'ouvre pour choisir la carte et le prix. */
   const [vendreA, setVendreA] = useState<Joueur | null>(null);
   const { livre } = useLivre(partieId, version);
@@ -45,7 +46,7 @@ export function Echanges({ partieId, version, echange, recevoir, positionAction 
 
   const proposer = async (j: Joueur, vente?: { itemId: string; prix: number }) => {
     setErreur(null);
-    setEnvoi(true);
+    setEnvoi(j.id);
     try {
       await api.post(`/parties/${partieId}/echanges`, { cibleId: j.id, position: await positionAction(), ...(vente ? { vente } : {}) });
       const r = await api.get<{ echange: VueEchange | null }>(`/parties/${partieId}/echanges/courant`);
@@ -55,7 +56,7 @@ export function Echanges({ partieId, version, echange, recevoir, positionAction 
       setErreur(message(e));
       setVendreA(null);
     } finally {
-      setEnvoi(false);
+      setEnvoi(null);
     }
   };
 
@@ -81,10 +82,10 @@ export function Echanges({ partieId, version, echange, recevoir, positionAction 
                   <b>{j.pseudo}</b>
                 </span>
                 <span className="actions">
-                  <button className="plein" disabled={envoi || !!echange} onClick={() => void proposer(j)}>
-                    Échanger
+                  <button className="plein" disabled={!!envoi || !!echange} onClick={() => void proposer(j)}>
+                    {envoi === j.id && !vendreA ? 'Envoi…' : 'Échanger'}
                   </button>
-                  <button disabled={envoi || !!echange || !livre} onClick={() => setVendreA(j)}>
+                  <button disabled={!!envoi || !!echange || !livre} onClick={() => setVendreA(j)}>
                     Vendre une carte
                   </button>
                 </span>
@@ -103,7 +104,7 @@ export function Echanges({ partieId, version, echange, recevoir, positionAction 
           titre={`Que vends-tu à ${vendreA.pseudo} ?`}
           pieces={mesPieces(livre, null)}
           choisies={[]}
-          vente={{ pour: vendreA.pseudo, envoi, onProposer: (itemId, prix) => void proposer(vendreA, { itemId, prix }) }}
+          vente={{ pour: vendreA.pseudo, envoi: !!envoi, onProposer: (itemId, prix) => void proposer(vendreA, { itemId, prix }) }}
           onFermer={() => setVendreA(null)}
         />
       )}

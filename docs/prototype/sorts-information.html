@@ -280,6 +280,8 @@ button.poche[aria-pressed='true'] { outline: 3px solid #8fb2ff; outline-offset: 
 .cine .pene { z-index: 3; position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; gap: 10px; padding: max(12px, env(safe-area-inset-top, 0px)) 16px max(14px, env(safe-area-inset-bottom, 0px)); opacity: 0; visibility: hidden; cursor: default; }
 .cine .pene.ouverte { visibility: visible; }
 .pene .poche { perspective: 600px; }
+.pene .poche > .retourne { position: absolute; inset: 3px; }
+.pene .v-legende { min-height: 5.4em; }
 .poche .retourne, .poche .face { display: block; }
 .balayage-cadre { position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; }
 .balayage { position: absolute; left: 0; right: 0; top: 0; height: 90px; margin-top: -45px; pointer-events: none; opacity: 0; background: linear-gradient(180deg, rgba(143, 178, 255, 0) 0%, rgba(143, 178, 255, 0.5) 38%, rgba(31, 74, 156, 0.85) 50%, rgba(143, 178, 255, 0.5) 62%, rgba(143, 178, 255, 0) 100%); }
@@ -525,8 +527,10 @@ const GUIDE = { zone: 'rives' };
 const SUIVI0 = { x: 100, y: 254 };
 // Pénétration : tes pages du Book (numéros présents, et contrefaçons qui se font passer pour la vraie carte).
 const MES_PAGES = [
-  { titre: 'Page 1 · 001 à 010', cartes: ['003', '007', '008', '010'], faux: ['008'] },
-  { titre: 'Page 2 · 011 à 020', cartes: ['011', '012', '014', '015', '017', '019'], faux: ['012', '017'] },
+// RG-8.9 : un doublon déguisé (Transformation) redevient sa vraie carte ; une copie de Mimétisme devient
+// « Contrefaçon de [nom] », grisée. Les deux libèrent l'emplacement désigné ; la provenance montre le donneur (RG-8.8).
+  { titre: 'Page 1 · 000 à 009', cartes: ['003', '007', '008'], faux: [{ num: '008', type: 'copie', de: 'Hisoka' }] },
+  { titre: 'Page 2 · 010 à 019', cartes: ['010', '011', '012', '014', '015', '017', '019'], faux: [{ num: '012', type: 'deguise', vraie: '007', de: 'Kirua' }, { num: '017', type: 'copie', de: 'Biscuit' }] },
 ];
 Object.assign(NOMS, { '010': 'Le rurubu d’or', '012': 'Le dictionnaire d’or', '015': 'Le génie capricieux', '017': 'Le souffle du grand ange' });
 const VILLES = { masadora: 'Masadora', antokiba: 'Antokiba' };
@@ -565,6 +569,8 @@ function taper(el, texte) {
   });
 }
 // « Tu as volé le diamant… » : l'article du nom passe en minuscule au milieu d'une phrase.
+// « du souffle… », « de la balance… », « de l’oreiller… »
+const duNom = (nom) => (/^Le\s/.test(nom) ? `du ${nom.slice(3)}` : /^Les\s/.test(nom) ? `des ${nom.slice(4)}` : /^La\s/.test(nom) ? `de la ${nom.slice(3)}` : /^L’/.test(nom) ? `de l’${nom.slice(2)}` : `de ${nom}`);
 const enPhrase = (nom) => nom.replace(/^(Les|Le|La)(?=\s)|^L’/, (m) => m.toLowerCase());
 const mmss = (ms) => { const s = Math.ceil(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 
@@ -1330,9 +1336,11 @@ async function jouerPenetration(r) {
   phase = 'vision'; cine.classList.remove('intro'); saute = false;
   await pause(450);
   await balayer(faux);
-  const noms = faux.map((n) => NOMS[n]);
+  const ligne = (f) => f.type === 'deguise'
+    ? `${f.num} était ${enPhrase(NOMS[f.vraie])} déguisée, reçue de ${f.de}.`
+    : `${f.num} : contrefaçon ${duNom(NOMS[f.num])}, reçue de ${f.de}.`;
   $('#p-legende').innerHTML = faux.length
-    ? `<b>${faux.length > 1 ? `${faux.length} contrefaçons démasquées` : 'Une contrefaçon démasquée'}</b> : ${noms.join(', ')}.`
+    ? `<b>${faux.length > 1 ? `${faux.length} cartes démasquées` : 'Une carte démasquée'}</b>, rangée${faux.length > 1 ? 's' : ''} dans tes emplacements libres :<br>${faux.map(ligne).join('<br>')}`
     : 'Aucune contrefaçon sur cette page : tes cartes sont vraies.';
   $('#p-fermer').focus({ preventScroll: true });
   await new Promise((res) => { finVision = res; });
@@ -1347,9 +1355,13 @@ function dessinerPene(pg, n) {
     const rang = rangDe(num);
     if (!pg.cartes.includes(num)) return `<span class="poche" aria-label="${num}, emplacement vide"><span class="poche-num">${num}<em>${rang}</em></span></span>`;
     const c = { genre: 'designee', num, nom: NOMS[num], rang, lim: LIM[rang], txt: '' };
-    const verite = carteHTML(c).replace('gi-carte f-designee', 'gi-carte f-designee faux');
-    return `<span class="poche" data-num="${num}" aria-label="${num}, ${c.nom}"><span class="retourne"><span class="face">${carteHTML(c)}</span>`
-      + `${pg.faux.includes(num) ? `<span class="verite">${verite}<span class="tampon-faux">FAUX</span></span>` : ''}</span></span>`;
+    const f = pg.faux.find((x) => x.num === num);
+    // Ce que la lumière révèle : la vraie carte du doublon déguisé, ou la copie grisée.
+    let verite = '';
+    if (f?.type === 'deguise') { const r2 = rangDe(f.vraie); verite = carteHTML({ genre: 'designee', num: f.vraie, nom: NOMS[f.vraie], rang: r2, lim: LIM[r2], txt: '' }); }
+    else if (f) verite = `${carteHTML(c).replace('gi-carte f-designee', 'gi-carte f-designee faux')}<span class="tampon-faux">FAUX</span>`;
+    return `<span class="poche" data-num="${num}" aria-label="${num}, ${c.nom}"><span class="poche-num">${num}<em>${rang}</em></span><span class="retourne"><span class="face">${carteHTML(c)}</span>`
+      + `${f ? `<span class="verite">${verite}</span>` : ''}</span></span>`;
   }).join('');
   const p = $('#p-page');
   p.className = 'page v-page p-designee';
@@ -1363,15 +1375,16 @@ async function balayer(faux) {
   anims.push(b.animate([{ transform: 'translateY(0)' }, { transform: `translateY(${pr.height}px)` }], { duration: duree, easing: 'linear', fill: 'forwards' }));
   page.querySelectorAll('.poche[data-num]').forEach((poche) => {
     const pb = poche.getBoundingClientRect(), k = (pb.top + pb.height / 2 - pr.top) / pr.height;
-    setTimeout(() => (faux.includes(poche.dataset.num) ? demasquer(poche) : luire(poche)), reduit ? 0 : k * duree);
+    const f = faux.find((x) => x.num === poche.dataset.num);
+    setTimeout(() => (f ? demasquer(poche, f) : luire(poche)), reduit ? 0 : k * duree);
   });
-  await new Promise((res) => setTimeout(res, duree + (faux.length && !reduit ? 1000 : 200)));
+  await new Promise((res) => setTimeout(res, duree + (faux.length && !reduit ? 2500 : 200)));
   b.animate([{ opacity: 1 }, { opacity: 0 }], { duration: reduit ? 1 : 300, fill: 'forwards' });
 }
 function luire(poche) {
   if (!reduit) poche.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(1.3)' }, { filter: 'brightness(1)' }], { duration: 420, easing: 'ease-out' });
 }
-function demasquer(poche) {
+function demasquer(poche, f) {
   const [x, y] = centre(poche);
   poche.insertAdjacentHTML('beforeend', '<svg class="feles-carte" viewBox="0 0 63 88" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M31 42 24 30 27 17 20 3"/><path pathLength="1" d="M31 42 41 35 50 38 61 28"/><path pathLength="1" d="M31 42 36 56 31 70 38 86"/><path pathLength="1" d="M31 42 19 50 6 47"/></svg>');
   poche.querySelectorAll('.feles-carte path').forEach((p, i) => dessin(p, 220, i * 30));
@@ -1381,8 +1394,11 @@ function demasquer(poche) {
   }
   setTimeout(() => {
     poche.querySelector('.feles-carte').animate([{ opacity: 1 }, { opacity: 0 }], { duration: reduit ? 1 : 200, fill: 'forwards' });
-    poche.querySelector('.retourne').animate([{ transform: 'rotateY(0)' }, { transform: 'rotateY(180deg)' }], { duration: reduit ? 1 : 560, easing: 'cubic-bezier(.3,0,.2,1)', fill: 'forwards' });
-    poche.setAttribute('aria-label', `${poche.dataset.num}, contrefaçon démasquée`);
+    const ret = poche.querySelector('.retourne');
+    ret.animate([{ transform: 'rotateY(0)' }, { transform: 'rotateY(180deg)' }], { duration: reduit ? 1 : 560, easing: 'cubic-bezier(.3,0,.2,1)', fill: 'forwards' });
+    poche.setAttribute('aria-label', `${f.num}, ${f.type === 'deguise' ? `c'était ${NOMS[f.vraie]}` : 'contrefaçon'} : emplacement libéré`);
+    // Démasquée, elle quitte l'emplacement désigné pour tes emplacements libres ; le numéro réapparaît en creux.
+    setTimeout(() => ret.animate([{ transform: 'rotateY(180deg)', opacity: 1 }, { transform: 'rotateY(180deg) translateY(40%) scale(.55)', opacity: 0 }], { duration: reduit ? 1 : 520, easing: 'cubic-bezier(.5,0,.75,0)', fill: 'forwards' }), reduit ? 0 : 1500);
   }, reduit ? 0 : 440);
 }
 

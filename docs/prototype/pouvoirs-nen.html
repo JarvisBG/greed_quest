@@ -657,7 +657,7 @@ function dessinerFiche() {
   } else if (k === 'bandit') {
     un = `<div class="case"><h2><span class="n">1</span>Cible</h2><p class="aide">Joueurs à portée, 30 m environ</p><ul class="cibles">${PORTEE.map((n) => `<li><button data-c="${n}" aria-pressed="${a === n}">${n}${CHECK}</button></li>`).join('')}</ul></div>`;
     const cat = [{ hasard: true }, ...RANGS.slice(0, 5).reverse().flatMap((r) => [{ titre: `Rang ${r}` }, ...CAT.filter((c) => c.rang === r)])];
-    deux = `<div class="case${a ? '' : ' attend'}" id="deux"><h2><span class="n">2</span>La carte visée</h2>${a ? `<p class="aide">Si ${a} en a un exemplaire prenable, l’épée le prend ; sinon, une carte au hasard. Jamais la SS.</p>${grilleCartes(cat, b)}` : ''}</div>`;
+    deux = `<div class="case${a ? '' : ' attend'}" id="deux"><h2><span class="n">2</span>La carte visée</h2>${a ? `<p class="aide">Si ${a} en a un exemplaire prenable, l’épée le prend ; sinon, une carte au hasard dans ses emplacements fixes. Tu ne vois pas son Book. Jamais la SS.</p>${grilleCartes(cat, b)}` : ''}</div>`;
     bouton = !a ? 'Choisis une cible' : !b ? 'Choisis la carte visée' : `Frapper ${a}`;
   } else {
     un = `<div class="case"><h2><span class="n">1</span>Carte à donner</h2>${grilleCartes(A_DONNER, a)}</div>`;

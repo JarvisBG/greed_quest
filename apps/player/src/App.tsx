@@ -16,6 +16,7 @@ import { Nen } from './ecrans/Nen';
 import { Raid } from './ecrans/Raid';
 import { Scan } from './ecrans/scan/Scan';
 import { Tirage, useTirages } from './ecrans/scan/Tirage';
+import { ADistance } from './ecrans/sorts/ADistance';
 import { Sorts } from './ecrans/sorts/Sorts';
 import { api, session } from './lib/client';
 import { creerEveil, eveilDisponible, preferenceEveil } from './lib/eveil';
@@ -228,7 +229,11 @@ export function App() {
                 apresAction={jeu.apresAction}
                 suiviCible={jeu.suiviCible}
                 ouvrirSuivi={jeu.ouvrirSuivi}
-                positionConnue={jeu.positionConnue}
+                positionCarte={jeu.positionCarte}
+                onVille={(v) => {
+                  setOnglet('accueil');
+                  setSous(v === 'masadora' ? 'boutique' : 'encheres');
+                }}
               />
             )}
             {ecran === 'accueil' && onglet === 'echanges' && (
@@ -250,6 +255,7 @@ export function App() {
             )}
             {ecran === 'accueil' && onglet === 'accueil' && sous === 'boutique' && (
               <div className="ancien">
+                {retourActif(moi, 'masadora') && moi.retour && <ADistance resteMs={moi.retour.resteMs} recuA={moi.recuA} />}
                 <Boutique
                   partieId={partie.id}
                   jenny={moi.jenny}
@@ -263,6 +269,7 @@ export function App() {
             )}
             {ecran === 'accueil' && onglet === 'accueil' && sous === 'encheres' && (
               <div className="ancien">
+                {retourActif(moi, 'antokiba') && moi.retour && <ADistance resteMs={moi.retour.resteMs} recuA={moi.recuA} />}
                 <Encheres
                   partieId={partie.id}
                   jenny={moi.jenny}

@@ -38,7 +38,8 @@ export function DefsCarte({ p }: { p: string }) {
   );
 }
 
-export function DessinCarte({ plan, evenements, p }: { plan: Plan; evenements: readonly EvenementZone[]; p: string }) {
+/** `comptes` : compteurs de balises (pas dans les cinématiques de sort) ; `moi` : ta position (le suivi la dessine lui-même). */
+export function DessinCarte({ plan, evenements, p, comptes = true, moi = true }: { plan: Plan; evenements: readonly EvenementZone[]; p: string; comptes?: boolean; moi?: boolean }) {
   return (
     <>
       <DefsCarte p={p} />
@@ -65,12 +66,14 @@ export function DessinCarte({ plan, evenements, p }: { plan: Plan; evenements: r
                 <text className="zone-nom" textAnchor="middle" y={ville ? 12 : 0}>
                   {z.nom}
                 </text>
-                <g className={`zone-compte${z.balises ? '' : ' vide'}`} transform={`translate(0 ${ville ? 22 : 10})`}>
-                  <rect x={-largeurCompte / 2} width={largeurCompte} height="18" />
-                  <text textAnchor="middle" y="13.5">
-                    {z.balises}
-                  </text>
-                </g>
+                {comptes && (
+                  <g className={`zone-compte${z.balises ? '' : ' vide'}`} transform={`translate(0 ${ville ? 22 : 10})`}>
+                    <rect x={-largeurCompte / 2} width={largeurCompte} height="18" />
+                    <text textAnchor="middle" y="13.5">
+                      {z.balises}
+                    </text>
+                  </g>
+                )}
               </g>
             </g>
             {ev && (
@@ -84,7 +87,7 @@ export function DessinCarte({ plan, evenements, p }: { plan: Plan; evenements: r
           </g>
         );
       })}
-      {plan.moi && (
+      {moi && plan.moi && (
         <g transform={`translate(${plan.moi.x} ${plan.moi.y})`}>
           <g className="moi">
             <circle className="moi-halo" r={plan.moi.r} />

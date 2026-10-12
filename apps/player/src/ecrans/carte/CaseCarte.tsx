@@ -6,7 +6,7 @@ import { DessinCarte, type EvenementZone } from './CarteIle';
 import { CartePleine } from './CartePleine';
 
 /** Zones et balises actives par zone, rechargées à chaque évènement reçu et toutes les minutes. */
-function useCarte(partieId: string, version: number) {
+export function useCarte(partieId: string, version: number) {
   const [carte, setCarte] = useState<{
     zones: ZoneRecue[];
     balisesParZone: Record<string, number>;

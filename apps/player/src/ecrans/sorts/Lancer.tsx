@@ -6,11 +6,18 @@
 // (issueLancer) : la carte prise revient et se retourne, la comète se brise sur un Mur défensif, le givre gagne
 // l'écran (Gel), le Book de la cible s'ouvre (Voyance, Clairvoyance), la carte choisie se dédouble (Mimétisme),
 // ou la boîte du jeu seule. Toucher pendant le cri saute à l'issue.
+// Page ⑨ (prototype validé le 2026-10-12 : docs/prototype/sorts-information.html) : la carte de l'île se déroule
+// dans la nuit et la comète y tombe (Trace : pas d'encre ; Guide : colonne de lumière ; Accompagnement : la cible
+// épinglée et gelée), Pénétration balaie ta page du Book, Retour t'envole au-dessus de l'île jusqu'à la ville.
 import type { SpellType } from '@gq/shared';
 import { Carte, Concentration, DosCarte, type CarteProps } from '@gq/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { issueLancer, type PocheVision, type ReponseSort } from '../../lib/sorts';
+import { cheminDeTrace, piedDeGuide, type Plan } from '../../lib/carte';
+import type { PochePenetration } from '../../lib/penetration';
+import { ilYa, issueLancer, type PocheVision, type ReponseSort } from '../../lib/sorts';
 import { creerEffets } from '../scan/effets';
+import { IleNuit, type VueIle } from './IleNuit';
+import { Penetration } from './Penetration';
 import { Vision } from './Vision';
 
 export type CarteVue = Omit<CarteProps, 'className' | 'illustration' | 'grisee'>;
@@ -21,6 +28,8 @@ export interface DemandeLancer {
   nomSort: string;
   carteSort: CarteVue;
   cible: string | null;
+  /** Ce que vise le cri (« → Kirua », « → Masadora », « → ta page 2 »). */
+  vers: string | null;
   /** Échange : la carte donnée (elle part avec la comète) ; Mimétisme : la carte copiée. */
   carteChoisie: CarteVue | null;
   /** Place de la carte dans la fiche : elle part de là et y revient sur un refus. */
@@ -31,6 +40,11 @@ export interface DemandeLancer {
   /** Voyance, Clairvoyance : pages du Book de la cible, et places des emplacements libres. */
   pagesVision: (r: ReponseSort) => PocheVision[][];
   placesLibres: number;
+  /** Page ⑨ : carte de l'île (Trace, Guide, Accompagnement, Retour), null tant qu'elle n'est pas chargée. */
+  plan: Plan | null;
+  /** Pénétration : la page examinée, et son numéro. */
+  pochesPenetration: (r: ReponseSort) => PochePenetration[];
+  numeroPage: number | null;
 }
 
 export type FinLancer = { type: 'fait'; r: ReponseSort } | { type: 'refus' };
@@ -88,13 +102,18 @@ const GIVRE = (() => {
 })();
 const COINS_GIVRE = ['hg', 'hd', 'bg', 'bd'] as const;
 
-export function Lancer({ demande, onRangement, onFini }: { demande: DemandeLancer; onRangement: () => void; onFini: (f: FinLancer) => void }) {
+export function Lancer({ demande, onRangement, onFini }: { demande: DemandeLancer; onRangement: (r: ReponseSort) => void; onFini: (f: FinLancer) => void }) {
   const calme = useRef(matchMedia('(prefers-reduced-motion: reduce)').matches).current;
   const [phase, setPhase] = useState<Phase>('intro');
   const [face, setFace] = useState<CarteVue>(demande.carteSort);
   const [cri, setCri] = useState({ mot: demande.nomSort.toUpperCase(), creux: false, centre: false });
   const [boite, setBoite] = useState({ qui: 'Greed Island', refus: false, texte: '', indice: '' });
   const [vision, setVision] = useState<{ pages: PocheVision[][]; libres: boolean } | null>(null);
+  const [ileVue, setIleVue] = useState<VueIle | null>(null);
+  const [penetration, setPenetration] = useState<PochePenetration[] | null>(null);
+  const ile = useRef<HTMLDivElement>(null);
+  const faisceau = useRef<HTMLDivElement>(null);
+  const etincelles = useRef<(x: number, y: number) => void>(() => undefined);
   const r = {
     racine: useRef<HTMLDivElement>(null),
     nuit: useRef<HTMLDivElement>(null),
@@ -155,6 +174,7 @@ export function Lancer({ demande, onRangement, onFini }: { demande: DemandeLance
     const c = ctl.current;
     const el = Object.fromEntries(Object.entries(r).map(([k, v]) => [k, v.current!])) as { [K in keyof typeof r]: NonNullable<(typeof r)[K]['current']> };
     const fx = creerEffets(el.toile, () => el.ret.getBoundingClientRect());
+    etincelles.current = (x, y) => fx.etincelles(x, y, 44, '#ffb4b0', 0.45);
     // La réponse est attendue plus tard : un refus arrivé avant ne doit pas passer pour une erreur non traitée.
     demande.reponse.catch(() => undefined);
     const anims: Animation[] = [];
@@ -252,17 +272,18 @@ export function Lancer({ demande, onRangement, onFini }: { demande: DemandeLance
     // Fin : la nuit se lève sur la main (la carte de sort a été dépensée).
     const refermer = async (rep: ReponseSort) => {
       mettrePhase('range');
-      rappels.current.onRangement();
+      rappels.current.onRangement(rep);
       A(el.dialogue, [{ opacity: 1 }, { opacity: 0, transform: 'translateY(24px)' }], { duration: 200 });
       A(el.cri, [{ opacity: 1 }, { opacity: 0 }], { duration: 220 });
       A(el.givre, [{ opacity: 1 }, { opacity: 0 }], { duration: 300 });
+      for (const e of [ile.current, faisceau.current]) if (e) A(e, [{ opacity: getComputedStyle(e).opacity }, { opacity: 0 }], { duration: 300 });
       await fini(A(el.nuit, [{ opacity: 1 }, { opacity: 0 }], { duration: 380, easing: 'ease-in' }));
       finir({ type: 'fait', r: rep });
     };
     // La carte reçue (ou copiée) file en arc dans l'onglet Book ; la nuit se referme dessus.
     const ranger = async (rep: ReponseSort, carte: HTMLElement) => {
       mettrePhase('range');
-      rappels.current.onRangement();
+      rappels.current.onRangement(rep);
       const onglet = document.querySelector('.onglets [data-onglet="livre"]');
       const [tx, ty] = onglet ? centre(onglet) : [innerWidth / 2, innerHeight - 30];
       const b = carte.getBoundingClientRect();
@@ -449,11 +470,197 @@ export function Lancer({ demande, onRangement, onFini }: { demande: DemandeLance
     };
 
     // Sans butin (rien à prendre) ou sort d'information : la réponse arrive dans la boîte du jeu.
-    const jouerTexte = async (rep: ReponseSort) => {
-      await revele('Greed Island', demande.phrase(rep), 'Touche l’écran pour revenir');
+    const jouerTexte = async (rep: ReponseSort, indice = 'Touche l’écran pour revenir') => {
+      await revele('Greed Island', demande.phrase(rep), indice);
       if (!vivant) return;
       await toucher();
       if (vivant) await refermer(rep);
+    };
+
+    // ---------- Page ⑨ : la carte de l'île dans la nuit ----------
+    const impact = (x: number, y: number, col = BLEU, fort = 1) => {
+      if (c.saute || calme) return;
+      A(el.flash, [{ opacity: 0.4 * fort }, { opacity: 0 }], { duration: 220, easing: 'ease-out' });
+      fx.onde(x, y, col, 0.6 * fort);
+      fx.etincelles(x, y, Math.round(80 * fort), '#cfe0ff', 0.6 * fort);
+      secouer(5 * fort);
+      vibrer(25);
+    };
+    /** Point du plan → point de l'écran. */
+    const ecran = (x: number, y: number): [number, number] => {
+      const m = ile.current?.querySelector('svg')?.getScreenCTM();
+      if (!m) return [innerWidth / 2, innerHeight * 0.42];
+      const p = new DOMPoint(x, y).matrixTransform(m);
+      return [p.x, p.y];
+    };
+    /** La carte se déroule depuis son milieu ; ses deux rouleaux restent aux bords. */
+    const ouvrirIle = async (vue: VueIle) => {
+      setIleVue(vue);
+      await deuxImages();
+      const e = ile.current!;
+      e.classList.add('ouverte');
+      e.style.opacity = '1';
+      const w = e.getBoundingClientRect().width;
+      const ease = 'cubic-bezier(.65,0,.35,1)';
+      A(el.lignes, [{ opacity: getComputedStyle(el.lignes).opacity }, { opacity: 0.12 }], { duration: 400 });
+      A(e.querySelector('.lancer-ile-feuille')!, [{ clipPath: 'inset(0 50% 0 50%)' }, { clipPath: 'inset(0 0% 0 0%)' }], { duration: 640, easing: ease });
+      A(e.querySelector('.lancer-ile-rouleau.g')!, [{ transform: 'none' }, { transform: `translateX(${-w / 2}px)` }], { duration: 640, easing: ease });
+      A(e.querySelector('.lancer-ile-rouleau.d')!, [{ transform: 'none' }, { transform: `translateX(${w / 2}px)` }], { duration: 640, easing: ease });
+      vibrer(8);
+      await pause(680);
+    };
+    const montrer = (sel: string, o: Partial<KeyframeAnimationOptions> & { duration?: number } = {}) =>
+      ile.current?.querySelectorAll(sel).forEach((e) => A(e, [{ opacity: 0 }, { opacity: 1 }], { duration: 400, ...o }));
+    const eclairer = () => {
+      ile.current?.querySelectorAll('.zone-halo').forEach((e) => A(e, [{ opacity: 0 }, { opacity: 0.55 }], { duration: 500 }));
+      montrer('.zone-eclat', { duration: 380 });
+    };
+    /** La comète cherche au-dessus de l'île et s'éteint : rien à montrer. */
+    const balayerIle = async (plan: Plan) => {
+      const [x1, y1] = ecran(plan.largeur * 0.95, plan.hauteur * 0.45);
+      const [x2, y2] = ecran(plan.largeur * 0.05, plan.hauteur * 0.55);
+      if (!c.saute && !calme) fx.trainee(() => centre(el.orbe));
+      el.orbe.style.opacity = '1';
+      await fini(
+        A(el.orbe, [{ transform: `translate(${coin[0]}px, ${coin[1]}px) scale(.55)` }, { transform: `translate(${x1}px, ${y1}px) scale(.8)`, offset: 0.35 }, { transform: `translate(${x2}px, ${y2}px) scale(.4)` }], {
+          duration: c.saute ? 1 : 1100,
+          easing: 'cubic-bezier(.3,0,.7,1)',
+        }),
+      );
+      fx.trainee(null);
+      el.orbe.style.opacity = '0';
+      if (!c.saute && !calme) fx.fumee(x2, y2, 12);
+      await pause(300);
+    };
+
+    // Trace, Guide, Accompagnement : la comète revient du ciel et tombe sur l'île.
+    const jouerIle = async (rep: ReponseSort) => {
+      const plan = demande.plan;
+      if (!plan || plan.zones.length === 0) return jouerTexte(rep);
+      const zone = rep.sort === 'accompagnement' ? undefined : plan.zones.find((z) => z.nom === rep.zone);
+      const pos = rep.accompagnement?.position ?? null;
+      const cible = rep.sort === 'accompagnement' && pos ? { ...((([x, y]) => ({ x, y }))(plan.projeter(pos))), pseudo: rep.accompagnement!.pseudo } : null;
+      const trace = rep.sort === 'radar' && zone ? { ...cheminDeTrace(zone), texte: rep.ageMin != null ? ilYa(rep.ageMin) : null } : null;
+      await ouvrirIle({ zoneId: zone?.id ?? null, trace, cible });
+      if (!vivant) return;
+
+      if (rep.sort === 'accompagnement') {
+        if (!cible) {
+          await balayerIle(plan);
+          return vivant ? jouerTexte(rep) : undefined;
+        }
+        const [sx, sy] = ecran(cible.x, cible.y);
+        await retourComete(sx, sy, 520, 'cubic-bezier(.4,0,.9,.6)', 1.3);
+        if (!vivant) return;
+        impact(sx, sy, '#dff0ff', 1.2);
+        montrer('.cible', { duration: 200 });
+        ile.current?.querySelectorAll('.cible-givre path').forEach((p, i) => A(p, [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 700, delay: calme ? 0 : i * 40, easing: 'cubic-bezier(.2,.7,.3,1)' }));
+        montrer('.ile-lien', { delay: calme ? 0 : 600 });
+        setCri({ mot: 'GELÉ', creux: true, centre: false });
+        await deuxImages();
+        A(el.criNom, [{ opacity: 0, transform: 'scale(1.6)' }, { opacity: 1, transform: 'none' }], { duration: 360, delay: 200 });
+        await pause(900);
+        return vivant ? jouerTexte(rep, 'Touche l’écran pour voir où il est') : undefined;
+      }
+
+      if (!zone) {
+        await balayerIle(plan);
+        return vivant ? jouerTexte(rep) : undefined;
+      }
+
+      if (rep.sort === 'radar' && trace) {
+        const der = trace.pas.at(-1)!;
+        const [sx, sy] = ecran(der.x, der.y);
+        await retourComete(sx, sy, 520, 'cubic-bezier(.4,0,.9,.6)', 1.2);
+        if (!vivant) return;
+        impact(sx, sy);
+        eclairer();
+        // Du plus récent (au point d'impact) au plus ancien, de plus en plus effacé.
+        const pas = [...(ile.current?.querySelectorAll('.pas') ?? [])].reverse();
+        pas.forEach((p, i) => A(p, [{ opacity: 0 }, { opacity: 1, offset: 0.25 }, { opacity: 1 - (0.62 * i) / Math.max(1, pas.length - 1) }], { duration: 900, delay: calme ? 0 : 150 + i * 120, fill: 'both' }));
+        montrer('.pas-etiquette', { duration: 300, delay: calme ? 0 : 150 + pas.length * 120, fill: 'both' });
+        await pause(300 + pas.length * 120);
+        return vivant ? jouerTexte(rep) : undefined;
+      }
+
+      // Guide : une colonne de lumière se dresse à côté du nom de la zone, jusqu'en haut de l'écran (RG-6.5 : jamais la balise).
+      const [gx, gy] = piedDeGuide(zone);
+      const [sx, sy] = ecran(gx, gy);
+      await retourComete(sx, sy, 520, 'cubic-bezier(.4,0,.9,.6)', 1.2);
+      if (!vivant) return;
+      impact(sx, sy, '#ffffff', 1.1);
+      eclairer();
+      const f = faisceau.current!;
+      Object.assign(f.style, { left: `${sx}px`, height: `${sy}px`, opacity: '1' });
+      A(f, [{ transform: 'scaleY(0)', opacity: 0 }, { transform: 'scaleY(1)', opacity: 1 }], { duration: 760 });
+      if (!c.saute && !calme) [0, 200, 400].forEach((d) => setTimeout(() => vivant && fx.etincelles(sx, sy, 26, '#ffffff', 0.45), d));
+      await pause(820);
+      return vivant ? jouerTexte(rep, 'Sa place exacte reste secrète. Touche l’écran pour revenir') : undefined;
+    };
+
+    // Pénétration : la comète revient avec la lumière ; ta page s'ouvre et la lumière la balaie.
+    const jouerPenetration = async (rep: ReponseSort) => {
+      const [cx, cy] = [innerWidth / 2, innerHeight * 0.45];
+      await retourComete(cx, cy, 460, 'cubic-bezier(.2,.6,.3,1)', 1.4);
+      if (!vivant) return;
+      impact(cx, cy);
+      A(el.lignes, [{ opacity: getComputedStyle(el.lignes).opacity }, { opacity: 0.12 }], { duration: 400 });
+      setPenetration(demande.pochesPenetration(rep));
+      mettrePhase('vision');
+      await new Promise<void>((res) => {
+        c.finVision = res;
+      });
+      c.finVision = null;
+      const v = el.racine.querySelector('.penetration');
+      if (v && vivant) A(v, [{ opacity: 1 }, { opacity: 0, transform: 'scale(.96)' }], { duration: 220 });
+      if (vivant) await refermer(rep);
+    };
+
+    // Retour : la boule de lumière descend sur toi, puis tu files en traînée au-dessus de l'île jusqu'à la ville.
+    const jouerEnvol = async (rep: ReponseSort, cx: number, cy: number) => {
+      const plan = demande.plan;
+      const z = plan?.zones.find((x) => x.type === rep.ville);
+      if (!plan || !z) {
+        A(el.orbe, [{ opacity: 1 }, { opacity: 0 }], { duration: 300 });
+        return jouerTexte(rep);
+      }
+      A(el.lignes, [{ opacity: getComputedStyle(el.lignes).opacity }, { opacity: 0.3 }], { duration: 400 });
+      await ouvrirIle({ zoneId: null, trace: null, cible: null });
+      if (!vivant) return;
+      const [mx, my] = plan.moi ? ecran(plan.moi.x, plan.moi.y) : [cx, cy];
+      const [tx, ty] = ecran(z.centre[0], z.centre[1] - 28);
+      await fini(A(el.orbe, [{ transform: `translate(${cx}px, ${cy}px) scale(1)` }, { transform: `translate(${mx}px, ${my}px) scale(.6)` }], { duration: c.saute ? 1 : 420, easing: 'cubic-bezier(.5,0,.3,1)' }));
+      if (!vivant) return;
+      if (!c.saute && !calme) {
+        fx.onde(mx, my, BLEU, 0.35);
+        vibrer(15);
+      }
+      await pause(160);
+      // Courbe en cloche : la traînée monte au-dessus de l'île, puis plonge sur la ville.
+      const hx = (mx + tx) / 2;
+      const hy = Math.min(my, ty) - 200;
+      const arc = Array.from({ length: 17 }, (_, i) => {
+        const t = i / 16;
+        const u = 1 - t;
+        const x = u * u * mx + 2 * u * t * hx + t * t * tx;
+        const y = u * u * my + 2 * u * t * hy + t * t * ty;
+        return { transform: `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) scale(${(0.6 + Math.sin(Math.PI * t) * 0.7).toFixed(2)})` };
+      });
+      if (!c.saute && !calme) fx.trainee(() => centre(el.orbe));
+      A(el.lignes, [{ opacity: 0.12 }, { opacity: 0.5 }, { opacity: 0.12 }], { duration: 900 });
+      await fini(A(el.orbe, arc, { duration: c.saute ? 1 : 950, easing: 'cubic-bezier(.45,0,.6,1)' }));
+      fx.trainee(null);
+      if (!vivant) return;
+      el.orbe.style.opacity = '0';
+      setIleVue({ zoneId: z.id, trace: null, cible: null });
+      await deuxImages();
+      impact(tx, ty, '#ffffff', 1.3);
+      eclairer();
+      setCri({ mot: z.nom.toUpperCase(), creux: false, centre: false });
+      await deuxImages();
+      A(el.criNom, [{ opacity: 0, transform: 'scale(1.8)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.5,0,.75,0)' });
+      await pause(500);
+      return vivant ? jouerTexte(rep, 'Touche l’écran pour entrer dans la ville') : undefined;
     };
 
     void (async () => {
@@ -491,7 +698,7 @@ export function Lancer({ demande, onRangement, onFini }: { demande: DemandeLance
       }
       await pause(220);
       A(el.criOn, [{ opacity: 0, transform: 'scale(2.6) rotate(8deg)' }, { opacity: 1, transform: 'scale(.94)', offset: 0.7 }, { opacity: 1, transform: 'scale(1)' }], { duration: 300, easing: 'cubic-bezier(.5,0,.75,0)' });
-      if (demande.cible) A(el.vise, [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 260, delay: 160 });
+      if (demande.vers) A(el.vise, [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 260, delay: 160 });
       await pause(240);
       if (!c.saute && !calme) {
         vibrer(25);
@@ -546,6 +753,7 @@ export function Lancer({ demande, onRangement, onFini }: { demande: DemandeLance
         vibrer(30);
       }
       if (issue === 'copie') return jouerCopie(rep, cx, cy);
+      if (issue === 'envol') return jouerEnvol(rep, cx, cy);
       if (!c.saute && !calme) fx.trainee(() => centre(el.orbe));
       await fini(
         A(
@@ -569,6 +777,8 @@ export function Lancer({ demande, onRangement, onFini }: { demande: DemandeLance
       if (issue === 'gel') return jouerGel(rep);
       if (issue === 'vision') return jouerVision(rep);
       if (issue === 'butin') return jouerButin(rep);
+      if (issue === 'ile') return jouerIle(rep);
+      if (issue === 'penetration') return jouerPenetration(rep);
       return jouerTexte(rep);
     })();
 
@@ -598,6 +808,8 @@ export function Lancer({ demande, onRangement, onFini }: { demande: DemandeLance
           </svg>
         ))}
       </div>
+      {demande.plan && <IleNuit ref={ile} plan={demande.plan} vue={ileVue} />}
+      <div ref={faisceau} className="lancer-faisceau" aria-hidden="true" />
       <canvas ref={r.toile} className="lancer-toile" aria-hidden="true" />
       <div ref={r.mur} className="lancer-mur" aria-hidden="true">
         <svg viewBox="-70 -70 140 140">
@@ -643,7 +855,7 @@ export function Lancer({ demande, onRangement, onFini }: { demande: DemandeLance
         </div>
       </div>
       <span ref={r.vise} className="lancer-vise" aria-hidden="true">
-        {demande.cible ? `→ ${demande.cible}` : ''}
+        {demande.vers ? `→ ${demande.vers}` : ''}
       </span>
       <div ref={r.orbe} className="lancer-orbe" aria-hidden="true" />
       <div ref={r.donnee} className="lancer-donnee" aria-hidden="true">
@@ -657,6 +869,15 @@ export function Lancer({ demande, onRangement, onFini }: { demande: DemandeLance
           libres={vision.libres}
           places={demande.placesLibres}
           pages={vision.pages}
+          onFermer={() => ctl.current.finVision?.()}
+        />
+      )}
+      {penetration && (
+        <Penetration
+          titre={`Pénétration · ta page ${demande.numeroPage ?? ''}`}
+          numeroPage={demande.numeroPage ?? 1}
+          poches={penetration}
+          etincelles={(x, y) => etincelles.current(x, y)}
           onFermer={() => ctl.current.finVision?.()}
         />
       )}

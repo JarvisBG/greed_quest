@@ -6,10 +6,12 @@ import { FREE_SLOTS } from '@gq/engine';
 import type { PositionInput } from '@gq/shared';
 import { Carte } from '@gq/ui';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import type { Plan } from '../../lib/carte';
 import { api } from '../../lib/client';
 import { numeroSort, SORTS } from '../../lib/format';
 import { contenu, titreDePage, type LivreRecu } from '../../lib/livre';
 import { CIBLE_CROISEE, cartesUtilisables, corpsSort, etapes, OFFENSIF, pagesVision, pouvoirDispo, resumeSort, type ChoixSort, type ReponseSort } from '../../lib/sorts';
+import { pochesPenetration } from '../../lib/penetration';
 import type { Moi } from '../../lib/useJeu';
 import type { DemandeLancer } from './Lancer';
 
@@ -36,12 +38,14 @@ interface Props {
   /** Place de la carte dans la main : elle en part. */
   origine: DOMRect | null;
   offensifDans: number;
+  /** Page ⑨ : carte de l'île pour la cinématique (Trace, Guide, Accompagnement, Retour). */
+  plan: Plan | null;
   positionAction: (envoyer?: boolean) => Promise<PositionInput>;
   onFermer: () => void;
   onLancer: (d: DemandeLancer) => void;
 }
 
-export function FicheSort({ partieId, moi, livre, depart, origine, offensifDans, positionAction, onFermer, onLancer }: Props) {
+export function FicheSort({ partieId, moi, livre, depart, origine, offensifDans, plan, positionAction, onFermer, onLancer }: Props) {
   const [choix, setChoix] = useState<ChoixSort>(depart);
   const [cibles, setCibles] = useState<Cibles | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -104,7 +108,7 @@ export function FicheSort({ partieId, moi, livre, depart, origine, offensifDans,
   else if (manque === 'page') action = 'Choisis la page';
   else if (manque === 'ville') action = villes.length ? 'Choisis la ville' : 'Aucune ville visitée';
   else if (manque === 'cible') action = 'Choisis une cible';
-  else action = `Lancer ${sort.nom}${nomCible ? ` sur ${nomCible}` : choix.ville ? ` vers ${VILLES[choix.ville]}` : ''}`;
+  else action = `Lancer ${sort.nom}${nomCible ? ` sur ${nomCible}` : choix.ville ? ` vers ${VILLES[choix.ville]}` : choix.page ? ` sur ta page ${choix.page}` : ''}`;
   const pret = !passif && !enDelai && !manque;
 
   const lancer = () => {
@@ -118,12 +122,16 @@ export function FicheSort({ partieId, moi, livre, depart, origine, offensifDans,
       nomSort: sort.nom,
       carteSort: { genre: 'sort', numero: numeroSort(sort.numero), nom: sort.nom, texte: sort.effet },
       cible: nomCible,
+      vers: nomCible ?? (choix.ville ? VILLES[choix.ville] : choix.page ? `ta page ${choix.page}` : null),
       carteChoisie: donnee ? { genre: 'designee', numero: donnee.numero, nom: donnee.nom, rang: donnee.rang, limite: donnee.limite ?? null, texte: donnee.texte ?? null } : null,
       depart: carte.current?.getBoundingClientRect() ?? null,
       reponse,
       phrase: (r) => resumeSort(r, nomCible, (id) => noms.get(id) ?? 'une carte', choix.sort === 'echange_force' ? donnee?.nom : undefined),
       pagesVision: (r) => pagesVision(r, livre, FREE_SLOTS),
       placesLibres: FREE_SLOTS,
+      plan,
+      pochesPenetration: (r) => pochesPenetration(livre, choix.page ?? 1, r),
+      numeroPage: choix.page ?? null,
     });
   };
 
@@ -176,6 +184,7 @@ export function FicheSort({ partieId, moi, livre, depart, origine, offensifDans,
           {besoins.includes('page') && (
             <section className="sorts-case">
               <h2>Page à examiner</h2>
+              <p className="aide">Les contrefaçons de cette page perdront leur déguisement.</p>
               <ul className="sorts-liste">
                 {livre.pages.map((_, i) => (
                   <li key={i}>
@@ -192,6 +201,7 @@ export function FicheSort({ partieId, moi, livre, depart, origine, offensifDans,
           {besoins.includes('ville') && (
             <section className="sorts-case">
               <h2>Ville déjà visitée</h2>
+              {villes.length > 0 && <p className="aide">Ses services s’ouvrent à distance pendant 10 min.</p>}
               {villes.length === 0 ? (
                 <p>Scanne d’abord le QR de Masadora ou d’Antokiba, sur place.</p>
               ) : (
@@ -229,7 +239,7 @@ export function FicheSort({ partieId, moi, livre, depart, origine, offensifDans,
               ) : !liste ? (
                 <p>Recherche des joueurs…</p>
               ) : liste.length === 0 ? (
-                <p>{croisee ? 'Tu n’as encore croisé personne.' : choix.sort === 'radar' ? 'Aucun autre joueur.' : 'Personne à portée (30 m environ). Rapproche-toi d’un joueur.'}</p>
+                <p>{croisee ? 'Tu n’as encore croisé personne. Approche-toi d’un joueur pour le croiser.' : choix.sort === 'radar' ? 'Aucun autre joueur.' : 'Personne à portée (30 m environ). Rapproche-toi d’un joueur.'}</p>
               ) : (
                 <ul className="sorts-liste">
                   {liste.map((c) => (

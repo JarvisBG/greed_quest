@@ -2,18 +2,22 @@
 // Les sorts du Book sont de vraies cartes bleues, rangées en deux familles : les offensifs (en gris tramé pendant le
 // délai entre deux sorts offensifs, RG-10.3, décompte dans l'en-tête) et les autres ; ×2 en pile, Mur défensif
 // tamponné « PASSIF ». Toucher une carte ouvre la fiche de lancement (FicheSort), puis la cinématique (Lancer).
-// Restent de la version précédente, à refaire avec les pages ⑨ et ⑩ : le suivi d'Accompagnement et les pouvoirs
-// de Nen (Manipulation, Texture Surprise).
+// Page ⑨ (validée le 2026-10-12) : après un Accompagnement réussi, le suivi s'ouvre (SuiviAccompagnement) ; tant
+// qu'il dure, un bandeau en haut de la page le rouvre. Après Retour, la ville s'ouvre (onVille).
+// Reste de la version précédente, à refaire avec la page ⑩ : les pouvoirs de Nen (Manipulation, Texture Surprise).
 import type { PositionInput, SpellType } from '@gq/shared';
 import { Carte } from '@gq/ui';
 import { useEffect, useState } from 'react';
-import { reperage, resteSuivi, type SuiviCible } from '../../lib/accompagnement';
-import { formatChrono, formatDuree, NENS, numeroSort, SORTS } from '../../lib/format';
+import { resteSuivi, type SuiviCible } from '../../lib/accompagnement';
+import { construirePlan } from '../../lib/carte';
+import { formatDuree, NENS, numeroSort, SORTS } from '../../lib/format';
 import { useLivre } from '../../lib/useLivre';
-import { familles, pouvoirDispo, sortsDisponibles, type ChoixSort, type SortDisponible } from '../../lib/sorts';
+import { familles, pouvoirDispo, sortsDisponibles, type ChoixSort, type ReponseSort, type SortDisponible } from '../../lib/sorts';
 import type { Moi } from '../../lib/useJeu';
+import { useCarte } from '../carte/CaseCarte';
 import { FicheSort, minSec } from './FicheSort';
 import { Lancer, type DemandeLancer, type FinLancer } from './Lancer';
+import { SuiviAccompagnement } from './SuiviAccompagnement';
 import { TextureSurprise } from './TextureSurprise';
 
 interface Props {
@@ -25,7 +29,10 @@ interface Props {
   /** Accompagnement (amendement 2026-10-10) : suivi de la cible, ouvert après un lancer réussi. */
   suiviCible: SuiviCible | null;
   ouvrirSuivi: (s: Omit<SuiviCible, 'recuA'>) => void;
-  positionConnue: () => { lat: number; lng: number } | null;
+  /** Dernière position connue, même ancienne : ta place sur la carte de l'île. */
+  positionCarte: () => { lat: number; lng: number; precisionM: number } | null;
+  /** Retour : ouvrir la ville à distance (boutique de Masadora, enchères d'Antokiba). */
+  onVille: (v: 'masadora' | 'antokiba') => void;
 }
 
 /** Délai restant, décompté depuis la réception du profil. */
@@ -36,7 +43,8 @@ function useRestant(ms: number, depuis: number): number {
     const t = setInterval(() => setMaintenant(Date.now()), 1000);
     return () => clearInterval(t);
   }, [ms, depuis]);
-  return Math.max(0, ms - (maintenant - depuis));
+  // Profil rechargé depuis le dernier tic (`depuis` plus récent que `maintenant`) : rien d'écoulé, pas un délai fantôme.
+  return Math.max(0, ms - Math.max(0, maintenant - depuis));
 }
 
 export function Sorts(p: Props) {
@@ -45,6 +53,8 @@ export function Sorts(p: Props) {
   const [lancer, setLancer] = useState<{ n: number; demande: DemandeLancer } | null>(null);
   const [transfo, setTransfo] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [suiviOuvert, setSuiviOuvert] = useState(false);
+  const carte = useCarte(p.partieId, p.version);
   const offensifDans = useRestant(p.moi.delais.offensif, p.moi.recuA);
   const suiviDans = useRestant(p.suiviCible?.resteMs ?? 0, p.suiviCible?.recuA ?? 0);
   const transfoDans = useRestant(p.moi.delais.transformation, p.moi.recuA);
@@ -73,14 +83,22 @@ export function Sorts(p: Props) {
   const emission = pouvoirDispo(p.moi.nen, p.moi.delais.pouvoir, ecoule, 'emission');
   const manipulation = pouvoirDispo(p.moi.nen, p.moi.delais.pouvoir, ecoule, 'manipulation');
   const ouvrir = (choix: ChoixSort, el: Element | null) => setFiche({ choix, origine: el?.querySelector('.sorts-tas')?.getBoundingClientRect() ?? null });
+  // La nuit se lève : sous elle, la fiche est déjà fermée et, après Accompagnement, le suivi déjà ouvert.
+  const rangement = (r: ReponseSort) => {
+    setFiche(null);
+    if (r.accompagnement && r.resultat === 'reussi') {
+      p.ouvrirSuivi({ ...r.accompagnement, resteMs: 3 * 60_000 });
+      setSuiviOuvert(true);
+    }
+  };
   const finLancer = (f: FinLancer) => {
     setLancer(null);
     if (f.type === 'refus') return;
     setFiche(null);
-    const r = f.r;
-    if (r.accompagnement && r.resultat === 'reussi') p.ouvrirSuivi({ ...r.accompagnement, resteMs: 3 * 60_000 });
     p.apresAction();
+    if (f.r.sort === 'retour' && f.r.resultat === 'reussi' && f.r.ville) p.onVille(f.r.ville);
   };
+  const plan = carte ? construirePlan(carte.zones, carte.balisesParZone, p.positionCarte()) : null;
 
   const pochette = (d: SortDisponible) => {
     const s = SORTS[d.sort];
@@ -126,13 +144,11 @@ export function Sorts(p: Props) {
       )}
 
       {p.suiviCible && suiviDans > 0 && (
-        <section className="sorts-case">
-          <div className="sorts-case-tete">
-            <h2>Accompagnement</h2>
-            <span className="sorts-chrono">{formatChrono(resteSuivi(p.suiviCible, Date.now()))}</span>
-          </div>
-          <p>{reperage(p.positionConnue(), p.suiviCible)}</p>
-        </section>
+        <button className="sorts-suivi" onClick={() => setSuiviOuvert(true)}>
+          <b>Accompagnement · {p.suiviCible.pseudo}</b>
+          <span>Voir sa position</span>
+          <span className="sorts-suivi-chrono">{minSec(resteSuivi(p.suiviCible, Date.now()))}</span>
+        </button>
       )}
 
       {emission && <p className="sorts-aide">Émission : tu peux viser une fois un joueur hors de portée avec un sort offensif.</p>}
@@ -204,12 +220,14 @@ export function Sorts(p: Props) {
           depart={fiche.choix}
           origine={fiche.origine}
           offensifDans={offensifDans}
+          plan={plan}
           positionAction={p.positionAction}
           onFermer={() => setFiche(null)}
           onLancer={(demande) => setLancer((l) => ({ n: (l?.n ?? 0) + 1, demande }))}
         />
       )}
-      {lancer && <Lancer key={lancer.n} demande={lancer.demande} onRangement={() => setFiche(null)} onFini={finLancer} />}
+      {suiviOuvert && p.suiviCible && <SuiviAccompagnement suivi={p.suiviCible} carte={carte} maPosition={p.positionCarte} onFermer={() => setSuiviOuvert(false)} />}
+      {lancer && <Lancer key={lancer.n} demande={lancer.demande} onRangement={rangement} onFini={finLancer} />}
     </div>
   );
 }

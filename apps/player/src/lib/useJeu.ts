@@ -9,6 +9,7 @@ import { positionActuelle } from './geo';
 import { connectRealtime, type EtatConnexion } from './realtime';
 import { rejouerFile, scanner, type IssueScan } from './scan';
 import { messageFin, termine, type EvenementEchange, type VueEchange } from './echanges';
+import { fusionnerLot, jeMene, texteAdjuge, texteClotureAutre, texteSurencheri, type Adjuge, type Cloture, type Lot } from './encheres';
 import { ilYaRecu, issueRecu, texteSortRecu, type SortRecu } from './sorts';
 import type { SuiviCible } from './accompagnement';
 import { partieFromUrl, type Session } from './session';
@@ -55,7 +56,7 @@ export interface Alerte {
   genre: 'sort' | 'evenement' | 'sanction' | 'info';
   qui: string;
   texte: string;
-  voir?: 'echanges';
+  voir?: 'echanges' | 'antokiba';
   /** Durée d'affichage (ms), plus longue pour une liste (rattrapage). */
   duree?: number;
 }
@@ -148,6 +149,16 @@ export function useJeu() {
   const [gelePar, setGelePar] = useState<{ pseudo: string; accompagnement: boolean } | null>(null);
   /** RG-7.5 : tirages reçus au rejeu de la file, en attente de leur cinématique (l'app les joue un par un). */
   const [rejoues, setRejoues] = useState<Extract<IssueScan, { type: 'ok' }>[]>([]);
+  /**
+   * Page ⑭ (RG-11.4) : dernier état connu de chaque lot d'Antokiba (qui mène, ma meilleure offre), pour dire « Kirua a
+   * surenchéri » hors de la page ; lots clos récemment (tampon ADJUGÉ / INVENDU sur la page) ; lots gagnés, en attente
+   * de la cinématique « ADJUGÉ ! » ; pastille sur Antokiba à l'accueil.
+   */
+  const lots = useRef(new Map<string, Lot>());
+  const surAntokiba = useRef(false);
+  const [clotures, setClotures] = useState<Cloture[]>([]);
+  const [adjuges, setAdjuges] = useState<Adjuge[]>([]);
+  const [pastilleAntokiba, setPastilleAntokiba] = useState(0);
 
   const rafraichir = useCallback(async () => {
     if (!partieId) return;
@@ -220,6 +231,17 @@ export function useJeu() {
     }
   }, [sess, notifier]);
 
+  /** Page ⑭ : état des lots à la connexion (qui mène), pour prévenir d'une surenchère hors de la page. */
+  const lireEncheres = useCallback(async () => {
+    if (!sess) return;
+    try {
+      const r = await api.get<{ encheres: Lot[] }>(`/parties/${sess.partieId}/encheres`);
+      lots.current = new Map(r.encheres.map((l) => [l.id, fusionnerLot(undefined, l, sess.joueurId)]));
+    } catch {
+      // hors ligne : on relira au retour du réseau
+    }
+  }, [sess]);
+
   /** Page ⑪ (RG-10.5) : sorts reçus pendant que l'app était fermée ou hors ligne, en une seule boîte. */
   const rattraper = useCallback(async () => {
     if (!sess) return;
@@ -244,6 +266,7 @@ export function useJeu() {
         if (e === 'en_ligne') {
           void rejouer();
           void rattraper();
+          void lireEncheres();
         }
       },
       evenement: (nom, data) => {
@@ -272,8 +295,43 @@ export function useJeu() {
           setSuiviCible((prev) => ({ cibleId: d.cibleId, pseudo: d.pseudo, position: d.position, resteMs: prev?.cibleId === d.cibleId ? prev.resteMs - (Date.now() - prev.recuA) : 3 * 60_000, recuA: Date.now() }));
           return;
         }
-        // Mises à jour fréquentes (surenchères, PV du raid) : l'écran se met à jour, sans notification.
-        if (nom === 'enchere' || nom === 'raid') return;
+        if (nom === 'enchere') {
+          // Surenchère : l'écran se met à jour, sans notification ; hors de la page, on prévient celui qui menait.
+          const l = data as Lot;
+          const avant = lots.current.get(l.id);
+          lots.current.set(l.id, fusionnerLot(avant, l, sess.joueurId));
+          if (avant && jeMene(avant, sess.joueurId) && l.meilleureOffre && !jeMene(l, sess.joueurId) && !surAntokiba.current) {
+            const texte = texteSurencheri(l.meilleureOffre.pseudo, l.meilleureOffre.montant, l.carte.nom, l.resteMs);
+            notifier(texte);
+            setPastilleAntokiba((n) => n + 1);
+            setAlerte({ n: Date.now(), genre: 'info', qui: 'Antokiba', texte, voir: 'antokiba' });
+            navigator.vibrate?.(80);
+          }
+          return;
+        }
+        if (nom === 'enchere_close') {
+          // RG-11.4 / 11.5 : le lot quitte la salle ; celui qui avait enchéri sans gagner ne paie rien.
+          const c = data as Cloture;
+          const l = lots.current.get(c.id);
+          lots.current.delete(c.id);
+          setClotures((x) => [...x.filter((k) => k.id !== c.id), c].slice(-10));
+          if (l && l.maOffre != null && c.joueurId !== sess.joueurId) {
+            const texte = texteClotureAutre(c, l.carte.nom);
+            notifier(texte);
+            setAlerte({ n: Date.now(), genre: 'info', qui: 'Antokiba', texte });
+            navigator.vibrate?.([60, 60, 60]);
+          }
+          return;
+        }
+        if (nom === 'enchere_gagnee') {
+          // La cinématique « ADJUGÉ ! » débite la jenny et range la carte (seul le gagnant paie, RG-11.4).
+          const a = data as Adjuge;
+          notifier(texteAdjuge(a.lot.nom, a.prix));
+          setAdjuges((x) => (x.some((k) => k.id === a.id) ? x : [...x, a]));
+          return;
+        }
+        // Mises à jour fréquentes (PV du raid) : l'écran se met à jour, sans notification.
+        if (nom === 'raid') return;
         const texte = (data as { texte?: unknown } | null)?.texte;
         const message = typeof texte === 'string' ? texte : libelleEvenement(nom);
         notifier(message);
@@ -460,6 +518,20 @@ export function useJeu() {
     },
     echangeConclu,
     finEchangeConclu: () => setEchangeConclu(null),
+    /** Page ⑭ : enchères d'Antokiba. */
+    encheres: {
+      /** Le joueur est sur la page : pas de boîte « a surenchéri », la pastille s'efface. */
+      surPage: (oui: boolean) => {
+        surAntokiba.current = oui;
+        if (oui) setPastilleAntokiba(0);
+      },
+      /** Lot lu ou modifié par la page (GET, ma propre offre). */
+      noter: (l: Lot) => lots.current.set(l.id, l),
+      clotures,
+      pastille: pastilleAntokiba,
+      adjuge: adjuges[0] ?? null,
+      finAdjuge: () => setAdjuges((x) => x.slice(1)),
+    },
     positionAction,
     apresAction,
     moi,

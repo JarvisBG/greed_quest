@@ -57,6 +57,7 @@ export function Accueil({
   onEcranAllume,
   onExamen,
   onOuvrir,
+  pastilleAntokiba = 0,
   onBook,
   position,
 }: {
@@ -69,6 +70,8 @@ export function Accueil({
   onEcranAllume: (oui: boolean) => void;
   onExamen: () => void;
   onOuvrir: (s: SousEcran) => void;
+  /** Page ⑭ : surenchères subies hors de la page d'Antokiba. */
+  pastilleAntokiba?: number;
   onBook: () => void;
   /** Dernière position GPS de ce téléphone (seule position montrée, RG-10.12). */
   position: { lat: number; lng: number; precisionM: number } | null;
@@ -162,8 +165,19 @@ export function Accueil({
         <div className="villes">
           {VILLES.map((v) => {
             const distance = retour?.ville === v.id;
+            const pastille = v.id === 'antokiba' ? pastilleAntokiba : 0;
             return (
-              <button key={v.id} className={`ville${distance ? ' a-distance' : ''}`} onClick={() => onOuvrir(v.ecran)}>
+              <button
+                key={v.id}
+                className={`ville${distance ? ' a-distance' : ''}`}
+                aria-label={pastille ? `${v.nom} : surenchéri ${pastille} fois` : undefined}
+                onClick={() => onOuvrir(v.ecran)}
+              >
+                {pastille > 0 && (
+                  <span className="pastille-rouge" aria-hidden="true">
+                    {pastille}
+                  </span>
+                )}
                 <b>{v.nom}</b>
                 <span>{v.lieu}</span>
                 {distance ? (

@@ -2,7 +2,6 @@ import { Annonce } from '@gq/ui';
 import { useEffect, useRef, useState } from 'react';
 import { Accueil, useEvenements, type SousEcran } from './ecrans/Accueil';
 import { Chrono } from './ecrans/Chrono';
-import { Encheres } from './ecrans/Encheres';
 import { Echanges } from './ecrans/echanges/Echanges';
 import { SessionEchange } from './ecrans/echanges/SessionEchange';
 import { Trade } from './ecrans/echanges/Trade';
@@ -14,11 +13,12 @@ import { Kit } from './ecrans/Kit';
 import { Book } from './ecrans/book/Book';
 import { Licence } from './ecrans/licence/Licence';
 import { Masadora } from './ecrans/masadora/Masadora';
+import { Adjuge } from './ecrans/antokiba/Adjuge';
+import { Antokiba } from './ecrans/antokiba/Antokiba';
 import { Nen } from './ecrans/Nen';
 import { Raid } from './ecrans/Raid';
 import { Scan } from './ecrans/scan/Scan';
 import { Tirage, useTirages } from './ecrans/scan/Tirage';
-import { ADistance } from './ecrans/sorts/ADistance';
 import { BandeauGel, styleGivre, useGel } from './ecrans/sorts/BandeauGel';
 import { BandeauZetsu } from './ecrans/sorts/BandeauZetsu';
 import { PieceFortune } from './ecrans/sorts/CaseNen';
@@ -159,7 +159,10 @@ export function App() {
                 action: (
                   <button
                     onClick={() => {
-                      setOnglet('echanges');
+                      if (jeu.alerte?.voir === 'antokiba') {
+                        setOnglet('accueil');
+                        setSous('encheres');
+                      } else setOnglet('echanges');
                       jeu.fermerAlerte();
                     }}
                   >
@@ -273,17 +276,17 @@ export function App() {
               />
             )}
             {ecran === 'accueil' && onglet === 'accueil' && sous === 'encheres' && (
-              <div className="ancien">
-                {retourActif(moi, 'antokiba') && moi.retour && <ADistance resteMs={moi.retour.resteMs} recuA={moi.recuA} />}
-                <Encheres
-                  partieId={partie.id}
-                  jenny={moi.jenny}
-                  version={jeu.version}
-                  positionAction={jeu.positionAction}
-                  onRetour={() => setSous(null)}
-                  aDistance={retourActif(moi, 'antokiba')}
-                />
-              </div>
+              <Antokiba
+                partieId={partie.id}
+                moi={moi.id}
+                jenny={moi.jenny}
+                version={jeu.version}
+                positionAction={jeu.positionAction}
+                annoncer={jeu.annoncer}
+                onRetour={() => setSous(null)}
+                retour={retourActif(moi, 'antokiba') && moi.retour ? { resteMs: moi.retour.resteMs, recuA: moi.recuA } : null}
+                encheres={jeu.encheres}
+              />
             )}
             {ecran === 'accueil' && onglet === 'accueil' && sous === 'raid' && (
               <div className="ancien">
@@ -309,6 +312,7 @@ export function App() {
                 }}
                 onExamen={() => setExamenOuvert(true)}
                 onOuvrir={setSous}
+                pastilleAntokiba={jeu.encheres.pastille}
                 onBook={() => setOnglet('livre')}
                 position={jeu.positionCarte()}
               />
@@ -370,6 +374,18 @@ export function App() {
             setTrade(false);
             setTableCachee(false);
             jeu.finEchangeConclu();
+          }}
+        />
+      )}
+      {/* Page ⑭ : enchère gagnée, où que soit le joueur dans l'app (après un tirage en cours). */}
+      {!tirages.courant && jeu.encheres.adjuge && (
+        <Adjuge
+          key={jeu.encheres.adjuge.id}
+          adjuge={jeu.encheres.adjuge}
+          onDebit={jeu.majJenny}
+          onFini={() => {
+            jeu.encheres.finAdjuge();
+            jeu.apresAction();
           }}
         />
       )}

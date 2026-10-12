@@ -8,11 +8,13 @@ import {
   castRegard,
   castRetour,
   castRevelation,
+  cartesParEmplacement,
   estInvisible,
   playersInRange,
   rechargesNenMs,
   transform,
   type Book,
+  type BookItem,
   type NenPower,
   type SpellNotice,
   type SpellPlayer,
@@ -20,7 +22,7 @@ import {
 } from '@gq/engine';
 import type { NenType } from '@gq/shared';
 import { SortIntent, TransformationIntent } from '@gq/shared';
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq, gt, isNotNull, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { requireRole } from '../auth/guard.js';
 import { ENGAGEE, activeSession, engagedItems } from '../core/echanges.js';
@@ -43,7 +45,7 @@ import {
   vueCarte,
   type JoueurRow,
 } from '../core/state.js';
-import { zones } from '../db/schema.js';
+import { journal, zones } from '../db/schema.js';
 import { introuvable } from '../errors.js';
 import { refus, send } from '../http.js';
 import { newId } from '../ids.js';
@@ -93,6 +95,17 @@ export function positionAccompagnee(cible: { id: string; pseudo: string; positio
   };
 }
 
+/**
+ * Page ⑪ (RG-10.5) : ce que la cible voit d'une carte qui quitte ou rejoint son Book : la carte telle qu'elle lui
+ * paraissait (une contrefaçon non démasquée paraît vraie), et son emplacement avant le sort (fixe ou libre).
+ */
+function vueItemCible(item: BookItem, avant: Book, designees: readonly string[], cat: Parameters<typeof vueCarte>[0], limites: Parameters<typeof vueCarte>[2]) {
+  if (item.kind === 'sort') return { kind: 'sort' as const, itemId: item.id, sort: item.spell, emplacement: 'libre' as const };
+  if (item.kind === 'objet') return { kind: 'objet' as const, itemId: item.id, objet: item.objet, emplacement: 'libre' as const };
+  const fixe = cartesParEmplacement(avant, designees).fixes.some((x) => x.id === item.id);
+  return { kind: 'carte' as const, itemId: item.id, carteId: item.cardId, ...vueCarte(cat, item.cardId, limites), emplacement: fixe ? ('fixe' as const) : ('libre' as const) };
+}
+
 export const rangeOf = (p: { porteeSortsM: number; margeGpsMaxM: number; ciblableMin: number }) => ({
   porteeM: p.porteeSortsM,
   margeMaxM: p.margeGpsMaxM,
@@ -129,6 +142,35 @@ export async function sortsRoutes(app: FastifyInstance) {
     return runner.run(partieId, { type: 'joueur', id: s.sub }, async (c) => {
       const cible = (await loadJoueurs(c.tx, partieId)).find((x) => x.accompagnePar === s.sub && x.accompagneJusqua !== null && x.accompagneJusqua > c.now);
       return { ok: true as const, accompagnement: cible ? { ...positionAccompagnee(cible), resteMs: cible.accompagneJusqua! - c.now } : null };
+    });
+  });
+
+  // Page ⑪ (RG-10.5) : sorts reçus depuis la dernière alerte vue par l'app (app fermée, hors ligne). Sans `apres`,
+  // seulement le repère actuel : l'app part de là. Lu dans le Journal, ce que la cible a le droit de savoir.
+  app.get<P & { Querystring: { apres?: string } }>('/parties/:partieId/sorts-recus', async (req) => {
+    const { partieId } = req.params;
+    const s = requireRole(req, partieId, 'joueur');
+    const apres = Number(req.query.apres);
+    return runner.run(partieId, { type: 'joueur', id: s.sub }, async (c) => {
+      const [dernier] = await c.tx.select({ id: journal.id }).from(journal).where(eq(journal.partieId, partieId)).orderBy(desc(journal.id)).limit(1);
+      const repere = dernier?.id ?? 0;
+      if (!Number.isInteger(apres) || apres < 0) return { ok: true as const, repere, maintenant: c.now, recus: [] };
+      const lignes = await c.tx
+        .select()
+        .from(journal)
+        .where(
+          and(
+            eq(journal.partieId, partieId),
+            eq(journal.action, 'sort'),
+            gt(journal.id, apres),
+            isNotNull(sql`${journal.details}->'alerte'`),
+            sql`${journal.details}->>'cible' = ${s.sub}`,
+          ),
+        )
+        .orderBy(journal.id)
+        .limit(20);
+      const recus = lignes.map((l) => ({ n: l.id, heureJeu: l.heureJeu, ...(l.details!.alerte as Record<string, unknown>) }));
+      return { ok: true as const, repere, maintenant: c.now, recus };
     });
   });
 
@@ -174,6 +216,8 @@ export async function sortsRoutes(app: FastifyInstance) {
       let res:
         | { ok: true; lanceur: SpellPlayer; cible?: SpellPlayer; notice: SpellNotice; prive: Record<string, unknown> }
         | SpellRefusal;
+      // Page ⑪ (RG-10.5) : ce que la cible apprend en plus du lanceur, du sort et du résultat.
+      let pourCible: Record<string, unknown> = {};
       switch (input.sort) {
         case 'vol':
         case 'gel':
@@ -194,6 +238,17 @@ export async function sortsRoutes(app: FastifyInstance) {
             },
             c.rng,
           );
+          if (o.ok) {
+            const avant = cible!.book, limites = limitesOf(p);
+            pourCible = {
+              // Vol, Pickpocket, Échange forcé : la carte qui part (et, pour l'échange, celle qui arrive).
+              perdue: o.recu ? vueItemCible(o.recu, avant, cat.designees, cat, limites) : null,
+              recue: o.donne ? vueItemCible(o.donne, o.cible.book, cat.designees, cat, limites) : null,
+              protection: o.protection ?? null,
+              // L'épée du vol (Bandit) ou Manipulation : un pouvoir, pas une carte de sort.
+              pouvoir: 'source' in input && input.source.type === 'pouvoir' ? (input.sort === 'vol' ? 'bandit' : 'manipulation') : null,
+            };
+          }
           res = o.ok
             ? {
                 ok: true,
@@ -218,6 +273,7 @@ export async function sortsRoutes(app: FastifyInstance) {
             cible: { id: cible!.id, position: cible!.position, book: cible!.book, zetsuJusqua: cible!.zetsuJusqua ?? null },
             zones: zs.map((z) => ({ id: z.id, polygon: z.polygone })),
           });
+          if (o.ok && o.voile) pourCible = { protection: 'voile' };
           res = o.ok
             ? {
                 ok: true,
@@ -244,6 +300,7 @@ export async function sortsRoutes(app: FastifyInstance) {
             rencontre: await seSontRencontres(c.tx, j.id, cible!.id),
             sort: input.sort,
           });
+          if (o.ok && o.voile) pourCible = { protection: 'voile' };
           res = o.ok
             ? {
                 ok: true,
@@ -331,13 +388,15 @@ export async function sortsRoutes(app: FastifyInstance) {
       }
 
       const { notice } = res;
-      await c.log({ action: 'sort', resultat: notice.resultat, details: { ...notice, ...res.prive } });
-      // RG-10.5 alerte à la cible ; RG-10.6 écran géant (lanceur, cible, résultat).
-      const pseudoCible = cibleRow?.pseudo ?? null;
       // Amendement 2026-10-09 : Voyance (et Clairvoyance) restent anonymes (la cible sait qu'on l'a regardée, pas qui ; l'écran ne nomme personne).
       const anonyme = notice.sort === 'regard' || notice.sort === 'clairvoyance';
-      if (notice.cible) {
-        c.emit({ type: 'joueur', id: notice.cible }, 'sort_recu', { lanceur: anonyme ? null : j.pseudo, sort: notice.sort, resultat: notice.resultat });
+      // RG-10.5 : alerte à la cible (lanceur, sort, résultat), gardée dans le Journal pour le rattrapage (page ⑪).
+      const alerte = notice.cible ? { lanceur: anonyme ? null : j.pseudo, sort: notice.sort, resultat: notice.resultat, ...pourCible } : null;
+      const ligne = await c.log({ action: 'sort', resultat: notice.resultat, details: { ...notice, ...res.prive, ...(alerte ? { alerte } : {}) } });
+      // RG-10.6 écran géant (lanceur, cible, résultat).
+      const pseudoCible = cibleRow?.pseudo ?? null;
+      if (notice.cible && alerte) {
+        c.emit({ type: 'joueur', id: notice.cible }, 'sort_recu', { n: ligne.id, heureJeu: c.now, ...alerte });
         await noterRencontre(c, j.id, notice.cible); // un sort ciblé vaut rencontre (Radar, Émission)
       }
       c.emit({ type: 'tracker' }, 'fil', {

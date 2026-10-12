@@ -8,7 +8,7 @@ import type { Db, Tx } from '../db/client.js';
 import { fil, parties } from '../db/schema.js';
 import type { Audience, Bus, Emission } from './bus.js';
 import { Refus } from '../errors.js';
-import { writeLog, type Acteur, type LogEntry } from './journal.js';
+import { writeLog, type Acteur, type JournalRow, type LogEntry } from './journal.js';
 import { lifecycleOf, type PartieRow } from './partie.js';
 
 /** Aléa du serveur (non prédictible). Les tests injectent un générateur seedé. */
@@ -23,7 +23,8 @@ export interface ActionCtx {
   now: number;
   rng: Rng;
   acteur: Acteur;
-  log(e: LogEntry): Promise<void>;
+  /** Écrit la ligne du Journal (RG-3.1) et la rend (son id sert de repère, ex. rattrapage des sorts reçus). */
+  log(e: LogEntry): Promise<JournalRow>;
   /** Diffusé seulement si la transaction est validée. */
   emit(a: Audience, evenement: string, data: unknown): void;
 }
@@ -82,6 +83,7 @@ export class Runner {
             const row = await writeLog(tx, partieId, now, acteur, e);
             // Diffusion « PNJ/GM : journal » de la matrice (REGLES.md).
             if (!HORS_FIL.has(e.action)) emissions.push({ partieId, a: { type: 'staff' }, evenement: 'journal', data: row });
+            return row;
           },
           emit: (a, evenement, data) => emissions.push({ partieId, a, evenement, data }),
         };

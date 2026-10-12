@@ -96,7 +96,7 @@ describe('RG-10 amendé : Vol, Pickpocket, Clairvoyance', () => {
     const res = await lancer(gon, { sort: 'clairvoyance', itemId: clair, cibleId: leorio.id });
     expect(res.json()).toMatchObject({ ok: true, sort: 'clairvoyance', resultat: 'reussi' });
     expect(res.json().cartes).toContainEqual(expect.objectContaining({ numero: 94 }));
-    expect(recues).toContainEqual({ a: leorio.id, evenement: 'sort_recu', data: { lanceur: null, sort: 'clairvoyance', resultat: 'reussi' } });
+    expect(recues).toContainEqual({ a: leorio.id, evenement: 'sort_recu', data: expect.objectContaining({ lanceur: null, sort: 'clairvoyance', resultat: 'reussi' }) });
   });
 });
 

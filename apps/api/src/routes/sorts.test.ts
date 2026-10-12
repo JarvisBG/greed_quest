@@ -70,7 +70,7 @@ describe('RG-10 sorts', () => {
     expect(moi.delais.pouvoir).toBeNull(); // pas de pouvoir de Nen rechargeable
     const [k] = await t.db.select().from(joueurs).where(eq(joueurs.id, kirua.id));
     expect(k?.immuniteJusqua).toBeGreaterThan(0);
-    expect(recues).toContainEqual({ a: kirua.id, evenement: 'sort_recu', data: { lanceur: 'Gon', sort: 'vol', resultat: 'reussi' } });
+    expect(recues).toContainEqual({ a: kirua.id, evenement: 'sort_recu', data: expect.objectContaining({ lanceur: 'Gon', sort: 'vol', resultat: 'reussi' }) });
     expect(recues.some((e) => e.a === 'tracker' && e.evenement === 'fil')).toBe(true);
   });
 
@@ -189,7 +189,7 @@ describe('Amendement 2026-10-09 : sort Regard', () => {
     const res = await lancer(leorio, { sort: 'regard', itemId: regard, cibleId: gon.id });
     expect(res.json()).toMatchObject({ ok: true, sort: 'regard', resultat: 'reussi' });
     expect(res.json().cartes).toContainEqual(expect.objectContaining({ numero: 0, rang: 'SS', contrefacon: false }));
-    expect(recues).toContainEqual({ a: gon.id, evenement: 'sort_recu', data: { lanceur: null, sort: 'regard', resultat: 'reussi' } });
+    expect(recues).toContainEqual({ a: gon.id, evenement: 'sort_recu', data: expect.objectContaining({ lanceur: null, sort: 'regard', resultat: 'reussi' }) });
     expect(recues.find((e) => e.a === 'tracker' && e.evenement === 'fil')?.data).toMatchObject({ lanceur: null, cible: null, sort: 'regard' });
   });
 

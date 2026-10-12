@@ -197,6 +197,7 @@ export function texteSortRecu(d: SortRecu): string {
   if (d.resultat === 'sans_effet') {
     if (d.sort === 'pickpocket') return `${l} t’a lancé Pickpocket, mais tes emplacements libres étaient vides.`;
     if (d.sort === 'vol' || d.sort === 'echange_force') return `${l} t’a lancé ${nom}, mais il n’y avait rien à prendre.`;
+    if (d.sort === 'radar') return `${l} a utilisé Trace sur toi, mais ne t’a pas trouvé.`;
     return `${l} t’a lancé ${nom}, sans effet.`;
   }
   const perdue = d.perdue ? nomRecu(d.perdue) : null;

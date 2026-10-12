@@ -14,13 +14,13 @@ export const styleGivre = { ['--givre-motif' as string]: MOTIF } as CSSPropertie
 
 /** Gel restant (ms) : Gel ou Accompagnement subi, décompté depuis la réception du profil ; rafraîchi chaque seconde. */
 export function useGel(moi: Moi | null): number {
-  const [maintenant, setMaintenant] = useState(Date.now());
+  const [, battre] = useState(0);
   const total = moi ? Math.max(moi.delais.gel, moi.accompagne) : 0;
-  const reste = moi ? Math.max(0, total - (maintenant - moi.recuA)) : 0;
+  // L'heure est lue à chaque rendu (leçon de la page ⑨) ; la minuterie ne sert qu'à redessiner.
+  const reste = moi && total > 0 ? Math.max(0, total - (Date.now() - moi.recuA)) : 0;
   useEffect(() => {
     if (!moi || total <= 0) return;
-    setMaintenant(Date.now());
-    const t = setInterval(() => setMaintenant(Date.now()), 1000);
+    const t = setInterval(() => battre((n) => n + 1), 1000);
     return () => clearInterval(t);
   }, [moi, total]);
   return reste;

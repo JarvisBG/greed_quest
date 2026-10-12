@@ -178,6 +178,7 @@ describe('page ⑪ : sort reçu (RG-10.5)', () => {
     expect(texteSortRecu({ ...base, sort: 'radar', resultat: 'bloque', protection: 'voile' })).toBe('Kirua a voulu utiliser Trace sur toi : ton Voile d’ombre l’en a empêché. Il est perdu.');
     expect(texteSortRecu({ lanceur: null, sort: 'regard', resultat: 'bloque', protection: 'voile' })).toBe('Quelqu’un a voulu consulter ton Book : ton Voile d’ombre l’en a empêché. Il est perdu.');
     expect(texteSortRecu({ ...base, sort: 'pickpocket', resultat: 'sans_effet' })).toBe('Kirua t’a lancé Pickpocket, mais tes emplacements libres étaient vides.');
+    expect(texteSortRecu({ ...base, sort: 'radar', resultat: 'sans_effet' })).toBe('Kirua a utilisé Trace sur toi, mais ne t’a pas trouvé.');
     // Ancienne forme de l'évènement (sans carte) : la phrase reste juste.
     expect(texteSortRecu({ ...base, sort: 'vol' })).toBe('Kirua t’a volé une carte !');
   });

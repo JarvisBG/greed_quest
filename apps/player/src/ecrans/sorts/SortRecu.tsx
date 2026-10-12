@@ -284,7 +284,7 @@ export function SortRecu({ recu, partieId, geleMs, onFini }: Props) {
 
     void (async () => {
       // Une autre cinématique en cours (ton propre lancer) : le sort reçu attend la fin.
-      while (vivant && document.querySelector('.lancer')) await delai(300);
+      while (vivant && document.querySelector('.lancer:not(.recu)')) await delai(300);
       // Ta page d'avant le vol : le Book est relu après le sort (court délai au plus).
       const livre = recu.perdue ? Promise.race([api.get<LivreRecu>(`/parties/${partieId}/livre`).catch(() => null), delai(1500).then(() => null)]) : Promise.resolve(null);
       await deuxImages();

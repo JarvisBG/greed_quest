@@ -381,8 +381,9 @@ export async function sortsRoutes(app: FastifyInstance) {
       }
       await saveBooks(c.tx, partieId, c.now, [{ joueurId: j.id, before: book, after: o.book }]);
       await updateJoueur(c.tx, j.id, { ...actionPatch(j, c.now), transformationDispoA: o.disponibleA });
-      await c.log({ action: 'transformation', resultat: 'ok', details: { itemId: o.item.id, imite: o.item.cardId } });
-      return { ok: true as const, itemId: o.item.id, carteId: o.item.cardId, disponibleA: o.disponibleA };
+      // Décision 2026-10-12 : sur une contrefaçon ignorée, le déguisement échoue (pouvoir utilisé, carte démasquée).
+      await c.log({ action: 'transformation', resultat: o.resultat === 'reussi' ? 'ok' : 'contrefacon', details: { itemId: o.item.id, imite: o.resultat === 'reussi' ? o.item.cardId : null } });
+      return { ok: true as const, resultat: o.resultat, itemId: o.item.id, carteId: o.item.cardId, disponibleA: o.disponibleA };
     });
     return send(reply, r);
   });

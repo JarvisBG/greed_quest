@@ -134,6 +134,7 @@ describe('RG-5.4 / RG-8.7 Transformation (Texture Surprise)', () => {
     const r = transform(input());
     expect(r).toMatchObject({
       ok: true,
+      resultat: 'reussi',
       item: { id: 'b', cardId: '002', faux: { nature: 'deguise', vraieCarteId: '001' }, marque: 'creee' },
       disponibleA: 1000 + TRANSFORMATION_COOLDOWN_MS,
     });
@@ -152,11 +153,22 @@ describe('RG-5.4 / RG-8.7 Transformation (Texture Surprise)', () => {
     if (r.ok) expect(Object.fromEntries(countInCirculation([r.book]))).toEqual({ '001': 2 });
   });
 
-  it('refus : pas un doublon, rang différent, même carte, contrefaçon', () => {
+  it('refus : pas un doublon, rang différent, même carte, contrefaçon que le joueur connaît', () => {
     expect(transform(input({ book: book(carte('b', '001')) }))).toMatchObject({ code: 'pas_un_doublon' });
     expect(transform(input({ cibleCardId: '003' }))).toMatchObject({ code: 'carte_invalide' });
     expect(transform(input({ cibleCardId: '001' }))).toMatchObject({ code: 'carte_invalide' });
-    expect(transform(input({ book: book(carte('a', '001'), copie('b', '001')) }))).toMatchObject({ code: 'pas_un_doublon' });
+    expect(transform(input({ book: book(carte('a', '001'), copie('b', '001', 'creee')) }))).toMatchObject({ code: 'pas_un_doublon' });
+    expect(transform(input({ book: book(carte('a', '001'), copie('b', '001', 'demasquee')) }))).toMatchObject({ code: 'pas_un_doublon' });
+  });
+
+  it('RG-5.4 décision 2026-10-12 : une contrefaçon ignorée fait échouer le déguisement, le pouvoir est utilisé, la carte est démasquée', () => {
+    const r = transform(input({ book: book(carte('a', '001'), copie('b', '001')) }));
+    expect(r).toMatchObject({ ok: true, resultat: 'contrefacon', item: { id: 'b', cardId: '001', marque: 'demasquee' }, disponibleA: 1000 + TRANSFORMATION_COOLDOWN_MS });
+    // Un doublon déguisé par un autre joueur redevient sa vraie carte (RG-8.9).
+    const deguise = carte('b', '001', { faux: { nature: 'deguise', vraieCarteId: '002' } });
+    expect(transform(input({ book: book(carte('a', '001'), deguise) }))).toMatchObject({ ok: true, resultat: 'contrefacon', item: { id: 'b', cardId: '002' } });
+    // Le rang demandé est vérifié d'abord : une entrée invalide reste un refus, rien n'est dépensé.
+    expect(transform(input({ book: book(carte('a', '001'), copie('b', '001')), cibleCardId: '003' }))).toMatchObject({ code: 'carte_invalide' });
   });
 
   it('refus : autre Nen, recharge de 20 min, partie fermée', () => {

@@ -103,4 +103,10 @@ describe('RG-5.4 page ⑩ : phrases des pouvoirs', () => {
   it('RG-5.4 Texture Surprise : la phrase rappelle la Pénétration', () => {
     expect(phraseTexture('Le dé du risque', 'La balance d’or')).toContain('la balance d’or');
   });
+
+  it('RG-5.4 décision 2026-10-12 : Texture Surprise sur une contrefaçon ignorée échoue, la carte reste démasquée', () => {
+    const p = phraseTexture('Le dé du risque', 'La balance d’or', 'contrefacon');
+    expect(p).toContain('contrefaçon');
+    expect(p).toContain('démasquée');
+  });
 });

@@ -27,7 +27,7 @@ export interface IssuePouvoir {
   phrase: string;
   /** Refus (RG-7.4) : rien n'est dépensé. */
   refus?: string;
-  /** Alchimie sur une contrefaçon. */
+  /** Alchimie ou Texture Surprise sur une contrefaçon. */
   echec?: boolean;
   /** L'épée arrêtée par une protection ; rien à prendre. */
   bloque?: boolean;
@@ -309,6 +309,17 @@ export function Pouvoir({ demande, onFini }: { demande: DemandePouvoir; onFini: 
       await pause(250);
       el.coulure.style.opacity = '1';
       vibrer(12);
+      if (i.echec) {
+        // L'encre ne prend pas sur une contrefaçon : elle s'arrête à mi-carte, la carte se fend et perd ses couleurs.
+        await fini(A(el.coulure, [{ transform: 'translateY(0)' }, { transform: 'translateY(45%)' }], { duration: 600, easing: 'cubic-bezier(.55,0,.7,.4)' }));
+        secouer(el.porte, 7);
+        vibrer([30, 40, 30]);
+        setEtat((e) => ({ ...e, felee: true }));
+        A(el.coulure, [{ opacity: 1 }, { opacity: 0 }], { duration: 500 });
+        auraVers(0.3);
+        await pause(600);
+        return dire(i.phrase, 'Échec', true);
+      }
       await fini(A(el.coulure, [{ transform: 'translateY(0)' }, { transform: 'translateY(100%)' }], { duration: 950, easing: 'cubic-bezier(.55,0,.7,.4)' }));
       el.carteA.style.opacity = '0';
       el.carteB.style.opacity = '1';

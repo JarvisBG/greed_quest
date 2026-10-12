@@ -123,7 +123,8 @@ export interface TransformInput {
 }
 
 export type TransformResult =
-  | { ok: true; book: Book; item: CardItem; disponibleA: number }
+  /** `contrefacon` : le doublon était une contrefaçon ignorée du joueur ; le déguisement échoue, le pouvoir est utilisé. */
+  | { ok: true; resultat: 'reussi' | 'contrefacon'; book: Book; item: CardItem; disponibleA: number }
   | {
       ok: false;
       code: 'partie_fermee' | 'pouvoir_indisponible' | 'recharge' | 'pas_un_doublon' | 'carte_invalide';
@@ -141,11 +142,13 @@ export function transform(t: TransformInput): TransformResult {
   }
 
   const item = t.book.items.find((i) => i.id === t.itemId);
-  // Un vrai exemplaire dont le joueur possède au moins un autre exemplaire.
+  // Une contrefaçon que le joueur connaît (sa propre création, ou démasquée) ne se déguise pas.
+  const connue = (i: CardItem) => i.marque === 'creee' || isRevealedCopy(i);
+  // Un exemplaire, tel que le joueur le voit, dont il possède au moins un autre exemplaire.
   const estDoublon =
     item !== undefined &&
     isCard(item) &&
-    !item.faux &&
+    !(item.faux && connue(item)) &&
     t.book.items.some((i) => i.id !== item.id && isCard(i) && i.cardId === item.cardId);
   if (!estDoublon || !isCard(item)) return { ok: false, code: 'pas_un_doublon', message: 'Choisis un doublon de ton Book' };
 
@@ -157,6 +160,15 @@ export function transform(t: TransformInput): TransformResult {
     return { ok: false, code: 'carte_invalide', message: 'Choisis une autre carte du même rang (ou la SS pour un doublon S)' };
   }
 
+  const disponibleA = t.now + TRANSFORMATION_COOLDOWN_MS;
+  // Décision Sivraj 2026-10-12 (comme l'Alchimie) : un doublon qui est en fait une contrefaçon ignorée fait échouer
+  // le déguisement ; le pouvoir est utilisé et la carte, révélée par le message, est démasquée pour son détenteur (RG-8.9).
+  if (item.faux) {
+    const book = revealItems(t.book, [item.id]);
+    const revelee = book.items.find((i) => i.id === item.id) as CardItem;
+    return { ok: true, resultat: 'contrefacon', book, item: revelee, disponibleA };
+  }
+
   const deguise: CardItem = {
     ...item,
     cardId: t.cibleCardId,
@@ -166,7 +178,8 @@ export function transform(t: TransformInput): TransformResult {
   return {
     ok: true,
     book: { ...t.book, items: t.book.items.map((i) => (i.id === item.id ? deguise : i)) },
+    resultat: 'reussi',
     item: deguise,
-    disponibleA: t.now + TRANSFORMATION_COOLDOWN_MS,
+    disponibleA,
   };
 }

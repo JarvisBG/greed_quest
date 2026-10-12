@@ -153,8 +153,9 @@ export function parRang(cartes: CarteCatalogue[]): { rang: Rank; cartes: CarteCa
   return RANKS.map((rang) => ({ rang, cartes: cartes.filter((c) => c.rang === rang).sort((a, b) => a.numero - b.numero) })).filter((g) => g.cartes.length > 0);
 }
 
-/** Phrase de Texture Surprise. */
-export function phraseTexture(doublon: string, apparence: string): string {
+/** Phrase de Texture Surprise (décision 2026-10-12 : une contrefaçon ignorée fait échouer le déguisement). */
+export function phraseTexture(doublon: string, apparence: string, resultat: 'reussi' | 'contrefacon' = 'reussi'): string {
+  if (resultat === 'contrefacon') return 'Le déguisement échoue : ce doublon était une contrefaçon. Elle reste dans ton Book, démasquée, et ton pouvoir est utilisé.';
   return `Ton doublon ${enPhrase(doublon)} a maintenant l’apparence de ${enPhrase(apparence)}. Pour les autres, c’est une vraie carte, jusqu’à ce qu’une Pénétration la démasque.`;
 }
 

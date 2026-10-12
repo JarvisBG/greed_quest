@@ -114,7 +114,13 @@ export function FichePouvoir({ partieId, nen, cle, livre, positionAction, onFerm
       const voulue = catalogue!.find((c) => c.id === deux)!;
       const reponse: Promise<IssuePouvoir> =
         cle === 'transformation'
-          ? api.post(`${base}/transformation`, { itemId: d.itemId, cibleCarteId: voulue.id }).then(() => ({ phrase: phraseTexture(d.nom, voulue.nom), tag: 'Pour les autres : une vraie carte' }), refus)
+          ? api.post<{ resultat: 'reussi' | 'contrefacon' }>(`${base}/transformation`, { itemId: d.itemId, cibleCarteId: voulue.id }).then(
+              (r) =>
+                r.resultat === 'contrefacon'
+                  ? { echec: true, phrase: phraseTexture(d.nom, voulue.nom, 'contrefacon') }
+                  : { phrase: phraseTexture(d.nom, voulue.nom), tag: 'Pour les autres : une vraie carte' },
+              refus,
+            )
           : api.post<{ resultat: 'reussi' | 'contrefacon' }>(`${base}/specialisation`, { pouvoir: 'alchimie', doublonItemId: d.itemId, carteVoulueId: voulue.id }).then(
               (r) =>
                 r.resultat === 'contrefacon'

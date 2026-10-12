@@ -2,7 +2,7 @@
 // et les alertes reçues (RG-10.5). Le serveur décide de tout (P1) ; ici on ne fait que présenter.
 import type { NenType, PositionInput, Rank, SpellType } from '@gq/shared';
 import { SORTS } from './format';
-import { contenu, type Carte, type EmplacementCarte, type LivreRecu } from './livre';
+import { contenu, genreDePage, rangDePage, titreDePage, type Carte, type EmplacementCarte, type LivreRecu } from './livre';
 
 /** Ordre d'affichage : offensifs, puis information, puis Livre. */
 const ORDRE: SpellType[] = ['vol', 'pickpocket', 'echange_force', 'gel', 'accompagnement', 'radar', 'regard', 'clairvoyance', 'revelation', 'retour', 'duplication', 'analyse', 'barriere'];
@@ -121,29 +121,144 @@ export function resumeSort(r: ReponseSort, cible: string | null, noms: (itemId: 
   }
 }
 
-/** RG-10.5 : alerte reçue par la cible (`sort_recu` : lanceur, sort, résultat). */
-export function texteSortRecu(d: { lanceur: string | null; sort: SpellType; resultat: ReponseSort['resultat'] }): string {
-  const nom = SORTS[d.sort]?.nom ?? d.sort;
-  // Regard est anonyme : la cible sait seulement qu'on a consulté son Livre.
-  if (d.sort === 'regard' || d.sort === 'clairvoyance' || d.lanceur === null) return 'Quelqu’un a consulté ton Book.';
-  if (d.resultat === 'bloque') return `${d.lanceur} t’a lancé ${nom}, mais ta protection l’a bloqué.`;
-  if (d.resultat === 'sans_effet') return `${d.lanceur} t’a lancé ${nom}, sans effet.`;
+/** Page ⑪ : carte qui quitte ou rejoint ton Book, telle que tu la voyais, et son emplacement avant le sort. */
+export interface ItemRecu {
+  kind: 'carte' | 'sort' | 'objet';
+  itemId: string;
+  emplacement: 'fixe' | 'libre';
+  carteId?: string;
+  numero?: number | null;
+  nom?: string;
+  rang?: Rank | null;
+  texte?: string | null;
+  limite?: number | null;
+  sort?: SpellType;
+  objet?: string;
+}
+
+/** RG-10.5 : alerte reçue par la cible (`sort_recu`, ou une ligne du rattrapage `GET /sorts-recus`). */
+export interface SortRecu {
+  /** Repère du Journal (rattrapage). */
+  n?: number;
+  heureJeu?: number;
+  lanceur: string | null;
+  sort: SpellType;
+  resultat: ReponseSort['resultat'];
+  perdue?: ItemRecu | null;
+  recue?: ItemRecu | null;
+  protection?: 'barriere' | 'renforcement' | 'voile' | null;
+  /** L'épée du vol (Spécialisation) ou Manipulation : un pouvoir, pas une carte de sort. */
+  pouvoir?: 'bandit' | 'manipulation' | null;
+}
+
+/** Nom d'une carte reçue ou perdue, dans une phrase (« le diamant arc-en-ciel », « la carte Vol »). */
+export function nomRecu(i: ItemRecu): string {
+  if (i.kind === 'sort') return `la carte ${SORTS[i.sort!]?.nom ?? 'de sort'}`;
+  if (i.kind === 'objet') return 'une carte objet';
+  return enPhrase(i.nom ?? 'une carte');
+}
+
+/** Nom crié pendant la cinématique : le sort, ou le pouvoir (L'épée du vol). */
+export function criRecu(d: SortRecu): string {
+  if (d.pouvoir === 'bandit') return 'L’épée du vol';
+  return SORTS[d.sort]?.nom ?? d.sort;
+}
+
+/**
+ * Page ⑪ (décision de Sivraj du 2026-10-12) : cinématique plein écran pour les sorts qui frappent ; Trace, Voyance,
+ * Clairvoyance (et le Voile d'ombre qui les bloque) restent une boîte du jeu.
+ */
+export type IssueRecu = 'vol' | 'echange' | 'gel' | 'accompagnement' | 'mur' | 'rien' | 'boite';
+export function issueRecu(d: SortRecu): IssueRecu {
+  if (!OFFENSIFS.includes(d.sort)) return 'boite';
+  if (d.resultat === 'bloque') return 'mur';
+  if (d.resultat === 'sans_effet') return 'rien';
+  if (d.sort === 'gel') return 'gel';
+  if (d.sort === 'accompagnement') return 'accompagnement';
+  if (d.sort === 'echange_force') return d.perdue ? 'echange' : 'boite';
+  return d.perdue ? 'vol' : 'boite';
+}
+const OFFENSIFS: SpellType[] = ['vol', 'pickpocket', 'echange_force', 'gel', 'accompagnement'];
+
+/** RG-10.5 : phrase de l'alerte reçue par la cible. */
+export function texteSortRecu(d: SortRecu): string {
+  const nom = criRecu(d);
+  const l = d.lanceur;
+  // Voyance et Clairvoyance sont anonymes : la cible sait seulement qu'on a consulté son Book.
+  if (d.sort === 'regard' || d.sort === 'clairvoyance' || l === null) {
+    return d.resultat === 'bloque' ? 'Quelqu’un a voulu consulter ton Book : ton Voile d’ombre l’en a empêché. Il est perdu.' : 'Quelqu’un a consulté ton Book.';
+  }
+  if (d.resultat === 'bloque') {
+    if (d.protection === 'voile') return `${l} a voulu utiliser ${nom} sur toi : ton Voile d’ombre l’en a empêché. Il est perdu.`;
+    if (d.protection === 'renforcement') return `${l} t’a lancé ${nom} : ton aura de Renforcement l’a bloqué.`;
+    if (d.protection === 'barriere') return `${l} t’a lancé ${nom} : ton Mur défensif l’a bloqué. Il est perdu.`;
+    return `${l} t’a lancé ${nom}, mais ta protection l’a bloqué.`;
+  }
+  if (d.resultat === 'sans_effet') {
+    if (d.sort === 'pickpocket') return `${l} t’a lancé Pickpocket, mais tes emplacements libres étaient vides.`;
+    if (d.sort === 'vol' || d.sort === 'echange_force') return `${l} t’a lancé ${nom}, mais il n’y avait rien à prendre.`;
+    return `${l} t’a lancé ${nom}, sans effet.`;
+  }
+  const perdue = d.perdue ? nomRecu(d.perdue) : null;
   switch (d.sort) {
     case 'vol':
-      return `${d.lanceur} t’a volé une carte !`;
-    case 'echange_force':
-      return `${d.lanceur} t’a imposé un échange forcé !`;
-    case 'gel':
-      return `${d.lanceur} t’a gelé : plus de scan pendant 3 min.`;
-    case 'radar':
-      return `${d.lanceur} a utilisé Trace sur toi : il connaît ta zone.`;
+      if (!perdue) return `${l} t’a volé une carte !`;
+      return d.pouvoir === 'bandit' ? `${l} t’a volé ${perdue} avec L’épée du vol.` : `${l} t’a volé ${perdue}.`;
     case 'pickpocket':
-      return `${d.lanceur} t’a pris une carte dans tes emplacements libres !`;
+      return perdue ? `${l} t’a pris ${perdue} dans tes emplacements libres.` : `${l} t’a pris une carte dans tes emplacements libres !`;
+    case 'echange_force':
+      return perdue && d.recue ? `${l} t’a imposé un échange : tu perds ${perdue} et tu reçois ${nomRecu(d.recue)}.` : `${l} t’a imposé un échange forcé !`;
+    case 'gel':
+      return `${l} t’a gelé : plus de scan pendant 3 min.`;
+    case 'radar':
+      return `${l} a utilisé Trace sur toi : il connaît ta zone.`;
     case 'accompagnement':
-      return `${d.lanceur} utilise Accompagnement sur toi : tu es gelé 3 min et il voit où tu es.`;
+      return `${l} utilise Accompagnement sur toi : tu es gelé 3 min et il voit où tu es.`;
     default:
-      return `${d.lanceur} t’a lancé ${nom}.`;
+      return `${l} t’a lancé ${nom}.`;
   }
+}
+
+/** Page ⑪ : une pochette de ta page, telle qu'avant le sort. */
+export type PocheRecu = { type: 'carte'; carte: Carte } | { type: 'sort'; sort: SpellType } | { type: 'absente'; numero: number | null; rang: Rank | null } | { type: 'vide' };
+
+const carteDe = (i: ItemRecu): Carte => ({ numero: i.numero ?? null, nom: i.nom ?? '?', rang: i.rang ?? null, texte: i.texte ?? null, limite: i.limite ?? null });
+
+/**
+ * Page ⑪ : ta page du Book telle qu'elle était avant le vol. Le Book est relu après le sort ; la carte perdue est
+ * remise dans sa pochette (fixe : l'emplacement de son numéro ; libre : la première pochette libre vide), et la
+ * carte reçue par un échange forcé en est retirée. `index` : la pochette d'où la carte va être arrachée.
+ */
+export function pageDuSortRecu(l: LivreRecu, perdue: ItemRecu, recue?: ItemRecu | null): { titre: string; libre: boolean; folio: number; poches: PocheRecu[]; index: number } | null {
+  const vers = (e: LivreRecu['pages'][number][number]): PocheRecu => {
+    if (e.etat === 'plein') {
+      if (recue && e.itemId === recue.itemId) return e.designe && e.kind === 'carte' ? { type: 'absente', numero: e.numero, rang: e.rang } : { type: 'vide' };
+      return e.kind === 'sort' ? { type: 'sort', sort: e.sort } : { type: 'carte', carte: e };
+    }
+    if (e.designe) return { type: 'absente', numero: e.carte.numero, rang: e.carte.rang };
+    return { type: 'vide' };
+  };
+  const remise: PocheRecu = perdue.kind === 'sort' ? { type: 'sort', sort: perdue.sort! } : { type: 'carte', carte: carteDe(perdue) };
+  for (let i = 0; i < l.pages.length; i++) {
+    const page = l.pages[i]!;
+    const libre = genreDePage(l, i) === 'libre';
+    let index = -1;
+    // Un doublon a pu reprendre l'emplacement fixe : c'est la même carte, on la montre arrachée de là.
+    if (perdue.emplacement === 'fixe' && !libre) index = page.findIndex((e) => e.designe && (e.etat === 'plein' ? e.kind === 'carte' && e.numero : e.carte.numero) === (perdue.numero ?? null));
+    if (perdue.emplacement === 'libre' && libre) index = page.findIndex((e) => !e.designe && (e.etat === 'vide' || (recue && e.etat === 'plein' && e.itemId === recue.itemId)));
+    if (index < 0) continue;
+    const poches = page.map(vers);
+    poches[index] = remise;
+    return { titre: libre ? 'Libres' : titreDePage(l, i), libre, folio: rangDePage(l, i).rang, poches, index };
+  }
+  return null;
+}
+
+/** Rattrapage : « il y a 6 min » d'après l'heure de jeu du sort et celle du serveur. */
+export function ilYaRecu(heureJeu: number | undefined, maintenant: number): string {
+  if (heureJeu === undefined) return '';
+  const min = Math.max(0, Math.floor((maintenant - heureJeu) / 60_000));
+  return min === 0 ? 'à l’instant' : `il y a ${min} min`;
 }
 
 /** Choix faits par le joueur dans l'écran des sorts. */

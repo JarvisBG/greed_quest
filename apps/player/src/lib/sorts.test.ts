@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LivreRecu } from './livre';
-import { cartesUtilisables, corpsSort, doublons, enPhrase, etapes, familles, issueLancer, pagesVision, pouvoirDispo, resumeSort, sortsDisponibles, texteSortRecu } from './sorts';
+import { cartesUtilisables, corpsSort, criRecu, doublons, enPhrase, etapes, familles, ilYaRecu, issueLancer, issueRecu, pageDuSortRecu, pagesVision, pouvoirDispo, resumeSort, sortsDisponibles, texteSortRecu } from './sorts';
 
 const carte = (itemId: string, o: Partial<{ designe: boolean; engagee: boolean; apparence: 'normale' | 'grisee'; nom: string }> = {}) => ({
   etat: 'plein' as const,
@@ -158,5 +158,65 @@ describe('sorts côté app (RG-10)', () => {
         { type: 'carte', numero: 3, nom: 'X', rang: 'B', n: 1, contrefacon: false },
       ],
     ]);
+  });
+});
+
+describe('page ⑪ : sort reçu (RG-10.5)', () => {
+  const diamant = { kind: 'carte' as const, itemId: 'd', emplacement: 'fixe' as const, carteId: 'c79', numero: 79, nom: 'Le diamant arc-en-ciel', rang: 'C' as const, limite: 8 };
+  const base = { lanceur: 'Kirua', resultat: 'reussi' as const };
+
+  it('RG-10.5 : la cible apprend ce qu’elle perd, ce qu’elle reçoit et ce qui l’a protégée', () => {
+    expect(texteSortRecu({ ...base, sort: 'vol', perdue: diamant })).toBe('Kirua t’a volé le diamant arc-en-ciel.');
+    expect(texteSortRecu({ ...base, sort: 'vol', perdue: diamant, pouvoir: 'bandit' })).toBe('Kirua t’a volé le diamant arc-en-ciel avec L’épée du vol.');
+    expect(texteSortRecu({ ...base, sort: 'pickpocket', perdue: { ...diamant, emplacement: 'libre' } })).toBe('Kirua t’a pris le diamant arc-en-ciel dans tes emplacements libres.');
+    expect(texteSortRecu({ ...base, sort: 'pickpocket', perdue: { kind: 'sort', itemId: 's', emplacement: 'libre', sort: 'gel' } })).toBe('Kirua t’a pris la carte Gel dans tes emplacements libres.');
+    expect(texteSortRecu({ ...base, sort: 'echange_force', perdue: diamant, recue: { ...diamant, itemId: 'o', nom: 'L’oreiller de l’esprit joueur' } })).toBe(
+      'Kirua t’a imposé un échange : tu perds le diamant arc-en-ciel et tu reçois l’oreiller de l’esprit joueur.',
+    );
+    expect(texteSortRecu({ ...base, sort: 'vol', resultat: 'bloque', protection: 'barriere' })).toBe('Kirua t’a lancé Vol : ton Mur défensif l’a bloqué. Il est perdu.');
+    expect(texteSortRecu({ ...base, sort: 'gel', resultat: 'bloque', protection: 'renforcement' })).toBe('Kirua t’a lancé Gel : ton aura de Renforcement l’a bloqué.');
+    expect(texteSortRecu({ ...base, sort: 'radar', resultat: 'bloque', protection: 'voile' })).toBe('Kirua a voulu utiliser Trace sur toi : ton Voile d’ombre l’en a empêché. Il est perdu.');
+    expect(texteSortRecu({ lanceur: null, sort: 'regard', resultat: 'bloque', protection: 'voile' })).toBe('Quelqu’un a voulu consulter ton Book : ton Voile d’ombre l’en a empêché. Il est perdu.');
+    expect(texteSortRecu({ ...base, sort: 'pickpocket', resultat: 'sans_effet' })).toBe('Kirua t’a lancé Pickpocket, mais tes emplacements libres étaient vides.');
+    // Ancienne forme de l'évènement (sans carte) : la phrase reste juste.
+    expect(texteSortRecu({ ...base, sort: 'vol' })).toBe('Kirua t’a volé une carte !');
+  });
+
+  it('page ⑪ : cinématique pour les sorts qui frappent, boîte seule pour Trace et Voyance', () => {
+    expect(issueRecu({ ...base, sort: 'vol', perdue: diamant })).toBe('vol');
+    expect(issueRecu({ ...base, sort: 'pickpocket', perdue: diamant })).toBe('vol');
+    expect(issueRecu({ ...base, sort: 'echange_force', perdue: diamant, recue: diamant })).toBe('echange');
+    expect(issueRecu({ ...base, sort: 'gel' })).toBe('gel');
+    expect(issueRecu({ ...base, sort: 'accompagnement' })).toBe('accompagnement');
+    expect(issueRecu({ ...base, sort: 'vol', resultat: 'bloque', protection: 'barriere' })).toBe('mur');
+    expect(issueRecu({ ...base, sort: 'vol', resultat: 'sans_effet' })).toBe('rien');
+    expect(issueRecu({ ...base, sort: 'radar' })).toBe('boite');
+    expect(issueRecu({ lanceur: null, sort: 'regard', resultat: 'reussi' })).toBe('boite');
+    expect(criRecu({ ...base, sort: 'vol', pouvoir: 'bandit' })).toBe('L’épée du vol');
+    expect(ilYaRecu(1_000_000, 1_000_000 + 6 * 60_000 + 5_000)).toBe('il y a 6 min');
+  });
+
+  it('page ⑪ : ta page d’avant le vol, la carte remise dans sa pochette', () => {
+    const carte = (numero: number, itemId: string) => ({ etat: 'plein' as const, designe: true, kind: 'carte' as const, itemId, carteId: `c${numero}`, numero, nom: `C${numero}`, rang: 'C' as const, apparence: 'normale' as const, badge: null, provenance: '', obtenue: '', engagee: false });
+    const livre: LivreRecu = {
+      gele: false,
+      cartesDesignees: 1,
+      total: 3,
+      libresUtilises: 1,
+      pages: [
+        [carte(78, 'a'), { etat: 'perdu', designe: true, carte: { numero: 79, nom: 'Le diamant arc-en-ciel', rang: 'C' }, message: 'Volée par Kirua' }, { etat: 'vide', designe: true, carte: { numero: 80, nom: 'P', rang: 'S' } }],
+        [{ ...carte(12, 'o'), designe: false }, { etat: 'vide', designe: false }, { etat: 'vide', designe: false }],
+      ],
+      objets: [],
+      placesObjets: 8,
+    };
+    const fixe = pageDuSortRecu(livre, diamant)!;
+    expect(fixe).toMatchObject({ libre: false, index: 1, titre: '078 – 080' });
+    expect(fixe.poches[1]).toMatchObject({ type: 'carte', carte: { numero: 79, nom: 'Le diamant arc-en-ciel' } });
+    expect(fixe.poches[2]).toEqual({ type: 'absente', numero: 80, rang: 'S' });
+    // Échange forcé dans les libres : la carte reçue (o) n'y était pas encore, la perdue reprend la première place libre.
+    const libre = pageDuSortRecu(livre, { ...diamant, emplacement: 'libre' }, { ...diamant, itemId: 'o' })!;
+    expect(libre).toMatchObject({ libre: true, index: 0, titre: 'Libres' });
+    expect(libre.poches[0]).toMatchObject({ type: 'carte', carte: { nom: 'Le diamant arc-en-ciel' } });
   });
 });

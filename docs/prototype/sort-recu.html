@@ -1,0 +1,884 @@
+<title>Sort reçu</title>
+<meta name="description" content="Prototype de la page ⑪ : un sort lancé sur toi. Cinématique côté cible (Vol, Pickpocket, L'épée du vol, Échange forcé, Gel, Accompagnement, Mur défensif), boîte du jeu pour Trace et Voyance, bandeau de gel et rattrapage au retour dans l'app.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@800&family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,800;1,400&family=Dela+Gothic+One&family=DotGothic16&display=swap">
+<style>
+/* Page ⑪ : le sort reçu. Le joueur est sur une page de l'app ; un autre joueur lui lance un sort.
+   Pour les sorts qui frappent, la nuit tombe d'un coup, on entend le cri du lanceur (« VOL, ON ! »),
+   la comète arrive du coin où il se tient et frappe : la carte est arrachée du Book, le givre prend,
+   ou le Mur défensif encaisse. Trace et Voyance restent une simple boîte du jeu. */
+:root {
+  color-scheme: light;
+  --papier: #eeefe9;
+  --case: #fbfbf7;
+  --case-2: #ecece6;
+  --encre: #111111;
+  --encre-2: #3b3d40;
+  --trame: rgba(17, 17, 17, 0.16);
+  --rouge: #c0272d;
+  --bleu: #1f4a9c;
+  --bleu-vif: #8fb2ff;
+  --jaune: #d9a11a;
+  --or: #d7b25a;
+  --succes: #17713a;
+  --alerte: #b3161c;
+  --nuit: #0c0c0e;
+  --givre: #dff0ff;
+  --f-titre: 'Dela Gothic One', 'Arial Black', sans-serif;
+  --f-texte: 'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif;
+  --f-chiffre: 'Atkinson Hyperlegible Mono', ui-monospace, monospace;
+  --f-jeu: 'DotGothic16', ui-monospace, monospace;
+  --trait: 3px;
+  --sortie: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { box-sizing: border-box; }
+html, body { overflow-x: clip; }
+body { margin: 0; background: var(--papier); color: var(--encre); font: 400 17px/1.45 var(--f-texte); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 3px solid var(--bleu); outline-offset: 3px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+
+.app { max-width: 480px; margin: 0 auto; padding: 0 16px 104px; display: grid; gap: 12px; }
+.app > * { min-width: 0; }
+
+/* Commandes du prototype (pas dans l'app) */
+.proto { display: grid; gap: 7px; padding: 10px 12px; margin-inline: -16px; background: var(--encre); color: var(--case); }
+.proto p { margin: 0; font: 600 13px/1.3 var(--f-texte); }
+.proto .rang { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.proto .rang > span { font: 800 12px var(--f-texte); color: #b9bcc2; min-width: 58px; }
+.proto button { min-height: 36px; padding: 0 10px; border: 2px solid var(--case); background: transparent; color: var(--case); font: 700 13px var(--f-texte); }
+.proto button:active { background: var(--case); color: var(--encre); }
+
+/* Barre d'état de l'app */
+.barre { position: sticky; top: 0; z-index: 30; margin-inline: -16px; padding: 10px 16px; background: var(--case); border-bottom: var(--trait) solid var(--encre); display: flex; align-items: center; gap: 12px; min-height: 58px; }
+.chrono { font: 800 30px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.liaison { display: flex; align-items: center; gap: 6px; font: 600 14px var(--f-texte); }
+.pastille { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--encre); background: var(--succes); display: inline-block; }
+.jenny { margin-left: auto; font: 800 22px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.jenny small { font: 600 15px var(--f-texte); margin-left: 3px; }
+
+/* Bandeau du gel subi : sous la barre, sur toutes les pages, givré. */
+.gel-bandeau { position: sticky; top: 58px; z-index: 29; margin-inline: -16px; display: flex; align-items: center; gap: 12px; padding: 8px 16px; border-bottom: var(--trait) solid var(--encre); background: #e3eef7; overflow: hidden; }
+.gel-bandeau[hidden] { display: none; }
+.gel-bandeau::before { content: ''; position: absolute; inset: 0; background: var(--givre-motif) left -20px top -30px / 150px 150px no-repeat, var(--givre-motif) right -30px bottom -50px / 170px 170px no-repeat; opacity: 0.9; pointer-events: none; }
+.gel-bandeau > * { position: relative; }
+.gel-bandeau .mot { font: 400 26px/1 var(--f-titre); color: var(--case); -webkit-text-stroke: 2px var(--encre); paint-order: stroke fill; letter-spacing: 0.02em; }
+.gel-bandeau .dit { display: grid; font: 800 15px/1.15 var(--f-texte); min-width: 0; }
+.gel-bandeau .dit small { font: 600 13px/1.2 var(--f-texte); color: var(--encre-2); }
+.gel-bandeau .temps { margin-left: auto; font: 800 26px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; background: var(--case); border: 2px solid var(--encre); padding: 4px 7px; }
+
+.tete-page { display: flex; align-items: baseline; gap: 12px; padding-top: 6px; }
+.tete-page h1 { margin: 0; font: 400 30px/1 var(--f-titre); }
+.case { background: var(--case); border: var(--trait) solid var(--encre); padding: 14px 16px; display: grid; gap: 8px; }
+.case h2 { margin: 0; font: 400 20px/1.1 var(--f-titre); }
+.case p { margin: 0; }
+.chiffres { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.chiffres div { display: grid; gap: 2px; }
+.chiffres b { font: 800 30px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.chiffres span { font: 600 13px/1.2 var(--f-texte); color: var(--encre-2); }
+.aide { font: 400 15px/1.35 var(--f-texte); color: var(--encre-2); }
+
+/* ---------- Onglets ---------- */
+.onglets { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, 1fr); background: var(--case); border-top: var(--trait) solid var(--encre); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.onglets button { position: relative; overflow: hidden; min-height: 64px; border: 0; border-right: 1.5px solid var(--encre); background: transparent; display: grid; justify-items: center; align-content: center; gap: 3px; font: 800 12.5px/1 var(--f-texte); padding: 6px 2px; }
+.onglets button:last-child { border-right: 0; }
+.onglets svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.onglets button[aria-current='page'] { background: var(--encre); color: var(--case); }
+.onglets .plus-un { position: absolute; top: -30px; left: 50%; translate: -50% 0; font: 400 22px/1 var(--f-titre); color: var(--encre); background: var(--case); border: var(--trait) solid var(--encre); padding: 3px 8px; pointer-events: none; }
+.onglets .moins-un { position: absolute; top: -30px; left: 50%; translate: -50% 0; font: 400 22px/1 var(--f-titre); color: var(--case); background: var(--rouge); border: var(--trait) solid var(--encre); padding: 3px 8px; pointer-events: none; }
+/* Scanner givré pendant le gel : le givre prend l'onglet, l'icône passe en trame. */
+.onglets button.gele { background: #e3eef7; color: var(--encre-2); }
+.onglets button.gele::before { opacity: 0.55; content: ''; position: absolute; inset: 0; background: var(--givre-motif) left -12px top -14px / 70px 70px no-repeat, var(--givre-motif) right -18px bottom -22px / 76px 76px no-repeat; pointer-events: none; }
+.onglets button.gele .gel-t { position: absolute; top: 4px; right: 4px; font: 800 11px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; background: var(--case); border: 1.5px solid var(--encre); padding: 2px 3px; color: var(--encre); }
+.toast[hidden] { display: none; }
+.toast { position: fixed; z-index: 35; left: 50%; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); translate: -50% 0; width: min(calc(100% - 24px), 440px); }
+
+/* ---------- Carte de Greed Island (copie de @gq/ui) ---------- */
+.gi-carte { container-type: inline-size; aspect-ratio: 63 / 88; width: 100%; position: relative; }
+.gi-carte .c-cadre { position: absolute; inset: 0; border-radius: 4.5cqi; padding: 5cqi; background: var(--cadre, var(--rouge)); box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35); display: grid; grid-template-rows: auto 1fr auto; gap: 3cqi; }
+.gi-carte.f-sort { --cadre: var(--bleu); }
+.gi-carte.f-designee .c-txt { font-style: italic; }
+.gi-carte .c-tete { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 3cqi; background: var(--case); border-radius: 2cqi; padding: 2.5cqi 3cqi; box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); }
+.gi-carte .c-num { font: 800 9cqi/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.gi-carte .c-num.long { font-size: 7.4cqi; }
+.gi-carte .c-nom { font: 800 6.4cqi/1.1 var(--f-texte); text-align: center; text-wrap: balance; hyphens: auto; overflow-wrap: break-word; }
+.gi-carte .c-nom.long { font-size: 5.6cqi; }
+.gi-rang { font: 400 7cqi/1 var(--f-titre); padding: 1.6cqi 2.4cqi; border-radius: 1.6cqi; white-space: nowrap; color: var(--encre); background: var(--matiere, var(--case)); box-shadow: 0 0 0 0.6cqi var(--encre); }
+.gi-carte .c-art { border-radius: 2cqi; background: #f4f2ea radial-gradient(var(--trame) 0.9px, transparent 1.1px) 0 0 / 5px 5px; box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); display: grid; place-items: center; overflow: hidden; min-height: 0; }
+.gi-carte .c-filigrane { font: 400 30cqi/1 var(--f-titre); color: transparent; -webkit-text-stroke: 0.9cqi rgba(17, 17, 17, 0.55); letter-spacing: -0.02em; }
+.gi-carte .c-txt { margin: 0; background: var(--case); border-radius: 2cqi; padding: 3cqi 3.5cqi; font: 400 5.6cqi/1.3 var(--f-texte); box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); }
+.r-SS { --matiere: linear-gradient(125deg, #9c7a1c 0%, #f6dc85 28%, #c39a2c 50%, #fbe7a6 72%, #a8841f 100%); }
+.r-S  { --matiere: linear-gradient(125deg, #8d949b 0%, #f1f3f5 35%, #aab1b8 60%, #e9ecef 100%); }
+.r-A  { --matiere: linear-gradient(125deg, #c97a4a 0%, #f2b48a 45%, #d88a58 100%); }
+.r-B  { --matiere: linear-gradient(125deg, #6fb596 0%, #b6e0cc 50%, #82c2a6 100%); }
+.r-C  { --matiere: linear-gradient(125deg, #9eb0c4 0%, #d6dfea 50%, #aebfd1 100%); }
+.r-D, .r-sort { --matiere: var(--case); }
+@container (max-width: 130px) {
+  .gi-carte .c-nom, .gi-carte .c-txt { display: none; }
+  .gi-carte .c-tete { grid-template-columns: 1fr auto; padding: 4cqi; }
+  .gi-carte .c-num { font-size: 17cqi; }
+  .gi-carte .gi-rang { font-size: 13cqi; padding: 2.5cqi 4cqi; }
+  .gi-carte .gi-rang .lim { display: none; }
+  .gi-carte .c-cadre { padding: 6cqi; gap: 5cqi; grid-template-rows: auto 1fr; }
+}
+.gi-carte.dos .c-cadre { background: #15233f; box-shadow: inset 0 0 0 1.2cqi #15233f, inset 0 0 0 2.2cqi var(--or), inset 0 0 0 3.4cqi #15233f, inset 0 0 0 4cqi var(--or); place-items: center; grid-template-rows: 1fr; }
+.gi-carte.dos svg { width: 58%; height: auto; }
+
+/* ---------- Boîte du jeu (annonce simple, en haut) ---------- */
+.gi-annonce { position: fixed; z-index: 60; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 70px); width: min(calc(100% - 24px), 440px); transform: translate(-50%, calc(-100% - 120px)); visibility: hidden; transition: transform 0.45s var(--sortie), visibility 0s 0.45s; background: var(--nuit); color: #f6f6f2; border-radius: 6px; box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f6f6f2, inset 0 0 0 8px var(--nuit), inset 0 0 0 9px #f6f6f2, 0 16px 30px -14px rgba(0, 0, 0, 0.6); padding: 22px 22px 18px; display: grid; gap: 8px; }
+.gi-annonce.visible { transform: translate(-50%, 0); visibility: visible; transition: transform 0.45s var(--sortie), visibility 0s; }
+.gi-annonce .a-qui, .gi-dialogue .a-qui { justify-self: start; font: 400 15px/1 var(--f-jeu); background: #f6f6f2; color: var(--nuit); padding: 4px 8px; }
+.gi-annonce.t-sort .a-qui, .gi-dialogue.t-sort .a-qui { background: #8fb2ff; }
+.gi-annonce .a-texte { font: 400 20px/1.4 var(--f-jeu); min-height: 1.4em; margin: 0; }
+.gi-annonce .a-liste { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; font: 400 18px/1.35 var(--f-jeu); }
+.gi-annonce .a-liste li { display: grid; grid-template-columns: auto 1fr; gap: 8px; }
+.gi-annonce .a-liste li::before { content: '▸'; color: #8fb2ff; }
+.gi-annonce .a-liste small { display: block; font: 400 14px/1.3 var(--f-jeu); color: #b9bcc2; }
+.gi-annonce .a-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.gi-annonce .a-actions button { background: #f6f6f2; color: var(--nuit); border: 0; font: 400 16px var(--f-jeu); padding: 10px 14px; min-height: 44px; }
+.gi-dialogue { background: var(--nuit); color: #f6f6f2; border-radius: 6px; box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f6f6f2, inset 0 0 0 8px var(--nuit), inset 0 0 0 9px #f6f6f2, 0 10px 24px -10px rgba(0, 0, 0, 0.6); padding: 18px 20px 16px; display: grid; gap: 10px; }
+.gi-dialogue .a-texte { font: 400 19px/1.45 var(--f-jeu); margin: 0; min-height: 1.45em; }
+
+/* ---------- Cinématique du sort reçu ---------- */
+.cine { position: fixed; inset: 0; z-index: 50; pointer-events: none; overflow: hidden; visibility: hidden; }
+.cine.joue { visibility: visible; pointer-events: auto; cursor: pointer; }
+/* La nuit de la cible : plus froide que celle du lanceur, avec une alerte rouge qui bat aux bords. */
+.cine .nuit { position: absolute; inset: 0; background: radial-gradient(ellipse at 70% 30%, #1a2448 0, #0d1120 46%, #050608 92%); opacity: 0; }
+.cine .alarme { position: absolute; inset: 0; box-shadow: inset 0 0 0 6px rgba(255, 70, 70, 0.9), inset 0 0 90px 30px rgba(220, 30, 40, 0.55); opacity: 0; }
+.cine .lignes { position: absolute; inset: -30%; opacity: 0; }
+.cine .lignes svg { width: 100%; height: 100%; }
+.cine canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* D'où vient le sort : le nom du lanceur, en haut à droite, d'où partira la comète. */
+.cine .lanceur { position: absolute; top: max(16px, env(safe-area-inset-top, 0px)); right: 16px; display: grid; justify-items: end; gap: 4px; opacity: 0; }
+.cine .lanceur b { font: 400 19px/1 var(--f-jeu); color: var(--nuit); background: #f6f6f2; padding: 6px 10px; }
+.cine .lanceur small { font: 400 14px/1 var(--f-jeu); color: #c3c6cc; }
+/* Le cri du lanceur, entendu de loin : plus petit qu'au lancer, en biais. */
+.cine .cri { position: absolute; left: 0; right: 0; top: max(70px, calc(50% - 40vh)); display: grid; justify-items: center; pointer-events: none; }
+.cine .cri span { display: block; font: 400 var(--taille, 80px)/0.92 var(--f-titre); letter-spacing: -0.03em; white-space: nowrap; color: #fff; -webkit-text-stroke: 3px var(--bleu-vif); paint-order: stroke fill; opacity: 0; }
+.cine .cri .on { font-size: min(18vw, 84px); color: var(--bleu-vif); -webkit-text-stroke: 3px #fff; rotate: -6deg; }
+.cine .issue { position: absolute; left: 0; right: 0; top: max(70px, calc(50% - 40vh)); text-align: center; pointer-events: none; font: 400 var(--taille, 110px)/1 var(--f-titre); letter-spacing: -0.02em; color: transparent; -webkit-text-stroke: 3px rgba(233, 236, 242, 0.8); opacity: 0; }
+.cine .issue.rouge { -webkit-text-stroke-color: #ff8c86; }
+.cine .issue.centre { top: 50%; translate: 0 -50%; }
+.cine .flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+.cine .scene { position: absolute; inset: 0; display: grid; place-items: center; }
+.cine .orbe { position: absolute; left: 0; top: 0; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: radial-gradient(closest-side, #fff 0, #fff 22%, #cfe0ff 40%, rgba(120, 160, 255, 0.55) 62%, rgba(80, 120, 255, 0) 100%); opacity: 0; will-change: transform; }
+/* Ta page du Book, éclairée dans la nuit. */
+.cine .livre { position: absolute; left: 50%; top: 50%; width: min(84vw, 340px, calc((100dvh - 320px) * 0.5)); translate: -50% -46%; opacity: 0; }
+.cine .arrachee { position: absolute; left: 0; top: 0; opacity: 0; will-change: transform; transform-origin: 50% 50%; }
+.cine .arrachee .gi-carte .c-cadre { box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35), 0 18px 30px rgba(0, 0, 0, 0.55); }
+/* Carte reçue (Échange forcé) : arrive de dos, se retourne. */
+.cine .recue { width: min(50vw, 220px, calc((100dvh - 330px) * 63 / 88)); perspective: 1300px; opacity: 0; }
+.cine .retourne { position: relative; transform-style: preserve-3d; }
+.cine .retourne > .gi-carte { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.cine .retourne > .gi-carte:not(.dos) .c-cadre { box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35), 0 18px 30px rgba(0, 0, 0, 0.55); }
+.cine .retourne > .dos { position: absolute; inset: 0; transform: rotateY(180deg); }
+/* Ton Mur défensif : la coque d'alvéoles se lève devant toi. */
+.cine .mur { position: absolute; left: 50%; top: 46%; width: min(92vw, 420px); aspect-ratio: 1; translate: -50% -50%; opacity: 0; }
+.cine .mur svg { width: 100%; height: 100%; overflow: visible; }
+/* Toi, au centre : la cible du gel et de l'Accompagnement. */
+.cine .toi { position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; background: #f6f6f2; box-shadow: 0 0 0 4px var(--nuit), 0 0 0 7px #f6f6f2, 0 0 30px 10px rgba(143, 178, 255, 0.5); opacity: 0; }
+.cine .toi-nom { position: absolute; left: 50%; top: calc(50% + 34px); translate: -50% 0; font: 400 16px/1 var(--f-jeu); color: #f6f6f2; opacity: 0; white-space: nowrap; }
+.cine .viseur { position: absolute; left: 50%; top: 50%; width: 150px; height: 150px; margin: -75px 0 0 -75px; opacity: 0; }
+.cine .viseur svg { width: 100%; height: 100%; overflow: visible; }
+.cine .oeil { position: absolute; left: 50%; top: calc(50% - 128px); translate: -50% 0; font: 400 16px/1 var(--f-jeu); color: var(--nuit); background: #ff8c86; padding: 6px 10px; white-space: nowrap; opacity: 0; }
+.cine .decompte { position: absolute; left: 0; right: 0; top: calc(50% + 70px); text-align: center; font: 800 64px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--givre); opacity: 0; }
+/* Gel : le givre gagne les coins de l'écran. */
+.cine .givre { position: absolute; inset: 0; opacity: 0; }
+.cine .givre svg { position: absolute; width: 54vmin; height: 54vmin; }
+.cine .givre path { fill: none; stroke: var(--givre); stroke-linecap: round; }
+.cine .dialogue { pointer-events: none; position: absolute; left: 50%; bottom: max(18px, env(safe-area-inset-bottom, 0px)); width: min(calc(100% - 24px), 440px); translate: -50% 0; opacity: 0; }
+.cine .dialogue .a-indice { margin: 0; font: 600 14px/1.3 var(--f-texte); color: #c3c6cc; opacity: 0; transition: opacity 0.3s; }
+.cine .dialogue .a-indice.visible { opacity: 1; }
+.cine .passer { pointer-events: none; position: absolute; bottom: max(16px, env(safe-area-inset-bottom, 0px)); left: 50%; translate: -50% 0; font: 600 13px var(--f-texte); color: rgba(235, 238, 242, 0.75); white-space: nowrap; opacity: 0; transition: opacity 0.25s; }
+.cine.intro .passer { opacity: 1; transition-delay: 0.6s; }
+
+/* Page du Book (copie de la page ⑦) */
+.page { --feuille: #fbfbf7; --filet: var(--rouge); position: relative; background: var(--feuille); border: var(--trait) solid var(--encre); border-left-width: 14px; border-radius: 2px 6px 6px 2px; padding: 10px 12px 14px; display: grid; align-content: start; gap: 10px; box-shadow: inset 16px 0 16px -12px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 255, 255, 0.25), 0 20px 50px rgba(0, 0, 0, 0.6); }
+.page.p-libre { --feuille: #d3d1c8; --filet: var(--encre); background-image: radial-gradient(rgba(17, 17, 17, 0.2) 0.9px, transparent 1.2px); background-size: 6px 6px; }
+.page::before { content: ''; position: absolute; left: -11px; top: 8%; bottom: 8%; width: 8px; background: radial-gradient(circle, var(--feuille) 2.4px, transparent 2.8px) center / 8px 34px repeat-y; }
+.page-tete { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding-bottom: 7px; border-bottom: 3px solid var(--filet); font: 400 15px/1 var(--f-titre); }
+.page-tete span:last-child { font: 800 15px var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.page-tete small { font-size: 13px; color: var(--encre-2); }
+.poches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.poche { position: relative; aspect-ratio: 63 / 88; border-radius: 4px; background: #e2e0d7; box-shadow: inset 0 0 0 1.5px rgba(17, 17, 17, 0.55), inset 0 2px 5px rgba(0, 0, 0, 0.18); padding: 3px; display: grid; overflow: hidden; color: var(--encre); }
+.p-libre .poche { background: #c4c2b9; }
+.poche::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(118deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 32%, rgba(255, 255, 255, 0) 64%, rgba(255, 255, 255, 0.22) 78%, rgba(255, 255, 255, 0) 90%); }
+.poche-num { align-self: center; justify-self: center; display: grid; justify-items: center; gap: 4px; font: 800 20px/1 var(--f-chiffre); color: #b3b1a8; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9), 0 -1px 0 rgba(0, 0, 0, 0.3); }
+.poche-num em { font: 400 12px/1 var(--f-titre); font-style: normal; color: #a9a79e; }
+/* Pochette vidée par le sort : le tampon « VOLÉE » (comme un emplacement perdu de la page ⑦). */
+.poche .volee { position: absolute; z-index: 2; left: 50%; top: 50%; translate: -50% -50%; rotate: -14deg; padding: 2px 4px; border: 2px solid var(--rouge); color: var(--rouge); background: rgba(251, 251, 247, 0.85); font: 400 11px/1 var(--f-titre); letter-spacing: 0.04em; white-space: nowrap; opacity: 0; }
+.page-folio { display: grid; place-items: center; font: 400 34px/1 var(--f-titre); color: #c9c7be; }
+.p-libre .page-folio { color: #a3a198; }
+.case-vide { aspect-ratio: 63 / 88; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+</style>
+
+<div class="app">
+  <div class="proto" role="group" aria-label="Commandes du prototype">
+    <p>Prototype : un autre joueur te lance un sort. Choisis lequel et ce qu'il donne.</p>
+    <div class="rang" id="r-frappe"><span>Cinématique</span></div>
+    <div class="rang" id="r-boite"><span>Boîte seule</span></div>
+    <div class="rang"><span>Autres</span>
+      <button id="t-deux">Deux sorts d'un coup</button>
+      <button id="t-retour">Retour dans l'app</button>
+      <button id="t-degel">Fin du gel</button>
+    </div>
+  </div>
+
+  <header class="barre" aria-label="État de la partie">
+    <span class="chrono">1:24:10</span>
+    <span class="liaison"><i class="pastille"></i>En ligne</span>
+    <span class="jenny">1 250<small>J</small></span>
+  </header>
+  <div class="gel-bandeau" id="gel-bandeau" role="status" hidden>
+    <span class="mot" aria-hidden="true">GELÉ</span>
+    <span class="dit"><span id="gel-qui">Kirua t’a gelé</span><small id="gel-sous">Plus de scan jusqu’à la fin</small></span>
+    <span class="temps" id="gel-temps">3:00</span>
+  </div>
+
+  <div class="tete-page"><h1>Accueil</h1></div>
+  <section class="case">
+    <h2>Ton Book</h2>
+    <div class="chiffres">
+      <div><b id="n-fixes">14</b><span>cartes désignées</span></div>
+      <div><b id="n-libres">7</b><span>libres sur 15</span></div>
+      <div><b>3</b><span>sorts</span></div>
+    </div>
+  </section>
+  <section class="case">
+    <h2>Évènements</h2>
+    <p class="aide">Aucun évènement en cours.</p>
+  </section>
+</div>
+
+<nav class="onglets" aria-label="Navigation">
+  <button data-onglet="accueil" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 3l9 8M6 9.5V21h12V9.5M10 21v-6h4v6"/></svg>Accueil</button>
+  <button data-onglet="scan" id="onglet-scan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5M7 12h10"/></svg>Scanner</button>
+  <button data-onglet="livre"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2zM5 19a2 2 0 0 1 2-2h12M9 7h6"/></svg>Book</button>
+  <button data-onglet="sorts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 2.6 6.6L21 9.5l-5 4.4 1.6 6.6L12 17l-5.6 3.5L8 13.9 3 9.5l6.4-.9z"/></svg>Sorts</button>
+  <button data-onglet="echanges"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg>Échanges</button>
+</nav>
+
+<div class="gi-annonce t-sort" id="annonce" role="alert">
+  <span class="a-qui" id="an-qui">Sort</span>
+  <p class="a-texte" id="an-texte"></p>
+  <ul class="a-liste" id="an-liste" hidden></ul>
+  <div class="a-actions"><button id="an-fermer">Fermer</button></div>
+</div>
+<div class="toast gi-dialogue" id="toast" hidden><span class="a-qui">Greed Island</span><p class="a-texte" id="toast-texte"></p></div>
+
+<div class="cine" id="cine" aria-hidden="true">
+  <div class="nuit" id="nuit"></div>
+  <div class="alarme" id="alarme"></div>
+  <div class="lignes" id="lignes"></div>
+  <div class="givre" id="givre"></div>
+  <canvas id="fx"></canvas>
+  <div class="mur" id="mur"></div>
+  <div class="toi" id="toi"></div>
+  <span class="toi-nom" id="toi-nom">toi</span>
+  <div class="viseur" id="viseur"></div>
+  <span class="oeil" id="oeil"></span>
+  <div class="livre" id="livre"></div>
+  <div class="scene" id="scene">
+    <div class="recue" id="recue"><div class="retourne" id="ret"><div id="face"></div><div class="gi-carte dos" id="dos"></div></div></div>
+  </div>
+  <div class="arrachee" id="arrachee"></div>
+  <div class="lanceur" id="lanceur"><small>sort lancé par</small><b id="lanceur-nom"></b></div>
+  <div class="cri" id="cri"><span id="cri-nom"></span><span class="on" id="cri-on">ON !</span></div>
+  <div class="issue" id="issue"></div>
+  <div class="decompte" id="decompte">3:00</div>
+  <div class="orbe" id="orbe"></div>
+  <div class="flash" id="flash"></div>
+  <div class="dialogue gi-dialogue t-sort" id="dialogue" role="status">
+    <span class="a-qui" id="d-qui">Sort reçu</span>
+    <p class="a-texte" id="d-texte"></p>
+    <p class="a-indice" id="d-indice"></p>
+  </div>
+  <span class="passer">Touche pour passer</span>
+</div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const DOS_SVG = '<svg viewBox="0 0 100 100" fill="none" stroke="#d7b25a" aria-hidden="true"><circle cx="50" cy="50" r="42" stroke-width="2.5"/><circle cx="50" cy="50" r="34" stroke-width="1"/><path d="m50 8 8 34 34 8-34 8-8 34-8-34-34-8 34-8z" stroke-width="2"/><circle cx="50" cy="50" r="9" stroke-width="2.5"/></svg>';
+$('#dos').innerHTML = `<div class="c-cadre">${DOS_SVG}</div>`;
+
+// ---------- Données du prototype (dans l'app, tout vient de l'évènement `sort_recu` du serveur) ----------
+const LIM = { SS: 1, S: 2, A: 3, B: 5, C: 8, D: 12 };
+const CARTES = {
+  '071': ['La pommade d’hormones du professeur fou', 'C', 'Une pommade qui attire irrésistiblement… parfois un peu trop.'],
+  '072': ['La machine de remodelage du professeur fou', 'B', 'Une machine qui remodèle le visage à volonté. Une fois sur vingt, elle échoue.'],
+  '073': ['Le jade des ténèbres', 'B', 'Un jade béni par le Diable, qui détourne le malheur sur un autre.'],
+  '074': ['L’aigue-marine philosophale', 'A', 'Une aigue-marine qui entoure son porteur d’amis brillants et fidèles toute sa vie.'],
+  '075': ['L’alexandrite de la chance', 'C', 'Une alexandrite qui attire des expériences uniques, pour le meilleur ou pour le pire.'],
+  '076': ['Le rubis du destin', 'D', 'Un rubis qui apporte une immense fortune, mais jamais plus d’une semaine au même endroit.'],
+  '077': ['L’émeraude qui attire la beauté', 'A', 'Une émeraude qui fait accourir les experts de la beauté.'],
+  '078': ['Le saphir solitaire', 'D', 'Un saphir qui apporte une immense fortune, et une vie entière de solitude.'],
+  '079': ['Le diamant arc-en-ciel', 'C', 'Le diamant des demandes en mariage : la réponse est toujours oui.'],
+  '080': ['La pierre flottante', 'S', 'Une pierre nourrie par le soleil, qui fait flotter une personne.'],
+  '011': ['La balance d’or', 'D', 'Une balance d’or qui, face à deux choix, penche toujours vers le meilleur.'],
+  '012': ['Le dictionnaire d’or', 'A', 'Un dictionnaire dont un mot brille d’or chaque jour : il servira le lendemain.'],
+  '019': ['L’oreiller de l’esprit joueur', 'B', 'Un oreiller qui laisse l’esprit vagabonder pendant le sommeil, 24 heures au plus.'],
+  '020': ['Le mètre de pulsions spirituelles', 'D', 'Une horloge qui règle l’état d’esprit comme on règle l’heure.'],
+  '022': ['Toraemon', 'C', 'Une bête rare qui fourre des trésors dans sa poche à quatre dimensions.'],
+  '025': ['Le dé du risque', 'D', 'Un dé de dix-neuf étoiles et une tête de mort. La tête de mort efface tout.'],
+  '026': ['Les sept nains au travail', 'C', 'Sept nains qui abattent tout le travail pendant le sommeil de leur maître.'],
+};
+const carte = (num) => { const [nom, rang, txt] = CARTES[num]; return { genre: 'designee', num, nom, rang, lim: LIM[rang], txt }; };
+// Tes pages : la page des fixes 071 – 080 (pochettes vides en creux) et ta 1re page de libres.
+const FIXES = { titre: '071 – 080', poches: ['071', null, '073', '074', null, '076', null, '078', '079', null] };
+const LIBRES = { titre: 'Libres', poches: ['011', '022', '025', '026', '020', '011', '019', null, null, null], libre: true };
+
+// Les sorts reçus (la cible ne voit que ce que le serveur lui envoie : lanceur, sort, résultat, carte perdue / reçue).
+const SCENARIOS = {
+  'Vol': { lanceur: 'Kirua', sort: 'Vol', issue: 'vol', page: FIXES, perdue: '079' },
+  'Pickpocket': { lanceur: 'Biscuit', sort: 'Pickpocket', issue: 'vol', page: LIBRES, perdue: '022' },
+  'L’épée du vol': { lanceur: 'Hisoka', sort: 'L’épée du vol', pouvoir: true, issue: 'vol', page: FIXES, perdue: '074' },
+  'Échange forcé': { lanceur: 'Kirua', sort: 'Échange', issue: 'echange', page: LIBRES, perdue: '026', recue: '012' },
+  'Gel': { lanceur: 'Goreinu', sort: 'Gel', issue: 'gel' },
+  'Accompagnement': { lanceur: 'Hisoka', sort: 'Accompagnement', issue: 'accompagnement' },
+  'Mur défensif': { lanceur: 'Kirua', sort: 'Vol', issue: 'mur' },
+  'Rien à prendre': { lanceur: 'Biscuit', sort: 'Pickpocket', issue: 'rien' },
+};
+const BOITES = {
+  'Trace': { qui: 'Sort reçu', texte: 'Kurapika a utilisé Trace sur toi : il connaît ta zone.' },
+  'Voyance': { qui: 'Sort reçu', texte: 'Quelqu’un a consulté ton Book.' },
+  'Voile d’ombre': { qui: 'Sort reçu', texte: 'Quelqu’un a voulu consulter ton Book : ton Voile d’ombre l’en a empêché. Il est perdu.' },
+};
+const RATTRAPAGE = [
+  ['Kirua t’a volé le diamant arc-en-ciel.', 'il y a 6 min'],
+  ['Quelqu’un a consulté ton Book.', 'il y a 4 min'],
+  ['Goreinu t’a gelé.', 'il y a 2 min · encore 1:12'],
+];
+
+// ---------- Outils ----------
+let anims = [], attentes = new Set(), saute = false, phase = 'repos', attenteToucher = null, revelA = 0;
+const A = (el, k, o) => { const a = el.animate(k, { fill: 'forwards', easing: 'cubic-bezier(.16,1,.3,1)', ...o, duration: reduit ? 1 : o.duration }); anims.push(a); return a; };
+function pause(ms) {
+  return new Promise((res) => {
+    if (saute || reduit) return res();
+    const f = () => { clearTimeout(t); attentes.delete(f); res(); };
+    const t = setTimeout(f, ms); attentes.add(f);
+  });
+}
+const finAnim = (a) => a.finished.catch(() => {});
+function sauter() { if (saute) return; saute = true; [...attentes].forEach((f) => f()); }
+function viderAnims() { anims.forEach((a) => a.cancel()); anims = []; }
+const centre = (el) => { const b = el.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2]; };
+const vibrer = (p) => navigator.vibrate?.(p);
+function carteHTML(c) {
+  const coin = c.genre === 'sort' ? '<span class="gi-rang r-sort">Sort</span>' : `<span class="gi-rang r-${c.rang}">${c.rang}<span class="lim">-${c.lim}</span></span>`;
+  return `<div class="gi-carte f-${c.genre}"><div class="c-cadre"><div class="c-tete"><span class="c-num">${c.num}</span><span class="c-nom${c.nom.length > 10 ? ' long' : ''}">${c.nom}</span>${coin}</div><div class="c-art"><span class="c-filigrane">${c.num}</span></div><p class="c-txt">${c.txt}</p></div></div>`;
+}
+function taper(el, texte) {
+  el.textContent = '';
+  if (reduit || saute) { el.textContent = texte; return Promise.resolve(); }
+  return new Promise((res) => {
+    let n = 0;
+    const pas = () => { if (saute) { el.textContent = texte; return res(); } el.textContent = texte.slice(0, ++n); n >= texte.length ? res() : setTimeout(pas, 22); };
+    pas();
+  });
+}
+const enPhrase = (nom) => nom.replace(/^(Les|Le|La)(?=\s)|^L’/, (m) => m.toLowerCase());
+const mmss = (ms) => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+
+// ---------- Lignes de concentration, Mur, givre, viseur ----------
+const lignes = $('#lignes');
+(function () {
+  let s = 23; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  let d = '';
+  for (let i = 0; i < 130; i++) {
+    const a = r() * Math.PI * 2, r0 = 40 + r() * 26, w = 0.004 + r() * 0.014;
+    const p = (ang, rad) => `${(Math.cos(ang) * rad).toFixed(1)} ${(Math.sin(ang) * rad).toFixed(1)}`;
+    d += `M${p(a, r0)}L${p(a - w, 170)}L${p(a + w, 170)}Z`;
+  }
+  lignes.innerHTML = `<svg viewBox="-100 -100 200 200" preserveAspectRatio="xMidYMid slice"><path d="${d}" fill="#dfe8ff"/></svg>`;
+})();
+(function () {
+  const hex = (cx, cy, r) => Array.from({ length: 6 }, (_, i) => { const a = Math.PI / 3 * i + Math.PI / 6; return `${(cx + Math.cos(a) * r).toFixed(1)},${(cy + Math.sin(a) * r).toFixed(1)}`; }).join(' ');
+  let alv = '';
+  const R = 9.5, dx = R * Math.sqrt(3), dy = R * 1.5;
+  for (let row = -7; row <= 7; row++) for (let col = -7; col <= 7; col++) {
+    const x = col * dx + (row % 2 ? dx / 2 : 0), y = row * dy;
+    if (Math.hypot(x, y) < 62) alv += `<polygon points="${hex(x, y, R - 0.6)}"/>`;
+  }
+  $('#mur').innerHTML = `<svg viewBox="-70 -70 140 140" aria-hidden="true">
+    <defs><radialGradient id="g-mur"><stop offset="0" stop-color="#cfe6ff" stop-opacity=".05"/><stop offset=".75" stop-color="#9fd0ff" stop-opacity=".22"/><stop offset="1" stop-color="#9fd0ff" stop-opacity=".5"/></radialGradient></defs>
+    <circle r="64" fill="url(#g-mur)"/>
+    <g fill="none" stroke="#bfe0ff" stroke-width=".8" opacity=".85">${alv}</g>
+    <circle r="64" fill="none" stroke="#e8f4ff" stroke-width="1.6"/>
+    <g id="feles" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <path pathLength="1" d="M28 -36 L19 -24 L8 -26 L0 -12 L-9 -14 L-6 -27"/><path pathLength="1" d="M28 -36 L36 -22 L52 -24"/>
+      <path pathLength="1" d="M28 -36 L38 -48 L36 -60"/><path pathLength="1" d="M0 -12 L-4 4 L-16 14 L-14 32 L-26 46"/>
+      <path pathLength="1" d="M-4 4 L12 14 L18 30 L33 38"/><path pathLength="1" d="M-9 -14 L-28 -10 L-40 -22 L-56 -20"/>
+    </g></svg>`;
+  // Givre : quatre coins de branches cristallines (le même motif sert au bandeau et à l'onglet Scanner).
+  let s = 7; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const branche = (x, y, a, l, n) => {
+    if (n === 0 || l < 3) return '';
+    const x2 = x + Math.cos(a) * l, y2 = y + Math.sin(a) * l;
+    let d = `M${x.toFixed(1)} ${y.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`;
+    for (let i = 1; i <= 2; i++) { const k = i / 3, bx = x + (x2 - x) * k, by = y + (y2 - y) * k; d += branche(bx, by, a + (i % 2 ? 0.75 : -0.75), l * 0.42, n - 1); }
+    return d + branche(x2, y2, a + (r() - 0.5) * 0.5, l * 0.66, n - 1);
+  };
+  let d = '';
+  for (let i = 0; i < 6; i++) d += branche(0, 0, (Math.PI / 2) * (i / 5) + (r() - 0.5) * 0.15, 26 + r() * 14, 4);
+  const coin = (st) => `<svg viewBox="0 0 100 100" style="${st}" aria-hidden="true"><path pathLength="1" d="${d}" stroke-width="1.4"/><path pathLength="1" d="${d}" stroke-width="5" opacity=".18"/></svg>`;
+  $('#givre').innerHTML = coin('left:0;top:0') + coin('right:0;top:0;transform:scaleX(-1)') + coin('left:0;bottom:0;transform:scaleY(-1)') + coin('right:0;bottom:0;transform:scale(-1,-1)');
+  // Motif pour la planche claire : le même givre, tracé en bleu-gris sur papier.
+  const motif = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -50 100 100"><g fill="none" stroke="#7d9cb8" stroke-linecap="round"><path d="${d}" stroke-width="1.1"/></g><g transform="rotate(180)" fill="none" stroke="#7d9cb8" stroke-linecap="round"><path d="${d}" stroke-width="1.1"/></g></svg>`;
+  document.documentElement.style.setProperty('--givre-motif', `url("data:image/svg+xml,${encodeURIComponent(motif)}")`);
+  // Viseur de l'Accompagnement : il se referme sur toi.
+  $('#viseur').innerHTML = `<svg viewBox="-50 -50 100 100" aria-hidden="true" fill="none" stroke="#ff8c86" stroke-width="2.4" stroke-linecap="round">
+    <circle r="40"/><circle r="22" stroke-dasharray="6 6"/><path d="M0 -48v14M0 34v14M-48 0h14M34 0h14"/></svg>`;
+})();
+
+// ---------- Effets (canvas) ----------
+const cv = $('#fx'), ctx = cv.getContext('2d');
+let dpr = 1, parts = [], ondes = [], image = 0, dernier = 0;
+let fx = { trainee: false };
+function taille() { dpr = Math.min(1.5, devicePixelRatio || 1); cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; }
+addEventListener('resize', taille); taille();
+const lueurs = {};
+function lueur(col) {
+  if (lueurs[col]) return lueurs[col];
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d'), rg = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  rg.addColorStop(0, col); rg.addColorStop(0.35, col + '99'); rg.addColorStop(1, col + '00');
+  g.fillStyle = rg; g.fillRect(0, 0, 64, 64); return (lueurs[col] = c);
+}
+const MAX_PARTS = 300;
+function etincelles(x, y, n, col, force = 1) {
+  lancerBoucle();
+  n = Math.min(n, MAX_PARTS - parts.length);
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, v = (240 + Math.random() * 620) * force;
+    parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, col, vie: 0, max: 0.45 + Math.random() * 0.7, t: 2 + Math.random() * 4, g: 60 });
+  }
+}
+function fumee(x, y, n) {
+  lancerBoucle();
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, v = 40 + Math.random() * 160;
+    parts.push({ fumee: true, x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v * 0.7 - 30, r: 10 + Math.random() * 20, vie: 0, max: 0.5 + Math.random() * 0.5 });
+  }
+}
+function onde(x, y, col, max = 1.4) { lancerBoucle(); ondes.push({ x, y, col, vie: 0, max: 0.55, rmax: Math.max(innerWidth, innerHeight) * 0.55 * max }); }
+let suivi = null; // élément qui sème des braises (la comète, ou la carte arrachée qui s'en va)
+function boucle(now) {
+  const dt = Math.max(0, Math.min(0.05, (now - dernier) / 1000)); dernier = now;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, innerWidth, innerHeight);
+  if (fx.trainee && suivi) {
+    const [ox, oy] = centre(suivi);
+    for (let i = 0; i < 6 && parts.length < MAX_PARTS; i++) parts.push({ x: ox + (Math.random() - 0.5) * 18, y: oy + (Math.random() - 0.5) * 18, vx: (Math.random() - 0.5) * 50, vy: (Math.random() - 0.5) * 50, col: i % 3 ? '#8fb2ff' : '#ffffff', vie: 0, max: 0.3 + Math.random() * 0.35, t: 3 + Math.random() * 4, g: 0 });
+  }
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i]; p.vie += dt;
+    const a = 1 - p.vie / p.max; if (a <= 0) { parts.splice(i, 1); continue; }
+    if (p.fumee) {
+      p.vx *= 0.9; p.vy *= 0.9; p.x += p.vx * dt; p.y += p.vy * dt; p.r += 50 * dt;
+      ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = a * 0.45; ctx.fillStyle = '#c9d0de';
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+      continue;
+    }
+    p.vx *= 0.94; p.vy = p.vy * 0.94 + p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+    const t = p.t * (0.4 + a * 0.8), l = lueur(p.col);
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a;
+    ctx.drawImage(l, p.x - t * 3, p.y - t * 3, t * 6, t * 6);
+  }
+  for (let i = ondes.length - 1; i >= 0; i--) {
+    const o = ondes[i]; o.vie += dt; const k = o.vie / o.max; if (k >= 1) { ondes.splice(i, 1); continue; }
+    const r = o.rmax * (1 - Math.pow(1 - k, 3));
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (1 - k) * 0.9; ctx.strokeStyle = o.col; ctx.lineWidth = 10 * (1 - k) + 1;
+    ctx.beginPath(); ctx.arc(o.x, o.y, r, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  image = parts.length || ondes.length || fx.trainee ? requestAnimationFrame(boucle) : 0;
+}
+const lancerBoucle = () => { if (!image && !reduit) { dernier = performance.now(); image = requestAnimationFrame(boucle); } };
+function viderFx() { parts = []; ondes = []; fx.trainee = false; suivi = null; }
+
+// ---------- Éléments ----------
+const cine = $('#cine'), nuit = $('#nuit'), alarme = $('#alarme'), cri = $('#cri'), criNom = $('#cri-nom'), criOn = $('#cri-on');
+const lanceur = $('#lanceur'), orbe = $('#orbe'), flash = $('#flash'), scene = $('#scene'), mur = $('#mur'), givre = $('#givre');
+const livre = $('#livre'), arrachee = $('#arrachee'), recue = $('#recue'), ret = $('#ret'), face = $('#face');
+const toi = $('#toi'), toiNom = $('#toi-nom'), viseur = $('#viseur'), oeil = $('#oeil'), decompte = $('#decompte'), issueEl = $('#issue');
+const dialogue = $('#dialogue'), dQui = $('#d-qui'), dTexte = $('#d-texte'), dIndice = $('#d-indice');
+const TOUS = () => [nuit, alarme, lignes, givre, mur, toi, toiNom, viseur, oeil, livre, arrachee, recue, lanceur, criNom, criOn, issueEl, decompte, orbe, flash, dialogue];
+
+function toucher() { return new Promise((res) => { attenteToucher = res; }); }
+function surToucher() {
+  if (phase === 'intro') sauter();
+  else if (phase === 'revele' && attenteToucher && performance.now() - revelA > 350) { const r = attenteToucher; attenteToucher = null; r(); }
+}
+cine.addEventListener('pointerdown', surToucher);
+addEventListener('keydown', (e) => { if (cine.classList.contains('joue') && ['Enter', ' ', 'Escape'].includes(e.key)) { e.preventDefault(); surToucher(); } });
+function secouer(px, el = scene) {
+  if (!px || reduit) return;
+  [el, livre].forEach((x) => x.animate([{ translate: '0 0' }, { translate: `${-px}px ${px * 0.6}px` }, { translate: `${px * 0.8}px ${-px * 0.6}px` }, { translate: `${-px * 0.4}px ${px * 0.3}px` }, { translate: '0 0' }], { duration: 220, easing: 'linear', composite: 'add' }));
+}
+const pointLanceur = () => [innerWidth - 40, Math.max(40, centre(lanceur)[1] + 30)];
+
+// ---------- File : un sort reçu pendant une cinématique attend son tour ----------
+const file = [];
+let enJeu = false;
+function recevoir(nom) {
+  file.push(nom);
+  if (!enJeu) void suivant();
+}
+async function suivant() {
+  const nom = file.shift();
+  if (!nom) { enJeu = false; return; }
+  enJeu = true;
+  fermerAnnonce();
+  await jouer(SCENARIOS[nom]);
+  void suivant();
+}
+
+// ---------- La cinématique ----------
+async function jouer(s) {
+  saute = false; phase = 'intro';
+  viderAnims(); viderFx();
+  TOUS().forEach((e) => (e.style.opacity = '0'));
+  cine.classList.add('joue', 'intro');
+  dIndice.classList.remove('visible'); dTexte.textContent = '';
+  $('#lanceur-nom').textContent = s.lanceur;
+  lanceur.querySelector('small').textContent = s.pouvoir ? 'pouvoir lancé par' : 'sort lancé par';
+  const cri1 = s.sort.toUpperCase();
+  criNom.textContent = cri1;
+  criNom.style.setProperty('--taille', `${Math.min(110, (Math.min(innerWidth, 480) * 0.86) / (cri1.length * 0.86 + 0.4)).toFixed(0)}px`);
+  criOn.style.display = s.pouvoir ? 'none' : '';
+  lancerBoucle();
+
+  // 1. L'alerte : un battement rouge aux bords, la nuit tombe d'un coup.
+  nuit.style.opacity = '1';
+  A(nuit, [{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: 'ease-out' });
+  A(alarme, [{ opacity: 0 }, { opacity: 1, offset: 0.25 }, { opacity: 0.2, offset: 0.55 }, { opacity: 0.8, offset: 0.7 }, { opacity: 0 }], { duration: 900, easing: 'linear' });
+  vibrer([200, 100, 200]);
+  A(lignes, [{ opacity: 0, transform: 'scale(1.4)' }, { opacity: 0.55, transform: 'scale(1)' }], { duration: 700 });
+  // Le lanceur se montre, en haut à droite : c'est de là que viendra la comète.
+  A(lanceur, [{ opacity: 0, transform: 'translateX(30px)' }, { opacity: 1, transform: 'none' }], { duration: 300, delay: 120 });
+  // Pour un vol, ta page du Book s'ouvre dans la nuit : on voit ce qui va partir.
+  if (s.page) {
+    dessinerPage(s.page);
+    A(livre, [{ opacity: 0, transform: 'translateY(40px) scale(.94)' }, { opacity: 1, transform: 'none' }], { duration: 460, delay: 200, fill: 'both' });
+  } else if (s.issue === 'gel' || s.issue === 'accompagnement' || s.issue === 'mur' || s.issue === 'rien') {
+    A(toi, [{ opacity: 0, transform: 'scale(.4)' }, { opacity: 1, transform: 'none' }], { duration: 360, delay: 200 });
+    A(toiNom, [{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 300 });
+  }
+  await pause(520);
+
+  // 2. Le cri du lanceur, entendu de loin.
+  A(criNom, [{ opacity: 0, transform: 'scale(2.2)' }, { opacity: 1, transform: 'scale(.95)', offset: 0.7 }, { opacity: 1, transform: 'scale(1)' }], { duration: 320, easing: 'cubic-bezier(.5,0,.75,0)' });
+  await pause(240);
+  if (!saute) { vibrer(18); secouer(3); }
+  if (!s.pouvoir) {
+    await pause(160);
+    A(criOn, [{ opacity: 0, transform: 'scale(2.4) rotate(8deg)' }, { opacity: 1, transform: 'scale(.94)', offset: 0.7 }, { opacity: 1, transform: 'scale(1)' }], { duration: 280, easing: 'cubic-bezier(.5,0,.75,0)' });
+    await pause(220);
+    if (!saute) { vibrer(25); secouer(6); const [x, y] = centre(criOn); etincelles(x, y, 30, '#8fb2ff', 0.5); }
+  }
+  // Pour le Mur défensif, ta coque se lève pendant que la comète arrive.
+  if (s.issue === 'mur') A(mur, [{ opacity: 0, transform: 'scale(.85)' }, { opacity: 0.95, transform: 'scale(1)' }], { duration: 320, delay: 150 });
+  await pause(360);
+
+  // 3. La comète part du lanceur et fond sur toi.
+  A(criNom, [{ opacity: 1 }, { opacity: 0, transform: 'scale(1.1)' }], { duration: 260 });
+  A(criOn, [{ opacity: 1 }, { opacity: 0, transform: 'scale(1.1)' }], { duration: 260 });
+  const [lx, ly] = pointLanceur();
+  const [cx, cy] = cibleDeLaComete(s);
+  suivi = orbe; fx.trainee = !saute; lancerBoucle();
+  orbe.style.opacity = '1';
+  await finAnim(A(orbe, [
+    { transform: `translate(${lx}px, ${ly}px) scale(.5)` },
+    { transform: `translate(${lx + (cx - lx) * 0.4 + 40}px, ${ly + (cy - ly) * 0.4 - 30}px) scale(.9)`, offset: 0.4 },
+    { transform: `translate(${cx}px, ${cy}px) scale(1.3)` },
+  ], { duration: saute ? 1 : 520, easing: 'cubic-bezier(.45,0,.85,.5)' }));
+  fx.trainee = false; orbe.style.opacity = '0';
+  A(lignes, [{ opacity: 0.55 }, { opacity: 0.2 }], { duration: 400 });
+
+  // 4. L'impact, puis l'issue.
+  if (s.issue === 'vol') return jouerVol(s, cx, cy);
+  if (s.issue === 'echange') return jouerEchange(s, cx, cy);
+  if (s.issue === 'gel' || s.issue === 'accompagnement') return jouerGel(s, cx, cy);
+  if (s.issue === 'mur') return jouerMur(s, cx, cy);
+  return jouerRien(s, cx, cy);
+}
+function cibleDeLaComete(s) {
+  if (s.page) { const p = pocheDe(s.page, s.perdue); return centre(p); }
+  if (s.issue === 'mur') { const b = mur.getBoundingClientRect(); return [b.left + b.width * 0.7, b.top + b.height * 0.24]; }
+  return centre(toi);
+}
+
+// Ta page du Book : pochettes fixes (numéro en creux si vide) ou libres.
+function dessinerPage(p) {
+  const restes = 12 - p.poches.length, span = restes % 3 || 3;
+  const base = p.libre ? 0 : 71;
+  const html = p.poches.map((num, i) => {
+    if (num) return `<span class="poche" data-num="${num}" data-i="${i}">${carteHTML(carte(num))}<span class="volee">VOLÉE</span></span>`;
+    if (p.libre) return '<span class="poche"></span>';
+    const n = String(base + i).padStart(3, '0');
+    return `<span class="poche"><span class="poche-num">${n}<em>${CARTES[n]?.[1] ?? ''}</em></span></span>`;
+  }).join('');
+  const pleines = p.poches.filter(Boolean).length;
+  livre.innerHTML = `<div class="page ${p.libre ? 'p-libre' : 'p-designee'}"><div class="page-tete"><span>${p.libre ? 'Libres' : 'Fixes'}</span><span>${p.libre ? `${pleines}<small> / 15</small>` : p.titre}</span></div><div class="poches">${html}<span class="page-folio" style="grid-column: span ${span}">${p.libre ? 1 : 8}</span>${'<span class="case-vide"></span>'.repeat(Math.max(0, restes - span))}</div></div>`;
+}
+const pocheDe = (p, num) => livre.querySelector(`.poche[data-num="${num}"]`);
+
+// Vol, Pickpocket, L'épée du vol : la comète frappe la pochette, la carte est arrachée, montre sa face, puis file vers le lanceur.
+async function arracher(s, cx, cy) {
+  const poche = pocheDe(s.page, s.perdue), c = carte(s.perdue);
+  const b = poche.getBoundingClientRect();
+  if (!saute) { A(flash, [{ opacity: 0.5 }, { opacity: 0 }], { duration: 200, easing: 'ease-out' }); onde(cx, cy, '#8fb2ff', 0.9); etincelles(cx, cy, 90, '#cfe0ff', 0.8); secouer(8); vibrer([40, 40, 60]); }
+  // La carte quitte sa pochette : un double posé exactement dessus, la pochette se vide.
+  // Dessinée en grand dès le départ (nom et texte lisibles), réduite à la taille de la pochette.
+  const W = Math.min(innerWidth * 0.5, 210), H = W * 88 / 63, k0 = b.width / W;
+  const pos = (x, y, sc) => `translate(${x - W * (1 - sc) / 2}px, ${y - H * (1 - sc) / 2}px) scale(${sc})`;
+  arrachee.style.width = `${W}px`;
+  arrachee.innerHTML = carteHTML(c);
+  arrachee.style.opacity = '1';
+  poche.querySelector('.gi-carte').remove();
+  if (!s.page.libre) poche.insertAdjacentHTML('afterbegin', `<span class="poche-num">${s.perdue}<em>${c.rang}</em></span>`);
+  const mx = innerWidth / 2 - W / 2, my = Math.max(80, innerHeight * 0.32 - H / 2);
+  await finAnim(A(arrachee, [
+    { transform: pos(b.left, b.top, k0) },
+    { transform: `${pos(b.left + (mx - b.left) * 0.3, b.top - 40, k0 + (1 - k0) * 0.4)} rotate(-14deg)`, offset: 0.3 },
+    { transform: `${pos(mx, my, 1)} rotate(6deg)` },
+  ], { duration: saute ? 1 : 560, easing: 'cubic-bezier(.2,.7,.3,1)' }));
+  // La pochette garde la trace : « VOLÉE ».
+  A(poche.querySelector('.volee'), [{ opacity: 0, transform: 'scale(1.8)' }, { opacity: 1, transform: 'none' }], { duration: 260, delay: 80 });
+  // Elle tremble un instant, face visible : on sait ce qu'on perd.
+  if (!saute) arrachee.animate([{ translate: '0 0' }, { translate: '-3px 1px' }, { translate: '3px -1px' }, { translate: '0 0' }], { duration: 120, iterations: 4, composite: 'add' });
+  await pause(820);
+  // Puis elle est aspirée vers le lanceur, en traînée.
+  const [lx, ly] = pointLanceur();
+  suivi = arrachee; fx.trainee = !saute; lancerBoucle();
+  await finAnim(A(arrachee, [
+    { transform: `${pos(mx, my, 1)} rotate(6deg)` },
+    { transform: `${pos(mx - 30, my + 20, 1.05)} rotate(-4deg)`, offset: 0.2 },
+    { transform: `${pos(lx - W / 2, ly - H / 2, 0.06)} rotate(40deg)`, opacity: 0.2 },
+  ], { duration: saute ? 1 : 560, easing: 'cubic-bezier(.6,0,.9,.4)' }));
+  fx.trainee = false; arrachee.style.opacity = '0';
+  if (!saute) { etincelles(lx, ly, 30, '#8fb2ff', 0.4); }
+  return c;
+}
+async function jouerVol(s, cx, cy) {
+  const c = await arracher(s, cx, cy);
+  issueEl.className = 'issue rouge';
+  issueEl.textContent = 'VOLÉE';
+  issueEl.style.setProperty('--taille', `${Math.min(110, Math.min(innerWidth, 480) * 0.86 / 4.6).toFixed(0)}px`);
+  A(issueEl, [{ opacity: 0, transform: 'scale(1.8)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: 'cubic-bezier(.5,0,.75,0)' });
+  const texte = s.sort === 'Pickpocket'
+    ? `${s.lanceur} t’a pris ${enPhrase(c.nom)} dans tes emplacements libres.`
+    : s.pouvoir ? `${s.lanceur} t’a volé ${enPhrase(c.nom)} avec L’épée du vol.` : `${s.lanceur} t’a volé ${enPhrase(c.nom)}.`;
+  await revele(texte, 'Touche l’écran pour revenir');
+  await toucher();
+  await refermer(s.page.libre ? 'libres' : 'fixes');
+}
+
+// Échange forcé : ta carte est arrachée, puis la comète revient avec celle qu'il te donne, de dos ; elle se retourne.
+async function jouerEchange(s, cx, cy) {
+  const perdue = await arracher(s, cx, cy);
+  const c = carte(s.recue);
+  face.innerHTML = carteHTML(c);
+  A(livre, [{ opacity: 1 }, { opacity: 0.25 }], { duration: 300 });
+  const [lx, ly] = pointLanceur(), [rx, ry] = centre(recue);
+  suivi = orbe; fx.trainee = !saute; lancerBoucle();
+  orbe.style.opacity = '1';
+  await finAnim(A(orbe, [{ transform: `translate(${lx}px, ${ly}px) scale(.5)` }, { transform: `translate(${rx}px, ${ry}px) scale(1.3)` }], { duration: saute ? 1 : 460, easing: 'cubic-bezier(.2,.6,.3,1)' }));
+  fx.trainee = false; orbe.style.opacity = '0';
+  if (!saute) { A(flash, [{ opacity: 0.5 }, { opacity: 0 }], { duration: 220 }); onde(rx, ry, '#ffffff', 1); etincelles(rx, ry, 100, '#e8b4b6', 0.9); fumee(rx, ry, 16); secouer(6); vibrer([30, 40, 20]); }
+  recue.style.opacity = '1';
+  A(recue, [{ transform: 'scale(.3)' }, { transform: 'scale(1.1)', offset: 0.6 }, { transform: 'scale(1)' }], { duration: 420 });
+  A(ret, [{ transform: 'rotateY(900deg)' }, { transform: 'rotateY(180deg)', offset: 0.7 }, { transform: 'rotateY(0deg)' }], { duration: 900, easing: 'cubic-bezier(.12,.8,.2,1)' });
+  await pause(900);
+  await revele(`${s.lanceur} t’a imposé un échange : tu perds ${enPhrase(perdue.nom)} et tu reçois ${enPhrase(c.nom)}.`, 'Touche l’écran pour la ranger dans ton Book');
+  await toucher();
+  await ranger();
+}
+
+// Gel / Accompagnement : la comète te frappe, le givre prend l'écran ; pour l'Accompagnement, un viseur rouge se referme sur toi.
+async function jouerGel(s, cx, cy) {
+  if (!saute) { A(flash, [{ opacity: 0.45 }, { opacity: 0 }], { duration: 220 }); onde(cx, cy, '#dff0ff', 1); etincelles(cx, cy, 90, '#dff0ff', 0.8); secouer(6); vibrer([40, 30, 40]); }
+  givre.querySelectorAll('path').forEach((p) => anims.push(p.animate([{ strokeDasharray: '1', strokeDashoffset: '1' }, { strokeDasharray: '1', strokeDashoffset: '0' }], { duration: reduit ? 1 : 900, fill: 'forwards', easing: 'cubic-bezier(.2,.7,.3,1)' })));
+  A(givre, [{ opacity: 0 }, { opacity: 1 }], { duration: 300 });
+  A(toi, [{ background: '#f6f6f2' }, { background: '#dff0ff', boxShadow: '0 0 0 4px #0c0c0e, 0 0 0 7px #dff0ff, 0 0 40px 16px rgba(223, 240, 255, 0.6)' }], { duration: 500 });
+  issueEl.className = 'issue';
+  issueEl.textContent = 'GELÉ';
+  issueEl.style.setProperty('--taille', `${Math.min(130, Math.min(innerWidth, 480) * 0.86 / 3.9).toFixed(0)}px`);
+  A(issueEl, [{ opacity: 0, transform: 'scale(1.6)' }, { opacity: 1, transform: 'none' }], { duration: 340, delay: 260 });
+  decompte.textContent = '3:00';
+  A(decompte, [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 300, delay: 500 });
+  if (s.issue === 'accompagnement') {
+    await pause(560);
+    oeil.textContent = `${s.lanceur} voit où tu es`;
+    A(viseur, [{ opacity: 0, transform: 'scale(2.6) rotate(-40deg)' }, { opacity: 1, transform: 'scale(1) rotate(0deg)' }], { duration: 520, easing: 'cubic-bezier(.2,.8,.3,1)' });
+    await pause(480);
+    if (!saute) { vibrer(30); secouer(4); }
+    A(oeil, [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 260 });
+  }
+  await pause(700);
+  const texte = s.issue === 'accompagnement'
+    ? `${s.lanceur} utilise Accompagnement sur toi : tu es gelé 3 min et il voit où tu es.`
+    : `${s.lanceur} t’a gelé : plus de scan pendant 3 min.`;
+  await revele(texte, 'Touche l’écran pour revenir');
+  await toucher();
+  await refermer();
+  gelerApp(s);
+}
+
+// Ton Mur défensif encaisse : la comète s'y brise, la coque se fend et tombe.
+async function jouerMur(s, cx, cy) {
+  const [mx, my] = centre(mur);
+  if (!saute) { A(flash, [{ opacity: 0.45 }, { opacity: 0 }], { duration: 200 }); etincelles(cx, cy, 140, '#bfe0ff', 1.1); onde(cx, cy, '#bfe0ff', 0.9); secouer(9); vibrer([40, 50, 30]); }
+  mur.querySelectorAll('#feles path').forEach((p, i) => anims.push(p.animate([{ strokeDasharray: '1', strokeDashoffset: '1' }, { strokeDasharray: '1', strokeDashoffset: '0' }], { duration: reduit ? 1 : 260, delay: reduit ? 0 : i * 30, fill: 'forwards', easing: 'ease-out' })));
+  await pause(560);
+  A(mur, [{ opacity: 0.95, transform: 'scale(1)' }, { opacity: 0, transform: 'translateY(60px) scale(1.04)' }], { duration: 480, easing: 'cubic-bezier(.5,0,.75,0)' });
+  if (!saute) etincelles(mx, my + 40, 60, '#ffffff', 0.4);
+  issueEl.className = 'issue';
+  issueEl.textContent = 'BLOQUÉ';
+  issueEl.style.setProperty('--taille', `${Math.min(110, Math.min(innerWidth, 480) * 0.86 / 5.6).toFixed(0)}px`);
+  A(issueEl, [{ opacity: 0, transform: 'scale(1.8)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.5,0,.75,0)' });
+  await pause(320);
+  await revele(`${s.lanceur} t’a lancé ${s.sort} : ton Mur défensif l’a bloqué. Il est perdu.`, 'Touche l’écran pour revenir');
+  await toucher();
+  await refermer('sorts');
+}
+
+// Rien à prendre : la comète se défait en fumée devant toi.
+async function jouerRien(s, cx, cy) {
+  if (!saute) { fumee(cx, cy, 28); etincelles(cx, cy, 30, '#8fb2ff', 0.3); vibrer(20); }
+  issueEl.className = 'issue';
+  issueEl.textContent = 'RIEN';
+  issueEl.style.setProperty('--taille', `${Math.min(110, Math.min(innerWidth, 480) * 0.86 / 3.8).toFixed(0)}px`);
+  A(issueEl, [{ opacity: 0, transform: 'scale(1.6)' }, { opacity: 1, transform: 'none' }], { duration: 320 });
+  await pause(500);
+  const texte = s.sort === 'Pickpocket' ? `${s.lanceur} t’a lancé Pickpocket, mais tes emplacements libres étaient vides.` : `${s.lanceur} t’a lancé ${s.sort}, mais il n’y avait rien à prendre.`;
+  await revele(texte, 'Touche l’écran pour revenir');
+  await toucher();
+  await refermer();
+}
+
+async function revele(texte, indice) {
+  phase = 'revele'; revelA = performance.now(); cine.classList.remove('intro');
+  dialogue.style.opacity = '1';
+  if (!reduit) dialogue.animate([{ transform: 'translateY(30px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 300, easing: 'cubic-bezier(.16,1,.3,1)' });
+  saute = false;
+  await taper(dTexte, texte);
+  dIndice.textContent = indice; dIndice.classList.add('visible');
+}
+
+// La nuit se lève ; l'onglet touché le marque (« −1 » sur Book pour une carte perdue).
+async function refermer(marque) {
+  phase = 'range';
+  A(dialogue, [{ opacity: 1 }, { opacity: 0, transform: 'translateY(24px)' }], { duration: 200 });
+  [cri, issueEl, decompte, givre, livre, toi, toiNom, viseur, oeil, lanceur].forEach((e) => A(e, [{ opacity: getComputedStyle(e).opacity }, { opacity: 0 }], { duration: 240 }));
+  A(lignes, [{ opacity: 0.2 }, { opacity: 0 }], { duration: 240 });
+  await finAnim(A(nuit, [{ opacity: 1 }, { opacity: 0 }], { duration: 380, easing: 'ease-in' }));
+  terminer();
+  if (marque === 'fixes' || marque === 'libres') {
+    marquer('livre', '−1', 'moins-un');
+    const n = $(marque === 'fixes' ? '#n-fixes' : '#n-libres'); n.textContent = Math.max(0, +n.textContent - 1);
+  }
+  if (marque === 'sorts') marquer('sorts', '−1', 'moins-un');
+}
+function marquer(onglet, texte, classe) {
+  const o = $(`[data-onglet="${onglet}"]`);
+  o.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.16)' }, { transform: 'scale(1)' }], { duration: reduit ? 1 : 320, easing: 'cubic-bezier(.16,1,.3,1)' });
+  const m = document.createElement('span'); m.className = classe; m.textContent = texte; o.append(m);
+  m.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none', offset: 0.2 }, { opacity: 1, offset: 0.75 }, { opacity: 0, transform: 'translateY(-8px)' }], { duration: reduit ? 1 : 1400, easing: 'ease-out' }).finished.then(() => m.remove());
+}
+// Échange forcé : la carte reçue file dans l'onglet Book ; la nuit se referme dessus.
+async function ranger() {
+  phase = 'range';
+  const onglet = $('[data-onglet="livre"]');
+  const [tx, ty] = centre(onglet), b = recue.getBoundingClientRect(), [bx, by] = [b.left + b.width / 2, b.top + b.height / 2];
+  const dx = tx - bx, dy = ty - by, s = 30 / b.width, R = Math.hypot(innerWidth, innerHeight);
+  vibrer(10);
+  A(dialogue, [{ opacity: 1 }, { opacity: 0, transform: 'translateY(24px)' }], { duration: 200 });
+  [lignes, livre, lanceur].forEach((e) => A(e, [{ opacity: getComputedStyle(e).opacity }, { opacity: 0 }], { duration: 250 }));
+  A(nuit, [{ clipPath: `circle(${R}px at ${tx}px ${ty}px)` }, { clipPath: `circle(0px at ${tx}px ${ty}px)` }], { duration: 560, delay: 80, easing: 'cubic-bezier(.6,0,.4,1)' });
+  await finAnim(A(recue, [
+    { transform: 'none', easing: 'cubic-bezier(.2,.7,.3,1)' },
+    { transform: `translate(${dx * 0.18}px, ${dy * 0.18 - 70}px) scale(.72) rotate(-6deg)`, offset: 0.32, easing: 'cubic-bezier(.6,0,.9,.5)' },
+    { transform: `translate(${dx}px, ${dy}px) scale(${s}) rotate(-18deg)` },
+  ], { duration: 640, easing: 'linear' }));
+  recue.style.opacity = '0';
+  terminer();
+  marquer('livre', '+1', 'plus-un');
+}
+function terminer() {
+  viderAnims(); viderFx();
+  cine.classList.remove('joue', 'intro');
+  TOUS().forEach((e) => (e.style.opacity = '0'));
+  nuit.style.clipPath = '';
+  phase = 'repos'; saute = false;
+}
+
+// ---------- Après la cinématique : le gel reste visible (bandeau, Scanner givré) ----------
+let gelFin = 0, gelTic = 0;
+function gelerApp(s, ms = 180_000) {
+  gelFin = Date.now() + ms;
+  $('#gel-qui').textContent = s.issue === 'accompagnement' ? `${s.lanceur} voit où tu es` : `${s.lanceur} t’a gelé`;
+  $('#gel-sous').textContent = s.issue === 'accompagnement' ? 'Gelé : plus de scan, ta position est suivie' : 'Plus de scan jusqu’à la fin';
+  const b = $('#gel-bandeau'); b.hidden = false;
+  if (!reduit) b.animate([{ transform: 'translateY(-100%)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 360, easing: 'cubic-bezier(.16,1,.3,1)' });
+  const scan = $('#onglet-scan');
+  scan.classList.add('gele');
+  if (!scan.querySelector('.gel-t')) scan.insertAdjacentHTML('beforeend', '<span class="gel-t"></span>');
+  clearInterval(gelTic);
+  const tic = () => {
+    const r = gelFin - Date.now();
+    if (r <= 0) return degeler();
+    $('#gel-temps').textContent = mmss(r);
+    scan.querySelector('.gel-t').textContent = mmss(r);
+  };
+  tic(); gelTic = setInterval(tic, 1000);
+}
+function degeler() {
+  clearInterval(gelTic); gelFin = 0;
+  $('#gel-bandeau').hidden = true;
+  const scan = $('#onglet-scan'); scan.classList.remove('gele'); scan.querySelector('.gel-t')?.remove();
+}
+// Toucher le Scanner pendant le gel : refus en clair, sans ouvrir la caméra.
+let toastT = 0;
+$('#onglet-scan').addEventListener('click', () => {
+  if (!gelFin) return;
+  const t = $('#toast');
+  $('#toast-texte').textContent = `Tu es gelé : plus de scan pendant encore ${mmss(gelFin - Date.now())}.`;
+  t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => (t.hidden = true), 2600);
+});
+
+// ---------- Boîte seule (Trace, Voyance, Voile) et rattrapage au retour ----------
+const annonce = $('#annonce');
+let annonceT = 0;
+function montrerAnnonce(qui, texte, liste) {
+  clearTimeout(annonceT);
+  $('#an-qui').textContent = qui;
+  const t = $('#an-texte'), l = $('#an-liste');
+  t.hidden = !!liste; l.hidden = !liste;
+  if (liste) l.innerHTML = liste.map(([x, quand]) => `<li><span>${x}<small>${quand}</small></span></li>`).join('');
+  annonce.classList.add('visible');
+  if (!liste) void taper(t, texte);
+  vibrer(120);
+  if (!liste) annonceT = setTimeout(fermerAnnonce, 7000);
+}
+function fermerAnnonce() { clearTimeout(annonceT); annonce.classList.remove('visible'); }
+$('#an-fermer').addEventListener('click', fermerAnnonce);
+
+// ---------- Commandes du prototype ----------
+$('#r-frappe').insertAdjacentHTML('beforeend', Object.keys(SCENARIOS).map((k) => `<button data-s="${k}">${k}</button>`).join(''));
+$('#r-boite').insertAdjacentHTML('beforeend', Object.keys(BOITES).map((k) => `<button data-b="${k}">${k}</button>`).join(''));
+document.querySelectorAll('[data-s]').forEach((b) => b.addEventListener('click', () => recevoir(b.dataset.s)));
+document.querySelectorAll('[data-b]').forEach((b) => b.addEventListener('click', () => { const x = BOITES[b.dataset.b]; montrerAnnonce(x.qui, x.texte); }));
+$('#t-deux').addEventListener('click', () => { recevoir('Gel'); recevoir('Vol'); });
+$('#t-retour').addEventListener('click', () => {
+  montrerAnnonce('Pendant ton absence', '', RATTRAPAGE);
+  gelerApp({ issue: 'gel', lanceur: 'Goreinu' }, 72_000);
+});
+$('#t-degel').addEventListener('click', degeler);
+window.voir = recevoir;
+</script>

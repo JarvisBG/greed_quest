@@ -8,7 +8,7 @@ import { STAFF, requireRole } from '../auth/guard.js';
 import { paramsOf } from '../core/params.js';
 import { recordPosition } from '../core/position.js';
 import type { ActionCtx } from '../core/runner.js';
-import { circulation, limitesOf, loadBook, loadCatalogue, loadJoueur, saveBooks, updateJoueur, actionPatch } from '../core/state.js';
+import { circulation, limitesOf, loadBook, loadCatalogue, loadJoueur, saveBooks, updateJoueur, actionPatch, vueCarte } from '../core/state.js';
 import { encheres, joueurs } from '../db/schema.js';
 import { introuvable } from '../errors.js';
 import { refus, send } from '../http.js';
@@ -32,21 +32,26 @@ const auctionOf = (r: EnchereRow): Auction => ({
 
 const gameOpen = (etat: string) => etat === 'en_cours' || etat === 'phase_finale';
 
-/** Vue publique : carte, fin, meilleure offre (pseudo). */
+/** Vue publique : carte (fiche complète, page ⑭), fin, meilleure offre (pseudo, et id pour que chacun sache s'il mène). */
 async function publicView(c: ActionCtx, a: Auction) {
   const cat = await loadCatalogue(c.tx, c.partie.id);
+  const limites = limitesOf(await paramsOf(c.tx, c.partie));
   const best = a.offres.at(-1);
   const pseudo = best ? (await loadJoueur(c.tx, best.playerId))?.pseudo ?? '?' : null;
   return {
     id: a.id,
-    carte: { id: a.cardId, nom: cat.nomDe(a.cardId), rang: cat.rangDe(a.cardId) },
+    carte: { id: a.cardId, ...vueCarte(cat, a.cardId, limites), nom: cat.nomDe(a.cardId), rang: cat.rangDe(a.cardId) },
     fin: a.fin,
     /** Temps restant (heure de jeu) au moment de l'envoi : l'app le décompte. */
     resteMs: Math.max(0, a.fin - c.now),
     prixDepart: a.prixDepart,
-    meilleureOffre: best ? { montant: best.montant, pseudo } : null,
+    meilleureOffre: best ? { montant: best.montant, pseudo, joueurId: best.playerId } : null,
   };
 }
+
+/** Meilleure offre de ce joueur sur l'enchère (null s'il n'a pas enchéri) : « dépassé » sur les vignettes. */
+const offreDe = (a: Pick<Auction, 'offres'>, joueurId: string) =>
+  a.offres.reduce<number | null>((m, o) => (o.playerId === joueurId && (m === null || o.montant > m) ? o.montant : m), null);
 
 /**
  * Clôture les enchères arrivées à échéance (appelée par les tâches planifiées et par le PNJ).
@@ -84,10 +89,11 @@ export async function closeDueAuctions(c: ActionCtx): Promise<void> {
     await updateJoueur(c.tx, j.id, { jenny: j.jenny - gagnant.montant });
     await c.tx.update(encheres).set({ etat: 'vendue', gagnantId: j.id, prix: gagnant.montant }).where(eq(encheres.id, a.id));
     await c.log({ action: 'enchere_cloture', resultat: 'vendue', details: { enchereId: a.id, carteId: a.cardId, gagnant: j.id, prix: gagnant.montant } });
-    const fin = { id: a.id, vendue: true, pseudo: j.pseudo, prix: gagnant.montant, carte: cat.nomDe(a.cardId) };
+    const fin = { id: a.id, vendue: true, pseudo: j.pseudo, joueurId: j.id, prix: gagnant.montant, carte: cat.nomDe(a.cardId) };
     c.emit({ type: 'joueurs' }, 'enchere_close', fin);
     c.emit({ type: 'staff' }, 'enchere_close', fin);
-    c.emit({ type: 'joueur', id: j.id }, 'enchere_gagnee', fin);
+    // Page ⑭ : la cinématique « ADJUGÉ ! » montre la carte gagnée et débite la jenny à ce moment-là.
+    c.emit({ type: 'joueur', id: j.id }, 'enchere_gagnee', { ...fin, lot: { id: a.cardId, ...vueCarte(cat, a.cardId, limites) }, jenny: j.jenny - gagnant.montant });
   }
 }
 
@@ -124,7 +130,9 @@ export async function encheresRoutes(app: FastifyInstance) {
     return runner.run(partieId, { type: s.role === 'joueur' ? 'joueur' : s.role, id: s.sub }, async (c) => {
       const rows = await c.tx.select().from(encheres).where(and(eq(encheres.partieId, partieId), eq(encheres.etat, 'ouverte')));
       const vues = [];
-      for (const r of rows) if (r.fin > c.now) vues.push({ ...(await publicView(c, auctionOf(r))), inscrit: r.participants.includes(s.sub) });
+      for (const r of rows) {
+        if (r.fin > c.now) vues.push({ ...(await publicView(c, auctionOf(r))), inscrit: r.participants.includes(s.sub), maOffre: offreDe(r, s.sub) });
+      }
       return { ok: true as const, encheres: vues };
     });
   });
@@ -158,7 +166,7 @@ export async function encheresRoutes(app: FastifyInstance) {
         const vue = await publicView(c, res.auction);
         c.emit({ type: 'joueurs' }, 'enchere', vue);
         c.emit({ type: 'staff' }, 'enchere', vue);
-        return { ok: true as const, enchere: vue };
+        return { ok: true as const, enchere: { ...vue, inscrit: true, maOffre: offreDe(res.auction, j.id) } };
       });
       return send(reply, r);
     });

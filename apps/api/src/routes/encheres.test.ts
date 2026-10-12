@@ -52,7 +52,16 @@ describe('RG-11.4 / 11.5 enchères d’Antokiba', () => {
     expect((await post(kirua.token, `encheres/${id}/offre`, { montant: 20 })).json()).toMatchObject({ code: 'offre_trop_basse', message: 'Offre minimale : 21 J' });
     expect((await post(kirua.token, `encheres/${id}/offre`, { montant: 999 })).json()).toMatchObject({ code: 'jenny_insuffisants' });
     const res = await post(kirua.token, `encheres/${id}/offre`, { montant: 30 });
-    expect(res.json().enchere.meilleureOffre).toEqual({ montant: 30, pseudo: 'Kirua' });
+    expect(res.json().enchere.meilleureOffre).toEqual({ montant: 30, pseudo: 'Kirua', joueurId: kirua.id });
+  });
+
+  it('RG-11.4 (page ⑭) : la liste donne la fiche de la carte, qui mène et ma meilleure offre', async () => {
+    const list = await t.app.inject({ url: `/parties/${t.partieId}/encheres`, headers: t.bearer(gon.token) });
+    const e = list.json().encheres.find((x: { id: string }) => x.id === id);
+    expect(e).toMatchObject({ carte: { nom: "Le dragon qui s'emballe", rang: 'A', limite: expect.any(Number) }, inscrit: true, maOffre: 20, meilleureOffre: { pseudo: 'Kirua', joueurId: kirua.id } });
+    expect(typeof e.carte.numero).toBe('number');
+    const autre = await t.app.inject({ url: `/parties/${t.partieId}/encheres`, headers: t.bearer(leorio.token) });
+    expect(autre.json().encheres.find((x: { id: string }) => x.id === id)).toMatchObject({ inscrit: false, maOffre: null });
   });
 
   it('RG-11.4 : à la clôture seul le gagnant est débité et reçoit la carte', async () => {

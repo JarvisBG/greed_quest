@@ -550,16 +550,15 @@ const CATALOGUE = {
   '080': C('080', 'La pierre flottante', 'S', 'Une pierre nourrie par le soleil, qui fait flotter une personne.'),
   '012': C('012', 'Le dictionnaire d’or', 'A', 'Un dictionnaire dont un mot brille d’or chaque jour : il servira le lendemain.'),
   '073': C('073', 'Le jade des ténèbres', 'B', 'Un jade béni par le Diable, qui détourne le malheur sur un autre.'),
-  '1007': { num: '1007', nom: 'Vol', genre: 'sort', txt: 'Prend 1 carte au hasard dans les emplacements fixes d’un joueur proche.' },
-  '1001': { num: '1001', nom: 'Voyance', genre: 'sort', txt: 'Montre les emplacements libres d’un joueur déjà croisé.' },
   '1032': { num: '1032', nom: 'Loterie', genre: 'objet', txt: 'Gratte le ticket : de 0 à 100 jenny.' },
   '1035': { num: '1035', nom: 'Solidité', genre: 'objet', txt: 'Protège ton Book d’un vol pendant 10 min.' },
 };
 // Ma réserve : les cartes que je peux poser (une carte engagée ailleurs n'apparaît pas, RG-11).
+// Cartes et objets seulement : les sorts ne s'échangent pas (RG-11, confirmé par Sivraj le 2026-10-12).
 const MES = [
   ['m1', '079', 'libre'], ['m2', '022', 'libre'], ['m3', '025', 'libre'], ['m4', '025', 'libre'], ['m5', '026', 'libre'],
   ['m6', '011', 'libre'], ['m7', '019', 'emplacement 019'], ['m8', '074', 'emplacement 074'],
-  ['m9', '1007', 'sort'], ['m10', '1001', 'sort'], ['m11', '1032', 'objet'], ['m12', '1035', 'objet'],
+  ['m11', '1032', 'objet'], ['m12', '1035', 'objet'],
 ].map(([id, num, ou]) => ({ id, ou, ...CATALOGUE[num] }));
 const SES_CARTES = ['080', '012', '073', '019'].map((num, i) => ({ id: 'l' + i, ...CATALOGUE[num] }));
 
@@ -587,9 +586,9 @@ function resume(cartes, jenny) {
   if (cartes.length) {
     bouts.push(`${cartes.length} carte${cartes.length > 1 ? 's' : ''}`);
     const n = {};
-    for (const c of cartes) { const k = c.genre === 'sort' ? 'sort' : c.genre === 'objet' ? 'objet' : c.rang; n[k] = (n[k] || 0) + 1; }
-    const ordre = ['SS', 'S', 'A', 'B', 'C', 'D', 'sort', 'objet'];
-    bouts.push(ordre.filter((k) => n[k]).map((k) => k === 'sort' || k === 'objet' ? `${n[k]} ${k}${n[k] > 1 ? 's' : ''}` : `${n[k]} ${k}`).join(', '));
+    for (const c of cartes) { const k = c.genre === 'objet' ? 'objet' : c.rang; n[k] = (n[k] || 0) + 1; }
+    const ordre = ['SS', 'S', 'A', 'B', 'C', 'D', 'objet'];
+    bouts.push(ordre.filter((k) => n[k]).map((k) => k === 'objet' ? `${n[k]} ${k}${n[k] > 1 ? 's' : ''}` : `${n[k]} ${k}`).join(', '));
   }
   if (jenny) bouts.push(`${jenny} J`);
   return bouts.join(' · ');
@@ -848,8 +847,8 @@ function ouvrirTiroir(mode) {
   $('#ti-titre').textContent = mode === 'vente' ? `Que vends-tu à ${autre} ?` : 'Tes cartes';
   $('#ti-prix').hidden = mode !== 'vente';
   const groupe = (titre, liste) => liste.length ? `<h3>${titre}</h3><div class="grille">${liste.map((c) => `<button class="choix" data-id="${c.id}" aria-pressed="${choisis.has(c.id)}">${carteHTML(c)}<span class="ou">${c.ou}</span></button>`).join('')}</div>` : '';
-  const vendables = MES; // tout se vend : cartes, sorts, objets
-  $('#ti-defile').innerHTML = groupe('Cartes', vendables.filter((c) => c.genre === 'designee')) + groupe('Sorts', vendables.filter((c) => c.genre === 'sort')) + groupe('Objets', vendables.filter((c) => c.genre === 'objet'));
+  const vendables = MES; // cartes et objets (pas les sorts)
+  $('#ti-defile').innerHTML = groupe('Cartes', vendables.filter((c) => c.genre === 'designee')) + groupe('Objets', vendables.filter((c) => c.genre === 'objet'));
   majTiroir();
   $('#voile').hidden = false; $('#tiroir').hidden = false;
 }

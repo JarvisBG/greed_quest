@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { exemplaires, joueurs, zones } from '../db/schema.js';
+import { exemplaires, joueurs, objets, zones } from '../db/schema.js';
 import { newId } from '../ids.js';
 import { SYSTEME } from '../core/journal.js';
 import { tickPartie } from '../core/taches.js';
@@ -105,5 +105,55 @@ describe('RG-11.1 amendé : échange à la Pokémon', () => {
     await t.app.gq.runner.run(t.partieId, SYSTEME, tickPartie);
     const notifs = recues.filter((e) => e.evenement === 'echange' && e.data.id === id && e.data.etat === 'expire').map((e) => e.a);
     expect(notifs.sort()).toEqual([leorio.id, kirua.id].sort());
+  });
+});
+
+describe('Vente entre joueurs (2026-10-12) et objets échangeables (amendement 2026-10-10)', () => {
+  let biscuit: J, zushi: J, palm: J;
+  let carteBiscuit: string, objetBiscuit: string;
+
+  beforeAll(async () => {
+    biscuit = await t.inscrire('Biscuit');
+    zushi = await t.inscrire('Zushi');
+    palm = await t.inscrire('Palm');
+    carteBiscuit = newId();
+    objetBiscuit = newId();
+    await t.db.insert(exemplaires).values({ id: carteBiscuit, partieId: t.partieId, joueurId: biscuit.id, carteId: t.carteIds[3]!, origine: { type: 'kit' }, obtenuA: 0 });
+    await t.db.insert(objets).values({ id: objetBiscuit, partieId: t.partieId, joueurId: biscuit.id, type: 'pepite', obtenuA: 0 });
+  });
+
+  it('RG-11.1 vente : la carte est posée dès la proposition, l’acheteur voit le prix', async () => {
+    const res = await post(biscuit, 'echanges', { cibleId: zushi.id, position: ici, vente: { itemId: carteBiscuit, prix: 30 } });
+    expect(res.json().ok).toBe(true);
+    const notif = recues.filter((e) => e.a === zushi.id && e.evenement === 'echange').at(-1);
+    expect(notif?.data).toMatchObject({ etat: 'invitation', invite: true, vente: { prix: 30, jeVends: false } });
+    expect(notif?.data.sonPart.cartes[0]).toMatchObject({ itemId: carteBiscuit, kind: 'carte', numero: expect.any(Number), limite: expect.any(Number) });
+  });
+
+  it('RG-11.1 vente acceptée : le prix est posé sur la part de l’acheteur, puis double validation', async () => {
+    const id = recues.filter((e) => e.a === zushi.id && e.evenement === 'echange').at(-1)!.data.id;
+    const rep = await post(zushi, `echanges/${id}/reponse`, { accepte: true });
+    expect(rep.json().echange).toMatchObject({ etat: 'composition', maPart: { cartes: [], jenny: 30 } });
+    await post(biscuit, `echanges/${id}/valider`);
+    expect((await post(zushi, `echanges/${id}/valider`)).json()).toMatchObject({ ok: true, conclu: true });
+    const [ex] = await t.db.select().from(exemplaires).where(eq(exemplaires.id, carteBiscuit));
+    expect(ex!.joueurId).toBe(zushi.id);
+  });
+
+  it('vente : prix nul ou carte d’un autre joueur refusés', async () => {
+    expect((await post(biscuit, 'echanges', { cibleId: palm.id, position: ici, vente: { itemId: carteGon, prix: 10 } })).json()).toMatchObject({ ok: false, code: 'element_invalide' });
+    expect((await post(biscuit, 'echanges', { cibleId: palm.id, position: ici, vente: { itemId: objetBiscuit, prix: 0 } })).statusCode).toBe(400);
+  });
+
+  it('amendement 2026-10-10 : un objet se met dans une part et change de main', async () => {
+    const id = (await post(biscuit, 'echanges', { cibleId: palm.id, position: ici })).json().sessionId;
+    await post(palm, `echanges/${id}/reponse`, { accepte: true });
+    const offre = await post(biscuit, `echanges/${id}/offre`, { itemIds: [objetBiscuit], jenny: 0 });
+    expect(offre.json().echange.maPart.cartes[0]).toMatchObject({ kind: 'objet', objet: 'pepite' });
+    await post(palm, `echanges/${id}/offre`, { itemIds: [], jenny: 5 });
+    await post(biscuit, `echanges/${id}/valider`);
+    expect((await post(palm, `echanges/${id}/valider`)).json()).toMatchObject({ ok: true, conclu: true });
+    const [o] = await t.db.select().from(objets).where(eq(objets.id, objetBiscuit));
+    expect(o!.joueurId).toBe(palm.id);
   });
 });

@@ -16,6 +16,7 @@ export const sessionOf = (r: EchangeRow): TradeSession => ({
   donneB: r.donneB,
   valideA: r.valideA,
   valideB: r.valideB,
+  vente: r.vente ?? null,
 });
 
 export async function saveSession(db: DbOrTx, partieId: string, s: TradeSession, concluA: number | null = null): Promise<void> {

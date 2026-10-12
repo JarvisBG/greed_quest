@@ -1,0 +1,1 @@
+ALTER TABLE "echanges" ADD COLUMN "vente" jsonb;

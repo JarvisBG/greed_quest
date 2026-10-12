@@ -1,6 +1,6 @@
 import type { Rank } from '@gq/shared';
 import { describe, expect, it } from 'vitest';
-import { emptyBook, type Book, type BookItem, type CardItem } from './book.js';
+import { emptyBook, type Book, type BookItem, type CardItem, type ObjetItem } from './book.js';
 import {
   AUCTION_DURATION_MS,
   PAIR_TRADE_INTERVAL_MS,
@@ -23,6 +23,7 @@ import {
   type TradeParty,
   type TradeSession,
 } from './trades.js';
+import { PLACES_OBJETS } from './objets.js';
 import type { Position } from './geo.js';
 
 const NOW = 5_000_000;
@@ -36,6 +37,7 @@ const carte = (id: string, cardId = id, extra: Partial<CardItem> = {}): CardItem
   obtenuA: 0,
   ...extra,
 });
+const objet = (id: string): ObjetItem => ({ kind: 'objet', id, objet: 'pepite', obtenuA: 0 });
 const book = (...items: BookItem[]): Book => ({ ...emptyBook(), items });
 const party = (id: string, over: Partial<TradeParty> = {}): TradeParty => ({
   id,
@@ -175,6 +177,24 @@ describe('RG-11.4 / 11.5 enchères', () => {
   });
 });
 
+describe('RG-11 (amendement 2026-10-10) : les objets s’échangent, pas les sorts', () => {
+  it('un objet change de main contre des jenny', () => {
+    const r = trade(input({ a: party('A', { book: book(objet('o1')) }), donneA: { itemIds: ['o1'], jenny: 0 }, donneB: { itemIds: [], jenny: 20 } }), rangDe);
+    expect(r.ok && r.b.book.items.map((i) => i.id)).toEqual(['b1', 'o1']);
+  });
+
+  it('section Objets pleine chez le receveur : refusé', () => {
+    const plein = book(...Array.from({ length: PLACES_OBJETS }, (_, i) => objet(`p${i}`)), carte('b1', '003'));
+    const r = trade(input({ a: party('A', { book: book(objet('o1')) }), b: party('B', { book: plein }), donneA: { itemIds: ['o1'], jenny: 0 } }), rangDe);
+    expect(code(r)).toBe('objets_plein');
+  });
+
+  it('un sort ne s’échange pas', () => {
+    const sort: BookItem = { kind: 'sort', id: 's1', spell: 'vol', obtenuA: 0 } as BookItem;
+    expect(code(trade(input({ a: party('A', { book: book(sort) }), donneA: { itemIds: ['s1'], jenny: 0 } }), rangDe))).toBe('element_invalide');
+  });
+});
+
 describe('RG-11.1 (amendé) session d’échange à la Pokémon', () => {
   const M = 1 / 111_195;
   const pos = (nordM: number): Position => ({ lat: 48.85 + nordM * M, lng: 2.35, precisionM: 0, a: NOW });
@@ -212,6 +232,17 @@ describe('RG-11.1 (amendé) session d’échange à la Pokémon', () => {
     expect(code(answerTrade(p.session, 'A', true, NOW))).toBe('pas_participant');
     expect(code(answerTrade(p.session, 'B', true, NOW + TRADE_INVITATION_TIMEOUT_MS + 1))).toBe('etat_invalide');
     expect(expireTradeSession(p.session, NOW + TRADE_INVITATION_TIMEOUT_MS + 1).etat).toBe('expire');
+  });
+
+  it('vente : la carte est posée dès la proposition, le prix sur la part de l’acheteur s’il peut payer', () => {
+    const a = { ...party('A', { book: book(carte('a1', '001')) }), position: pos(0) };
+    const p = propose({ a, vente: { itemId: 'a1', prix: 40 } });
+    expect(p).toMatchObject({ ok: true, session: { donneA: { itemIds: ['a1'], jenny: 0 }, vente: { prix: 40 } } });
+    if (!p.ok) return;
+    expect(answerTrade(p.session, 'B', true, NOW, 100)).toMatchObject({ ok: true, session: { etat: 'composition', donneB: { itemIds: [], jenny: 40 } } });
+    expect(answerTrade(p.session, 'B', true, NOW, 30)).toMatchObject({ ok: true, session: { donneB: { itemIds: [], jenny: 0 } } });
+    expect(code(propose({ a, vente: { itemId: 'zz', prix: 40 } }))).toBe('element_invalide');
+    expect(code(propose({ a, vente: { itemId: 'a1', prix: 0 } }))).toBe('element_invalide');
   });
 
   it('les deux validations sont nécessaires ; toute modification les annule', () => {

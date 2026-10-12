@@ -128,9 +128,14 @@ export const AchatIntent = z.object({ qr: z.string().max(100).optional(), positi
 export const ReventeIntent = z.object({ qr: z.string().max(100).optional(), itemId: z.string(), position: PositionInput });
 
 /** RG-11.1 amendé : proposer un échange à un joueur à portée. */
-export const EchangeProposition = z.object({ cibleId: z.string(), position: PositionInput });
+/** `vente` : « Vendre une carte » (2026-10-12), la carte (ou l'objet) posée et le prix demandé ; même échange carte contre jenny. */
+export const EchangeProposition = z.object({
+  cibleId: z.string(),
+  position: PositionInput,
+  vente: z.object({ itemId: z.string(), prix: z.number().int().min(1).max(1_000_000) }).optional(),
+});
 export const EchangeReponse = z.object({ accepte: z.boolean() });
-/** Sa part de l'échange : cartes de son Livre et/ou jenny. */
+/** Sa part de l'échange : cartes et objets de son Livre (pas les sorts) et/ou jenny. */
 export const EchangeOffre = z.object({ itemIds: z.array(z.string()).max(30), jenny: z.number().int().min(0) });
 
 /** RG-11.4 : un PNJ met une carte aux enchères. */

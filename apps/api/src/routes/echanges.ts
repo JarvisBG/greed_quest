@@ -17,7 +17,7 @@ import {
   type TradeSession,
   type TradeSide,
 } from '@gq/engine';
-import { EchangeOffre, EchangeProposition, EchangeReponse } from '@gq/shared';
+import { EchangeOffre, EchangeProposition, EchangeReponse, type Rank } from '@gq/shared';
 import { and, eq, gte, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { requireRole } from '../auth/guard.js';
@@ -26,7 +26,7 @@ import { activeSession, lastPairTrade, saveSession, sessionOf } from '../core/ec
 import { paramsOf } from '../core/params.js';
 import { recordPosition } from '../core/position.js';
 import type { ActionCtx } from '../core/runner.js';
-import { actionPatch, isLivreGele, loadBooks, loadCatalogue, loadJoueur, saveBooks, updateJoueur, type Catalogue, type JoueurRow } from '../core/state.js';
+import { actionPatch, isLivreGele, limitesOf, loadBooks, loadCatalogue, loadJoueur, saveBooks, updateJoueur, vueCarte, type Catalogue, type JoueurRow } from '../core/state.js';
 import { echanges, journal } from '../db/schema.js';
 import { introuvable } from '../errors.js';
 import { refus, send } from '../http.js';
@@ -45,13 +45,19 @@ const party = async (c: ActionCtx, j: JoueurRow, book: Book): Promise<TradeParty
   livreGele: await isLivreGele(c.tx, j.id),
 });
 
-/** Ce que voit un participant. RG-11.6 : les cartes de l'autre paraissent toujours vraies. */
-function view(s: TradeSession, moi: string, pseudos: Record<string, string>, books: Map<string, Book>, cat: Catalogue) {
+/**
+ * Ce que voit un participant. RG-11.6 : les cartes de l'autre paraissent toujours vraies.
+ * Chaque carte posée est décrite comme dans le Book (numéro, nom, rang, texte, limite) pour être dessinée ;
+ * un objet donne son type (amendement 2026-10-10).
+ */
+function view(s: TradeSession, moi: string, pseudos: Record<string, string>, books: Map<string, Book>, cat: Catalogue, limites: Record<Rank, number>) {
   const part = (joueurId: string, side: TradeSide) => ({
     cartes: side.itemIds.map((itemId) => {
       const item = books.get(joueurId)?.items.find((i) => i.id === itemId);
+      if (item?.kind === 'objet') return { itemId, kind: 'objet' as const, objet: item.objet, carteId: null, numero: null, nom: null, rang: null, texte: null, limite: null };
       const carteId = item?.kind === 'carte' ? item.cardId : null;
-      return { itemId, carteId, nom: carteId ? cat.nomDe(carteId) : null, rang: carteId ? cat.rangDe(carteId) : null };
+      const vue = carteId ? vueCarte(cat, carteId, limites) : { numero: null, nom: null, rang: null, texte: null, limite: null };
+      return { itemId, kind: 'carte' as const, objet: null, carteId, ...vue };
     }),
     jenny: side.jenny,
   });
@@ -66,6 +72,9 @@ function view(s: TradeSession, moi: string, pseudos: Record<string, string>, boo
     sonPart: part(autre, jeSuisA ? s.donneB : s.donneA),
     jeValide: jeSuisA ? s.valideA : s.valideB,
     ilValide: jeSuisA ? s.valideB : s.valideA,
+    /** Vente : le prix demandé, et qui vend (moi ou l'autre). */
+    vente: s.vente ? { prix: s.vente.prix, jeVends: jeSuisA } : null,
+    derniereActionA: s.derniereActionA,
   };
 }
 
@@ -83,13 +92,14 @@ export async function echangesRoutes(app: FastifyInstance) {
     const [a, b] = await Promise.all([loadJoueur(c.tx, s.a), loadJoueur(c.tx, s.b)]);
     const books = await loadBooks(c.tx, [s.a, s.b]);
     const cat = await loadCatalogue(c.tx, c.partie.id);
-    return { s, a: a!, b: b!, books, cat, pseudos: { [a!.id]: a!.pseudo, [b!.id]: b!.pseudo } };
+    const limites = limitesOf(await paramsOf(c.tx, c.partie));
+    return { s, a: a!, b: b!, books, cat, limites, pseudos: { [a!.id]: a!.pseudo, [b!.id]: b!.pseudo } };
   }
 
   /** Enregistre la session et la diffuse aux deux participants. */
   async function publish(c: ActionCtx, s: TradeSession, ctx: Awaited<ReturnType<typeof load>>, concluA: number | null = null) {
     await saveSession(c.tx, c.partie.id, s, concluA);
-    for (const id of [s.a, s.b]) c.emit({ type: 'joueur', id }, 'echange', view(s, id, ctx.pseudos, ctx.books, ctx.cat));
+    for (const id of [s.a, s.b]) c.emit({ type: 'joueur', id }, 'echange', view(s, id, ctx.pseudos, ctx.books, ctx.cat, ctx.limites));
   }
 
   // A propose à B, choisi dans la liste des joueurs à portée.
@@ -123,13 +133,15 @@ export async function echangesRoutes(app: FastifyInstance) {
         b: { ...(await party(c, b, books.get(b.id)!)), position: b.position },
         portee: rangeOf(await paramsOf(c.tx, c.partie)),
         dernierEchangePaireA: await lastPairTrade(c.tx, partieId, a.id, b.id),
+        ...(input.vente ? { vente: input.vente } : {}),
       });
       if (!res.ok) return deny(res.code, res.message);
       // Zetsu : se montrer pour échanger rompt l'invisibilité.
       await updateJoueur(c.tx, a.id, { ...actionPatch(a, c.now), ...(estInvisible(a, c.now) ? { zetsuJusqua: null } : {}) });
-      await c.log({ action: 'echange_proposition', resultat: 'ok', details: { sessionId: res.session.id, avec: b.id } });
+      await c.log({ action: 'echange_proposition', resultat: 'ok', details: { sessionId: res.session.id, avec: b.id, ...(input.vente ? { vente: input.vente } : {}) } });
       const cat = await loadCatalogue(c.tx, partieId);
-      await publish(c, res.session, { s: res.session, a, b, books, cat, pseudos: { [a.id]: a.pseudo, [b.id]: b.pseudo } });
+      const limites = limitesOf(await paramsOf(c.tx, c.partie));
+      await publish(c, res.session, { s: res.session, a, b, books, cat, limites, pseudos: { [a.id]: a.pseudo, [b.id]: b.pseudo } });
       return { ok: true as const, sessionId: res.session.id };
     });
     return send(reply, r);
@@ -143,7 +155,7 @@ export async function echangesRoutes(app: FastifyInstance) {
       const cur = await activeSession(c.tx, partieId, s.sub, c.now);
       if (!cur) return { ok: true as const, echange: null };
       const ctx = await load(c, cur.id);
-      return { ok: true as const, echange: view(cur, s.sub, ctx.pseudos, ctx.books, ctx.cat) };
+      return { ok: true as const, echange: view(cur, s.sub, ctx.pseudos, ctx.books, ctx.cat, ctx.limites) };
     });
   });
 
@@ -174,7 +186,7 @@ export async function echangesRoutes(app: FastifyInstance) {
         }
         await publish(c, res.session, ctx, res.concluA ?? null);
         if (!res.extra) await c.log({ action, resultat: res.session.etat, details: { sessionId: id } });
-        return { ok: true as const, echange: view(res.session, s.sub, ctx.pseudos, ctx.books, ctx.cat), ...res.extra };
+        return { ok: true as const, echange: view(res.session, s.sub, ctx.pseudos, ctx.books, ctx.cat, ctx.limites), ...res.extra };
       });
       return send(reply, r);
     });
@@ -182,14 +194,15 @@ export async function echangesRoutes(app: FastifyInstance) {
 
   sessionAction('reponse', 'echange_reponse', async (c, ctx, joueurId, body) => {
     const { accepte } = parse(EchangeReponse, body);
-    return answerTrade(ctx.s, joueurId, accepte, c.now);
+    // Vente : le prix demandé est posé sur la part de l'acheteur s'il peut le payer.
+    return answerTrade(ctx.s, joueurId, accepte, c.now, ctx.b.jenny);
   });
 
   sessionAction('offre', 'echange_offre', async (c, ctx, joueurId, body) => {
     const side = parse(EchangeOffre, body);
     const book = ctx.books.get(joueurId)!;
-    // On ne propose que ses propres cartes (pas de sorts, RG-11) et des jenny qu'on possède.
-    const ok = side.itemIds.every((itemId) => book.items.some((i) => i.id === itemId && i.kind === 'carte'));
+    // On ne propose que ses propres cartes et objets (amendement 2026-10-10 ; pas de sorts, RG-11) et des jenny qu'on possède.
+    const ok = side.itemIds.every((itemId) => book.items.some((i) => i.id === itemId && (i.kind === 'carte' || i.kind === 'objet')));
     if (!ok || new Set(side.itemIds).size !== side.itemIds.length) return refus('element_invalide', 'Choisis des cartes de ton Book');
     const jenny = joueurId === ctx.a.id ? ctx.a.jenny : ctx.b.jenny;
     if (side.jenny > jenny) return refus('jenny_insuffisants', 'Jenny insuffisants');

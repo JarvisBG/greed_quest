@@ -282,6 +282,8 @@ export const echanges = pgTable(
     donneB: jsonb('donne_b').$type<TradeSide>().notNull(),
     valideA: boolean('valide_a').notNull().default(false),
     valideB: boolean('valide_b').notNull().default(false),
+    /** « Vendre une carte » (2026-10-12) : prix demandé par A, null pour un échange. */
+    vente: jsonb('vente').$type<{ prix: number }>(),
     concluA: heureJeu('conclu_a'),
   },
   (t) => [index('echanges_partie').on(t.partieId, t.etat)],

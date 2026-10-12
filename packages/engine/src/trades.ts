@@ -2,6 +2,7 @@
 import type { GameState, PlayerStatus, Rank } from '@gq/shared';
 import { transferItem, type Book, type BookItem, type CardItem, type ObjetItem } from './book.js';
 import { isInRange, isValidPosition, type Position, type RangeSettings } from './geo.js';
+import { objetsDe, PLACES_OBJETS } from './objets.js';
 
 /** Délai pour répondre à une proposition d'échange. */
 export const TRADE_INVITATION_TIMEOUT_MS = 60_000;
@@ -46,6 +47,7 @@ export type TradeRefusalCode =
   | 'don_pur'
   | 'element_invalide'
   | 'jenny_insuffisants'
+  | 'objets_plein'
   | 'frequence_paire';
 
 export type TradeResult =
@@ -95,6 +97,12 @@ export function trade(t: TradeInput, rangDe: (cardId: string) => Rank): TradeRes
   const cartesB = cardsOf(t.b, t.donneB);
   if (!cartesA || !cartesB) return refuse('element_invalide', 'Une carte de l’offre n’est plus disponible');
   if (t.a.jenny < t.donneA.jenny || t.b.jenny < t.donneB.jenny) return refuse('jenny_insuffisants', 'Jenny insuffisants');
+  // Amendement 2026-10-10 : la section Objets a PLACES_OBJETS places ; l'échange ne la fait pas déborder.
+  const objets = (x: TradeParty, donnes: (CardItem | ObjetItem)[], recus: (CardItem | ObjetItem)[]) =>
+    objetsDe(x.book).length - donnes.filter((i) => i.kind === 'objet').length + recus.filter((i) => i.kind === 'objet').length;
+  if (objets(t.a, cartesA, cartesB) > PLACES_OBJETS || objets(t.b, cartesB, cartesA) > PLACES_OBJETS) {
+    return refuse('objets_plein', 'La section Objets d’un des deux Books est pleine');
+  }
 
   if (t.dernierEchangePaireA !== null && t.now - t.dernierEchangePaireA < PAIR_TRADE_INTERVAL_MS) {
     const min = Math.ceil((t.dernierEchangePaireA + PAIR_TRADE_INTERVAL_MS - t.now) / 60_000);
@@ -146,6 +154,8 @@ export interface TradeSession {
   donneB: TradeSide;
   valideA: boolean;
   valideB: boolean;
+  /** Vente (demande de Sivraj, 2026-10-12) : A pose une carte et un prix ; c'est un échange carte contre jenny. */
+  vente: { prix: number } | null;
 }
 
 export type SessionRefusalCode = TradeRefusalCode | 'hors_portee' | 'gps_invalide' | 'etat_invalide' | 'pas_participant';
@@ -163,6 +173,8 @@ export interface ProposeInput {
   b: TradeParty & { position: Position | null };
   portee: RangeSettings;
   dernierEchangePaireA: number | null;
+  /** « Vendre une carte » : la carte (ou l'objet) de A et le prix demandé, posés dès la proposition. */
+  vente?: { itemId: string; prix: number };
 }
 
 /** A propose un échange à un joueur de la liste « à portée » (même rayon que les sorts). */
@@ -183,6 +195,10 @@ export function proposeTrade(p: ProposeInput): SessionResult {
     const min = Math.ceil((p.dernierEchangePaireA + PAIR_TRADE_INTERVAL_MS - p.now) / 60_000);
     return sessionRefuse('frequence_paire', `Vous avez déjà échangé : réessayez dans ${min} min`); // RG-11.3
   }
+  if (p.vente) {
+    if (!Number.isInteger(p.vente.prix) || p.vente.prix < 1) return sessionRefuse('element_invalide', 'Fixe un prix d’au moins 1 jenny');
+    if (!cardsOf(p.a, { itemIds: [p.vente.itemId], jenny: 0 })) return sessionRefuse('element_invalide', 'Choisis une carte de ton Book');
+  }
   return {
     ok: true,
     session: {
@@ -191,10 +207,11 @@ export function proposeTrade(p: ProposeInput): SessionResult {
       b: p.b.id,
       etat: 'invitation',
       derniereActionA: p.now,
-      donneA: emptySide,
+      donneA: p.vente ? { itemIds: [p.vente.itemId], jenny: 0 } : emptySide,
       donneB: emptySide,
       valideA: false,
       valideB: false,
+      vente: p.vente ? { prix: p.vente.prix } : null,
     },
   };
 }
@@ -216,11 +233,13 @@ function active(s: TradeSession, now: number, playerId: string, etat: TradeSessi
 const isRefusal = (x: TradeSession | SessionRefusal): x is SessionRefusal => 'ok' in x;
 
 /** B accepte ou refuse la proposition (dans les 60 s). */
-export function answerTrade(s: TradeSession, playerId: string, accepte: boolean, now: number): SessionResult {
+export function answerTrade(s: TradeSession, playerId: string, accepte: boolean, now: number, jennyB = 0): SessionResult {
   const cur = active(s, now, playerId, 'invitation');
   if (isRefusal(cur)) return cur;
   if (playerId !== cur.b) return sessionRefuse('pas_participant', 'Seul le joueur invité peut répondre');
-  return { ok: true, session: { ...cur, etat: accepte ? 'composition' : 'refuse', derniereActionA: now } };
+  // Vente acceptée : le prix demandé est posé sur la part de l'acheteur s'il peut le payer ; il peut le changer.
+  const prix = accepte && cur.vente && jennyB >= cur.vente.prix ? { donneB: { itemIds: [], jenny: cur.vente.prix } } : {};
+  return { ok: true, session: { ...cur, ...prix, etat: accepte ? 'composition' : 'refuse', derniereActionA: now } };
 }
 
 /** Un joueur compose sa part ; les deux validations sont annulées. */

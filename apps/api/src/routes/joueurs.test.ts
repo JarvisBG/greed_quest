@@ -84,4 +84,10 @@ describe('RG-5 inscription', () => {
     const encore = await t.app.inject({ method: 'POST', url: `/parties/${t.partieId}/nen`, headers: t.bearer(token), payload: { reponses: [0, 0, 0, 0, 0] } });
     expect(encore.json().code).toBe('deja_fait');
   });
+
+  it('RG-14 / RG-5.4 : /moi donne la durée complète des recharges, pour la jauge du pouvoir (page ⑩)', async () => {
+    const { token } = await t.inscrire('Wing');
+    const moi = (await t.app.inject({ url: `/parties/${t.partieId}/moi`, headers: t.bearer(token) })).json();
+    expect(moi.recharges).toEqual({ pouvoir: null, transformation: 20 * 60_000, reserve: 40 * 60_000, specialisation: 40 * 60_000, zetsu: 10 * 60_000 });
+  });
 });

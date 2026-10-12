@@ -9,6 +9,7 @@ import {
   kitSpell,
   nenFromAnswers,
   speDisponibleDans,
+  TRANSFORMATION_COOLDOWN_MS,
   pouvoirSpeDepuisReponse,
   QUESTION_SPE,
   pouvoirDisponibleDans,
@@ -205,6 +206,14 @@ export async function joueursRoutes(app: FastifyInstance) {
         offensif: Math.max(0, (j.dernierOffensifA ?? -Infinity) + CASTER_DELAY_MS - now), // RG-10.3
         transformation: Math.max(0, (j.transformationDispoA ?? 0) - now), // RG-5.4
         gel: Math.max(0, (j.geleJusqua ?? 0) - now),
+      },
+      // Page ⑩ : durées complètes des recharges (RG-14, réglables), pour la jauge de la case du Nen (ms).
+      recharges: {
+        pouvoir: power && p ? rechargesNenMs(p)[power] : null,
+        transformation: TRANSFORMATION_COOLDOWN_MS, // RG-5.4
+        reserve: p ? p.reserveMaterialisationMin * 60_000 : null,
+        specialisation: p ? p.rechargeSpeMin * 60_000 : null,
+        zetsu: p ? p.zetsuMin * 60_000 : null,
       },
       // RG-5.2 : de quoi calculer la licence hors ligne (voir core/licence.ts).
       licenceSecret: j.licenceSecret,

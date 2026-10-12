@@ -43,6 +43,13 @@ describe('RG-9 boutique de Masadora', () => {
     expect((await post('achat', { qr: qrMasadora })).json()).toMatchObject({ ok: true });
   });
 
+  it('RG-9.3 : la vitrine donne le décompte de la vague suivante et les prix de rachat (page ⑬)', async () => {
+    const r = (await t.app.inject({ url: `/parties/${t.partieId}/boutique`, headers: t.bearer(gon.token) })).json();
+    expect(r).toMatchObject({ prixBase: 50, krachResteMs: null, reventeContrefacon: 1, reventeObjets: { pepite: 30, ticket: null } });
+    expect(r.vagueResteMs).toBeGreaterThan(0);
+    expect(r.vagueResteMs).toBeLessThanOrEqual(20 * 60_000);
+  });
+
   it('RG-9.4 : revente d’une carte D à 5 J, l’exemplaire sort du jeu', async () => {
     const id = newId();
     await t.db.insert(exemplaires).values({ id, partieId: t.partieId, joueurId: gon.id, carteId: t.carteIds[29]!, origine: { type: 'kit' }, obtenuA: 0 });

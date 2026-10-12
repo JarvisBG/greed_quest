@@ -57,7 +57,8 @@ describe('RG-12 événements', () => {
   it('Krach : boutique à -50 %', async () => {
     await lancer({ type: 'krach' });
     const res = await t.app.inject({ url: `/parties/${t.partieId}/boutique`, headers: t.bearer(gon.token) });
-    expect(res.json().prixPaquet).toBe(25);
+    expect(res.json()).toMatchObject({ prixPaquet: 25, prixBase: 50 });
+    expect(res.json().krachResteMs).toBeGreaterThan(0); // page ⑬ : décompte de fin du Krach
   });
 
   it('Raid : bonnes réponses retirent des PV ; une question une fois par joueur ; victoire → 3 sorts par participant', async () => {

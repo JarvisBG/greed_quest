@@ -1,6 +1,8 @@
 // Boutique de Masadora (RG-9) : paquets de sorts par vague, revente de cartes (contrefaçons révélées, RG-8.9).
 import {
+  DEFAULT_OBJETS_CONFIG,
   DEFAULT_SHOP_CONFIG,
+  WAVE_DURATION_MS,
   buyPack,
   currentWave,
   sellCard,
@@ -68,14 +70,22 @@ export async function boutiqueRoutes(app: FastifyInstance) {
     return runner.run(partieId, { type: 'joueur', id: s.sub }, async (c) => {
       const w = await wave(c);
       const config = shopConfigOf(c.partie);
-      const mult = shopPriceMultiplier(await loadActiveEvents(c.tx, partieId), c.now);
+      const events = await loadActiveEvents(c.tx, partieId);
+      const mult = shopPriceMultiplier(events, c.now);
+      // Page ⑬ : le Krach en cours (tampon « −50 % », décompte de fin) et le décompte de la vague suivante.
+      const krach = events.find((e) => e.data.type === 'krach' && e.etat === 'actif' && c.now < e.fin);
       return {
         ok: true as const,
         prixPaquet: Math.ceil(config.prixPaquet * mult),
+        prixBase: config.prixPaquet,
+        krachResteMs: krach ? krach.fin - c.now : null,
         paquetsRestants: w.stock,
+        vagueResteMs: WAVE_DURATION_MS - (c.now % WAVE_DURATION_MS), // RG-9.3, vagues comptées depuis le démarrage
         mesAchats: w.achats[s.sub] ?? 0,
         maxParVague: config.maxPaquetsParJoueurParVague,
         revente: config.revente,
+        reventeContrefacon: config.reventeContrefacon, // RG-8.9
+        reventeObjets: DEFAULT_OBJETS_CONFIG.revente, // amendement 2026-10-10 (Ticket de la Fortune : null)
       };
     });
   });

@@ -1,0 +1,758 @@
+<title>Arène de Soufrabi</title>
+<meta name="description" content="Prototype de la page ⑮ : l'arène de Soufrabi (affiche de combat, mise, chances A / S / SS, décompte avant la prochaine tentative), le combat en cours avec son bandeau, la cinématique « VICTOIRE ! » (bras de l'arbitre, sceaux A · S · SS) et le court moment de la défaite.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@800&family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,800;1,400&family=Dela+Gothic+One&family=DotGothic16&display=swap">
+<style>
+/* Page ⑮ : Soufrabi, l'arène. Planche claire de l'app (papier, encre, cases) ; l'enseigne suspendue des villes ;
+   une affiche de combat (papier sable, encre rouge) dit la mise, les chances et quand revenir. Pendant le défi,
+   l'affiche devient la case sombre « COMBAT EN COURS ». Le grand moment : le bras de l'arbitre se lève,
+   « VICTOIRE ! », puis trois sceaux A · S · SS s'allument tour à tour et s'arrêtent sur le rang gagné.
+   Thème clair unique (jeu au soleil), comme les autres pages. */
+:root {
+  color-scheme: light;
+  --papier: #eeefe9;
+  --case: #fbfbf7;
+  --case-2: #ecece6;
+  --encre: #111111;
+  --encre-2: #3b3d40;
+  --trame: rgba(17, 17, 17, 0.16);
+  --rouge: #c0272d;
+  --bleu: #1f4a9c;
+  --bleu-vif: #8fb2ff;
+  --jaune: #d9a11a;
+  --or: #d7b25a;
+  --or-vif: #ffd877;
+  --succes: #17713a;
+  --nuit: #0c0c0e;
+  /* La salle : bois sombre et velours bordeaux sous la lumière du projecteur. */
+  --salle: #1b100c;
+  --velours: #5a1420;
+  --bois: #6b3f22;
+  --bois-clair: #a8693a;
+  --lumiere: #fff1c9;
+  --sceau: #e0463c;
+  --f-titre: 'Dela Gothic One', 'Arial Black', sans-serif;
+  --f-texte: 'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif;
+  --f-chiffre: 'Atkinson Hyperlegible Mono', ui-monospace, monospace;
+  --f-jeu: 'DotGothic16', ui-monospace, monospace;
+  --trait: 3px;
+  --sortie: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { overflow-x: clip; }
+body { margin: 0; background: var(--papier); color: var(--encre); font: 400 17px/1.45 var(--f-texte); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 3px solid var(--bleu); outline-offset: 3px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { cursor: default; }
+
+.app { max-width: 480px; margin: 0 auto; padding: 0 16px 104px; display: grid; gap: 14px; }
+.app > * { min-width: 0; }
+
+/* Commandes du prototype (pas dans l'app) */
+.proto { display: grid; gap: 7px; padding: 10px 12px; margin-inline: -16px; background: var(--encre); color: var(--case); }
+.proto p { margin: 0; font: 600 13px/1.3 var(--f-texte); }
+.proto .rang { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.proto .rang > span { font: 800 12px var(--f-texte); color: #b9bcc2; min-width: 58px; }
+.proto button { min-height: 36px; padding: 0 10px; border: 2px solid var(--case); background: transparent; color: var(--case); font: 700 13px var(--f-texte); }
+.proto button[aria-pressed='true'] { background: var(--case); color: var(--encre); }
+
+/* Barre d'état de l'app */
+.barre { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; margin-inline: -16px; padding: 10px 16px; background: var(--case); border-bottom: var(--trait) solid var(--encre); display: flex; align-items: center; gap: 12px; min-height: 58px; }
+.chrono { font: 800 30px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.liaison { display: flex; align-items: center; gap: 6px; font: 600 14px var(--f-texte); }
+.pastille { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--encre); background: var(--succes); display: inline-block; }
+.jenny { margin-left: auto; font: 800 22px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.jenny small { font: 600 15px var(--f-texte); margin-left: 3px; }
+
+/* ---------- Onglets ---------- */
+.onglets { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, 1fr); background: var(--case); border-top: var(--trait) solid var(--encre); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.onglets button { position: relative; min-height: 64px; border: 0; border-right: 1.5px solid var(--encre); background: transparent; display: grid; justify-items: center; align-content: center; gap: 3px; font: 800 12.5px/1 var(--f-texte); padding: 6px 2px; }
+.onglets button:last-child { border-right: 0; }
+.onglets svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.onglets button[aria-current='page'] { background: var(--encre); color: var(--case); }
+.onglets .plus-un { position: absolute; top: -30px; left: 50%; translate: -50% 0; font: 400 22px/1 var(--f-titre); color: var(--encre); background: var(--case); border: var(--trait) solid var(--encre); padding: 3px 8px; pointer-events: none; }
+.jenny { position: relative; }
+.flotte { position: absolute; right: 0; top: 100%; font: 800 18px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; padding: 4px 7px; background: var(--case); border: 2px solid var(--encre); pointer-events: none; white-space: nowrap; }
+.flotte.gain { color: var(--succes); }
+.flotte.perte { color: var(--rouge); }
+
+.aide { font: 400 15px/1.35 var(--f-texte); color: var(--encre-2); margin: 0; }
+.case { background: var(--case); border: var(--trait) solid var(--encre); padding: 14px 16px; display: grid; gap: 12px; }
+.case h2 { margin: 0; font: 400 20px/1.1 var(--f-titre); }
+.case p { margin: 0; }
+
+/* ---------- En-tête : retour et enseigne suspendue ---------- */
+.tete-ville { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding-top: 8px; }
+.retour { min-height: 44px; padding: 0 12px 0 8px; border: var(--trait) solid var(--encre); background: var(--case); font: 800 15px var(--f-texte); display: inline-flex; align-items: center; gap: 4px; justify-self: start; }
+.retour svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.enseigne { justify-self: center; position: relative; padding-top: 22px; transform-origin: 50% 0; animation: balance 5s ease-in-out infinite; }
+@keyframes balance { 0%, 100% { rotate: -1.6deg; } 50% { rotate: 0.6deg; } }
+/* Deux chaînes, puis la planche noire au double filet. */
+.enseigne::before, .enseigne::after { content: ''; position: absolute; top: 0; width: 4px; height: 24px; background: repeating-linear-gradient(var(--encre) 0 5px, transparent 5px 7px); border-inline: 1px solid var(--encre); }
+.enseigne::before { left: 18%; }
+.enseigne::after { right: 18%; }
+.planche { background: var(--encre); color: var(--case); padding: 10px 18px 9px; border-radius: 3px; box-shadow: inset 0 0 0 3px var(--encre), inset 0 0 0 5px var(--case), 0 6px 0 -2px rgba(17, 17, 17, 0.25); display: grid; justify-items: center; gap: 4px; }
+.planche h1 { margin: 0; font: 400 clamp(26px, 8.4vw, 36px)/1 var(--f-titre); letter-spacing: 0.04em; }
+.planche span { font: 400 13px/1 var(--f-jeu); color: var(--or-vif); letter-spacing: 0.08em; }
+.distance { justify-self: center; display: inline-flex; gap: 8px; align-items: center; font: 800 14px var(--f-texte); padding: 6px 10px; border: 2px dashed var(--bleu); color: var(--bleu); background: var(--case); }
+.distance b { font: 800 15px var(--f-chiffre); font-variant-numeric: tabular-nums; }
+
+/* ---------- Carte de Greed Island (copie de @gq/ui) ---------- */
+.gi-carte { container-type: inline-size; aspect-ratio: 63 / 88; width: 100%; position: relative; color: var(--encre); }
+.gi-carte .c-cadre { position: absolute; inset: 0; border-radius: 4.5cqi; padding: 5cqi; background: var(--cadre, var(--rouge)); box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35); display: grid; grid-template-rows: auto 1fr auto; gap: 3cqi; }
+.gi-carte.f-sort { --cadre: var(--bleu); }
+.gi-carte.f-objet { --cadre: var(--jaune); }
+.gi-carte.f-designee .c-txt { font-style: italic; }
+.gi-carte .c-tete { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 3cqi; background: var(--case); border-radius: 2cqi; padding: 2.5cqi 3cqi; box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); }
+.gi-carte .c-num { font: 800 9cqi/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.gi-carte .c-num.long { font-size: 7.4cqi; }
+.gi-carte .c-nom { font: 800 6.4cqi/1.1 var(--f-texte); text-align: center; text-wrap: balance; hyphens: auto; overflow-wrap: break-word; }
+.gi-carte .c-nom.long { font-size: 5.6cqi; }
+.gi-rang { font: 400 7cqi/1 var(--f-titre); padding: 1.6cqi 2.4cqi; border-radius: 1.6cqi; white-space: nowrap; color: var(--encre); background: var(--matiere, var(--case)); box-shadow: 0 0 0 0.6cqi var(--encre); }
+.gi-carte .c-art { border-radius: 2cqi; background: #f4f2ea radial-gradient(var(--trame) 0.9px, transparent 1.1px) 0 0 / 5px 5px; box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); display: grid; place-items: center; overflow: hidden; min-height: 0; }
+.gi-carte .c-filigrane { font: 400 30cqi/1 var(--f-titre); color: transparent; -webkit-text-stroke: 0.9cqi rgba(17, 17, 17, 0.55); letter-spacing: -0.02em; }
+.gi-carte .c-txt { margin: 0; background: var(--case); border-radius: 2cqi; padding: 3cqi 3.5cqi; font: 400 5.6cqi/1.3 var(--f-texte); box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); }
+.r-SS { --matiere: linear-gradient(125deg, #9c7a1c 0%, #f6dc85 28%, #c39a2c 50%, #fbe7a6 72%, #a8841f 100%); }
+.r-S  { --matiere: linear-gradient(125deg, #8d949b 0%, #f1f3f5 35%, #aab1b8 60%, #e9ecef 100%); }
+.r-A  { --matiere: linear-gradient(125deg, #c97a4a 0%, #f2b48a 45%, #d88a58 100%); }
+.r-B  { --matiere: linear-gradient(125deg, #6fb596 0%, #b6e0cc 50%, #82c2a6 100%); }
+.r-C  { --matiere: linear-gradient(125deg, #9eb0c4 0%, #d6dfea 50%, #aebfd1 100%); }
+.r-D, .r-sort, .r-objet { --matiere: var(--case); }
+@container (max-width: 130px) {
+  .gi-carte .c-nom, .gi-carte .c-txt { display: none; }
+  .gi-carte .c-tete { grid-template-columns: 1fr auto; padding: 4cqi; }
+  .gi-carte .c-num { font-size: 17cqi; }
+  .gi-carte .gi-rang { font-size: 13cqi; padding: 2.5cqi 4cqi; }
+  .gi-carte .gi-rang .lim, .gi-carte .r-sort, .gi-carte .r-objet { display: none; }
+  .gi-carte.f-sort .c-tete, .gi-carte.f-objet .c-tete { grid-template-columns: 1fr; }
+  .gi-carte .c-cadre { padding: 6cqi; gap: 5cqi; grid-template-rows: auto 1fr; }
+}
+.gi-carte.dos .c-cadre { background: #15233f; box-shadow: inset 0 0 0 1.2cqi #15233f, inset 0 0 0 2.2cqi var(--or), inset 0 0 0 3.4cqi #15233f, inset 0 0 0 4cqi var(--or); place-items: center; grid-template-rows: 1fr; }
+.gi-carte.dos svg { width: 58%; height: auto; }
+
+/* ---------- Boîte du jeu ---------- */
+.gi-annonce { position: fixed; z-index: 70; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 70px); width: min(calc(100% - 24px), 440px); transform: translate(-50%, calc(-100% - 120px)); visibility: hidden; transition: transform 0.45s var(--sortie), visibility 0s 0.45s; background: var(--nuit); color: #f6f6f2; border-radius: 6px; box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f6f6f2, inset 0 0 0 8px var(--nuit), inset 0 0 0 9px #f6f6f2, 0 16px 30px -14px rgba(0, 0, 0, 0.6); padding: 22px 22px 18px; display: grid; gap: 8px; }
+.gi-annonce.visible { transform: translate(-50%, 0); visibility: visible; transition: transform 0.45s var(--sortie), visibility 0s; }
+.a-qui { justify-self: start; font: 400 15px/1 var(--f-jeu); background: #f6f6f2; color: var(--nuit); padding: 4px 8px; }
+.t-sort .a-qui { background: var(--bleu-vif); }
+.gi-annonce .a-texte { font: 400 20px/1.4 var(--f-jeu); margin: 0; }
+.gi-annonce .a-actions { display: flex; gap: 10px; }
+.gi-annonce .a-actions button { background: #f6f6f2; color: var(--nuit); border: 0; font: 400 16px var(--f-jeu); padding: 10px 14px; min-height: 44px; }
+.gi-dialogue { background: var(--nuit); color: #f6f6f2; border-radius: 6px; box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f6f6f2, inset 0 0 0 8px var(--nuit), inset 0 0 0 9px #f6f6f2, 0 10px 24px -10px rgba(0, 0, 0, 0.6); padding: 18px 20px 16px; display: grid; gap: 10px; }
+.gi-dialogue .a-texte { font: 400 19px/1.45 var(--f-jeu); margin: 0; min-height: 1.45em; }
+.t-vente .a-qui { background: var(--or-vif); }
+
+
+/* ---------- Soufrabi : sable, ocre, rouge de l'affiche ---------- */
+:root {
+  --sable: #ecd9ae;
+  --sable-2: #dcc187;
+  --ocre: #9c5a1c;
+  --arene: #1c0f09;
+}
+/* L'affiche de combat : papier sable, double filet d'encre, gros titres rouges. */
+.affiche { position: relative; overflow: hidden; border: var(--trait) solid var(--encre); padding: 16px 16px 18px; display: grid; gap: 12px; justify-items: center; text-align: center;
+  background: radial-gradient(rgba(156, 90, 28, 0.18) 0.9px, transparent 1.2px) 0 0 / 5px 5px, linear-gradient(var(--sable), var(--sable-2));
+  box-shadow: inset 0 0 0 4px var(--sable), inset 0 0 0 6px var(--encre); }
+.affiche .surtitre { font: 400 13px/1 var(--f-jeu); letter-spacing: 0.12em; color: var(--ocre); }
+.affiche h2 { margin: 0; font: 400 clamp(30px, 10vw, 44px)/0.95 var(--f-titre); color: var(--rouge); letter-spacing: -0.01em; -webkit-text-stroke: 1px var(--encre); paint-order: stroke fill; rotate: -2deg; }
+/* Les deux issues, côte à côte : ce qu'on gagne, ce qu'on perd. */
+.issues { width: 100%; display: grid; grid-template-columns: 1fr 1fr; border: 2px solid var(--encre); background: rgba(251, 251, 247, 0.55); }
+.issues > div { padding: 8px 6px 10px; display: grid; gap: 6px; justify-items: center; align-content: start; }
+.issues > div + div { border-left: 2px solid var(--encre); }
+.issues .t { font: 400 15px/1 var(--f-titre); }
+.issues .gagne .t { color: var(--succes); }
+.issues .perd .t { color: var(--rouge); }
+.issues p { margin: 0; font: 600 14px/1.25 var(--f-texte); }
+.chances { display: flex; gap: 6px; }
+.chance { display: grid; justify-items: center; gap: 3px; font: 800 12px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.sceau { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font: 400 14px/1 var(--f-titre); background: var(--matiere); box-shadow: 0 0 0 2px var(--encre), inset 0 0 0 3px rgba(255, 255, 255, 0.35); }
+.mise { font: 800 34px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--encre); }
+.mise small { font: 600 16px var(--f-texte); margin-left: 3px; }
+/* Où en est le joueur : prêt, à attendre, ou trop pauvre. */
+.statut { width: 100%; display: grid; gap: 10px; }
+.statut .ligne { font: 800 16px/1.3 var(--f-texte); }
+.statut .attente { display: grid; gap: 2px; justify-items: center; }
+.statut .attente span { font: 600 12px/1 var(--f-texte); letter-spacing: 0.1em; text-transform: uppercase; color: var(--encre-2); }
+.statut .attente b { font: 800 40px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.statut .dernier { font: 600 14px/1.3 var(--f-texte); color: var(--encre-2); }
+.statut .dernier b { color: var(--encre); }
+.gros { position: relative; min-height: 60px; width: 100%; border: 0; background: var(--encre); color: var(--case); font: 400 19px/1.1 var(--f-titre); padding: 8px 14px; box-shadow: 0 5px 0 -1px rgba(17, 17, 17, 0.3); display: flex; align-items: center; justify-content: center; gap: 12px; }
+.gros:active:not(:disabled) { translate: 0 3px; box-shadow: none; }
+.gros svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linejoin: round; }
+.gros.secondaire { background: var(--case); color: var(--encre); border: var(--trait) solid var(--encre); font: 800 16px var(--f-texte); }
+.regle { font: 400 14px/1.35 var(--f-texte); color: var(--encre-2); margin: 0; }
+
+/* Le combat en cours : la case sombre, le chrono depuis l'entrée, la mise engagée. */
+.combat { position: relative; overflow: hidden; border: var(--trait) solid var(--encre); color: #f3ead2; padding: 18px 16px; display: grid; gap: 12px; justify-items: center; text-align: center;
+  background: radial-gradient(ellipse 70% 60% at 50% 35%, rgba(224, 70, 60, 0.28), transparent 70%), radial-gradient(rgba(255, 255, 255, 0.04) 0.8px, transparent 1.2px) 0 0 / 4px 4px, linear-gradient(#2c1710, var(--arene) 65%, #0d0705); }
+.combat .lignes-c { position: absolute; inset: -40%; opacity: 0.12; pointer-events: none; animation: tourne-lent 30s linear infinite; }
+.combat .lignes-c svg { width: 100%; height: 100%; }
+@keyframes tourne-lent { to { rotate: 360deg; } }
+.combat > :not(.lignes-c) { position: relative; }
+.combat h2 { margin: 0; font: 400 clamp(28px, 9vw, 38px)/1 var(--f-titre); color: #fff; -webkit-text-stroke: 2px var(--sceau); paint-order: stroke fill; letter-spacing: -0.01em; animation: battre 1.2s ease-in-out infinite; }
+@keyframes battre { 0%, 100% { scale: 1; } 12% { scale: 1.05; } 24% { scale: 1; } 36% { scale: 1.03; } }
+.combat .chrono-combat { font: 800 52px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--lumiere); letter-spacing: -0.03em; }
+.combat .engagee { display: inline-flex; gap: 8px; align-items: baseline; padding: 6px 12px; border: 1.5px solid rgba(243, 234, 210, 0.4); font: 600 14px var(--f-texte); }
+.combat .engagee b { font: 800 18px var(--f-chiffre); color: var(--or-vif); }
+.combat p { margin: 0; font: 400 17px/1.4 var(--f-jeu); }
+
+/* Le bandeau du combat, sur toutes les autres pages. */
+.bandeau-combat { margin-top: -14px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 58px); z-index: 29; margin-inline: -16px; padding: 8px 16px; border-bottom: var(--trait) solid var(--encre); background: var(--arene); color: #f3ead2; display: flex; align-items: center; gap: 10px; font: 800 15px/1.2 var(--f-texte); text-align: left; width: calc(100% + 32px); border-top: 0; border-inline: 0; }
+.bandeau-combat .poing { width: 10px; height: 10px; border-radius: 50%; background: var(--sceau); box-shadow: 0 0 0 3px rgba(224, 70, 60, 0.35); animation: presse 1s steps(2) infinite; flex: none; }
+.bandeau-combat b { margin-left: auto; font: 800 18px var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--lumiere); }
+
+/* Accueil (pour montrer le bandeau hors de la page) */
+.mini-accueil { display: grid; gap: 14px; }
+.villes { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.villes button { min-height: 54px; border: var(--trait) solid var(--encre); background: var(--case); font: 400 15px/1 var(--f-titre); padding: 0 4px; }
+
+/* Licence (aperçu) */
+.fiche { position: fixed; z-index: 55; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(5, 4, 4, 0.8); }
+.fiche .lic { width: min(80vw, 300px); background: var(--case); border: var(--trait) solid var(--encre); padding: 16px; display: grid; gap: 10px; justify-items: center; }
+.fiche .lic h3 { margin: 0; font: 400 20px var(--f-titre); }
+.fiche .lic svg { width: 100%; height: auto; }
+.fiche .lic p { margin: 0; font: 600 14px/1.3 var(--f-texte); color: var(--encre-2); text-align: center; }
+
+/* ---------- Cinématique « VICTOIRE ! » ---------- */
+.cine { --cw: min(42vw, 180px, calc((100dvh - 430px) * 63 / 88)); --ch: calc(var(--cw) * 88 / 63); position: fixed; inset: 0; z-index: 65; pointer-events: none; overflow: hidden; visibility: hidden; }
+.cine.joue { visibility: visible; pointer-events: auto; cursor: pointer; }
+.cine .nuit { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 42%, #4a1d12 0, #1d0c07 46%, #060302 92%); opacity: 0; }
+.cine .lignes { position: absolute; inset: -30%; opacity: 0; }
+.cine .lignes svg { width: 100%; height: 100%; }
+.cine canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* Le bras de l'arbitre : il monte du bas de l'écran, poing serré, manche rayée. */
+.cine .bras { position: absolute; left: 50%; bottom: -4%; width: min(34vw, 150px); height: 62%; margin-left: calc(min(34vw, 150px) / -2); transform-origin: 50% 100%; opacity: 0; }
+.cine .bras svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.cine .cri { position: absolute; left: 0; right: 0; top: max(16px, calc(36% - var(--ch) / 2 - 96px)); text-align: center; font: 400 min(12.4vw, 76px)/0.92 var(--f-titre); letter-spacing: -0.03em; white-space: nowrap; color: #fff; -webkit-text-stroke: 3px var(--sceau); paint-order: stroke fill; opacity: 0; rotate: -5deg; }
+/* La carte gagnée, au centre. */
+.cine .c-carte { position: absolute; left: 50%; top: 36%; width: var(--cw); translate: -50% -50%; opacity: 0; }
+.cine .c-carte .gi-carte .c-cadre { box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35), 0 18px 30px rgba(0, 0, 0, 0.55); }
+.cine .c-carte.brille-SS .gi-carte { filter: drop-shadow(0 0 14px #ffd877) drop-shadow(0 0 34px #ffb43c); }
+.cine .c-carte.brille-S .gi-carte { filter: drop-shadow(0 0 12px #e9eef5) drop-shadow(0 0 26px #9fb8d6); }
+.cine .c-carte.brille-A .gi-carte { filter: drop-shadow(0 0 10px #f2b48a); }
+/* Les trois sceaux : A · S · SS. */
+.cine .sceaux { position: absolute; left: 50%; top: calc(36% + var(--ch) / 2 + 26px); translate: -50% 0; display: flex; gap: min(6vw, 26px); }
+.cine .sc { width: min(17vw, 72px); aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; font: 400 min(6.4vw, 26px)/1 var(--f-titre); color: var(--encre); background: var(--matiere); box-shadow: 0 0 0 3px #111, inset 0 0 0 4px rgba(255, 255, 255, 0.35); opacity: 0; filter: brightness(0.38) saturate(0.6); transition: filter 0.08s, scale 0.08s; }
+.cine .sc.allume { filter: none; scale: 1.14; box-shadow: 0 0 0 3px #111, inset 0 0 0 4px rgba(255, 255, 255, 0.5), 0 0 22px 4px rgba(255, 216, 119, 0.65); }
+.cine .sc.gagne { filter: none; scale: 1.24; box-shadow: 0 0 0 3px #111, inset 0 0 0 4px rgba(255, 255, 255, 0.6), 0 0 30px 8px rgba(255, 216, 119, 0.85); }
+.cine .sc.eteint { filter: brightness(0.25) saturate(0.3); scale: 0.9; transition: filter 0.4s, scale 0.4s; }
+.cine .flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+.cine .flash.or { background: radial-gradient(circle at 50% 50%, #fff6d8, #ffd877 45%, #ffb43c); }
+.cine .dialogue { pointer-events: none; position: absolute; left: 50%; bottom: max(18px, env(safe-area-inset-bottom, 0px)); width: min(calc(100% - 24px), 440px); translate: -50% 0; opacity: 0; }
+.cine .dialogue .a-qui { background: var(--or-vif); }
+.cine .dialogue .a-indice { margin: 0; font: 600 14px/1.3 var(--f-texte); color: #c3c6cc; opacity: 0; transition: opacity 0.3s; }
+.cine .dialogue .a-indice.visible { opacity: 1; }
+.cine .passer { pointer-events: none; position: absolute; bottom: max(16px, env(safe-area-inset-bottom, 0px)); left: 50%; translate: -50% 0; font: 600 13px var(--f-texte); color: rgba(235, 238, 242, 0.75); white-space: nowrap; opacity: 0; transition: opacity 0.25s; }
+.cine.intro .passer { opacity: 1; transition-delay: 0.6s; }
+
+/* ---------- Défaite : un court moment, sans humilier ---------- */
+.defaite { position: fixed; inset: 0; z-index: 64; display: grid; place-items: center; align-content: center; gap: 14px; padding: 16px; background: rgba(17, 10, 8, 0.82); visibility: hidden; opacity: 0; transition: opacity 0.3s, visibility 0s 0.3s; cursor: pointer; text-align: center; color: #f3ead2; }
+.defaite.joue { visibility: visible; opacity: 1; transition: opacity 0.25s; }
+.defaite .tampon { width: min(76vw, 300px); rotate: -10deg; }
+.defaite .tampon svg { width: 100%; height: auto; overflow: visible; }
+.defaite .tampon.frappe { animation: frapper 0.34s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes frapper { from { scale: 2.2; opacity: 0; } 65% { scale: 0.93; opacity: 1; } }
+.defaite .effrite { font: 800 40px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--or-vif); display: flex; justify-content: center; min-height: 40px; }
+.defaite .effrite span { display: inline-block; }
+.defaite .deja { margin: 0; font: 600 15px/1.3 var(--f-texte); color: #c9bda0; }
+.defaite .revenir { display: grid; gap: 4px; }
+.defaite .revenir span { font: 600 12px/1 var(--f-texte); letter-spacing: 0.1em; text-transform: uppercase; color: #c9bda0; }
+.defaite .revenir b { font: 800 46px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--lumiere); letter-spacing: -0.02em; }
+.defaite small { font: 600 13px var(--f-texte); color: rgba(235, 238, 242, 0.7); }
+
+@keyframes presse { 50% { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Encre des tampons : bord mangé et manques. -->
+    <filter id="encre" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" result="grain"/>
+      <feDisplacementMap in="SourceGraphic" in2="grain" scale="3.2" result="bord"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.22" numOctaves="2" seed="11" result="taches"/>
+      <feColorMatrix in="taches" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2.3 2.2" result="masque"/>
+      <feComposite in="bord" in2="masque" operator="in"/>
+    </filter>
+  </defs>
+</svg>
+
+<div class="app">
+  <div class="proto" role="group" aria-label="Commandes du prototype">
+    <p>Prototype : tu es Gon, à Soufrabi. Le PNJ de l'arène scanne ta licence, arbitre ton défi et donne le verdict.</p>
+    <div class="rang"><span>Avant</span>
+      <button data-avant="pret" aria-pressed="true">prêt</button>
+      <button data-avant="delai" aria-pressed="false">reviens dans 12 min</button>
+      <button data-avant="pauvre" aria-pressed="false">18 J seulement</button>
+    </div>
+    <div class="rang"><span>PNJ</span>
+      <button id="p-entree">scanne ta licence</button>
+      <button id="p-annule">annule (erreur)</button>
+    </div>
+    <div class="rang"><span>Verdict</span>
+      <button data-verdict="A">victoire A</button>
+      <button data-verdict="S">victoire S</button>
+      <button data-verdict="SS">victoire SS</button>
+      <button data-verdict="perdu">défaite</button>
+    </div>
+    <div class="rang"><span>Ailleurs</span>
+      <button id="p-ailleurs">aller à l'accueil</button>
+    </div>
+  </div>
+
+  <header class="barre" aria-label="État de la partie">
+    <span class="chrono">1:24:10</span>
+    <span class="liaison"><i class="pastille"></i>En ligne</span>
+    <span class="jenny" id="jenny"><span id="mes-jenny">120</span><small>J</small></span>
+  </header>
+  <button class="bandeau-combat" id="bandeau" hidden><i class="poing"></i>Combat en cours à Soufrabi<b id="bandeau-chrono">0:00</b></button>
+
+  <div id="page-arene" style="display:grid;gap:14px">
+    <div class="tete-ville">
+      <button class="retour" id="retour"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Accueil</button>
+      <div class="enseigne"><div class="planche"><h1>SOUFRABI</h1><span>l'arène</span></div></div>
+    </div>
+
+    <section class="affiche" id="affiche" aria-labelledby="t-affiche">
+      <span class="surtitre">— le PNJ de l'arène t'attend —</span>
+      <h2 id="t-affiche">DÉFI DE L'ARÈNE</h2>
+      <div class="issues">
+        <div class="gagne">
+          <span class="t">Victoire</span>
+          <div class="chances" aria-label="Une carte A une fois sur deux, S 4 fois sur 10, SS une fois sur 10">
+            <span class="chance"><i class="sceau r-A">A</i>50 %</span>
+            <span class="chance"><i class="sceau r-S">S</i>40 %</span>
+            <span class="chance"><i class="sceau r-SS">SS</i>10 %</span>
+          </div>
+          <p>une carte de haut rang</p>
+        </div>
+        <div class="perd">
+          <span class="t">Mise</span>
+          <span class="mise">30<small>J</small></span>
+          <p>perdue en cas de défaite</p>
+        </div>
+      </div>
+      <div class="statut" id="statut" aria-live="polite"></div>
+    </section>
+
+    <section class="combat" id="combat" hidden aria-live="polite">
+      <div class="lignes-c" id="lignes-c" aria-hidden="true"></div>
+      <h2>COMBAT EN COURS</h2>
+      <span class="chrono-combat" id="chrono-combat">0:00</span>
+      <span class="engagee">Mise engagée <b>30 J</b></span>
+      <p>Le PNJ arbitre ton défi. Le verdict tombera ici, où que tu sois dans l'app.</p>
+    </section>
+
+    <p class="regle">Une tentative toutes les 15 min, comptées depuis ton entrée. Si le PNJ annule une entrée par erreur, ta mise t'est rendue. Book plein : la carte gagnée s'ajoute quand même.</p>
+  </div>
+
+  <div id="page-accueil" class="mini-accueil" hidden>
+    <h1 style="margin:0;font:400 30px/1 var(--f-titre)">Accueil</h1>
+    <section class="case">
+      <h2>Les villes</h2>
+      <div class="villes"><button>Masadora</button><button>Antokiba</button><button id="v-soufrabi">Soufrabi</button></div>
+      <p class="aide">Ici, l'accueil n'est montré que pour le bandeau du combat : le verdict tombe aussi hors de la page.</p>
+    </section>
+  </div>
+</div>
+
+<nav class="onglets" aria-label="Navigation">
+  <button data-onglet="accueil" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 3l9 8M6 9.5V21h12V9.5M10 21v-6h4v6"/></svg>Accueil</button>
+  <button data-onglet="scan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5M7 12h10"/></svg>Scanner</button>
+  <button data-onglet="livre" id="onglet-livre"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2zM5 19a2 2 0 0 1 2-2h12M9 7h6"/></svg>Book</button>
+  <button data-onglet="sorts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 2.6 6.6L21 9.5l-5 4.4 1.6 6.6L12 17l-5.6 3.5L8 13.9 3 9.5l6.4-.9z"/></svg>Sorts</button>
+  <button data-onglet="echanges"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg>Échanges</button>
+</nav>
+
+<div class="fiche" id="licence" hidden>
+  <div class="lic"><h3>Licence de Gon</h3><div id="lic-qr"></div><p>Montre-la au PNJ de l'arène. Dans l'app, c'est ta vraie licence tournante.</p><p style="font-size:13px">Touche pour fermer</p></div>
+</div>
+
+<div class="gi-annonce" id="annonce" role="alert">
+  <span class="a-qui">Soufrabi</span>
+  <p class="a-texte" id="an-texte"></p>
+  <div class="a-actions"><button id="an-fermer">Fermer</button></div>
+</div>
+
+<!-- Défaite -->
+<div class="defaite" id="defaite" aria-hidden="true" role="status">
+  <div class="tampon" id="d-tampon"></div>
+  <div class="effrite" id="d-effrite" aria-label="moins 30 jenny"></div>
+  <p class="deja">Ta mise était déjà payée.</p>
+  <div class="revenir"><span>Reviens dans</span><b id="d-reste">13:00</b></div>
+  <small>Touche pour fermer</small>
+</div>
+
+<!-- Cinématique -->
+<div class="cine" id="cine" aria-hidden="true">
+  <div class="nuit" id="c-nuit"></div>
+  <div class="lignes" id="c-lignes"></div>
+  <canvas id="fx"></canvas>
+  <div class="bras" id="c-bras"></div>
+  <div class="cri" id="c-cri">VICTOIRE !</div>
+  <div class="c-carte" id="c-carte"><div class="tourne" id="c-tourne"></div></div>
+  <div class="sceaux" id="c-sceaux"><i class="sc r-A">A</i><i class="sc r-S">S</i><i class="sc r-SS">SS</i></div>
+  <div class="flash" id="c-flash"></div>
+  <div class="dialogue gi-dialogue" id="c-dialogue" role="status">
+    <span class="a-qui">Soufrabi</span>
+    <p class="a-texte" id="c-texte"></p>
+    <p class="a-indice" id="c-indice">Touche pour ranger dans ton Book</p>
+  </div>
+  <span class="passer">Touche pour passer</span>
+</div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---------- Données du prototype (dans l'app : l'évènement `arene` : en_cours + mise, gagnee + carte, perdue, annulee + motif) ----------
+const LIM = { SS: 1, S: 2, A: 3 };
+const C = (num, nom, rang, txt) => ({ num, nom, rang, lim: LIM[rang], txt, genre: 'designee' });
+const GAINS = {
+  A: C('012', 'Le dictionnaire d’or', 'A', 'Un dictionnaire dont un mot brille d’or chaque jour : il servira le lendemain.'),
+  S: C('080', 'La pierre flottante', 'S', 'Une pierre nourrie par le soleil, qui fait flotter une personne.'),
+  SS: C('002', 'La pièce du roi', 'SS', 'Une pièce frappée pour le roi de l’île. Introuvable ailleurs.'),
+};
+const MISE = 30, DELAI = 15 * 60;
+// etat : 'pret' | 'combat' ; prochaine : secondes avant la prochaine tentative ; entree : secondes depuis l'entrée.
+const S = { etat: 'pret', prochaine: 0, entree: 0, dernier: null, ailleurs: false };
+
+// ---------- Outils ----------
+const vibrer = (p) => navigator.vibrate?.(p);
+const mmss = (s) => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.max(0, s) % 60).padStart(2, '0')}`;
+const centre = (el) => { const b = el.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2]; };
+const jenny = () => +$('#mes-jenny').textContent;
+const enPhrase = (nom) => nom.replace(/^(Les|Le|La)(?=\s)|^L’/, (m) => m.toLowerCase());
+function carteHTML(c) {
+  return `<div class="gi-carte f-${c.genre}"><div class="c-cadre"><div class="c-tete"><span class="c-num">${c.num}</span><span class="c-nom${c.nom.length > 10 ? ' long' : ''}">${c.nom}</span><span class="gi-rang r-${c.rang}">${c.rang}<span class="lim">-${c.lim}</span></span></div><div class="c-art"><span class="c-filigrane">${c.num}</span></div><p class="c-txt">${c.txt}</p></div></div>`;
+}
+const DOS = `<div class="gi-carte dos"><div class="c-cadre"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="40" fill="none" stroke="#d7b25a" stroke-width="4"/><path d="M50 18 58 42 82 50 58 58 50 82 42 58 18 50 42 42z" fill="#d7b25a"/></svg></div></div>`;
+const tampon = (mots) => `<svg viewBox="-80 -36 160 72" aria-hidden="true"><g filter="url(#encre)" fill="none" stroke="#e0463c">
+  <rect x="-76" y="-32" width="152" height="64" rx="5" stroke-width="5"/><rect x="-68" y="-25" width="136" height="50" rx="2" stroke-width="1.5"/>
+  ${mots.map((m, i) => `<text y="${mots.length === 1 ? 8 : -4 + i * 20}" text-anchor="middle" fill="#e0463c" stroke="none" style="font: 400 ${i ? 13 : 24}px 'Dela Gothic One', 'Arial Black', sans-serif; letter-spacing: .5px">${m}</text>`).join('')}
+</g></svg>`;
+function flotte(texte, genre) {
+  const f = document.createElement('span'); f.className = `flotte ${genre}`; f.textContent = texte;
+  $('#jenny').append(f);
+  f.animate([{ opacity: 0, translate: '0 -6px' }, { opacity: 1, translate: '0 4px', offset: 0.15 }, { opacity: 1, offset: 0.8 }, { opacity: 0, translate: '0 10px' }], { duration: 1700, easing: 'ease-out' }).finished.then(() => f.remove());
+}
+function annoncer(t) { $('#an-texte').textContent = t; $('#annonce').classList.add('visible'); $('#an-fermer').focus({ preventScroll: true }); }
+$('#an-fermer').addEventListener('click', () => $('#annonce').classList.remove('visible'));
+
+// Lignes de concentration (case du combat et nuit de la cinématique).
+function lignesSVG(couleur, graine) {
+  let s = graine; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  let d = '';
+  for (let i = 0; i < 130; i++) {
+    const a = r() * Math.PI * 2, r0 = 40 + r() * 26, w = 0.004 + r() * 0.014;
+    const p = (ang, rad) => `${(Math.cos(ang) * rad).toFixed(1)} ${(Math.sin(ang) * rad).toFixed(1)}`;
+    d += `M${p(a, r0)}L${p(a - w, 170)}L${p(a + w, 170)}Z`;
+  }
+  return `<svg viewBox="-100 -100 200 200" preserveAspectRatio="xMidYMid slice"><path d="${d}" fill="${couleur}"/></svg>`;
+}
+$('#lignes-c').innerHTML = lignesSVG('#ffe2b8', 17);
+$('#c-lignes').innerHTML = lignesSVG('#ffe2b8', 29);
+
+// QR de licence factice (dans l'app : la vraie licence tournante).
+(function () {
+  let s = 7, cases = ''; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  for (let y = 0; y < 25; y++) for (let x = 0; x < 25; x++) {
+    const coin = (x < 7 && y < 7) || (x > 17 && y < 7) || (x < 7 && y > 17);
+    if (coin) continue;
+    if (r() < 0.48) cases += `<rect x="${x}" y="${y}" width="1" height="1"/>`;
+  }
+  const oeil = (x, y) => `<rect x="${x}" y="${y}" width="7" height="7"/><rect x="${x + 1}" y="${y + 1}" width="5" height="5" fill="#fbfbf7"/><rect x="${x + 2}" y="${y + 2}" width="3" height="3"/>`;
+  $('#lic-qr').innerHTML = `<svg viewBox="-2 -2 29 29" aria-label="QR de licence"><rect x="-2" y="-2" width="29" height="29" fill="#fbfbf7"/><g fill="#111">${cases}${oeil(0, 0)}${oeil(18, 0)}${oeil(0, 18)}</g></svg>`;
+})();
+$('#licence').addEventListener('click', () => ($('#licence').hidden = true));
+
+// ---------- La page ----------
+function dessiner() {
+  const combat = S.etat === 'combat';
+  $('#affiche').hidden = combat;
+  $('#combat').hidden = !combat;
+  $('#bandeau').hidden = !combat || !S.ailleurs;
+  $('#chrono-combat').textContent = mmss(S.entree);
+  $('#bandeau-chrono').textContent = mmss(S.entree);
+  if (combat) return;
+  const st = $('#statut');
+  const dernier = S.dernier ? `<span class="dernier">Dernier combat : <b>${S.dernier}</b></span>` : '';
+  if (S.prochaine > 0) {
+    st.innerHTML = `<div class="attente"><span>Prochaine tentative dans</span><b id="attente">${mmss(S.prochaine)}</b></div>${dernier}`;
+  } else if (jenny() < MISE) {
+    st.innerHTML = `<span class="ligne">Il te faut ${MISE} J pour entrer : tu en as ${jenny()}.</span>${dernier}<button class="gros secondaire" id="licence-btn">${iconeLicence}Ma licence</button>`;
+  } else {
+    st.innerHTML = `<span class="ligne">Prêt au combat. Montre ta licence au PNJ de l'arène : il prélève la mise et lance le défi.</span>${dernier}<button class="gros" id="licence-btn">${iconeLicence}Montrer ma licence</button>`;
+  }
+  $('#licence-btn')?.addEventListener('click', () => ($('#licence').hidden = false));
+}
+const iconeLicence = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h4M7 13h4M14 9h3v6h-3z"/></svg>';
+
+setInterval(() => {
+  if (S.etat === 'combat') S.entree++;
+  if (S.prochaine > 0) S.prochaine--;
+  if (S.etat === 'combat') { $('#chrono-combat').textContent = mmss(S.entree); $('#bandeau-chrono').textContent = mmss(S.entree); }
+  else if ($('#attente')) { $('#attente').textContent = mmss(S.prochaine); if (S.prochaine <= 0) dessiner(); }
+  if ($('#defaite').classList.contains('joue')) $('#d-reste').textContent = mmss(S.prochaine);
+}, 1000);
+
+// ---------- Ce que fait le PNJ ----------
+$('#p-entree').addEventListener('click', () => {
+  if (S.etat === 'combat') return;
+  if (S.prochaine > 0) { annoncer(`Le PNJ a scanné ta licence, mais ta prochaine tentative n'est que dans ${mmss(S.prochaine)}.`); return; }
+  if (jenny() < MISE) { annoncer(`Le PNJ a scanné ta licence : il te faut ${MISE} J pour entrer.`); return; }
+  $('#licence').hidden = true;
+  S.etat = 'combat'; S.entree = 0; S.prochaine = DELAI;
+  $('#mes-jenny').textContent = jenny() - MISE; flotte(`−${MISE} J`, 'perte');
+  vibrer([30, 40, 30]);
+  dessiner();
+  annoncer(`Le PNJ a pris ta mise de ${MISE} J. Que le combat commence !`);
+});
+$('#p-annule').addEventListener('click', () => {
+  if (S.etat !== 'combat') return;
+  S.etat = 'pret'; S.prochaine = 0;
+  $('#mes-jenny').textContent = jenny() + MISE; flotte(`+${MISE} J`, 'gain');
+  dessiner();
+  annoncer(`Le PNJ a annulé ton entrée (erreur de joueur). Ta mise de ${MISE} J t'est rendue.`);
+});
+document.querySelectorAll('[data-verdict]').forEach((b) => b.addEventListener('click', () => {
+  if (S.etat !== 'combat') return;
+  S.etat = 'pret';
+  $('#annonce').classList.remove('visible');
+  const v = b.dataset.verdict;
+  if (v === 'perdu') { S.dernier = 'défaite'; dessiner(); defaite(); }
+  else { S.dernier = `victoire, une carte ${v}`; victoire(GAINS[v]); }
+}));
+document.querySelectorAll('[data-avant]').forEach((b) => b.addEventListener('click', () => {
+  if (S.etat === 'combat') return;
+  document.querySelectorAll('[data-avant]').forEach((x) => x.setAttribute('aria-pressed', x === b));
+  const a = b.dataset.avant;
+  S.prochaine = a === 'delai' ? 12 * 60 + 34 : 0;
+  S.dernier = a === 'delai' ? 'défaite' : null;
+  $('#mes-jenny').textContent = a === 'pauvre' ? 18 : 120;
+  dessiner();
+}));
+
+// ---------- Accueil / Soufrabi (pour le bandeau) ----------
+function allerAccueil() { S.ailleurs = true; $('#page-arene').hidden = true; $('#page-accueil').hidden = false; dessiner(); scrollTo(0, 0); }
+function allerArene() { S.ailleurs = false; $('#page-arene').hidden = false; $('#page-accueil').hidden = true; dessiner(); scrollTo(0, 0); }
+$('#retour').addEventListener('click', allerAccueil);
+$('#p-ailleurs').addEventListener('click', allerAccueil);
+$('#v-soufrabi').addEventListener('click', allerArene);
+$('#bandeau').addEventListener('click', allerArene);
+
+// ---------- Défaite : tampon, la mise s'effrite, « Reviens dans » ----------
+let finDefaite = null;
+function defaite() {
+  const d = $('#defaite'), t = $('#d-tampon'), e = $('#d-effrite');
+  t.innerHTML = tampon(['DÉFAITE']);
+  e.innerHTML = [...`−${MISE} J`].map((c) => `<span>${c === ' ' ? '&nbsp;' : c}</span>`).join('');
+  $('#d-reste').textContent = mmss(S.prochaine);
+  d.classList.add('joue'); d.setAttribute('aria-hidden', 'false');
+  t.classList.remove('frappe'); void t.offsetWidth; t.classList.add('frappe');
+  vibrer([60, 50, 60]);
+  // La mise s'effrite, lettre par lettre (elle était déjà payée à l'entrée).
+  if (!reduit) [...e.children].forEach((s, i) => s.animate([{ translate: '0 0', rotate: '0deg', opacity: 1, filter: 'blur(0)' }, { translate: `${(i - 2) * 6}px 46px`, rotate: `${(i % 2 ? 1 : -1) * (20 + i * 9)}deg`, opacity: 0, filter: 'blur(1.5px)' }], { duration: 900, delay: 500 + i * 70, easing: 'cubic-bezier(.5,0,.8,.4)', fill: 'forwards' }));
+  else e.style.opacity = '0.3';
+  clearTimeout(finDefaite);
+  finDefaite = setTimeout(fermerDefaite, 3200);
+}
+function fermerDefaite() { clearTimeout(finDefaite); const d = $('#defaite'); d.classList.remove('joue'); d.setAttribute('aria-hidden', 'true'); }
+$('#defaite').addEventListener('click', fermerDefaite);
+
+// ---------- Effets (canvas) ----------
+const cv = $('#fx'), ctx = cv.getContext('2d');
+let dpr = 1, parts = [], ondes = [], image = 0, dernierT = 0;
+function taille() { dpr = Math.min(1.5, devicePixelRatio || 1); cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; }
+addEventListener('resize', taille); taille();
+const lueurs = {};
+function lueur(col) {
+  if (lueurs[col]) return lueurs[col];
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d'), rg = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  rg.addColorStop(0, col); rg.addColorStop(0.35, col + '99'); rg.addColorStop(1, col + '00');
+  g.fillStyle = rg; g.fillRect(0, 0, 64, 64); return (lueurs[col] = c);
+}
+const MAX_PARTS = 360;
+function etincelles(x, y, n, col, force = 1, haut = false) {
+  lancerBoucle();
+  n = Math.min(n, MAX_PARTS - parts.length);
+  for (let i = 0; i < n; i++) {
+    const a = haut ? -Math.PI / 2 + (Math.random() - 0.5) * 1.6 : Math.random() * Math.PI * 2, v = (240 + Math.random() * 620) * force;
+    parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, col, vie: 0, max: 0.45 + Math.random() * 0.7, t: 2 + Math.random() * 4, g: 60 });
+  }
+}
+function onde(x, y, col, max = 1.4) { lancerBoucle(); ondes.push({ x, y, col, vie: 0, max: 0.55, rmax: Math.max(innerWidth, innerHeight) * 0.55 * max }); }
+function boucle(now) {
+  const dt = Math.max(0, Math.min(0.05, (now - dernierT) / 1000)); dernierT = now;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, innerWidth, innerHeight);
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i]; p.vie += dt;
+    const a = 1 - p.vie / p.max; if (a <= 0) { parts.splice(i, 1); continue; }
+    p.vx *= 0.94; p.vy = p.vy * 0.94 + p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+    const t = p.t * (0.4 + a * 0.8), l = lueur(p.col);
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a;
+    ctx.drawImage(l, p.x - t * 3, p.y - t * 3, t * 6, t * 6);
+  }
+  for (let i = ondes.length - 1; i >= 0; i--) {
+    const o = ondes[i]; o.vie += dt; const k = o.vie / o.max; if (k >= 1) { ondes.splice(i, 1); continue; }
+    const r = o.rmax * (1 - Math.pow(1 - k, 3));
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (1 - k) * 0.9; ctx.strokeStyle = o.col; ctx.lineWidth = 10 * (1 - k) + 1;
+    ctx.beginPath(); ctx.arc(o.x, o.y, r, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  image = parts.length || ondes.length ? requestAnimationFrame(boucle) : 0;
+}
+const lancerBoucle = () => { if (!image && !reduit) { dernierT = performance.now(); image = requestAnimationFrame(boucle); } };
+
+// Le bras de l'arbitre : manche rayée noir et blanc, poing serré, vu de face, levé vers le ciel.
+$('#c-bras').innerHTML = `<svg viewBox="0 0 100 300" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+  <defs><pattern id="rayures" width="100" height="26" patternUnits="userSpaceOnUse"><rect width="100" height="13" fill="#111"/><rect y="13" width="100" height="13" fill="#f3ead2"/></pattern>
+  <linearGradient id="peau" x1="0" x2="1"><stop offset="0" stop-color="#c98b5e"/><stop offset=".5" stop-color="#eab489"/><stop offset="1" stop-color="#b8784c"/></linearGradient></defs>
+  <path d="M30 300 L34 118 Q50 108 66 118 L70 300 Z" fill="url(#rayures)" stroke="#111" stroke-width="4"/>
+  <path d="M36 122 L38 86 Q50 80 62 86 L64 122 Q50 128 36 122 Z" fill="url(#peau)" stroke="#111" stroke-width="4"/>
+  <rect x="24" y="30" width="52" height="60" rx="16" fill="url(#peau)" stroke="#111" stroke-width="4"/>
+  <path d="M37 30 V52 M50 30 V52 M63 30 V52" stroke="#111" stroke-width="3" stroke-linecap="round"/>
+  <path d="M24 60 Q16 58 18 72 Q22 84 34 80" fill="url(#peau)" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+</svg>`;
+
+// ---------- Cinématique « VICTOIRE ! » ----------
+let anims = [], attentes = new Set(), saute = false, phase = 'repos', attenteToucher = null, revelA = 0;
+// L'opacité finale est aussi posée en style (leçon des pages ⑧ et ⑪ : sur certains téléphones, le `fill` ne tient pas).
+const A = (el, k, o) => {
+  const a = el.animate(k, { fill: 'both', easing: 'cubic-bezier(.16,1,.3,1)', ...o, duration: reduit || saute ? 1 : o.duration, delay: reduit || saute ? 0 : o.delay || 0 });
+  anims.push(a);
+  const fin = k[k.length - 1];
+  if (fin.opacity !== undefined) el.style.opacity = String(fin.opacity);
+  return a;
+};
+function pause(ms) {
+  return new Promise((res) => {
+    if (saute || reduit) return res();
+    const f = () => { clearTimeout(t); attentes.delete(f); res(); };
+    const t = setTimeout(f, ms); attentes.add(f);
+  });
+}
+const finAnim = (a) => a.finished.catch(() => {});
+function sauter() { if (saute) return; saute = true; [...attentes].forEach((f) => f()); anims.forEach((a) => { try { a.finish(); } catch {} }); }
+function taper(el, texte) {
+  el.textContent = '';
+  if (reduit || saute) { el.textContent = texte; return Promise.resolve(); }
+  return new Promise((res) => { let n = 0; const pas = () => { if (saute) { el.textContent = texte; return res(); } el.textContent = texte.slice(0, ++n); n >= texte.length ? res() : setTimeout(pas, 22); }; pas(); });
+}
+const cine = $('#cine');
+function toucher() { return new Promise((res) => { attenteToucher = res; }); }
+cine.addEventListener('pointerdown', () => {
+  if (phase === 'intro') sauter();
+  else if (phase === 'revele' && !attenteToucher) sauter();
+  else if (phase === 'revele' && attenteToucher && performance.now() - revelA > 350) { const r = attenteToucher; attenteToucher = null; r(); }
+});
+addEventListener('keydown', (e) => {
+  if (cine.classList.contains('joue') && ['Enter', ' ', 'Escape'].includes(e.key)) { e.preventDefault(); cine.dispatchEvent(new PointerEvent('pointerdown')); }
+  else if ($('#defaite').classList.contains('joue') && ['Enter', ' ', 'Escape'].includes(e.key)) { e.preventDefault(); fermerDefaite(); }
+});
+const RANGS = ['A', 'S', 'SS'];
+const COULEUR = { A: '#f2b48a', S: '#e9eef5', SS: '#ffd877' };
+
+async function victoire(carte) {
+  saute = false; phase = 'intro'; anims.forEach((a) => a.cancel()); anims = []; parts = []; ondes = [];
+  // La carte est recréée à chaque victoire : un élément neuf, sans calque ni animation laissés par la précédente
+  // (sinon Chromium peut garder l'ancienne image et la carte reste invisible).
+  $('#c-carte').replaceWith(Object.assign(document.createElement('div'), { id: 'c-carte', className: 'c-carte', innerHTML: '<div class="tourne" id="c-tourne"></div>' }));
+  const nuit = $('#c-nuit'), lignes = $('#c-lignes'), bras = $('#c-bras'), cri = $('#c-cri'), ccarte = $('#c-carte'), tourne = $('#c-tourne'), flash = $('#c-flash'), dlg = $('#c-dialogue');
+  const sceaux = [...document.querySelectorAll('#c-sceaux .sc')];
+  [nuit, lignes, bras, cri, ccarte, flash, dlg, ...sceaux].forEach((e) => (e.style.opacity = '0'));
+  sceaux.forEach((s) => s.classList.remove('allume', 'gagne', 'eteint'));
+  flash.classList.toggle('or', carte.rang === 'SS');
+  tourne.innerHTML = DOS;
+  $('#c-indice').classList.remove('visible'); $('#c-texte').textContent = '';
+  cine.classList.add('joue', 'intro');
+  vibrer([30, 40, 30]);
+  // 1. L'arène s'assombrit.
+  A(nuit, [{ opacity: 0 }, { opacity: 1 }], { duration: 320 });
+  await pause(300);
+  // 2. Le bras de l'arbitre se lève…
+  A(bras, [{ opacity: 1, transform: 'translateY(40%) rotate(-62deg)' }, { opacity: 1, transform: 'translateY(0) rotate(0deg)' }], { duration: 560, easing: 'cubic-bezier(.3,1.35,.5,1)' });
+  await pause(520);
+  // 3. … « VICTOIRE ! » : éclair, onde, secousse.
+  const [px, py] = centre(bras); const poingY = bras.getBoundingClientRect().top + bras.offsetHeight * 0.18;
+  A(flash, [{ opacity: 0.75 }, { opacity: 0 }], { duration: 320, easing: 'ease-out' });
+  onde(px, poingY, '#ffe2b8', 1.2); etincelles(px, poingY, 60, '#ffd877', 0.9); etincelles(px, poingY, 24, '#ffffff', 0.7);
+  vibrer(120);
+  if (!reduit) { try { cine.animate([{ translate: '0 0' }, { translate: '-6px 4px' }, { translate: '5px -3px' }, { translate: '-2px 2px' }, { translate: '0 0' }], { duration: 240 }); } catch {} }
+  A(cri, [{ opacity: 0, scale: 2.4 }, { opacity: 1, scale: 1 }], { duration: 300, easing: 'cubic-bezier(.3,1.5,.5,1)' });
+  A(lignes, [{ opacity: 0, scale: 1.3 }, { opacity: 0.22, scale: 1 }], { duration: 400 });
+  await pause(900);
+  // 4. Le bras redescend ; les trois sceaux A · S · SS apparaissent.
+  A(bras, [{ opacity: 1, transform: 'translateY(0) rotate(0deg)' }, { opacity: 0, transform: 'translateY(60%) rotate(-20deg)' }], { duration: 420, easing: 'cubic-bezier(.5,0,.8,.4)' });
+  sceaux.forEach((s, i) => A(s, [{ opacity: 0, transform: 'scale(.4)' }, { opacity: 1, transform: 'none' }], { duration: 360, delay: 120 + i * 90, easing: 'cubic-bezier(.3,1.6,.5,1)' }));
+  await pause(520);
+  // 5. Suspense : la lumière passe d'un sceau à l'autre en ralentissant, puis s'arrête sur le rang gagné.
+  const cible = RANGS.indexOf(carte.rang);
+  const pas = 9 + cible; // deux tours complets et demi, finir sur la cible
+  let i = 0;
+  for (let k = 0; k <= pas; k++) {
+    if (saute) break;
+    i = k % 3;
+    sceaux.forEach((s, j) => s.classList.toggle('allume', j === i));
+    vibrer(8);
+    await pause(70 + Math.pow(k / pas, 2.2) * 360);
+  }
+  sceaux.forEach((s, j) => { s.classList.remove('allume'); s.classList.toggle('gagne', j === cible); s.classList.toggle('eteint', j !== cible); });
+  const sc = sceaux[cible];
+  const [sx, sy] = centre(sc);
+  vibrer(carte.rang === 'SS' ? [80, 40, 160] : 90);
+  onde(sx, sy, COULEUR[carte.rang], carte.rang === 'SS' ? 1.8 : 1);
+  etincelles(sx, sy, carte.rang === 'SS' ? 150 : carte.rang === 'S' ? 80 : 50, COULEUR[carte.rang], carte.rang === 'SS' ? 1.2 : 0.9);
+  if (carte.rang === 'SS') { A(flash, [{ opacity: 0.85 }, { opacity: 0 }], { duration: 600, easing: 'ease-out' }); etincelles(sx, sy, 60, '#ffffff', 1.1); }
+  await pause(380);
+  // 6. La carte jaillit du sceau (de dos), monte au centre et se retourne.
+  const [cx, cy] = centre(ccarte);
+  const jaillit = A(ccarte, [{ opacity: 0, transform: `translate(${sx - cx}px, ${sy - cy}px) scale(.25)` }, { opacity: 1, transform: 'none' }], { duration: 560, easing: 'cubic-bezier(.2,1.2,.4,1)' });
+  await finAnim(jaillit);
+  await pause(160);
+  const r1 = A(tourne, [{ transform: 'perspective(1100px) rotateY(0)' }, { transform: 'perspective(1100px) rotateY(90deg)' }], { duration: 220, easing: 'cubic-bezier(.5,0,1,1)' });
+  await finAnim(r1);
+  tourne.innerHTML = carteHTML(carte);
+  ccarte.classList.add(`brille-${carte.rang}`);
+  const r2 = A(tourne, [{ transform: 'perspective(1100px) rotateY(-90deg)' }, { transform: 'perspective(1100px) rotateY(0)' }], { duration: 320, easing: 'cubic-bezier(0,0,.3,1.3)' });
+  // La carte revient à plat : on lâche ses animations, sinon certains navigateurs gardent l'ancienne image du dos.
+  finAnim(r2).then(() => { [jaillit, r1, r2].forEach((a) => a.cancel()); });
+  etincelles(cx, cy, carte.rang === 'SS' ? 90 : 40, COULEUR[carte.rang], 0.8);
+  vibrer(40);
+  await pause(500);
+  cine.classList.remove('intro');
+  // 7. Le jeu dit ce qui s'est passé.
+  phase = 'revele';
+  A(dlg, [{ opacity: 0, translate: '-50% 20px' }, { opacity: 1, translate: '-50% 0' }], { duration: 300 });
+  await taper($('#c-texte'), `Victoire ! L'arène te remet ${enPhrase(carte.nom)}, une carte ${carte.rang}.`);
+  $('#c-indice').classList.add('visible');
+  revelA = performance.now();
+  await toucher();
+  // 8. La carte file dans l'onglet Book : « +1 ».
+  phase = 'fin';
+  const [bx, by] = centre($('#onglet-livre'));
+  const [x, y] = centre(ccarte);
+  A(dlg, [{ opacity: 1 }, { opacity: 0 }], { duration: 200 });
+  A(cri, [{ opacity: 1 }, { opacity: 0 }], { duration: 200 });
+  sceaux.forEach((s) => A(s, [{ opacity: 1 }, { opacity: 0 }], { duration: 220 }));
+  const vol = A(ccarte, [{ transform: 'none', opacity: 1 }, { transform: `translate(${bx - x}px,${by - y}px) scale(.16) rotate(-14deg)`, opacity: 0.2 }], { duration: 560, easing: 'cubic-bezier(.55,0,.75,.3)' });
+  A(nuit, [{ opacity: 1 }, { opacity: 0 }], { duration: 520, delay: 200 });
+  A(lignes, [{ opacity: 0.22 }, { opacity: 0 }], { duration: 300 });
+  await finAnim(vol);
+  const p = document.createElement('span'); p.className = 'plus-un'; p.textContent = '+1';
+  $('#onglet-livre').append(p);
+  p.animate([{ opacity: 0, translate: '-50% 8px' }, { opacity: 1, translate: '-50% 0', offset: 0.2 }, { opacity: 1, offset: 0.8 }, { opacity: 0 }], { duration: 1600 }).finished.then(() => p.remove());
+  vibrer(30);
+  await pause(320);
+  cine.classList.remove('joue'); phase = 'repos'; anims.forEach((a) => a.cancel()); anims = [];
+  dessiner();
+}
+
+dessiner();
+</script>

@@ -1,5 +1,5 @@
 <title>Échanges entre joueurs</title>
-<meta name="description" content="Prototype de la page ⑫ : proposer un échange ou une vente à un joueur à portée, invitation en appel plein écran, table face à face avec appui long et tampons « VALIDÉ », fins refusé / annulé / expiré et cinématique « TRADE ! » des comètes croisées.">
+<meta name="description" content="Prototype de la page ⑫ : proposer un échange ou une vente à un joueur à portée, invitation en appel plein écran, table de jeu face à face (tapis marine et or, sceaux « VALIDÉ » à l’appui long), fins refusé / annulé / expiré et cinématique « TRADE ! » des comètes croisées.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@800&family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,800;1,400&family=Dela+Gothic+One&family=DotGothic16&display=swap">
@@ -51,7 +51,7 @@ button:disabled { cursor: default; }
 .proto button:active { background: var(--case); color: var(--encre); }
 /* Par-dessus la table ou l'appel : un bouton ramène les commandes en haut de l'écran. */
 .proto.flottant { position: fixed; z-index: 90; top: 0; left: 0; right: 0; margin: 0; padding-top: max(10px, env(safe-area-inset-top, 0px)); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
-.proto-btn { position: fixed; z-index: 91; left: 0; top: calc(env(safe-area-inset-top, 0px) + 72px); min-height: 40px; padding: 0 10px; border: 2px solid var(--case); border-left: 0; background: var(--encre); color: var(--case); font: 800 13px var(--f-texte); }
+.proto-btn { position: fixed; z-index: 91; left: 0; top: 34%; writing-mode: vertical-rl; rotate: 180deg; min-width: 26px; padding: 10px 3px; border: 1.5px solid var(--case); border-right: 0; background: var(--encre); color: var(--case); font: 800 13px var(--f-texte); }
 .proto-btn[hidden] { display: none; }
 
 /* Barre d'état de l'app */
@@ -180,107 +180,153 @@ button:disabled { cursor: default; }
 .appel .accepter { background: var(--or-vif); color: var(--nuit); border-color: var(--or-vif) !important; }
 .appel .bas button:active { translate: 0 2px; }
 
-/* ---------- La table ---------- */
-.table { position: fixed; z-index: 40; inset: 0; display: grid; grid-template-rows: auto 1fr auto 1fr auto; background: var(--tapis); }
+/* ---------- La table : un tapis de jeu dans la nuit, habillé comme le dos des cartes ----------
+   Marine et doubles filets d'or ; l'étoile du dos au milieu, sur la couture entre les deux parts ;
+   une lampe au-dessus. Ses cartes sont jetées de son côté (à l'envers), les tiennes du tien. */
+.table { --marine: #15233f; --marine-2: #0b1426; --creme: #f3ead2; --creme-2: #b9b29c; --sceau: #e0463c;
+  position: fixed; z-index: 40; inset: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr);
+  background: radial-gradient(ellipse at 50% 42%, #2a2110 0, #120e08 55%, #050404 100%); color: var(--creme); }
 .table[hidden] { display: none; }
-.t-barre { display: flex; align-items: center; gap: 10px; padding: max(10px, env(safe-area-inset-top, 0px)) 16px 10px; background: var(--case); border-bottom: var(--trait) solid var(--encre); }
-.t-barre .titre { display: grid; gap: 3px; min-width: 0; }
-.t-barre h1 { margin: 0; font: 400 21px/1.05 var(--f-titre); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.t-barre .mode { justify-self: start; font: 800 12px/1 var(--f-texte); letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 6px; background: var(--encre); color: var(--case); }
-.t-barre .mode.vente { background: var(--or-vif); color: var(--encre); box-shadow: inset 0 0 0 2px var(--encre); }
-.t-barre .reste { margin-left: auto; display: grid; justify-items: end; font: 600 12px/1.1 var(--f-texte); color: var(--encre-2); }
-.t-barre .reste b { font: 800 19px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--encre); }
-.t-barre .annuler { min-height: 40px; padding: 0 12px; border: var(--trait) solid var(--encre); background: var(--case); font: 800 14px var(--f-texte); }
+.t-barre { display: flex; align-items: center; gap: 10px; padding: max(10px, env(safe-area-inset-top, 0px)) 16px 10px; }
+.t-barre .titre { display: grid; gap: 4px; min-width: 0; }
+.t-barre h1 { margin: 0; font: 400 21px/1.05 var(--f-titre); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--creme); }
+.t-barre .mode { justify-self: start; font: 800 11px/1 var(--f-texte); letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 7px; color: var(--or-vif); box-shadow: inset 0 0 0 1.5px rgba(215, 178, 90, 0.7); }
+.t-barre .mode.vente { background: var(--or-vif); color: var(--marine-2); box-shadow: none; }
+.t-barre .reste { margin-left: auto; display: grid; justify-items: end; gap: 2px; font: 600 11px/1 var(--f-texte); letter-spacing: 0.06em; text-transform: uppercase; color: var(--creme-2); }
+.t-barre .reste b { font: 800 20px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--or-vif); letter-spacing: 0; }
+.t-barre .annuler { min-height: 40px; padding: 0 12px; border: 1.5px solid rgba(243, 234, 210, 0.55); background: transparent; color: var(--creme); font: 800 14px var(--f-texte); border-radius: 4px; }
 
-/* Une part posée sur la table. */
-.part { position: relative; display: grid; align-content: center; gap: 10px; padding: 14px 16px; min-height: 0; overflow: hidden; }
-.part .etiquette { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.part .etiquette b { font: 400 17px/1 var(--f-titre); }
-.part .resume { font: 600 14px/1.25 var(--f-texte); color: var(--encre-2); font-variant-numeric: tabular-nums; }
-.posees { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; min-height: 98px; }
+.plateau { position: relative; margin: 0 10px; border-radius: 22px; display: grid; grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr); grid-template-columns: minmax(0, 1fr); overflow: hidden; isolation: isolate;
+  background:
+    radial-gradient(ellipse 75% 50% at 50% 50%, rgba(255, 226, 160, 0.16), rgba(255, 226, 160, 0) 70%),
+    radial-gradient(rgba(255, 255, 255, 0.045) 0.8px, transparent 1.2px) 0 0 / 4px 4px,
+    linear-gradient(#1a2c52, #0f1b33);
+  box-shadow: inset 0 0 0 5px var(--marine-2), inset 0 0 0 7px var(--or), inset 0 0 0 11px var(--marine-2), inset 0 0 0 12px rgba(215, 178, 90, 0.55), inset 0 0 70px rgba(0, 0, 0, 0.65), 0 24px 60px rgba(0, 0, 0, 0.7); }
+/* Les filets s'allument quand les deux sceaux sont posés. */
+.plateau::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 0 7px var(--or-vif), inset 0 0 40px 6px rgba(255, 216, 119, 0.55); opacity: 0; }
+.plateau.scelle::after { animation: allume 1s ease-out forwards; }
+@keyframes allume { 30% { opacity: 1; } to { opacity: 0.8; } }
+
+/* Une part posée sur le tapis. */
+.part { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); align-content: center; gap: 10px; padding: 22px 24px; min-height: 0; min-width: 0; }
+.chez-lui { align-content: start; padding-top: 24px; }
+.chez-moi { align-content: end; padding-bottom: 22px; }
+.part .etiquette { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.part .etiquette b { font: 400 13px/1 var(--f-titre); letter-spacing: 0.12em; text-transform: uppercase; color: var(--or-vif); }
+.part .resume { font: 600 13px/1.25 var(--f-texte); color: var(--creme-2); font-variant-numeric: tabular-nums; }
+/* Une seule rangée : quand la main déborde, les cartes se chevauchent comme un éventail posé. */
+.posees { display: flex; gap: 10px; align-items: center; min-height: 96px; }
+.posees.serre { gap: 0; }
+.posees.serre > * + * { margin-inline-start: var(--chevauche); }
+.chez-lui .posees.serre > * + * { margin-inline: 0 var(--chevauche); }
 .posees:empty { display: none; }
-.posee { position: relative; width: 66px; flex: none; border: 0; padding: 0; background: none; }
-.posee .gi-carte .c-cadre { box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35), 0 4px 0 rgba(17, 17, 17, 0.25); }
-.posee .retirer { position: absolute; top: -7px; right: -7px; width: 24px; height: 24px; border-radius: 50%; background: var(--encre); color: var(--case); display: grid; place-items: center; font: 800 15px/1 var(--f-texte); }
-.posee.arrive { animation: poser 0.42s var(--sortie); }
-@keyframes poser { from { translate: 0 22px; rotate: -8deg; opacity: 0; } }
-.chez-lui .posee.arrive { animation-name: poser-lui; }
-@keyframes poser-lui { from { translate: 0 -22px; rotate: 8deg; opacity: 0; } }
-/* Sa part est posée à l'envers, de son côté de la table. Toucher une carte la montre à l'endroit. */
-.chez-lui .posees { flex-direction: row-reverse; align-items: flex-start; }
-.chez-lui .posee .gi-carte { rotate: 180deg; }
-.ajouter { width: 66px; aspect-ratio: 63 / 88; border: 2.5px dashed var(--encre); border-radius: 4px; background: rgba(251, 251, 247, 0.6); display: grid; place-content: center; justify-items: center; gap: 2px; font: 800 13px/1.1 var(--f-texte); }
-.ajouter span { font: 400 30px/1 var(--f-titre); }
-.vide-lui { font: 600 15px/1.3 var(--f-texte); color: var(--encre-2); align-self: center; }
+.chez-lui .posees { flex-direction: row-reverse; }
+.posee { position: relative; width: 64px; flex: none; border: 0; padding: 0; background: none; translate: 0 var(--y, 0); transition: translate 0.2s var(--sortie); }
+.posee .gi-carte { rotate: var(--r, 0deg); filter: drop-shadow(0 7px 6px rgba(0, 0, 0, 0.55)); }
+.chez-lui .posee .gi-carte { rotate: calc(180deg + var(--r, 0deg)); }
+.chez-moi .posee:active { translate: 0 calc(var(--y, 0px) - 6px); }
+.posee .retirer { position: absolute; z-index: 2; top: -8px; left: -8px; width: 24px; height: 24px; border-radius: 50%; background: var(--marine-2); color: var(--or-vif); box-shadow: 0 0 0 1.5px var(--or); display: grid; place-items: center; font: 800 15px/1 var(--f-texte); }
+.posee.arrive { animation: jeter 0.5s var(--sortie); }
+@keyframes jeter { from { translate: 0 60px; rotate: -14deg; opacity: 0; } }
+.chez-lui .posee.arrive { animation-name: jeter-lui; }
+@keyframes jeter-lui { from { translate: 0 -60px; rotate: 14deg; opacity: 0; } }
+.ajouter { width: 64px; flex: none; aspect-ratio: 63 / 88; border: 1.5px dashed rgba(255, 216, 119, 0.75); border-radius: 5px; background: rgba(255, 216, 119, 0.05); color: var(--or-vif); display: grid; place-content: center; justify-items: center; gap: 2px; font: 800 12px/1.1 var(--f-texte); }
+.ajouter span { font: 400 28px/1 var(--f-titre); }
+.ajouter:active { background: rgba(255, 216, 119, 0.14); }
+.vide-lui { font: 400 italic 15px/1.3 var(--f-texte); color: var(--creme-2); }
+.vide-lui::after { content: ''; display: inline-block; width: 1.2em; text-align: left; animation: points 1.4s steps(4) infinite; }
+@keyframes points { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
 
-/* Pile de jenny : des pièces empilées, un chiffre en face. */
-.pile { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+/* Pile de jenny : des pièces d'or empilées. */
+.pile { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .pile[hidden] { display: none; }
-.pieces { position: relative; width: 46px; height: 44px; flex: none; }
-.pieces i { position: absolute; left: 3px; width: 40px; height: 14px; border-radius: 50%; background: linear-gradient(#f3d27a, #c99a2a); box-shadow: 0 0 0 2px var(--encre); }
-.pieces i::after { content: 'J'; position: absolute; inset: 0; display: grid; place-items: center; font: 800 9px/1 var(--f-chiffre); color: #6b4f0d; }
-.pile .montant { font: 800 26px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; min-width: 4ch; }
-.pile .montant small { font: 600 15px var(--f-texte); margin-left: 2px; }
-.pile .note { font: 600 13px/1.2 var(--f-texte); color: var(--encre-2); flex-basis: 100%; }
+.pieces { position: relative; width: 44px; height: 42px; flex: none; }
+.pieces:empty::before { content: ''; position: absolute; left: 2px; bottom: 0; width: 40px; height: 13px; border-radius: 50%; border: 1.5px dashed rgba(215, 178, 90, 0.6); }
+.pieces i { position: absolute; left: 2px; width: 40px; height: 13px; border-radius: 50%; background: linear-gradient(90deg, #8f6614 0%, #f7dc8a 28%, #c99a2a 52%, #fbe8a9 74%, #9c7417 100%); box-shadow: 0 2px 0 #6e500f, 0 3px 4px rgba(0, 0, 0, 0.5); }
+.pieces i:last-child::after { content: 'J'; position: absolute; inset: 0; display: grid; place-items: center; font: 800 8px/1 var(--f-chiffre); color: #6b4f0d; }
+.pile .montant { font: 800 26px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--or-vif); min-width: 3ch; }
+.pile .montant small { font: 600 14px var(--f-texte); margin-left: 3px; color: var(--creme-2); }
+.pile .note { font: 600 13px/1.25 var(--f-texte); color: var(--creme-2); flex-basis: 100%; }
 .pile .note[hidden] { display: none; }
 .montants { display: flex; gap: 6px; flex-wrap: wrap; }
-.montants button { min-height: 38px; min-width: 46px; padding: 0 9px; border: 2px solid var(--encre); background: var(--case); font: 800 14px var(--f-chiffre); font-variant-numeric: tabular-nums; }
-.montants button:active:not(:disabled) { background: var(--encre); color: var(--case); }
-.montants button:disabled { opacity: 0.35; }
+.montants button { min-height: 36px; min-width: 46px; padding: 0 10px; border: 1.5px solid rgba(215, 178, 90, 0.7); border-radius: 999px; background: rgba(0, 0, 0, 0.25); color: var(--or-vif); font: 800 14px var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.montants button:active:not(:disabled) { background: var(--or-vif); color: var(--marine-2); }
+.montants button:disabled { opacity: 0.3; }
 
-/* Bord de la table : les deux noms et l'état des validations. */
-.bord { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 16px; background: var(--encre); color: var(--case); font: 800 13px/1.2 var(--f-texte); }
-.bord .fleches { font: 400 18px/1 var(--f-titre); color: var(--or-vif); }
-.bord .etat { display: inline-flex; align-items: center; gap: 6px; }
-.bord .etat i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--case); }
-.bord .etat.ok i { background: var(--or-vif); border-color: var(--or-vif); }
+/* La couture : double filet d'or, l'étoile du dos au milieu, l'état des deux sceaux de part et d'autre. */
+.couture { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; padding: 0 24px; height: 60px; }
+.couture::before { content: ''; position: absolute; left: 12px; right: 12px; top: 50%; height: 5px; translate: 0 -50%; border-block: 1px solid rgba(215, 178, 90, 0.75); z-index: -1; }
+.embleme { position: relative; width: 58px; height: 58px; border-radius: 50%; background: var(--marine); box-shadow: 0 0 0 2px var(--marine-2), 0 0 0 3.5px var(--or), 0 0 0 6px var(--marine-2), 0 0 0 7px rgba(215, 178, 90, 0.55), 0 6px 18px rgba(0, 0, 0, 0.6); display: grid; place-items: center; }
+.embleme svg { width: 76%; height: auto; transition: filter 0.4s; }
+.plateau.scelle .embleme { animation: embleme 1s var(--sortie); }
+.plateau.scelle .embleme svg { filter: drop-shadow(0 0 6px #ffd877) drop-shadow(0 0 16px #ffb347); }
+@keyframes embleme { 30% { scale: 1.25; rotate: 45deg; } to { scale: 1.1; rotate: 45deg; } }
+.etat { display: grid; gap: 3px; font: 800 13px/1 var(--f-texte); color: var(--creme); min-width: 0; }
+.etat small { font: 600 11px/1 var(--f-texte); letter-spacing: 0.08em; text-transform: uppercase; color: var(--creme-2); white-space: nowrap; }
+.etat.droite { justify-items: end; text-align: right; }
+.etat.ok small { color: #ff8c86; }
 
-/* Le tampon « VALIDÉ », posé de travers sur la part ; il tombe quand une part change. */
-.tampon { position: absolute; z-index: 3; right: 14px; top: 50%; padding: 6px 10px; border: 4px solid var(--rouge); border-radius: 4px; color: var(--rouge); background: rgba(251, 251, 247, 0.7); font: 400 26px/1 var(--f-titre); letter-spacing: 0.04em; rotate: -12deg; translate: 0 -50%; pointer-events: none; mix-blend-mode: multiply; visibility: hidden; }
-.chez-lui .tampon { right: auto; left: 14px; rotate: 168deg; }
-.tampon.pose { visibility: visible; animation: tamponner 0.32s cubic-bezier(.3, 1.6, .5, 1); }
-@keyframes tamponner { from { scale: 1.9; opacity: 0; } 70% { scale: 0.94; opacity: 1; } }
-.tampon.tombe { visibility: visible; animation: tomber 0.5s ease-in forwards; }
-@keyframes tomber { to { translate: 0 60px; rotate: 30deg; opacity: 0; } }
-.chez-lui .tampon.tombe { animation-name: tomber-lui; }
-@keyframes tomber-lui { to { translate: 0 -60px; rotate: 150deg; opacity: 0; } }
+/* Le sceau « VALIDÉ » : encre rouge, bord mangé, frappé de travers sur la part. Il saute quand une part change. */
+.sceau { position: absolute; z-index: 3; right: 20px; top: 50%; width: 104px; aspect-ratio: 1; translate: 0 -50%; rotate: -14deg; pointer-events: none; visibility: hidden; }
+.chez-lui .sceau { right: auto; left: 20px; rotate: 166deg; }
+.sceau svg { width: 100%; height: 100%; overflow: visible; }
+.sceau::before { content: ''; position: absolute; inset: 6%; border-radius: 50%; border: 3px solid var(--sceau); opacity: 0; }
+.sceau.pose { visibility: visible; animation: frapper 0.34s cubic-bezier(.3, 1.6, .5, 1); }
+.sceau.pose::before { animation: eclat 0.55s ease-out 0.1s; }
+@keyframes frapper { from { scale: 2.2; opacity: 0; } 65% { scale: 0.93; opacity: 1; } }
+@keyframes eclat { from { scale: 0.9; opacity: 0.9; } to { scale: 1.9; opacity: 0; } }
+.sceau.tombe { visibility: visible; animation: sauter-sceau 0.55s ease-in forwards; }
+@keyframes sauter-sceau { 20% { scale: 1.08; } to { translate: 0 -10%; scale: 0.6; opacity: 0; filter: blur(2px); } }
 
 /* Bas de la table : valider par un appui long. */
-.t-bas { display: grid; gap: 6px; padding: 10px 16px max(12px, env(safe-area-inset-bottom, 0px)); background: var(--case); border-top: var(--trait) solid var(--encre); }
-.maintenir { position: relative; overflow: hidden; min-height: 58px; border: var(--trait) solid var(--encre); background: var(--encre); color: var(--case); font: 400 18px/1 var(--f-titre); touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
-.maintenir .remplit { position: absolute; inset: 0; background: var(--rouge); transform-origin: left; scale: 0 1; }
+.t-bas { display: grid; gap: 8px; padding: 12px 16px max(14px, env(safe-area-inset-bottom, 0px)); }
+.maintenir { position: relative; overflow: hidden; min-height: 58px; border: 0; border-radius: 6px; background: linear-gradient(100deg, #b98a24, #ffd877 30%, #e8b947 55%, #ffe7a6 80%, #c4952b); color: var(--marine-2); font: 400 18px/1 var(--f-titre); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35), 0 8px 24px rgba(255, 190, 80, 0.18); touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.maintenir .remplit { position: absolute; inset: 0; background: linear-gradient(90deg, #a51f22, var(--sceau)); transform-origin: left; scale: 0 1; }
 .maintenir span { position: relative; }
-.maintenir:disabled { background: var(--case-2); color: var(--encre-2); }
-.maintenir.fait { background: var(--case); color: var(--encre); }
-.t-bas .indice { margin: 0; min-height: 1.3em; font: 600 14px/1.3 var(--f-texte); color: var(--encre-2); text-align: center; }
+.maintenir:disabled { background: rgba(255, 255, 255, 0.05); color: var(--creme-2); box-shadow: inset 0 0 0 1.5px rgba(215, 178, 90, 0.35); }
+.maintenir.fait { background: transparent; color: var(--or-vif); box-shadow: inset 0 0 0 1.5px var(--or); }
+.t-bas .indice { margin: 0; min-height: 1.3em; font: 600 14px/1.3 var(--f-texte); color: var(--creme-2); text-align: center; }
 
 /* ---------- Tiroir de mes cartes ---------- */
-.voile { position: fixed; inset: 0; z-index: 48; background: rgba(17, 17, 17, 0.45); }
+.voile { position: fixed; inset: 0; z-index: 48; background: rgba(5, 4, 4, 0.6); }
 .voile[hidden], .tiroir[hidden], .fiche[hidden] { display: none; }
-.tiroir { position: fixed; z-index: 49; left: 0; right: 0; bottom: 0; max-height: 78dvh; display: grid; grid-template-rows: auto 1fr auto; background: var(--case); border-top: var(--trait) solid var(--encre); animation: monter 0.32s var(--sortie); }
+.tiroir { --creme: #f3ead2; --creme-2: #b9b29c; position: fixed; z-index: 49; left: 0; right: 0; bottom: 0; max-height: 80dvh; display: grid; grid-template-rows: auto 1fr auto; background: linear-gradient(#17284a, #0d1830); color: var(--creme); border-radius: 18px 18px 0 0; box-shadow: inset 0 0 0 1px rgba(215, 178, 90, 0.5), inset 0 2px 0 var(--or), 0 -20px 50px rgba(0, 0, 0, 0.6); animation: monter 0.32s var(--sortie); }
 @keyframes monter { from { translate: 0 100%; } }
-.tiroir .t-tete { display: flex; align-items: baseline; gap: 10px; padding: 14px 16px 10px; border-bottom: 1.5px solid var(--encre); }
+.tiroir .t-tete { display: flex; align-items: baseline; gap: 10px; padding: 18px 18px 12px; border-bottom: 1px solid rgba(215, 178, 90, 0.35); }
 .tiroir .t-tete h2 { margin: 0; font: 400 20px/1 var(--f-titre); }
-.tiroir .t-tete span { margin-left: auto; font: 800 14px var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--encre-2); }
-.tiroir .defile { overflow-y: auto; padding: 12px 16px 16px; display: grid; gap: 14px; overscroll-behavior: contain; }
-.tiroir h3 { margin: 0; font: 800 13px/1 var(--f-texte); letter-spacing: 0.08em; text-transform: uppercase; color: var(--encre-2); }
-.grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 10px; }
-.choix { position: relative; border: 0; padding: 0; background: none; display: grid; gap: 4px; justify-items: center; font: 600 12px/1.15 var(--f-texte); text-align: center; color: var(--encre); }
-.choix .gi-carte { width: 100%; }
-.choix[aria-pressed='true'] .gi-carte { outline: 3px solid var(--encre); outline-offset: 3px; border-radius: 3px; }
-.choix[aria-pressed='true']::after { content: '✓'; position: absolute; top: -6px; right: -6px; width: 24px; height: 24px; border-radius: 50%; background: var(--encre); color: var(--case); display: grid; place-items: center; font: 800 14px/1 var(--f-texte); }
-.choix .ou { color: var(--encre-2); }
-.tiroir .t-pied { padding: 10px 16px max(12px, env(safe-area-inset-bottom, 0px)); border-top: 1.5px solid var(--encre); display: grid; gap: 8px; }
+.tiroir .t-tete span { margin-left: auto; font: 800 14px var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--or-vif); }
+.tiroir .defile { overflow-y: auto; padding: 14px 18px 18px; display: grid; gap: 14px; overscroll-behavior: contain; }
+.tiroir h3 { margin: 0; font: 400 12px/1 var(--f-titre); letter-spacing: 0.14em; text-transform: uppercase; color: var(--or-vif); }
+.grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 12px 10px; }
+.choix { position: relative; border: 0; padding: 0; background: none; display: grid; gap: 5px; justify-items: center; font: 600 12px/1.15 var(--f-texte); text-align: center; color: var(--creme-2); }
+.choix .gi-carte { width: 100%; filter: drop-shadow(0 5px 5px rgba(0, 0, 0, 0.5)); transition: translate 0.2s var(--sortie); }
+.choix[aria-pressed='true'] .gi-carte { translate: 0 -5px; filter: drop-shadow(0 0 0 var(--or-vif)) drop-shadow(0 0 8px rgba(255, 216, 119, 0.8)); }
+.choix[aria-pressed='true'] .gi-carte .c-cadre { box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35), 0 0 0 3px var(--or-vif); }
+.choix[aria-pressed='true']::after { content: '✓'; position: absolute; z-index: 2; top: -10px; right: -6px; width: 24px; height: 24px; border-radius: 50%; background: var(--or-vif); color: #0b1426; display: grid; place-items: center; font: 800 14px/1 var(--f-texte); }
+.choix[aria-pressed='true'] .ou { color: var(--or-vif); }
+.tiroir .t-pied { padding: 12px 18px max(14px, env(safe-area-inset-bottom, 0px)); border-top: 1px solid rgba(215, 178, 90, 0.35); display: grid; gap: 10px; }
 .tiroir .prix { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .tiroir .prix[hidden] { display: none; }
 .tiroir .prix label { font: 800 15px var(--f-texte); }
-.btn-plein { min-height: 52px; border: var(--trait) solid var(--encre); background: var(--encre); color: var(--case); font: 400 17px/1 var(--f-titre); }
-.btn-plein:disabled { background: var(--case-2); color: var(--encre-2); }
+.tiroir .prix .montant { font: 800 24px var(--f-chiffre); color: var(--or-vif); font-variant-numeric: tabular-nums; }
+.btn-plein { min-height: 54px; border: 0; border-radius: 6px; background: linear-gradient(100deg, #b98a24, #ffd877 30%, #e8b947 55%, #ffe7a6 80%, #c4952b); color: #0b1426; font: 400 17px/1 var(--f-titre); }
+.btn-plein:disabled { background: rgba(255, 255, 255, 0.05); color: var(--creme-2); box-shadow: inset 0 0 0 1.5px rgba(215, 178, 90, 0.35); }
 
 /* Fiche : une carte en grand, à l'endroit. */
-.fiche { position: fixed; z-index: 55; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(17, 17, 17, 0.7); }
-.fiche .f-boite { width: min(72vw, 280px); display: grid; gap: 12px; }
+.fiche { position: fixed; z-index: 55; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(5, 4, 4, 0.78); }
+.fiche .f-boite { width: min(72vw, 280px); display: grid; gap: 14px; animation: fiche 0.4s var(--sortie); }
+@keyframes fiche { from { rotate: 180deg; scale: 0.4; opacity: 0; } }
+.fiche .gi-carte { filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.6)); }
 .fiche p { margin: 0; text-align: center; font: 600 14px var(--f-texte); color: #e9e9e4; }
+
+@media (max-height: 680px) {
+  .posees { min-height: 80px; gap: 8px; }
+  .posee, .ajouter { width: 54px; }
+  .part { gap: 6px; padding-block: 12px; }
+  .couture { height: 50px; }
+  .embleme { width: 46px; height: 46px; }
+  .sceau { width: 84px; }
+}
 
 /* ---------- Cinématique « TRADE ! » ---------- */
 .cine { position: fixed; inset: 0; z-index: 65; pointer-events: none; overflow: hidden; visibility: hidden; }
@@ -319,11 +365,6 @@ button:disabled { cursor: default; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
-}
-@media (max-height: 640px) {
-  .posees { min-height: 84px; }
-  .posee, .ajouter { width: 56px; }
-  .part { gap: 6px; padding-block: 8px; }
 }
 </style>
 
@@ -404,33 +445,47 @@ button:disabled { cursor: default; }
 </div>
 
 <!-- La table -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Encre du sceau : bord mangé et manques, comme un vrai coup de tampon. -->
+    <filter id="encre" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" result="grain"/>
+      <feDisplacementMap in="SourceGraphic" in2="grain" scale="3.2" result="bord"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.22" numOctaves="2" seed="11" result="taches"/>
+      <feColorMatrix in="taches" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2.3 2.2" result="masque"/>
+      <feComposite in="bord" in2="masque" operator="in"/>
+    </filter>
+  </defs>
+</svg>
 <div class="table" id="table" hidden role="dialog" aria-modal="true" aria-labelledby="t-titre">
   <div class="t-barre">
     <div class="titre"><h1 id="t-titre">Avec Leolio</h1><span class="mode" id="t-mode">Échange</span></div>
     <span class="reste">sans action<b id="t-reste">3:00</b></span>
     <button class="annuler" id="t-annuler">Annuler</button>
   </div>
-  <section class="part chez-lui" id="part-lui" aria-label="Part de Leolio">
-    <div class="etiquette"><b>Leolio donne</b><span class="resume" id="res-lui">rien pour l’instant</span></div>
-    <div class="posees" id="posees-lui"></div>
-    <div class="pile" id="pile-lui" hidden><span class="pieces" id="pieces-lui"></span><span class="montant"><span id="j-lui">0</span><small>J</small></span></div>
-    <span class="tampon" id="tampon-lui" aria-hidden="true">VALIDÉ</span>
-  </section>
-  <div class="bord" aria-live="polite">
-    <span class="etat" id="etat-lui"><i></i>Leolio</span>
-    <span class="fleches" aria-hidden="true">⇅</span>
-    <span class="etat" id="etat-moi">Toi<i></i></span>
-  </div>
-  <section class="part chez-moi" id="part-moi" aria-label="Ta part">
-    <div class="etiquette"><b>Tu donnes</b><span class="resume" id="res-moi">rien pour l’instant</span></div>
-    <div class="posees" id="posees-moi"></div>
-    <div class="pile">
-      <span class="pieces" id="pieces-moi"></span><span class="montant"><span id="j-moi">0</span><small>J</small></span>
-      <span class="montants" id="montants"></span>
-      <span class="note" id="note-prix" hidden></span>
+  <div class="plateau" id="plateau">
+    <section class="part chez-lui" id="part-lui" aria-label="Part de Leolio">
+      <div class="etiquette"><b>Leolio donne</b><span class="resume" id="res-lui">rien pour l’instant</span></div>
+      <div class="posees" id="posees-lui"></div>
+      <div class="pile" id="pile-lui" hidden><span class="pieces" id="pieces-lui"></span><span class="montant"><span id="j-lui">0</span><small>J</small></span></div>
+      <span class="sceau" id="tampon-lui" aria-hidden="true"></span>
+    </section>
+    <div class="couture" aria-live="polite">
+      <span class="etat" id="etat-lui"><span class="qui">Leolio</span><small>compose</small></span>
+      <span class="embleme" id="embleme" aria-hidden="true"></span>
+      <span class="etat droite" id="etat-moi"><span class="qui">Toi</span><small>compose</small></span>
     </div>
-    <span class="tampon" id="tampon-moi" aria-hidden="true">VALIDÉ</span>
-  </section>
+    <section class="part chez-moi" id="part-moi" aria-label="Ta part">
+      <div class="etiquette"><b>Tu donnes</b><span class="resume" id="res-moi">rien pour l’instant</span></div>
+      <div class="posees" id="posees-moi"></div>
+      <div class="pile">
+        <span class="pieces" id="pieces-moi"></span><span class="montant"><span id="j-moi">0</span><small>J</small></span>
+        <span class="montants" id="montants"></span>
+        <span class="note" id="note-prix" hidden></span>
+      </div>
+      <span class="sceau" id="tampon-moi" aria-hidden="true"></span>
+    </section>
+  </div>
   <div class="t-bas">
     <button class="maintenir" id="maintenir"><i class="remplit" id="remplit"></i><span id="m-texte">Maintiens pour valider</span></button>
     <p class="indice" id="indice" aria-live="polite"></p>
@@ -443,7 +498,7 @@ button:disabled { cursor: default; }
   <div class="t-tete"><h2 id="ti-titre">Tes cartes</h2><span id="ti-compte">0 / 30</span></div>
   <div class="defile" id="ti-defile"></div>
   <div class="t-pied">
-    <div class="prix" id="ti-prix" hidden><label for="prix-val">Ton prix</label><span class="montant" style="font:800 24px var(--f-chiffre)"><span id="prix-val">50</span> J</span><span class="montants" id="prix-montants"></span></div>
+    <div class="prix" id="ti-prix" hidden><label for="prix-val">Ton prix</label><span class="montant"><span id="prix-val">50</span> J</span><span class="montants" id="prix-montants"></span></div>
     <button class="btn-plein" id="ti-ok">Poser sur la table</button>
   </div>
 </div>
@@ -543,6 +598,17 @@ function pieces(el, jenny) {
   const n = jenny ? Math.min(6, 1 + Math.floor(Math.log2(1 + jenny / 10))) : 0;
   el.innerHTML = Array.from({ length: n }, (_, i) => `<i style="bottom:${i * 5}px"></i>`).join('');
 }
+
+// ---------- Sceaux et emblème de la table ----------
+const SCEAU = `<svg viewBox="-60 -60 120 120" aria-hidden="true"><g filter="url(#encre)" fill="none" stroke="#e0463c">
+  <circle r="53" stroke-width="6"/><circle r="44" stroke-width="1.6"/>
+  <path d="M-30 -14h60M-30 22h60" stroke-width="1.6"/>
+  <text y="10" text-anchor="middle" fill="#e0463c" stroke="none" style="font: 400 17px 'Dela Gothic One', 'Arial Black', sans-serif; letter-spacing: .5px">VALIDÉ</text>
+  <path d="m0 -36 2.4 6 6 .4-4.7 3.8 1.6 5.8L0 -23.2l-5.1 3.2 1.6-5.8-4.7-3.8 6-.4z" fill="#e0463c" stroke="none"/>
+  <path d="m0 28 2 5 5 .3-3.9 3.1 1.3 4.8L0 38.6l-4.4 2.6 1.3-4.8L-7 33.3l5-.3z" fill="#e0463c" stroke="none"/>
+</g></svg>`;
+document.querySelectorAll('.sceau').forEach((el) => (el.innerHTML = SCEAU));
+$('#embleme').innerHTML = DOS_SVG;
 
 // ---------- Lignes de concentration (appel et cinématique) ----------
 (function () {
@@ -647,8 +713,9 @@ function ouvrirTable({ vente, jeVends }) {
   $('#t-mode').textContent = vente ? `Vente · ${vente.prix} J demandés` : 'Échange';
   $('#t-mode').classList.toggle('vente', !!vente);
   document.querySelectorAll('#part-lui .etiquette b').forEach((b) => (b.textContent = `${autre} donne`));
-  $('#etat-lui').lastChild.textContent = autre;
-  $('#tampon-lui').className = 'tampon'; $('#tampon-moi').className = 'tampon';
+  $('#etat-lui .qui').textContent = autre;
+  $('#tampon-lui').className = 'sceau'; $('#tampon-moi').className = 'sceau';
+  $('#plateau').classList.remove('scelle');
   $('#table').hidden = false;
   dessinerTable(true);
   clearInterval(horloge);
@@ -657,10 +724,10 @@ function ouvrirTable({ vente, jeVends }) {
   if (vente && jeVends) setTimeout(() => { T.lui.jenny = vente.prix; dessinerTable(); setTimeout(() => valider('lui'), 1300); }, 1500);
 }
 function dessinerTable(tout = false, nouvelle = null) {
-  const posee = (c, moi) => `<button class="posee${c === nouvelle ? ' arrive' : ''}" data-carte="${c.id}" aria-label="${c.nom}${moi ? ', toucher pour retirer' : ''}">${carteHTML(c)}${moi && !(T.vente && T.jeVends) ? '<span class="retirer" aria-hidden="true">×</span>' : ''}</button>`;
-  $('#posees-lui').innerHTML = T.lui.cartes.map((c) => posee(c, false)).join('') || `<span class="vide-lui">${autre} compose sa part…</span>`;
+  const posee = (c, moi) => `<button class="posee${c === nouvelle ? ' arrive' : ''}" style="${jete(c.id)}" data-carte="${c.id}" aria-label="${c.nom}${moi ? ', toucher pour retirer' : ''}">${carteHTML(c)}${moi && !(T.vente && T.jeVends) ? '<span class="retirer" aria-hidden="true">×</span>' : ''}</button>`;
+  $('#posees-lui').innerHTML = T.lui.cartes.map((c) => posee(c, false)).join('') || `<span class="vide-lui">${autre} compose sa part</span>`;
   const peutAjouter = !(T.vente && T.jeVends) && !(T.vente && !T.jeVends);
-  $('#posees-moi').innerHTML = T.moi.cartes.map((c) => posee(c, true)).join('') + (peutAjouter ? '<button class="ajouter" id="ajouter"><span>+</span>Carte</button>' : '');
+  $('#posees-moi').innerHTML = (peutAjouter ? '<button class="ajouter" id="ajouter"><span>+</span>Carte</button>' : '') + T.moi.cartes.map((c) => posee(c, true)).join('');
   $('#res-lui').textContent = resume(T.lui.cartes, T.lui.jenny);
   $('#res-moi').textContent = resume(T.moi.cartes, T.moi.jenny);
   $('#pile-lui').hidden = !T.lui.jenny && !(T.vente && T.jeVends);
@@ -674,8 +741,15 @@ function dessinerTable(tout = false, nouvelle = null) {
   else if (T.vente && T.jeVends) { note.hidden = false; note.textContent = `Ton prix : ${T.vente.prix} J`; }
   else note.hidden = true;
   if (T.vente && T.jeVends && !T.lui.jenny) { $('#j-lui').textContent = '…'; }
-  $('#etat-lui').classList.toggle('ok', T.lui.valide);
-  $('#etat-moi').classList.toggle('ok', T.moi.valide);
+  const etat = (k) => T[k].valide ? 'validé' : !T[k].cartes.length && !T[k].jenny ? 'compose' : 'réfléchit';
+  for (const k of ['lui', 'moi']) { $(`#etat-${k}`).classList.toggle('ok', T[k].valide); $(`#etat-${k} small`).textContent = etat(k); }
+  // Main trop large pour le tapis : les cartes se chevauchent.
+  for (const el of [$('#posees-lui'), $('#posees-moi')]) {
+    const n = el.children.length, w = el.clientWidth, larg = el.lastElementChild?.offsetWidth || 64;
+    const besoin = n * larg + (n - 1) * 10;
+    el.classList.toggle('serre', n > 1 && besoin > w);
+    if (n > 1) el.style.setProperty('--chevauche', `${Math.min(0, (w - n * larg) / (n - 1)) - 2}px`);
+  }
   majBouton();
 }
 function majBouton() {
@@ -691,15 +765,16 @@ function majBouton() {
 // Toute modification d'une part fait tomber les deux tampons (RG-11.1 amendé).
 function modifie() {
   T.reste = 180; $('#t-reste').textContent = mmss(T.reste);
-  for (const k of ['moi', 'lui']) if (T[k].valide) { T[k].valide = false; const t = $(`#tampon-${k}`); t.className = 'tampon'; void t.offsetWidth; t.classList.add('tombe'); }
+  for (const k of ['moi', 'lui']) if (T[k].valide) { T[k].valide = false; const t = $(`#tampon-${k}`); t.className = 'sceau'; void t.offsetWidth; t.classList.add('tombe'); }
 }
 function valider(qui) {
   if (T[qui].valide) return;
   T[qui].valide = true; T.reste = 180;
-  const t = $(`#tampon-${qui}`); t.className = 'tampon'; void t.offsetWidth; t.classList.add('pose');
-  vibrer(qui === 'moi' ? 40 : 20);
+  const t = $(`#tampon-${qui}`); t.className = 'sceau'; void t.offsetWidth; t.classList.add('pose');
+  // Le coup de tampon : la part encaisse.
+  setTimeout(() => { vibrer(qui === 'moi' ? 45 : 25); if (!reduit) $(`#part-${qui}`).animate([{ translate: '0 0' }, { translate: `0 ${qui === 'moi' ? 3 : -3}px` }, { translate: '0 0' }], { duration: 160 }); }, 150);
   dessinerTable();
-  if (T.moi.valide && T.lui.valide) setTimeout(() => finir('conclu'), 650);
+  if (T.moi.valide && T.lui.valide) sceller();
 }
 $('#montants').addEventListener('click', (e) => {
   const b = e.target.closest('[data-j]'); if (!b || b.disabled) return;
@@ -718,17 +793,33 @@ $('#posees-lui').addEventListener('click', (e) => {
 $('#fiche').addEventListener('click', () => ($('#fiche').hidden = true));
 $('#t-annuler').addEventListener('click', () => finir('annule-moi'));
 
-// Appui long : 0,7 s pour poser le tampon ; relâcher avant annule.
+// Les deux sceaux sont posés : les filets s'allument, l'étoile tourne, puis « TRADE ! ».
+function sceller() {
+  clearInterval(horloge);
+  $('#plateau').classList.add('scelle');
+  $('#indice').textContent = 'Échange scellé';
+  vibrer([20, 60, 40]);
+  setTimeout(() => finir('conclu'), reduit ? 300 : 1000);
+}
+// Cartes jetées sur le tapis : chacune garde son angle (tiré de son id).
+function jete(id) {
+  let h = 7; for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) % 9973;
+  return `--r:${(h % 13) - 6}deg;--y:${(h >> 3) % 7 - 3}px`;
+}
+// Appui long : 0,7 s pour poser le tampon ; relâcher avant annule. Pendant l'appui, l'aura monte sur ta part.
 (function () {
-  const b = $('#maintenir'), r = $('#remplit');
-  let a = null;
+  const b = $('#maintenir'), r = $('#remplit'), part = () => [$('#posees-moi'), $('#part-moi .pile')];
+  let a = null, auras = [];
+  const aura = (sens) => { auras.forEach((x) => x.cancel()); auras = sens ? part().map((el) => el.animate([{ filter: 'drop-shadow(0 0 0 rgba(255,216,119,0))' }, { filter: 'drop-shadow(0 0 14px rgba(255,216,119,.95))' }], { duration: reduit ? 300 : 700, easing: 'ease-in', fill: 'forwards' })) : []; };
   const debut = (e) => {
     if (b.disabled || a) return;
     e.preventDefault?.();
+    vibrer(10);
     a = r.animate([{ scale: '0 1' }, { scale: '1 1' }], { duration: reduit ? 300 : 700, easing: 'linear', fill: 'forwards' });
-    a.onfinish = () => { a = null; r.getAnimations().forEach((x) => x.cancel()); valider('moi'); };
+    aura(true);
+    a.onfinish = () => { a = null; r.getAnimations().forEach((x) => x.cancel()); part().forEach((el) => el.animate([{ filter: 'drop-shadow(0 0 14px rgba(255,216,119,.95))' }, { filter: 'drop-shadow(0 0 0 rgba(255,216,119,0))' }], { duration: 600 })); aura(false); valider('moi'); };
   };
-  const fin = () => { if (!a) return; a.onfinish = null; a.reverse(); const x = a; a = null; x.onfinish = () => x.cancel(); $('#indice').textContent = 'Garde le doigt appuyé jusqu’au bout.'; };
+  const fin = () => { if (!a) return; a.onfinish = null; a.reverse(); aura(false); const x = a; a = null; x.onfinish = () => x.cancel(); $('#indice').textContent = 'Garde le doigt appuyé jusqu’au bout.'; };
   b.addEventListener('pointerdown', debut);
   b.addEventListener('pointerup', fin); b.addEventListener('pointerleave', fin); b.addEventListener('pointercancel', fin);
   b.addEventListener('contextmenu', (e) => e.preventDefault());

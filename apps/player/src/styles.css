@@ -430,15 +430,15 @@ p { margin: 0; }
 .legende-note { margin: 0; font: 400 14px/1.35 var(--f-texte); }
 
 /* Villes : accès directs sous la carte */
-.villes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gouttiere); }
+.villes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .ville {
   border: var(--trait) solid var(--encre); background: var(--case);
-  padding: 8px 12px; text-align: left;
+  padding: 8px 8px; text-align: left; min-width: 0;
   display: grid; gap: 2px; align-content: start; min-height: 56px;
 }
 @media (hover: hover) { .ville:hover { background: var(--case-2); } }
 .ville:active { transform: translateY(2px); }
-.ville b { font: 400 18px/1.1 var(--f-titre); }
+.ville b { font: 400 clamp(14px, 4vw, 18px)/1.1 var(--f-titre); overflow-wrap: anywhere; }
 .ville span { font: 600 13px/1.25 var(--f-texte); color: var(--encre-2); }
 .ville .etat-ville { font-weight: 800; color: var(--encre); }
 .ville.a-distance { background: var(--encre); color: var(--case); }
@@ -1503,14 +1503,14 @@ dialog.fiche[open] { animation: monte 0.35s var(--sortie); }
 .mas-retour { min-height: 44px; padding: 0 12px 0 8px; border: var(--trait) solid var(--encre); background: var(--case); color: var(--encre); font: 800 15px var(--f-texte); display: inline-flex; align-items: center; gap: 4px; justify-self: start; }
 .mas-retour svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 .mas-retour:active { background: var(--encre); color: var(--case); }
-.masadora .enseigne { justify-self: center; position: relative; padding-top: 22px; transform-origin: 50% 0; animation: mas-balance 5s ease-in-out infinite; }
+.masadora .enseigne, .ar-page .enseigne { justify-self: center; position: relative; padding-top: 22px; transform-origin: 50% 0; animation: mas-balance 5s ease-in-out infinite; }
 @keyframes mas-balance { 0%, 100% { rotate: -1.6deg; } 50% { rotate: 0.6deg; } }
-.masadora .enseigne::before, .masadora .enseigne::after { content: ''; position: absolute; top: 0; width: 4px; height: 24px; background: repeating-linear-gradient(var(--encre) 0 5px, transparent 5px 7px); border-inline: 1px solid var(--encre); }
-.masadora .enseigne::before { left: 18%; }
-.masadora .enseigne::after { right: 18%; }
-.masadora .planche { background: var(--encre); color: var(--case); padding: 10px 18px 9px; border-radius: 3px; box-shadow: inset 0 0 0 3px var(--encre), inset 0 0 0 5px var(--case), 0 6px 0 -2px rgba(17, 17, 17, 0.25); display: grid; justify-items: center; gap: 4px; }
-.masadora .planche h1 { margin: 0; font: 400 clamp(26px, 8.4vw, 36px)/1 var(--f-titre); letter-spacing: 0.04em; }
-.masadora .planche span { font: 400 13px/1 var(--f-jeu); color: var(--or-vif); letter-spacing: 0.08em; }
+.masadora .enseigne::before, .masadora .enseigne::after, .ar-page .enseigne::before, .ar-page .enseigne::after { content: ''; position: absolute; top: 0; width: 4px; height: 24px; background: repeating-linear-gradient(var(--encre) 0 5px, transparent 5px 7px); border-inline: 1px solid var(--encre); }
+.masadora .enseigne::before, .ar-page .enseigne::before { left: 18%; }
+.masadora .enseigne::after, .ar-page .enseigne::after { right: 18%; }
+.masadora .planche, .ar-page .planche { background: var(--encre); color: var(--case); padding: 10px 18px 9px; border-radius: 3px; box-shadow: inset 0 0 0 3px var(--encre), inset 0 0 0 5px var(--case), 0 6px 0 -2px rgba(17, 17, 17, 0.25); display: grid; justify-items: center; gap: 4px; }
+.masadora .planche h1, .ar-page .planche h1 { margin: 0; font: 400 clamp(26px, 8.4vw, 36px)/1 var(--f-titre); letter-spacing: 0.04em; }
+.masadora .planche span, .ar-page .planche span { font: 400 13px/1 var(--f-jeu); color: var(--or-vif); letter-spacing: 0.08em; }
 .masadora .distance { justify-self: center; display: inline-flex; gap: 8px; align-items: center; font: 800 14px var(--f-texte); padding: 6px 10px; border: 2px dashed var(--bleu); color: var(--bleu); background: var(--case); }
 .masadora .distance b { font: 800 15px var(--f-chiffre); font-variant-numeric: tabular-nums; }
 
@@ -1618,7 +1618,7 @@ dialog.fiche[open] { animation: monte 0.35s var(--sortie); }
   .masadora .infos { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .masadora .enseigne, .masadora .presentoir .mas-paquet, .mas-paquet .corps::after { animation: none; }
+  .masadora .enseigne, .ar-page .enseigne, .masadora .presentoir .mas-paquet, .mas-paquet .corps::after { animation: none; }
 }
 
 /* ---------- Page ⑭ : Antokiba, la ville des enchères (prototype docs/prototype/antokiba.html) ----------
@@ -1725,4 +1725,90 @@ dialog.fiche[open] { animation: monte 0.35s var(--sortie); }
 /* Écran court : la boîte du jeu couvrirait le prix payé, qu'elle redit ; il s'efface quand elle arrive. */
 @media (max-height: 700px) {
   .adjuge.revele .adj-prix, .adjuge.range .adj-prix { opacity: 0 !important; transition: opacity 0.2s; }
+}
+
+/* ---------- Page ⑮ : arène de Soufrabi (prototype validé le 2026-10-12 : docs/prototype/arene.html) ---------- */
+/* Sable, ocre et rouge de l'affiche ; la case sombre du combat. */
+.ar-page { --sable: #ecd9ae; --sable-2: #dcc187; --ocre: #9c5a1c; --arene: #1c0f09; --lumiere: #fff1c9; --sceau: #e0463c; --or-vif: #ffd877; display: grid; gap: 14px; padding-block: 0 12px; }
+.ar-page > * { min-width: 0; }
+/* L'affiche de combat : papier sable, double filet d'encre, gros titres rouges. */
+.ar-affiche { position: relative; overflow: hidden; border: var(--trait) solid var(--encre); padding: 16px 16px 18px; display: grid; gap: 12px; justify-items: center; text-align: center;
+  background: radial-gradient(rgba(156, 90, 28, 0.18) 0.9px, transparent 1.2px) 0 0 / 5px 5px, linear-gradient(var(--sable), var(--sable-2));
+  box-shadow: inset 0 0 0 4px var(--sable), inset 0 0 0 6px var(--encre); }
+.ar-affiche .surtitre { font: 400 13px/1 var(--f-jeu); letter-spacing: 0.12em; color: var(--ocre); }
+.ar-affiche h2 { margin: 0; font: 400 clamp(30px, 10vw, 44px)/0.95 var(--f-titre); color: var(--rouge); letter-spacing: -0.01em; -webkit-text-stroke: 1px var(--encre); paint-order: stroke fill; rotate: -2deg; text-wrap: balance; }
+.ar-affiche .issues { width: 100%; display: grid; grid-template-columns: 1fr 1fr; border: 2px solid var(--encre); background: rgba(251, 251, 247, 0.55); }
+.ar-affiche .issues > div { padding: 8px 6px 10px; display: grid; gap: 6px; justify-items: center; align-content: start; }
+.ar-affiche .issues > div + div { border-left: 2px solid var(--encre); }
+.ar-affiche .issues .t { font: 400 15px/1 var(--f-titre); }
+.ar-affiche .gagne .t { color: var(--succes); }
+.ar-affiche .perd .t { color: var(--rouge); }
+.ar-affiche .issues p { margin: 0; font: 600 14px/1.25 var(--f-texte); }
+.ar-affiche .chances { display: flex; gap: 6px; }
+.ar-affiche .chance { display: grid; justify-items: center; gap: 3px; font: 800 12px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.ar-sceau { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font: 400 14px/1 var(--f-titre); font-style: normal; color: var(--encre); background: var(--matiere); box-shadow: 0 0 0 2px var(--encre), inset 0 0 0 3px rgba(255, 255, 255, 0.35); }
+.ar-affiche .mise { font: 800 34px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.ar-affiche .mise small { font: 600 16px var(--f-texte); margin-left: 3px; }
+.ar-affiche .statut { width: 100%; display: grid; gap: 10px; }
+.ar-affiche .ligne { font: 800 16px/1.3 var(--f-texte); }
+.ar-affiche .attente { display: grid; gap: 2px; justify-items: center; }
+.ar-affiche .attente span { font: 600 12px/1 var(--f-texte); letter-spacing: 0.1em; text-transform: uppercase; color: var(--encre-2); }
+.ar-affiche .attente b { font: 800 40px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.ar-affiche .dernier { font: 600 14px/1.3 var(--f-texte); color: var(--encre-2); }
+.ar-affiche .dernier b { color: var(--encre); }
+.ar-gros { position: relative; min-height: 60px; width: 100%; border: 0; background: var(--encre); color: var(--case); font: 400 19px/1.1 var(--f-titre); padding: 8px 14px; box-shadow: 0 5px 0 -1px rgba(17, 17, 17, 0.3); display: flex; align-items: center; justify-content: center; gap: 12px; }
+.ar-gros:active { translate: 0 3px; box-shadow: none; }
+.ar-gros svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linejoin: round; }
+.ar-gros.secondaire { background: var(--case); color: var(--encre); border: var(--trait) solid var(--encre); font: 800 16px var(--f-texte); }
+.ar-regle { font-size: 14px; line-height: 1.35; }
+/* Le combat en cours : la case sombre, le chrono depuis l'entrée, la mise engagée. */
+.ar-combat { position: relative; overflow: hidden; border: var(--trait) solid var(--encre); color: #f3ead2; padding: 18px 16px; display: grid; gap: 12px; justify-items: center; text-align: center;
+  background: radial-gradient(ellipse 70% 60% at 50% 35%, rgba(224, 70, 60, 0.28), transparent 70%), radial-gradient(rgba(255, 255, 255, 0.04) 0.8px, transparent 1.2px) 0 0 / 4px 4px, linear-gradient(#2c1710, var(--arene) 65%, #0d0705); }
+.ar-combat h2 { margin: 0; font: 400 clamp(28px, 9vw, 38px)/1 var(--f-titre); color: #fff; -webkit-text-stroke: 2px var(--sceau); paint-order: stroke fill; letter-spacing: -0.01em; animation: ar-battre 1.2s ease-in-out infinite; }
+@keyframes ar-battre { 0%, 100% { scale: 1; } 12% { scale: 1.05; } 24% { scale: 1; } 36% { scale: 1.03; } }
+.ar-combat .chrono-combat { font: 800 52px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--lumiere); letter-spacing: -0.03em; }
+.ar-combat .engagee { display: inline-flex; gap: 8px; align-items: baseline; padding: 6px 12px; border: 1.5px solid rgba(243, 234, 210, 0.4); font: 600 14px var(--f-texte); }
+.ar-combat .engagee b { font: 800 18px var(--f-chiffre); color: var(--or-vif); }
+.ar-combat p { font: 400 17px/1.4 var(--f-jeu); }
+/* Bandeau du combat, sous la barre, sur toutes les autres pages. */
+.ar-bandeau { position: sticky; top: calc(58px + env(safe-area-inset-top, 0px)); z-index: 29; margin-inline: -16px; width: calc(100% + 32px); padding: 8px 16px; border: 0; border-bottom: var(--trait) solid var(--encre); background: #1c0f09; color: #f3ead2; display: flex; align-items: center; gap: 10px; font: 800 15px/1.2 var(--f-texte); text-align: left; }
+.ar-bandeau .poing { width: 10px; height: 10px; border-radius: 50%; background: #e0463c; box-shadow: 0 0 0 3px rgba(224, 70, 60, 0.35); animation: ar-presse 1s steps(2) infinite; flex: none; }
+@keyframes ar-presse { 50% { opacity: 0.55; } }
+.ar-bandeau b { margin-left: auto; font: 800 18px var(--f-chiffre); font-variant-numeric: tabular-nums; color: #fff1c9; }
+
+/* Cinématique « VICTOIRE ! » */
+.ar-victoire { --cw: min(42vw, 180px, calc((100dvh - 430px) * 63 / 88)); --ch: calc(var(--cw) * 88 / 63); z-index: 65; }
+.ar-nuit { background: radial-gradient(ellipse at 50% 42%, #4a1d12 0, #1d0c07 46%, #060302 92%); }
+.ar-lignes path { fill: #ffe2b8; }
+.ar-bras { position: absolute; left: 50%; bottom: -4%; width: min(34vw, 150px); height: 62%; margin-left: calc(min(34vw, 150px) / -2); transform-origin: 50% 100%; opacity: 0; pointer-events: none; }
+.ar-bras svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.ar-cri { position: absolute; left: 0; right: 0; top: max(16px, calc(36% - var(--ch) / 2 - 96px)); text-align: center; font: 400 min(12.4vw, 76px)/0.92 var(--f-titre); letter-spacing: -0.03em; white-space: nowrap; color: #fff; -webkit-text-stroke: 3px #e0463c; paint-order: stroke fill; opacity: 0; rotate: -5deg; pointer-events: none; }
+.ar-carte { position: absolute; left: 50%; top: 36%; width: var(--cw); margin: calc(var(--ch) / -2) 0 0 calc(var(--cw) / -2); opacity: 0; pointer-events: none; }
+.ar-carte .gi-carte:not(.dos) .c-cadre { box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35), 0 18px 30px rgba(0, 0, 0, 0.55); }
+.ar-carte.brille-SS .gi-carte { filter: drop-shadow(0 0 14px #ffd877) drop-shadow(0 0 34px #ffb43c); }
+.ar-carte.brille-S .gi-carte { filter: drop-shadow(0 0 12px #e9eef5) drop-shadow(0 0 26px #9fb8d6); }
+.ar-carte.brille-A .gi-carte { filter: drop-shadow(0 0 10px #f2b48a); }
+.ar-sceaux { position: absolute; left: 50%; top: calc(36% + var(--ch) / 2 + 26px); translate: -50% 0; display: flex; gap: min(6vw, 26px); pointer-events: none; }
+.ar-sceaux .sc { width: min(17vw, 72px); aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; font: 400 min(6.4vw, 26px)/1 var(--f-titre); font-style: normal; color: var(--encre); background: var(--matiere); box-shadow: 0 0 0 3px #111, inset 0 0 0 4px rgba(255, 255, 255, 0.35); opacity: 0; filter: brightness(0.38) saturate(0.6); transition: filter 0.08s, scale 0.08s; }
+.ar-sceaux .sc.allume { filter: none; scale: 1.14; box-shadow: 0 0 0 3px #111, inset 0 0 0 4px rgba(255, 255, 255, 0.5), 0 0 22px 4px rgba(255, 216, 119, 0.65); }
+.ar-sceaux .sc.gagne { filter: none; scale: 1.24; box-shadow: 0 0 0 3px #111, inset 0 0 0 4px rgba(255, 255, 255, 0.6), 0 0 30px 8px rgba(255, 216, 119, 0.85); }
+.ar-sceaux .sc.eteint { filter: brightness(0.25) saturate(0.3); scale: 0.9; transition: filter 0.4s, scale 0.4s; }
+.lancer-flash.ar-or { background: radial-gradient(circle at 50% 50%, #fff6d8, #ffd877 45%, #ffb43c); }
+.ar-dialogue { z-index: 6; }
+.ar-dialogue .a-qui { background: #ffd877 !important; }
+/* Défaite : un court moment, sans humilier. */
+.ar-defaite { position: fixed; inset: 0; z-index: 64; display: grid; place-items: center; align-content: center; gap: 14px; padding: 16px; background: rgba(17, 10, 8, 0.82); cursor: pointer; text-align: center; color: #f3ead2; animation: ar-voile 0.25s ease-out; }
+@keyframes ar-voile { from { opacity: 0; } }
+.ar-defaite .tampon { width: min(76vw, 300px); rotate: -10deg; animation: ar-frapper 0.34s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes ar-frapper { from { scale: 2.2; opacity: 0; } 65% { scale: 0.93; opacity: 1; } }
+.ar-defaite .tampon svg { width: 100%; height: auto; overflow: visible; }
+.ar-defaite .effrite { font: 800 40px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; color: #ffd877; display: flex; justify-content: center; min-height: 40px; }
+.ar-defaite .effrite span { display: inline-block; }
+.ar-defaite .deja { font: 600 15px/1.3 var(--f-texte); color: #c9bda0; }
+.ar-defaite .revenir { display: grid; gap: 4px; }
+.ar-defaite .revenir span { font: 600 12px/1 var(--f-texte); letter-spacing: 0.1em; text-transform: uppercase; color: #c9bda0; }
+.ar-defaite .revenir b { font: 800 46px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; color: #fff1c9; letter-spacing: -0.02em; }
+.ar-defaite small { font: 600 13px var(--f-texte); color: rgba(235, 238, 242, 0.7); }
+@media (prefers-reduced-motion: reduce) {
+  .ar-combat h2, .ar-bandeau .poing, .ar-defaite, .ar-defaite .tampon { animation: none; }
 }

@@ -11,6 +11,7 @@ import { rejouerFile, scanner, type IssueScan } from './scan';
 import { messageFin, termine, type EvenementEchange, type VueEchange } from './echanges';
 import { fusionnerLot, jeMene, texteAdjuge, texteClotureAutre, texteSurencheri, type Adjuge, type Cloture, type Lot } from './encheres';
 import { ilYaRecu, issueRecu, texteSortRecu, type SortRecu } from './sorts';
+import { texteAnnulee, texteEntree, type EtatArene, type EvArene, type IssueArene } from './arene';
 import type { SuiviCible } from './accompagnement';
 import { partieFromUrl, type Session } from './session';
 import { creerSuivi, type Suivi } from './suivi';
@@ -158,6 +159,9 @@ export function useJeu() {
   const surAntokiba = useRef(false);
   const [clotures, setClotures] = useState<Cloture[]>([]);
   const [adjuges, setAdjuges] = useState<Adjuge[]>([]);
+  /** Page ⑮ : l'arène de Soufrabi lue côté joueur (combat en cours, prochaine tentative) et les issues à jouer. */
+  const [arene, setArene] = useState<{ etat: EtatArene; recuA: number } | null>(null);
+  const [issuesArene, setIssuesArene] = useState<IssueArene[]>([]);
   const [pastilleAntokiba, setPastilleAntokiba] = useState(0);
 
   const rafraichir = useCallback(async () => {
@@ -330,6 +334,24 @@ export function useJeu() {
           setAdjuges((x) => (x.some((k) => k.id === a.id) ? x : [...x, a]));
           return;
         }
+        if (nom === 'arene') {
+          // Page ⑮ : entrée (mise prise), annulation (mise rendue), puis victoire (cinématique) ou défaite (court moment).
+          const a = data as EvArene;
+          if (a.etat === 'en_cours') {
+            notifier(texteEntree(a.mise));
+            setAlerte({ n: Date.now(), genre: 'info', qui: 'Soufrabi', texte: texteEntree(a.mise) });
+            navigator.vibrate?.([30, 40, 30]);
+          } else if (a.etat === 'annulee') {
+            notifier(texteAnnulee(a.mise, a.motif));
+            setAlerte({ n: Date.now(), genre: 'info', qui: 'Soufrabi', texte: texteAnnulee(a.mise, a.motif) });
+          } else {
+            notifier(a.etat === 'gagnee' ? 'Victoire à l’arène de Soufrabi !' : 'Défaite à l’arène de Soufrabi.');
+            setIssuesArene((x) => (x.some((k) => k.id === a.id) ? x : [...x, { ...a, recuA: Date.now() }]));
+          }
+          void chargerArene();
+          void rafraichir();
+          return;
+        }
         // Mises à jour fréquentes (PV du raid) : l'écran se met à jour, sans notification.
         if (nom === 'raid') return;
         const texte = (data as { texte?: unknown } | null)?.texte;
@@ -381,6 +403,21 @@ export function useJeu() {
     if (vue.etat === 'invitation' && vue.invite && echangeRef.current?.id !== vue.id) notifier(vue.vente ? `${vue.avec.pseudo} te vend une carte` : `${vue.avec.pseudo} te propose un échange`);
     setEchange({ ...vue, recuA: Date.now() });
   };
+
+  /** Page ⑮ : état de l'arène pour ce joueur. */
+  const chargerArene = async () => {
+    const s = session.get();
+    if (!s) return;
+    try {
+      const r = await api.get<EtatArene>(`/parties/${s.partieId}/arene/moi`);
+      setArene({ etat: r, recuA: Date.now() });
+    } catch {
+      // Hors ligne : l'affiche garde ce qu'elle savait.
+    }
+  };
+  useEffect(() => {
+    if (sess) void chargerArene();
+  }, [sess]);
 
   // Reprise d'un échange en cours (app rechargée).
   useEffect(() => {
@@ -531,6 +568,13 @@ export function useJeu() {
       pastille: pastilleAntokiba,
       adjuge: adjuges[0] ?? null,
       finAdjuge: () => setAdjuges((x) => x.slice(1)),
+    },
+    /** Page ⑮ : arène de Soufrabi. */
+    arene: {
+      etat: arene,
+      recharger: chargerArene,
+      issue: issuesArene[0] ?? null,
+      finIssue: () => setIssuesArene((x) => x.slice(1)),
     },
     positionAction,
     apresAction,

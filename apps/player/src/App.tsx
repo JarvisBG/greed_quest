@@ -15,6 +15,9 @@ import { Licence } from './ecrans/licence/Licence';
 import { Masadora } from './ecrans/masadora/Masadora';
 import { Adjuge } from './ecrans/antokiba/Adjuge';
 import { Antokiba } from './ecrans/antokiba/Antokiba';
+import { Arene, BandeauCombat } from './ecrans/arene/Arene';
+import { Defaite } from './ecrans/arene/Defaite';
+import { Victoire } from './ecrans/arene/Victoire';
 import { Nen } from './ecrans/Nen';
 import { Raid } from './ecrans/Raid';
 import { Scan } from './ecrans/scan/Scan';
@@ -60,6 +63,8 @@ export function App() {
   const [onglet, setOnglet] = useState<Onglet>('accueil');
   /** Écran ouvert depuis l'accueil (licence, lieux, raid). */
   const [sous, setSous] = useState<SousEcran | null>(null);
+  /** Page ⑮ : la licence ouverte depuis l'arène y ramène. */
+  const retourLicence = useRef<SousEcran | null>(null);
   const evenements = useEvenements(jeu.partieId ?? '', jeu.version);
   /** Cinématiques du tirage (page ⑥), jouées une à une par-dessus l'app. */
   const tirages = useTirages();
@@ -145,6 +150,16 @@ export function App() {
       )}
       {enJeu && ecran === 'accueil' && <BandeauZetsu moi={moi} />}
       {enJeu && ecran === 'accueil' && <BandeauGel moi={moi} par={jeu.gelePar} />}
+      {/* Page ⑮ : combat en cours à l'arène, sur toutes les pages sauf l'arène elle-même. */}
+      {enJeu && ecran === 'accueil' && !(onglet === 'accueil' && sous === 'arene') && (
+        <BandeauCombat
+          etat={jeu.arene.etat}
+          onOuvrir={() => {
+            setOnglet('accueil');
+            setSous('arene');
+          }}
+        />
+      )}
 
       {jeu.alerte && (
         <Annonce
@@ -260,7 +275,29 @@ export function App() {
               <Echanges partieId={partie.id} version={jeu.version} echange={jeu.echange} recevoir={jeu.recevoirEchange} positionAction={jeu.positionAction} />
             )}
             {ecran === 'accueil' && onglet === 'accueil' && sous === 'licence' && jeu.licenceSecret && (
-              <Licence partieId={partie.id} joueurId={moi.id} pseudo={moi.pseudo} nen={moi.nen} secret={jeu.licenceSecret} onRetour={() => setSous(null)} />
+              <Licence
+                partieId={partie.id}
+                joueurId={moi.id}
+                pseudo={moi.pseudo}
+                nen={moi.nen}
+                secret={jeu.licenceSecret}
+                onRetour={() => {
+                  setSous(retourLicence.current);
+                  retourLicence.current = null;
+                }}
+              />
+            )}
+            {ecran === 'accueil' && onglet === 'accueil' && sous === 'arene' && (
+              <Arene
+                etat={jeu.arene.etat}
+                jenny={moi.jenny}
+                recharger={() => void jeu.arene.recharger()}
+                onLicence={() => {
+                  retourLicence.current = 'arene';
+                  setSous('licence');
+                }}
+                onRetour={() => setSous(null)}
+              />
             )}
             {ecran === 'accueil' && onglet === 'accueil' && sous === 'boutique' && (
               <Masadora
@@ -389,6 +426,18 @@ export function App() {
           }}
         />
       )}
+      {/* Page ⑮ : verdict de l'arène, où que soit le joueur (après un tirage en cours). */}
+      {!tirages.courant && jeu.arene.issue?.etat === 'gagnee' && (
+        <Victoire
+          key={jeu.arene.issue.id}
+          issue={jeu.arene.issue}
+          onFini={() => {
+            jeu.arene.finIssue();
+            jeu.apresAction();
+          }}
+        />
+      )}
+      {!tirages.courant && jeu.arene.issue?.etat === 'perdue' && <Defaite key={jeu.arene.issue.id} issue={jeu.arene.issue} onFini={jeu.arene.finIssue} />}
       {tirages.courant && <Tirage key={tirages.courant.id} demande={tirages.courant} onFini={tirages.terminer} />}
       {/* Page ⑪ : sorts reçus qui frappent, un par un, après un tirage en cours. */}
       {!tirages.courant && jeu.sortRecu && jeu.partieId && (

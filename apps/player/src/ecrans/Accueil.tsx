@@ -24,7 +24,7 @@ export interface Evenement {
   pvMax?: number;
 }
 
-export type SousEcran = 'licence' | 'boutique' | 'encheres' | 'raid';
+export type SousEcran = 'licence' | 'boutique' | 'encheres' | 'arene' | 'raid';
 
 /** Évènements en cours, rechargés à chaque évènement reçu. */
 export function useEvenements(partieId: string, version: number) {
@@ -45,6 +45,8 @@ const LIBELLE_ZONE: Record<string, string> = { double_gain: 'Double gain', appar
 const VILLES = [
   { id: 'masadora', nom: 'Masadora', lieu: 'Boutique de sorts', ecran: 'boutique' },
   { id: 'antokiba', nom: 'Antokiba', lieu: 'Enchères', ecran: 'encheres' },
+  // Page ⑮ : l'arène, ouverte depuis l'accueil (le PNJ scanne la licence sur place).
+  { id: 'soufrabi', nom: 'Soufrabi', lieu: 'Arène', ecran: 'arene' },
 ] as const;
 
 export function Accueil({

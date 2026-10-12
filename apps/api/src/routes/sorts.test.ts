@@ -115,6 +115,17 @@ describe('RG-10 sorts', () => {
     expect(res.json()).toHaveProperty('zone');
   });
 
+  it('Page ⑨ Trace (Radar) : âge de la position en minutes, jamais la position (RG-10.12)', async () => {
+    // Les zones de la partie de test sont à 60 m au nord et au sud du centre.
+    await bouger(kirua, { lat: CENTRE.lat + 60 / 111_320, lng: CENTRE.lng, precisionM: 5 });
+    t.clock.t += 3 * 60_000 + 5_000;
+    const radar = await donnerSort(gon.id, 'radar');
+    const res = await lancer(gon, { sort: 'radar', itemId: radar, cibleId: kirua.id });
+    expect(res.json()).toMatchObject({ ok: true, resultat: 'reussi', ageMin: 3 });
+    expect(JSON.stringify(res.json())).not.toMatch(/lat|lng/);
+    await bouger(kirua);
+  });
+
   it('RG-10.7 Duplication sous la limite : vrai exemplaire', async () => {
     const dup = await donnerSort(leorio.id, 'duplication');
     const carte = await donnerCarte(leorio.id, 29);
@@ -131,6 +142,29 @@ describe('RG-10 sorts', () => {
     expect(res.json()).toMatchObject({ ok: true, contrefacons: [] });
     const fil = recues.slice(avant).find((e) => e.a === 'tracker');
     expect(fil?.data).not.toHaveProperty('contrefacons');
+  });
+
+  it('RG-8.9 Pénétration (Analyse) : dit ce que chaque contrefaçon était (doublon déguisé → sa vraie carte, copie)', async () => {
+    const analyse = await donnerSort(leorio.id, 'analyse');
+    const deguise = newId();
+    const copie = newId();
+    await t.db.insert(exemplaires).values([
+      { id: deguise, partieId: t.partieId, joueurId: leorio.id, carteId: t.carteIds[1]!, origine: { type: 'kit' }, obtenuA: 0, faux: { nature: 'deguise', vraieCarteId: t.carteIds[4]! } },
+      { id: copie, partieId: t.partieId, joueurId: leorio.id, carteId: t.carteIds[2]!, origine: { type: 'kit' }, obtenuA: 0, faux: { nature: 'copie' } },
+    ]);
+    const livre = (await t.app.inject({ url: `/parties/${t.partieId}/livre`, headers: t.bearer(leorio.token) })).json();
+    const page = livre.pages.findIndex((p: { itemId?: string }[]) => p.some((e) => e.itemId === deguise)) + 1;
+    const res = (await lancer(leorio, { sort: 'analyse', itemId: analyse, page })).json();
+    expect(res).toMatchObject({ ok: true });
+    expect(res.demasquees).toEqual(
+      expect.arrayContaining([
+        { itemId: deguise, nature: 'deguise', vraie: expect.objectContaining({ numero: expect.any(Number), nom: expect.any(String) }) },
+        ...(res.contrefacons.includes(copie) ? [{ itemId: copie, nature: 'copie', vraie: null }] : []),
+      ]),
+    );
+    // Le doublon déguisé est redevenu sa vraie carte dans le Book.
+    const [ex] = await t.db.select().from(exemplaires).where(eq(exemplaires.id, deguise));
+    expect(ex?.carteId).toBe(t.carteIds[4]);
   });
 
   it('Barrière : ne se lance pas', async () => {

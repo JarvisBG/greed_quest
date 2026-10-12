@@ -225,7 +225,12 @@ export async function sortsRoutes(app: FastifyInstance) {
                 // Voile d'ombre de la cible consommé (objet, amendement 2026-10-10).
                 ...(o.voile ? { cible: { ...cible!, book: o.voile.cibleBook } } : {}),
                 notice: o.notice,
-                prive: { zone: zs.find((z) => z.id === o.resultat.zoneId)?.nom ?? null, protection: o.voile ? 'voile' : null },
+                prive: {
+                  zone: zs.find((z) => z.id === o.resultat.zoneId)?.nom ?? null,
+                  // Page ⑨ : âge de cette position, en minutes (« il y a 3 min »), sans jamais la position elle-même (RG-10.12).
+                  ageMin: o.resultat.zoneId && cible!.position ? Math.max(0, Math.floor((c.now - cible!.position.a) / 60_000)) : null,
+                  protection: o.voile ? 'voile' : null,
+                },
               }
             : o;
           break;
@@ -282,7 +287,16 @@ export async function sortsRoutes(app: FastifyInstance) {
         }
         case 'analyse': {
           const o = castAnalyse(w, { lanceur, itemId: input.itemId, page: input.page, designees: cat.designees });
-          res = o.ok ? { ok: true, lanceur: o.lanceur, notice: o.notice, prive: { contrefacons: o.resultat.contrefacons } } : o; // RG-10.8 : privé
+          // RG-8.9 : ce que chaque contrefaçon démasquée était (lu avant la révélation) : un doublon déguisé redevient
+          // sa vraie carte, une copie de Duplication reste « Contrefaçon de… ». Page ⑨ : la cinématique le montre.
+          const demasquees = o.ok
+            ? o.resultat.contrefacons.map((id) => {
+                const i = lanceur.book.items.find((x) => x.id === id);
+                const faux = i?.kind === 'carte' ? i.faux : undefined;
+                return { itemId: id, nature: faux?.nature ?? 'copie', vraie: faux?.nature === 'deguise' ? vueCarte(cat, faux.vraieCarteId, limitesOf(p)) : null };
+              })
+            : [];
+          res = o.ok ? { ok: true, lanceur: o.lanceur, notice: o.notice, prive: { contrefacons: o.resultat.contrefacons, demasquees } } : o; // RG-10.8 : privé
           break;
         }
         case 'retour': {

@@ -37,7 +37,7 @@ import {
   saveEvent,
   updateJoueur,
 } from '../core/state.js';
-import { evenements } from '../db/schema.js';
+import { evenements, journal } from '../db/schema.js';
 import { introuvable } from '../errors.js';
 import { refus, send } from '../http.js';
 import { newId } from '../ids.js';
@@ -196,9 +196,30 @@ export async function evenementsRoutes(app: FastifyInstance) {
   });
 
   // Raid : questions (sans réponses) et réponses des joueurs.
+  // Page ⑯ : avec le raid en cours, ce que le joueur a déjà joué (reprise après rechargement) : ses réponses
+  // (lues dans le Journal), les PV du boss, le temps restant, le nombre de joueurs qui ont frappé.
   app.get<P>('/parties/:partieId/raid', async (req) => {
-    requireRole(req, req.params.partieId, 'joueur');
-    return { ok: true, questions: RAID_QUESTIONS.map(({ bonne: _b, ...q }) => q) };
+    const { partieId } = req.params;
+    const s = requireRole(req, partieId, 'joueur');
+    return runner.run(partieId, { type: 'joueur', id: s.sub }, async (c) => {
+      const questions = RAID_QUESTIONS.map(({ bonne: _b, ...q }) => q);
+      const raid = (await loadActiveEvents(c.tx, partieId)).find((e) => e.data.type === 'raid' && isActive(e, c.now));
+      if (!raid || raid.data.type !== 'raid') return { ok: true as const, questions, raid: null };
+      const lignes = await c.tx
+        .select({ resultat: journal.resultat, details: journal.details })
+        .from(journal)
+        .where(and(eq(journal.partieId, partieId), eq(journal.action, 'raid_reponse'), eq(journal.acteurId, s.sub)));
+      const reponses: Record<string, boolean> = {};
+      for (const l of lignes) {
+        const d = l.details as { evenementId?: string; questionId?: string } | null;
+        if (d?.evenementId === raid.id && d.questionId) reponses[d.questionId] = l.resultat === 'bonne';
+      }
+      return {
+        ok: true as const,
+        questions,
+        raid: { id: raid.id, pv: raid.data.pv, pvMax: raid.data.pvMax, resteMs: Math.max(0, raid.fin - c.now), frappeurs: raid.data.participants.length, reponses },
+      };
+    });
   });
 
   app.post<P>('/parties/:partieId/raid/reponse', async (req, reply) => {
@@ -219,7 +240,8 @@ export async function evenementsRoutes(app: FastifyInstance) {
       await updateJoueur(c.tx, j.id, actionPatch(j, c.now));
       await c.log({ action: 'raid_reponse', resultat: correcte ? 'bonne' : 'fausse', details: { evenementId: raid.id, questionId: q.id } });
       if (next.data.type === 'raid') {
-        const barre = { id: next.id, pv: next.data.pv, pvMax: next.data.pvMax };
+        // Page ⑯ : qui a frappé (les coups des autres tombent en direct), combien de joueurs ont frappé.
+        const barre = { id: next.id, pv: next.data.pv, pvMax: next.data.pvMax, par: correcte ? { id: j.id, pseudo: j.pseudo } : null, frappeurs: next.data.participants.length, resteMs: Math.max(0, next.fin - c.now) };
         c.emit({ type: 'tracker' }, 'raid', barre); // barre de vie
         c.emit({ type: 'staff' }, 'raid', barre);
         c.emit({ type: 'joueurs' }, 'raid', barre);

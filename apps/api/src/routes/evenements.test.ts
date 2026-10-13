@@ -69,6 +69,14 @@ describe('RG-12 événements', () => {
     const fausse = await post('/raid/reponse', kirua.token, { questionId: 'r1', choix: 0 });
     expect(fausse.json()).toMatchObject({ ok: true, correcte: false, pv: 5 }); // J = 1 → J × 5 PV
     for (const q of RAID_QUESTIONS.slice(0, 4)) await post('/raid/reponse', gon.token, { questionId: q.id, choix: q.bonne });
+    // Page ⑯ : à la reprise, le joueur retrouve ses réponses, les PV, le temps restant et le nombre de frappeurs.
+    const reprise = (await t.app.inject({ url: `/parties/${t.partieId}/raid`, headers: t.bearer(gon.token) })).json().raid;
+    expect(reprise).toMatchObject({ pv: 1, pvMax: 5, frappeurs: 1, reponses: { r1: true, r2: true, r3: true, r4: true } });
+    expect(reprise.resteMs).toBeGreaterThan(0);
+    expect((await t.app.inject({ url: `/parties/${t.partieId}/raid`, headers: t.bearer(kirua.token) })).json().raid.reponses).toEqual({ r1: false });
+    // Page ⑯ : les coups tombent en direct avec le pseudo de celui qui a frappé ; une erreur ne frappe pas.
+    const coups = recues.filter((e) => e.a === 'joueurs' && e.evenement === 'raid').map((e) => e.data.par?.pseudo ?? null);
+    expect(coups).toEqual([null, 'Gon', 'Gon', 'Gon', 'Gon']);
     expect((await post('/raid/reponse', gon.token, { questionId: 'r1', choix: 1 })).json()).toMatchObject({ code: 'deja_repondu' });
     const fin = await post('/raid/reponse', gon.token, { questionId: 'r5', choix: 1 });
     expect(fin.json()).toMatchObject({ ok: true, pv: 0, vaincu: true });

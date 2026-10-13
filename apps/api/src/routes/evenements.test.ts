@@ -67,10 +67,10 @@ describe('RG-12 événements', () => {
     expect(qs[0]).not.toHaveProperty('bonne');
     const avant = (await t.db.select().from(sorts).where(and(eq(sorts.joueurId, gon.id), eq(sorts.utilise, false)))).length;
     const fausse = await post('/raid/reponse', kirua.token, { questionId: 'r1', choix: 0 });
-    expect(fausse.json()).toMatchObject({ ok: true, correcte: false, pv: 10 });
-    for (const q of RAID_QUESTIONS.slice(0, 9)) await post('/raid/reponse', gon.token, { questionId: q.id, choix: q.bonne });
+    expect(fausse.json()).toMatchObject({ ok: true, correcte: false, pv: 5 }); // J = 1 → J × 5 PV
+    for (const q of RAID_QUESTIONS.slice(0, 4)) await post('/raid/reponse', gon.token, { questionId: q.id, choix: q.bonne });
     expect((await post('/raid/reponse', gon.token, { questionId: 'r1', choix: 1 })).json()).toMatchObject({ code: 'deja_repondu' });
-    const fin = await post('/raid/reponse', gon.token, { questionId: 'r10', choix: 1 });
+    const fin = await post('/raid/reponse', gon.token, { questionId: 'r5', choix: 1 });
     expect(fin.json()).toMatchObject({ ok: true, pv: 0, vaincu: true });
     expect((await t.db.select().from(sorts).where(and(eq(sorts.joueurId, gon.id), eq(sorts.utilise, false)))).length).toBe(avant + 3);
     // Kirua n'a donné aucune bonne réponse : pas participant.

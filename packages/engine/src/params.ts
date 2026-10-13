@@ -69,7 +69,9 @@ export const AUTO_FORMULAS: Record<ParamKey, (c: ParamContext) => number> = {
   limiteB: (c) => Math.max(4, Math.ceil(c.J / 3)),
   limiteCD: (c) => Math.max(5, Math.ceil(c.J / 2)),
   paquetsParVague: (c) => Math.ceil(c.J / 2),
-  pvBoss: (c) => c.J * 10,
+  // Décision 2026-10-13 (Sivraj) : J × 5 (document : J × 10). Avec 10 questions à 1 PV, J × 10 exigeait
+  // que tous les joueurs actifs répondent juste à tout ; J × 5 = la moitié des réponses possibles.
+  pvBoss: (c) => c.J * 5,
   kBoucle: (c) => (c.balisesActivesCourantes < 8 ? 2 : 3),
   // RG-10.11 : portée des sorts et plafond de la marge GPS, à adapter au lieu (parking, parc…).
   porteeSortsM: () => 30,

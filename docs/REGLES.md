@@ -224,7 +224,7 @@ Prix défaut (réglables) : paquet 50 J · revente D/C/B 5/10/20 J · A/S 40/80 
 | Limite B | max(4, ceil(J/3)) | Multiplicateur × 2 |
 | Limite C/D | max(5, ceil(J/2)) | Multiplicateur × 2 |
 | Paquets par vague | ceil(J/2) | Auto |
-| PV boss | J × 10 | Auto |
+| PV boss | J × 5 (amendé le 2026-10-13 ; document : J × 10) | Auto |
 | K boucle | 3, ou 2 si < 8 balises actives | Auto |
 | Durée partie | 150 min (amendement : 120) | Verrouillé |
 | Mise de l'arène (amendement) | 30 J | Auto |

@@ -143,7 +143,7 @@ export function endApparition(event: GameEvent, beacons: readonly Beacon[]): Bea
 
 // --- Raid de la Brigade ---
 
-/** PV du boss : paramètre pvBoss (J × 10, RG-14). */
+/** PV du boss : paramètre pvBoss (J × 5, RG-14 amendé). */
 export function startRaid(b: StartBase, pvBoss: number): StartResult {
   const err = checkStart(b, 'raid', null);
   if (err) return { ok: false, message: err };

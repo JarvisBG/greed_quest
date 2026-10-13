@@ -1,13 +1,13 @@
 <title>Raid de la Brigade</title>
-<meta name="description" content="Prototype de la page ⑯ : l'alarme du raid, le combat face au chef de la Brigade (barre de vie, coups en direct, questions), la victoire avec le paquet de 3 sorts, et la fuite de la Brigade quand le temps est écoulé.">
+<meta name="description" content="Prototype de la page ⑯ : l'alarme du raid, le combat face au boss (boss de base, image détourée ou affiche « avis de recherche ») (barre de vie, coups en direct, questions), la victoire avec le paquet de 3 sorts, et la fuite de la Brigade quand le temps est écoulé.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@800&family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,800;1,400&family=Dela+Gothic+One&family=DotGothic16&display=swap">
 <style>
-/* Page ⑯ : le Raid de la Brigade. Planche claire de l'app ; le combat est une case sombre d'acier et d'alarme
-   rouge où le chef de la Brigade fait face au joueur, sa barre de vie en grand. Les questions sont des cases
-   de manga claires. Grands moments : l'alarme (sirène, « RAID DE LA BRIGADE ! »), la chute du boss puis le
-   paquet de sorts, et la fuite en riant si le temps s'écoule. Thème clair unique (jeu au soleil). */
+/* Page ⑯ : le Raid. Planche claire de l'app ; le combat est une case sombre d'acier et d'alarme rouge où le
+   boss fait face au joueur, sa barre de vie en grand. Boss de base dessiné ; les autres viennent de la
+   bibliothèque : image détourée (dans l'arène) ou image avec fond (affiche « AVIS DE RECHERCHE »).
+   Grands moments : l'alarme, la chute du boss puis le paquet de sorts, la fuite. Thème clair unique. */
 :root {
   color-scheme: light;
   --papier: #eeefe9;
@@ -271,7 +271,7 @@ button:disabled { cursor: default; }
 .alarme .yeux-seuls svg { width: 100%; height: 100%; display: block; overflow: visible; }
 .alarme .cri { position: absolute; left: 0; right: 0; top: max(28px, 9dvh); display: grid; justify-items: center; gap: 2px; rotate: -4deg; opacity: 0; }
 .alarme .cri .l1 { font: 400 min(26vw, 140px)/0.88 var(--f-titre); color: #fff; -webkit-text-stroke: 5px var(--alarme); paint-order: stroke fill; letter-spacing: -0.02em; }
-.alarme .cri .l2 { font: 400 min(8.4vw, 42px)/1 var(--f-titre); color: #fff; -webkit-text-stroke: 3px var(--alarme); paint-order: stroke fill; white-space: nowrap; }
+.alarme .cri .l2 { font: 400 min(8.4vw, 42px, calc(124vw / var(--n, 15)))/1 var(--f-titre); color: #fff; -webkit-text-stroke: 3px var(--alarme); paint-order: stroke fill; white-space: nowrap; }
 .alarme .infos { position: absolute; left: 50%; bottom: max(20px, env(safe-area-inset-bottom, 0px)); width: min(calc(100% - 24px), 440px); translate: -50% 0; display: grid; gap: 10px; opacity: 0; }
 .alarme .infos .a-texte { font: 400 19px/1.4 var(--f-jeu); margin: 0; }
 .alarme .infos .a-texte b { font-family: var(--f-chiffre); color: var(--braise); }
@@ -295,7 +295,7 @@ button:disabled { cursor: default; }
 .cine .c-boss .croix { opacity: 0; }
 .cine .c-boss.ko .croix { opacity: 1; }
 .cine .cri { position: absolute; left: 0; right: 0; top: max(24px, 8dvh); display: grid; justify-items: center; rotate: -5deg; opacity: 0; }
-.cine .cri .l1 { font: 400 min(16vw, 92px)/0.9 var(--f-titre); color: #fff; -webkit-text-stroke: 4px var(--alarme); paint-order: stroke fill; }
+.cine .cri .l1 { font: 400 min(16vw, 92px, calc(108vw / var(--n, 7)))/0.9 var(--f-titre); color: #fff; -webkit-text-stroke: 4px var(--alarme); paint-order: stroke fill; }
 .cine .cri .l2 { font: 400 min(12vw, 70px)/0.95 var(--f-titre); color: #fff; -webkit-text-stroke: 4px var(--alarme); paint-order: stroke fill; }
 .cine .tes-coups { position: absolute; left: 0; right: 0; top: calc(max(24px, 8dvh) + min(30vw, 170px)); text-align: center; font: 400 18px/1.2 var(--f-jeu); color: var(--braise); opacity: 0; }
 .cine .rayons { position: absolute; left: 50%; top: 46%; width: 150vmax; height: 150vmax; margin: -75vmax 0 0 -75vmax; opacity: 0; pointer-events: none;
@@ -337,6 +337,29 @@ button:disabled { cursor: default; }
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
 .alarme .yeux-seuls svg > :not(.yeux) { opacity: 0; }
+
+/* ---------- Boss de la bibliothèque : image détourée, ou affiche « AVIS DE RECHERCHE » ---------- */
+.boss img, .c-boss img, .ombre img, .f-boss img { width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; display: block; }
+.ko img { filter: grayscale(1) brightness(0.7); }
+.avis { container-type: inline-size; position: relative; height: 100%; aspect-ratio: 3 / 4.15; max-width: 100%; margin-inline: auto; rotate: -2deg; color: var(--encre); display: grid; grid-template-rows: auto 1fr auto auto; gap: 3cqi; padding: 6cqi 6cqi 5cqi; text-align: center;
+  background: radial-gradient(rgba(156, 90, 28, 0.2) 0.9px, transparent 1.2px) 0 0 / 5px 5px, linear-gradient(#efdcae, #dcc187);
+  border: 1.2cqi solid var(--encre); box-shadow: inset 0 0 0 1.6cqi #efdcae, inset 0 0 0 2.2cqi var(--encre), 0 10px 24px rgba(0, 0, 0, 0.45); }
+.avis::before, .avis::after { content: ''; position: absolute; top: 2.4cqi; width: 4cqi; height: 4cqi; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #d8d8d8, #555 70%); box-shadow: 0 0 0 0.5cqi var(--encre); }
+.avis::before { left: 3cqi; }
+.avis::after { right: 3cqi; }
+.avis .a-titre { font: 400 9cqi/0.95 var(--f-titre); color: var(--rouge); letter-spacing: -0.01em; }
+.avis .photo { min-height: 0; border: 1cqi solid var(--encre); background: #222; overflow: hidden; }
+.avis .photo img { width: 100%; height: 100%; object-fit: cover; display: block; filter: sepia(0.25) contrast(1.05); }
+.avis .a-nom { font: 400 9cqi/1 var(--f-titre); text-wrap: balance; }
+.avis .a-prime { font: 400 6cqi/1.1 var(--f-jeu); color: var(--ocre, #9c5a1c); }
+.avis .tampon-ko { position: absolute; left: 8%; right: 8%; top: 34%; rotate: -16deg; opacity: 0; pointer-events: none; }
+.avis .tampon-ko svg { width: 100%; height: auto; overflow: visible; }
+.ko .avis .tampon-ko { opacity: 1; }
+.ko .avis .photo img { filter: grayscale(1) contrast(1.1); }
+/* Dans la nuit de l'alarme et de la fuite, l'affiche reste en couleur (pas de silhouette). */
+.alarme.affiche .ombre, .fuite.affiche .f-boss { filter: none; }
+.alarme.affiche .yeux-seuls, .alarme.detoure .yeux-seuls { display: none; }
+.proto .note { font: 400 12px/1.3 var(--f-texte); color: #b9bcc2; }
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -354,7 +377,13 @@ button:disabled { cursor: default; }
 
 <div class="app">
   <div class="proto" role="group" aria-label="Commandes du prototype">
-    <p>Prototype : tu es Gon, 12 joueurs actifs, le boss a 12 × 5 = 60 PV. Le GM lance le raid, les autres joueurs frappent en direct.</p>
+    <p>Prototype : tu es Gon, 12 joueurs actifs. PV du boss = 12 × (ses questions) ÷ 2. Le GM choisit le boss et lance le raid ; les autres joueurs frappent en direct.</p>
+    <div class="rang"><span>Boss</span>
+      <button data-boss="base" aria-pressed="true">de base</button>
+      <button data-boss="bombardier" aria-pressed="false">détouré</button>
+      <button data-boss="magicien" aria-pressed="false">avec fond</button>
+    </div>
+    <p class="note">« Détouré » et « avec fond » : images d'exemple dessinées ici ; les images de l'anime de la bibliothèque prendront leur place.</p>
     <div class="rang"><span>GM</span>
       <button id="p-lancer">lance le raid (alarme)</button>
     </div>
@@ -377,7 +406,7 @@ button:disabled { cursor: default; }
     <span class="liaison"><i class="pastille"></i>En ligne</span>
     <span class="jenny" id="jenny"><span id="mes-jenny">85</span><small>J</small></span>
   </header>
-  <button class="bandeau-raid" id="bandeau" hidden><i class="oeil"></i><span>Raid de la Brigade · <span id="bandeau-pv">47</span> PV</span><b id="bandeau-temps">7:42</b><span class="mini"><i id="bandeau-jauge"></i></span></button>
+  <button class="bandeau-raid" id="bandeau" hidden><i class="oeil"></i><span><span id="bandeau-nom">Raid de la Brigade</span> · <span id="bandeau-pv">47</span> PV</span><b id="bandeau-temps">7:42</b><span class="mini"><i id="bandeau-jauge"></i></span></button>
 
   <div id="page-raid" style="display:grid;gap:14px">
     <div class="tete-ville">
@@ -404,7 +433,7 @@ button:disabled { cursor: default; }
 
     <section class="question" id="question" aria-live="polite"></section>
 
-    <p class="regle">Chaque bonne réponse retire 1 PV au boss. Une seule réponse par question. Si la Brigade tombe avant la fin, chaque joueur qui a porté au moins un coup reçoit un paquet de 3 sorts.</p>
+    <p class="regle">Chaque bonne réponse retire 1 PV au boss. Une seule réponse par question. Si le boss tombe avant la fin, chaque joueur qui a porté au moins un coup reçoit un paquet de 3 sorts.</p>
   </div>
 
   <div id="page-accueil" class="mini-accueil" hidden>
@@ -434,10 +463,10 @@ button:disabled { cursor: default; }
   <div class="ombre" id="al-ombre"></div>
   <div class="yeux-seuls" id="al-yeux"></div>
   <div class="bords" id="al-bords"></div>
-  <div class="cri" id="al-cri"><span class="l1" id="al-titre">RAID</span><span class="l2">DE LA BRIGADE !</span></div>
+  <div class="cri" id="al-cri"><span class="l1" id="al-titre">RAID</span><span class="l2" id="al-l2">DE LA BRIGADE !</span></div>
   <div class="infos gi-dialogue" id="al-infos">
-    <span class="a-qui" style="background:var(--alarme-vif);color:#fff">Raid</span>
-    <p class="a-texte">Le chef de la Brigade débarque sur l'île : <b>60 PV</b>, <b>10:00</b> pour l'abattre. Chaque bonne réponse le frappe.</p>
+    <span class="a-qui" style="background:var(--alarme-vif);color:#fff" id="al-qui">Raid</span>
+    <p class="a-texte" id="al-texte"></p>
     <button class="au-combat" id="al-combat">Au combat !</button>
     <button class="plus-tard" id="al-tard">Plus tard</button>
   </div>
@@ -450,12 +479,12 @@ button:disabled { cursor: default; }
   <div class="lignes" id="c-lignes"></div>
   <div class="rayons" id="c-rayons"></div>
   <div class="c-boss" id="c-boss"></div>
-  <div class="cri" id="c-cri"><span class="l1">BRIGADE</span><span class="l2">VAINCUE !</span></div>
+  <div class="cri" id="c-cri"><span class="l1" id="c-l1">BRIGADE</span><span class="l2" id="c-l2">VAINCUE !</span></div>
   <div class="tes-coups" id="c-coups"></div>
   <div class="scene" id="scene"><div class="c-paquet" id="c-paquet"></div></div>
   <div class="flash" id="c-flash"></div>
   <div class="dialogue gi-dialogue" id="c-dialogue" role="status">
-    <span class="a-qui">Raid</span>
+    <span class="a-qui" id="c-qui">Raid</span>
     <p class="a-texte" id="c-texte"></p>
     <p class="a-indice" id="c-indice">Touche pour continuer</p>
   </div>
@@ -472,7 +501,7 @@ button:disabled { cursor: default; }
 <script>
 const $ = (s, r = document) => r.querySelector(s);
 const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const BOSS = `<svg viewBox="0 0 200 220" aria-hidden="true"><path d="M8 220 L22 132 Q30 116 60 112 L140 112 Q170 116 178 132 L192 220 Z" fill="#2b2f37" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+const BOSS_BASE = `<svg viewBox="0 0 200 220" aria-hidden="true"><path d="M8 220 L22 132 Q30 116 60 112 L140 112 Q170 116 178 132 L192 220 Z" fill="#2b2f37" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
       <path d="M60 112 L84 170 M140 112 L116 170" stroke="#111" stroke-width="3" fill="none"/>
       <path d="M40 150 Q46 132 62 128 M160 150 Q154 132 138 128" stroke="#4a505c" stroke-width="2.5" fill="none" stroke-linecap="round"/>
       <circle cx="100" cy="138" r="13" fill="#1b1d22" stroke="#111" stroke-width="3"/>
@@ -494,7 +523,6 @@ const BOSS = `<svg viewBox="0 0 200 220" aria-hidden="true"><path d="M8 220 L22 
       <path d="M118 88 L126 104" stroke="#8a5a36" stroke-width="2.5" stroke-linecap="round"/>
       <path class="moue" d="M84 96 Q100 92 116 96" stroke="#111" stroke-width="4" fill="none" stroke-linecap="round"/>
       <g class="grin"><path d="M78 92 Q100 108 122 92 Q100 100 78 92 Z" fill="#fff" stroke="#111" stroke-width="3.5" stroke-linejoin="round"/><path d="M86 95 L88 100 M94 97 L95 102 M101 98 L101 103 M108 97 L107 102 M115 95 L113 100" stroke="#111" stroke-width="2"/></g></svg>`;
-['#boss', '#c-boss', '#al-ombre', '#al-yeux', '#f-boss'].forEach((s) => ($(s).innerHTML = BOSS));
 
 // ---------- Données du prototype (dans l'app : GET /raid, POST /raid/reponse, évènements `raid`, `evenement`, `evenement_fin`, `recompense_raid`) ----------
 const QUESTIONS = [
@@ -509,6 +537,78 @@ const QUESTIONS = [
   ['Quel sort annule le prochain sort offensif reçu ?', ['Mur défensif', 'Voile d’ombre', 'Trace'], 0],
   ['Que faut-il montrer au PNJ de l’arène ?', ['Son Book', 'Sa licence', 'Un sort'], 1],
 ].map(([texte, choix, bonne]) => ({ texte, choix, bonne }));
+const QUESTIONS_MAGICIEN = [
+  ['Quel sort copie une carte de ton Book ?', ['Mimétisme', 'Trace', 'Guide'], 0],
+  ['Combien de rangs de cartes existe-t-il ?', ['4', '6', '8'], 1],
+  ['Une contrefaçon compte-t-elle pour le Clear ?', ['Oui', 'Jamais'], 1],
+  ['Où achète-t-on des paquets de sorts ?', ['Masadora', 'Soufrabi', 'Antokiba'], 0],
+  ['Quel sort montre la zone d’une balise rare ?', ['Voyance', 'Guide', 'Vol'], 1],
+  ['Combien coûte l’entrée de l’arène ?', ['10 J', '30 J', '50 J'], 1],
+].map(([texte, choix, bonne]) => ({ texte, choix, bonne }));
+
+// ---------- Les boss (dans l'app : la bibliothèque du jeu ; le GM prépare sa galerie avant la partie) ----------
+// Images d'exemple dessinées ici ; les vraies images de l'anime les remplaceront.
+const IMG_BOMBARDIER = 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220">
+  <g stroke="#111" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M44 220 L52 134 Q100 114 148 134 L156 220 Z" fill="#6b5640"/>
+    <path d="M52 176 H148" stroke-width="10" stroke="#2a2118"/>
+    <circle cx="74" cy="176" r="9" fill="#1b1d22"/><circle cx="100" cy="178" r="9" fill="#1b1d22"/><circle cx="126" cy="176" r="9" fill="#1b1d22"/>
+    <path d="M70 128 Q100 146 130 128 L126 116 Q100 124 74 116 Z" fill="#b8312f"/>
+    <path d="M56 138 Q34 160 40 196" fill="none" stroke-width="16" stroke="#111"/><path d="M56 138 Q34 160 40 196" fill="none" stroke-width="10" stroke="#6b5640"/>
+    <path d="M142 136 Q170 108 168 76" fill="none" stroke-width="16" stroke="#111"/><path d="M142 136 Q170 108 168 76" fill="none" stroke-width="10" stroke="#6b5640"/>
+    <circle cx="40" cy="198" r="10" fill="#d49a6a"/>
+    <circle cx="96" cy="84" r="36" fill="#d49a6a"/>
+    <path d="M60 78 Q62 44 96 44 Q130 44 132 78 Q96 64 60 78 Z" fill="#3c4a2e"/>
+    <path d="M60 80 H132" stroke-width="7"/>
+    <circle cx="80" cy="82" r="12" fill="#ffcf6b"/><circle cx="112" cy="82" r="12" fill="#ffcf6b"/>
+    <path d="M74 104 Q96 120 118 104 Q96 110 74 104 Z" fill="#fff"/>
+    <circle cx="172" cy="56" r="24" fill="#1b1d22"/>
+    <circle cx="164" cy="48" r="6" fill="#4a505c" stroke="none"/>
+    <path d="M182 36 Q188 22 198 18" fill="none" stroke-width="3"/>
+    <circle cx="168" cy="78" r="10" fill="#d49a6a"/>
+  </g>
+  <path d="M198 18 l4 -10 l2 10 l10 -2 l-8 6 l8 6 l-10 -2 l-2 10 l-4 -10 l-10 2 l8 -6 l-8 -6 z" fill="#ffb43c" stroke="#ff5a1f" stroke-width="1.5" transform="translate(-10 4) scale(.9)"/>
+</svg>`);
+function sceneMagicien() {
+  const c = document.createElement('canvas'); c.width = 480; c.height = 640;
+  const g = c.getContext('2d');
+  const ciel = g.createLinearGradient(0, 0, 0, 640); ciel.addColorStop(0, '#22123d'); ciel.addColorStop(0.6, '#7a2f4a'); ciel.addColorStop(1, '#d9673c');
+  g.fillStyle = ciel; g.fillRect(0, 0, 480, 640);
+  g.fillStyle = '#f3e2b3'; g.beginPath(); g.arc(360, 130, 70, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#120a1c';
+  g.beginPath(); g.moveTo(0, 520); [[0, 470], [60, 470], [60, 430], [120, 430], [120, 490], [170, 490], [170, 450], [330, 450], [330, 400], [390, 400], [390, 470], [480, 470], [480, 640], [0, 640]].forEach(([x, y]) => g.lineTo(x, y)); g.fill();
+  g.fillStyle = '#ffcf6b'; [[20, 490], [80, 450], [350, 420], [430, 490], [90, 470]].forEach(([x, y]) => g.fillRect(x, y, 12, 16));
+  // La cape, la doublure rouge, le corps.
+  g.lineWidth = 6; g.strokeStyle = '#111'; g.lineJoin = 'round';
+  g.fillStyle = '#2b1838'; g.beginPath(); g.moveTo(240, 290); g.lineTo(60, 640); g.lineTo(420, 640); g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = '#a3222a'; g.beginPath(); g.moveTo(240, 320); g.lineTo(150, 640); g.lineTo(330, 640); g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = '#e9e1cf'; g.beginPath(); g.moveTo(205, 300); g.lineTo(240, 420); g.lineTo(275, 300); g.closePath(); g.fill(); g.stroke();
+  // Le bras levé et l'éventail de cartes.
+  g.lineWidth = 22; g.strokeStyle = '#111'; g.beginPath(); g.moveTo(280, 320); g.quadraticCurveTo(340, 300, 350, 240); g.stroke();
+  g.lineWidth = 14; g.strokeStyle = '#2b1838'; g.stroke();
+  [-30, -10, 10, 30].forEach((a, i) => { g.save(); g.translate(352, 236); g.rotate((a * Math.PI) / 180); g.fillStyle = '#fbfbf7'; g.strokeStyle = '#111'; g.lineWidth = 4; g.fillRect(-18, -70, 36, 52); g.strokeRect(-18, -70, 36, 52); g.fillStyle = i % 2 ? '#111' : '#c0272d'; g.font = '700 22px serif'; g.fillText(['♠', '♥', '♣', '♦'][i], -8, -38); g.restore(); });
+  // La tête, le masque, le haut-de-forme.
+  g.fillStyle = '#efdcc8'; g.strokeStyle = '#111'; g.lineWidth = 6; g.beginPath(); g.ellipse(240, 250, 44, 52, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+  g.fillStyle = '#111'; g.beginPath(); g.moveTo(206, 238); g.lineTo(232, 246); g.lineTo(206, 250); g.fill(); g.beginPath(); g.moveTo(274, 238); g.lineTo(248, 246); g.lineTo(274, 250); g.fill();
+  g.fillStyle = '#c0272d'; g.beginPath(); g.moveTo(212, 272); g.quadraticCurveTo(240, 300, 268, 272); g.quadraticCurveTo(240, 284, 212, 272); g.fill(); g.lineWidth = 3; g.stroke();
+  g.fillStyle = '#111'; g.fillRect(196, 120, 88, 92); g.fillStyle = '#a3222a'; g.fillRect(196, 186, 88, 14);
+  g.beginPath(); g.ellipse(240, 212, 70, 12, 0, 0, Math.PI * 2); g.fillStyle = '#111'; g.fill();
+  // Trame d'imprimé.
+  g.globalAlpha = 0.12; g.fillStyle = '#000';
+  for (let y = 0; y < 640; y += 6) for (let x = (y / 6) % 2 ? 3 : 0; x < 480; x += 6) { g.beginPath(); g.arc(x, y, 1.2, 0, Math.PI * 2); g.fill(); }
+  return c.toDataURL('image/jpeg', 0.85);
+}
+const BOSSES = {
+  base: { nom: 'Le chef de la Brigade', sujet: 'La Brigade', f: true, rendu: 'dessin', titre: 'RAID DE LA BRIGADE', bandeau: 'Raid de la Brigade', l2: 'DE LA BRIGADE !', cri: ['BRIGADE', 'VAINCUE !'], questions: QUESTIONS,
+    entree: 'Le chef de la Brigade débarque sur l’île', ricane: ['Hé hé hé !', 'Raté, gamin !', 'C’est tout ?'], fuite: null },
+  bombardier: { nom: 'Le Bombardier', sujet: 'Le Bombardier', f: false, rendu: 'detoure', img: IMG_BOMBARDIER, titre: 'RAID : LE BOMBARDIER', bandeau: 'Raid : Le Bombardier', l2: 'LE BOMBARDIER !', cri: ['BOMBARDIER', 'VAINCU !'], questions: QUESTIONS,
+    entree: '« Je vais tous vous faire sauter ! »', ricane: ['Boum !', 'Trop lent !', 'Tic, tac…'], fuite: '« On se reverra, chasseurs ! »' },
+  magicien: { nom: 'Le Magicien', sujet: 'Le Magicien', f: false, rendu: 'affiche', img: sceneMagicien(), titre: 'RAID : LE MAGICIEN', bandeau: 'Raid : Le Magicien', l2: 'LE MAGICIEN !', cri: ['MAGICIEN', 'VAINCU !'], questions: QUESTIONS_MAGICIEN,
+    entree: '« Un tour de cartes, mes petits ? »', ricane: ['Abracadabra… raté !', 'Mauvaise carte !', 'Encore !'], fuite: '« Le spectacle est terminé ! »' },
+};
+let BOSS = BOSSES.base;
+const pvDe = (b) => (12 * b.questions.length) / 2; // PV = J × (questions du boss) ÷ 2, J = 12
+const accord = (b, mot) => mot + (b.f ? 'e' : '');
 const SORTS = [
   ['1023', 'Vol', 'Prend une carte désignée au hasard à un joueur proche.'],
   ['1003', 'Mur défensif', 'Annule le prochain sort offensif reçu.'],
@@ -547,6 +647,28 @@ function lignesSVG(couleur, graine) {
 $('#lignes-c').innerHTML = lignesSVG('#ffd2c4', 17);
 $('#al-lignes').innerHTML = lignesSVG('#ffd2c4', 23);
 $('#c-lignes').innerHTML = lignesSVG('#ffd2c4', 29);
+
+// Le boss tel qu'il apparaît : le dessin de base, l'image détourée, ou l'affiche « AVIS DE RECHERCHE ».
+function bossHTML(b) {
+  if (b.rendu === 'dessin') return BOSS_BASE;
+  if (b.rendu === 'detoure') return `<img src="${b.img}" alt="">`;
+  return `<div class="avis"><span class="a-titre">AVIS DE RECHERCHE</span><div class="photo"><img src="${b.img}" alt=""></div><span class="a-nom">${b.nom}</span><span class="a-prime">Récompense : 3 sorts par chasseur</span><div class="tampon-ko">${tampon(['VAINCU'])}</div></div>`;
+}
+function poserBoss() {
+  ['#boss', '#c-boss', '#al-ombre', '#f-boss'].forEach((s) => ($(s).innerHTML = bossHTML(BOSS)));
+  $('#al-yeux').innerHTML = BOSS.rendu === 'dessin' ? BOSS_BASE : '';
+  ['affiche', 'detoure'].forEach((r) => { $('#alarme').classList.toggle(r, BOSS.rendu === r); $('#fuite').classList.toggle(r, BOSS.rendu === r); });
+  $('#t-raid').textContent = BOSS.titre;
+  $('#bandeau-nom').textContent = BOSS.bandeau;
+  $('#al-l2').textContent = BOSS.l2;
+  $('#al-qui').textContent = BOSS.nom;
+  $('#c-l1').textContent = BOSS.cri[0]; $('#c-l2').textContent = BOSS.cri[1];
+  // Le cri tient sur la largeur de l'écran quelle que soit la longueur du nom.
+  $('#c-l1').style.setProperty('--n', Math.max(7, BOSS.cri[0].length));
+  $('#al-l2').style.setProperty('--n', Math.max(15, BOSS.l2.length));
+  $('#boss').classList.remove('ko');
+}
+poserBoss();
 
 // ---------- Effets (canvas) : étincelles, ondes, entailles ----------
 const cv = $('#fx'), ctx = cv.getContext('2d');
@@ -621,8 +743,9 @@ function dessinerVie() {
   $('#bandeau-pv').textContent = S.pv;
   $('#bandeau-jauge').style.width = `${pc}%`;
   $('#boss').classList.toggle('ko', S.etat === 'vaincu');
-  $('#boss').querySelector('.croix').style.opacity = S.etat === 'vaincu' ? 1 : 0;
-  $('#boss').querySelector('.yeux').style.opacity = S.etat === 'vaincu' ? 0 : '';
+  const croix = $('#boss .croix'), yeux = $('#boss .yeux');
+  if (croix) croix.style.opacity = S.etat === 'vaincu' ? 1 : 0;
+  if (yeux) yeux.style.opacity = S.etat === 'vaincu' ? 0 : '';
 }
 function dessinerTemps() {
   $('#temps-b').textContent = mmss(S.reste);
@@ -636,22 +759,22 @@ function dessinerQuestion() {
   if (S.etat === 'vaincu') {
     q.classList.add('fini');
     q.innerHTML = S.coups
-      ? `<h3>La Brigade est tombée !</h3><b class="gros-chiffre">${S.coups}</b><p class="verdict">coup${S.coups > 1 ? 's' : ''} porté${S.coups > 1 ? 's' : ''} par toi. Ton paquet de 3 sorts est dans tes Sorts.</p>`
-      : `<h3>La Brigade est tombée.</h3><p class="verdict">Tu n’as pas porté de coup : pas de paquet cette fois.</p>`;
+      ? `<h3>${BOSS.sujet} est ${accord(BOSS, 'tombé')} !</h3><b class="gros-chiffre">${S.coups}</b><p class="verdict">coup${S.coups > 1 ? 's' : ''} porté${S.coups > 1 ? 's' : ''} par toi. Ton paquet de 3 sorts est dans tes Sorts.</p>`
+      : `<h3>${BOSS.sujet} est ${accord(BOSS, 'tombé')}.</h3><p class="verdict">Tu n’as pas porté de coup : pas de paquet cette fois.</p>`;
     return;
   }
   if (S.etat === 'enfuie') {
     q.classList.add('fini');
-    q.innerHTML = `<h3>La Brigade s’est enfuie</h3><p class="verdict">Le temps est écoulé avec ${S.pv} PV restants. Pas de récompense cette fois.</p>`;
+    q.innerHTML = `<h3>${BOSS.sujet} s’est ${accord(BOSS, 'enfui')}</h3><p class="verdict">Le temps est écoulé avec ${S.pv} PV restants. Pas de récompense cette fois.</p>`;
     return;
   }
-  if (S.q >= QUESTIONS.length) {
+  if (S.q >= BOSS.questions.length) {
     q.classList.add('fini');
-    q.innerHTML = `<h3>Tu as répondu aux ${QUESTIONS.length} questions</h3><b class="gros-chiffre">${S.coups}</b><p class="verdict">coup${S.coups > 1 ? 's' : ''} porté${S.coups > 1 ? 's' : ''}. Les autres joueurs peuvent encore l’achever : il lui reste ${S.pv} PV.</p>`;
+    q.innerHTML = `<h3>Tu as répondu aux ${BOSS.questions.length} questions</h3><b class="gros-chiffre">${S.coups}</b><p class="verdict">coup${S.coups > 1 ? 's' : ''} porté${S.coups > 1 ? 's' : ''}. Les autres joueurs peuvent encore l’achever : il lui reste ${S.pv} PV.</p>`;
     return;
   }
-  const qq = QUESTIONS[S.q];
-  q.innerHTML = `<div class="q-tete"><span>Question ${S.q + 1} sur ${QUESTIONS.length}</span><span class="mes-coups">Tes coups : <b>${S.coups}</b></span></div>
+  const qq = BOSS.questions[S.q];
+  q.innerHTML = `<div class="q-tete"><span>Question ${S.q + 1} sur ${BOSS.questions.length}</span><span class="mes-coups">Tes coups : <b>${S.coups}</b></span></div>
     <h3>${qq.texte}</h3>
     <div class="choix-raid">${qq.choix.map((c, i) => `<button data-i="${i}" data-lettre="${'ABC'[i]}">${c}</button>`).join('')}</div>
     <p class="verdict" id="verdict"></p>`;
@@ -663,7 +786,7 @@ function dessiner() { dessinerVie(); dessinerTemps(); dessinerQuestion(); }
 function repondre(i) {
   if (S.attente || S.etat !== 'combat') return;
   S.attente = true;
-  const qq = QUESTIONS[S.q], btns = [...document.querySelectorAll('.choix-raid button')];
+  const qq = BOSS.questions[S.q], btns = [...document.querySelectorAll('.choix-raid button')];
   btns.forEach((b) => (b.disabled = true));
   const juste = i === qq.bonne;
   btns[i].classList.add(juste ? 'juste' : 'faux');
@@ -718,7 +841,7 @@ function frapper(qui) {
 let finRire = 0;
 function ricaner() {
   const boss = $('#boss'), bulle = $('#bulle');
-  bulle.textContent = ['Hé hé hé !', 'Raté, gamin !', 'C’est tout ?'][Math.floor(Math.random() * 3)];
+  bulle.textContent = BOSS.ricane[Math.floor(Math.random() * BOSS.ricane.length)];
   boss.classList.remove('rit'); void boss.offsetWidth; boss.classList.add('rit');
   bulle.classList.add('visible');
   vibrer([20, 40, 20]);
@@ -778,8 +901,12 @@ const alarme = $('#alarme');
 alarme.addEventListener('pointerdown', (e) => { if (phase === 'alarme' && !e.target.closest('button')) sauter(); });
 async function lancerRaid() {
   nettoyer(); fermerFuite();
-  Object.assign(S, { etat: 'combat', pv: 60, pvMax: 60, reste: 600, q: 0, coups: 0, frappeurs: new Set(), attente: false });
+  poserBoss();
+  Object.assign(S, { etat: 'combat', pv: pvDe(BOSS), pvMax: pvDe(BOSS), reste: 600, q: 0, coups: 0, frappeurs: new Set(), attente: false });
   dessiner();
+  $('#al-texte').innerHTML = BOSS.rendu === 'dessin'
+    ? `${BOSS.entree} : <b>${S.pvMax} PV</b>, <b>10:00</b> pour l’abattre. Chaque bonne réponse le frappe.`
+    : `${BOSS.entree} ${BOSS.nom} débarque : <b>${S.pvMax} PV</b>, <b>10:00</b> pour l’abattre. Chaque bonne réponse le frappe.`;
   phase = 'alarme';
   const nuit = $('#al-nuit'), sirene = $('#al-sirene'), bords = $('#al-bords'), lignes = $('#al-lignes'), ombre = $('#al-ombre'), yeux = $('#al-yeux'), cri = $('#al-cri'), infos = $('#al-infos');
   [nuit, sirene, bords, lignes, ombre, yeux, cri, infos].forEach((e) => (e.style.opacity = '0'));
@@ -838,7 +965,8 @@ async function victoire(coupFinal) {
   S.etat = 'vaincu'; S.pv = 0; dessiner();
   const nuit = $('#c-nuit'), lignes = $('#c-lignes'), rayons = $('#c-rayons'), boss = $('#c-boss'), cri = $('#c-cri'), coups = $('#c-coups'), flash = $('#c-flash'), dlg = $('#c-dialogue'), scene = $('#scene'), cp = $('#c-paquet');
   // Le boss et les cartes sont recréés à chaque fois (leçon de la page ⑮ : Chromium peut garder l'ancienne image).
-  boss.replaceWith(Object.assign(document.createElement('div'), { id: 'c-boss', className: 'c-boss', innerHTML: BOSS }));
+  boss.replaceWith(Object.assign(document.createElement('div'), { id: 'c-boss', className: 'c-boss', innerHTML: bossHTML(BOSS) }));
+  $('#c-qui').textContent = BOSS.nom;
   const b2 = $('#c-boss');
   scene.querySelectorAll('.c-carte').forEach((e) => e.remove());
   cp.innerHTML = `<div class="paquet">${PAQUET}</div><span class="dechirure"></span>`;
@@ -866,7 +994,8 @@ async function victoire(coupFinal) {
   }
   // 3. Les yeux s'éteignent ; il s'effondre dans la poussière.
   b2.classList.add('ko');
-  b2.querySelector('.croix').style.opacity = 1; b2.querySelector('.yeux').style.opacity = 0;
+  if (b2.querySelector('.croix')) { b2.querySelector('.croix').style.opacity = 1; b2.querySelector('.yeux').style.opacity = 0; }
+  if (BOSS.rendu === 'affiche') { const [tx, ty] = centre(b2); vibrer(90); onde(tx, ty, '#e0463c', 0.6); await pause(500); }
   await pause(380);
   const chute = A(b2, [{ opacity: 1, transform: 'none' }, { opacity: 1, transform: 'rotate(-6deg) translateY(2%)', offset: 0.3 }, { opacity: 0, transform: 'rotate(12deg) translateY(40%) scaleY(.7)' }], { duration: 900, easing: 'cubic-bezier(.5,0,.8,.5)' });
   await pause(520);
@@ -887,7 +1016,7 @@ async function victoire(coupFinal) {
     // Pas de coup, pas de paquet : on le dit simplement.
     phase = 'revele';
     A(dlg, [{ opacity: 0, translate: '-50% 20px' }, { opacity: 1, translate: '-50% 0' }], { duration: 300 });
-    await taper($('#c-texte'), 'La Brigade est tombée sans toi : pas de coup porté, pas de paquet cette fois.');
+    await taper($('#c-texte'), `${BOSS.sujet} est ${accord(BOSS, 'tombé')} sans toi : pas de coup porté, pas de paquet cette fois.`);
     $('#c-indice').textContent = 'Touche pour fermer'; $('#c-indice').classList.add('visible');
     revelA = performance.now();
     await toucher();
@@ -978,13 +1107,15 @@ function fuite() {
   S.etat = 'enfuie'; dessiner();
   const f = $('#fuite'), boss = $('#f-boss'), t = $('#f-tampon'), piste = $('#f-piste');
   piste.querySelectorAll('.ha').forEach((e) => e.remove());
-  t.innerHTML = tampon(['ENFUIE']);
-  $('#f-texte').textContent = `Le temps est écoulé : la Brigade s’est enfuie avec ${S.pv} PV. Pas de récompense cette fois.`;
+  t.innerHTML = tampon([accord(BOSS, 'ENFUI')]);
+  $('#f-texte').textContent = `${BOSS.fuite ? BOSS.fuite + ' ' : ''}Le temps est écoulé : ${BOSS.sujet.replace(/^L[ae] /, (m) => m.toLowerCase())} s’est ${accord(BOSS, 'enfui')} avec ${S.pv} PV. Pas de récompense cette fois.`;
   f.classList.add('joue'); f.setAttribute('aria-hidden', 'false');
   vibrer([60, 50, 60]);
   if (!reduit) {
     // Il tourne les talons et file vers la droite en sautillant.
-    boss.animate([{ transform: 'translateX(0) scaleX(1)' }, { transform: 'translateX(0) scaleX(-1)', offset: 0.12 }, { transform: 'translateX(18vw) scaleX(-1) translateY(-6%)', offset: 0.3 }, { transform: 'translateX(36vw) scaleX(-1)', offset: 0.48 }, { transform: 'translateX(54vw) scaleX(-1) translateY(-6%)', offset: 0.66 }, { transform: 'translateX(90vw) scaleX(-1)' }], { duration: 2800, easing: 'ease-in', fill: 'forwards' });
+    // L'affiche s'envole en tournoyant ; le boss détouré tourne les talons et file en sautillant.
+    if (BOSS.rendu === 'affiche') boss.animate([{ transform: 'none' }, { transform: 'translate(10vw, -4%) rotate(8deg)', offset: 0.25 }, { transform: 'translate(40vw, -14%) rotate(-10deg)', offset: 0.55 }, { transform: 'translate(95vw, -30%) rotate(40deg)' }], { duration: 2600, easing: 'ease-in', fill: 'forwards' });
+    else boss.animate([{ transform: 'translateX(0) scaleX(1)' }, { transform: 'translateX(0) scaleX(-1)', offset: 0.12 }, { transform: 'translateX(18vw) scaleX(-1) translateY(-6%)', offset: 0.3 }, { transform: 'translateX(36vw) scaleX(-1)', offset: 0.48 }, { transform: 'translateX(54vw) scaleX(-1) translateY(-6%)', offset: 0.66 }, { transform: 'translateX(90vw) scaleX(-1)' }], { duration: 2800, easing: 'ease-in', fill: 'forwards' });
     rires.forEach(clearTimeout);
     rires = [0, 1, 2, 3, 4].map((i) => setTimeout(() => {
       const h = document.createElement('span'); h.className = 'ha'; h.textContent = 'HA';
@@ -1006,6 +1137,14 @@ $('#fuite').addEventListener('click', fermerFuite);
 
 // ---------- Commandes du prototype ----------
 $('#p-equipe').addEventListener('click', (e) => { S.equipe = !S.equipe; e.currentTarget.setAttribute('aria-pressed', String(S.equipe)); });
+document.querySelectorAll('[data-boss]').forEach((b) => b.addEventListener('click', () => {
+  if ($('#cine').classList.contains('joue')) return;
+  document.querySelectorAll('[data-boss]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  BOSS = BOSSES[b.dataset.boss]; poserBoss(); fermerFuite();
+  const pv = pvDe(BOSS);
+  Object.assign(S, { etat: 'combat', pv: Math.round(pv * 0.78), pvMax: pv, reste: 462, q: 2, coups: 2, attente: false });
+  dessiner();
+}));
 $('#p-presque').addEventListener('click', () => { if (S.etat !== 'combat') return; S.pv = 3; dessinerVie(); });
 $('#p-victoire').addEventListener('click', () => { if (!S.coups) { S.coups = 1; S.frappeurs.add('Gon'); } victoire(true); });
 $('#p-sans').addEventListener('click', () => { S.coups = 0; victoire(false); });

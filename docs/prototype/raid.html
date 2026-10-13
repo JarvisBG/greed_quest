@@ -1,0 +1,1015 @@
+<title>Raid de la Brigade</title>
+<meta name="description" content="Prototype de la page ⑯ : l'alarme du raid, le combat face au chef de la Brigade (barre de vie, coups en direct, questions), la victoire avec le paquet de 3 sorts, et la fuite de la Brigade quand le temps est écoulé.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@800&family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,800;1,400&family=Dela+Gothic+One&family=DotGothic16&display=swap">
+<style>
+/* Page ⑯ : le Raid de la Brigade. Planche claire de l'app ; le combat est une case sombre d'acier et d'alarme
+   rouge où le chef de la Brigade fait face au joueur, sa barre de vie en grand. Les questions sont des cases
+   de manga claires. Grands moments : l'alarme (sirène, « RAID DE LA BRIGADE ! »), la chute du boss puis le
+   paquet de sorts, et la fuite en riant si le temps s'écoule. Thème clair unique (jeu au soleil). */
+:root {
+  color-scheme: light;
+  --papier: #eeefe9;
+  --case: #fbfbf7;
+  --case-2: #ecece6;
+  --encre: #111111;
+  --encre-2: #3b3d40;
+  --trame: rgba(17, 17, 17, 0.16);
+  --rouge: #c0272d;
+  --bleu: #1f4a9c;
+  --bleu-vif: #8fb2ff;
+  --jaune: #d9a11a;
+  --or: #d7b25a;
+  --or-vif: #ffd877;
+  --succes: #17713a;
+  --nuit: #0c0c0e;
+  /* La salle : bois sombre et velours bordeaux sous la lumière du projecteur. */
+  --salle: #1b100c;
+  --velours: #5a1420;
+  --bois: #6b3f22;
+  --bois-clair: #a8693a;
+  --lumiere: #fff1c9;
+  --sceau: #e0463c;
+  --f-titre: 'Dela Gothic One', 'Arial Black', sans-serif;
+  --f-texte: 'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif;
+  --f-chiffre: 'Atkinson Hyperlegible Mono', ui-monospace, monospace;
+  --f-jeu: 'DotGothic16', ui-monospace, monospace;
+  --trait: 3px;
+  --sortie: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { overflow-x: clip; }
+body { margin: 0; background: var(--papier); color: var(--encre); font: 400 17px/1.45 var(--f-texte); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 3px solid var(--bleu); outline-offset: 3px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { cursor: default; }
+
+.app { max-width: 480px; margin: 0 auto; padding: 0 16px 104px; display: grid; gap: 14px; }
+.app > * { min-width: 0; }
+
+/* Commandes du prototype (pas dans l'app) */
+.proto { display: grid; gap: 7px; padding: 10px 12px; margin-inline: -16px; background: var(--encre); color: var(--case); }
+.proto p { margin: 0; font: 600 13px/1.3 var(--f-texte); }
+.proto .rang { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.proto .rang > span { font: 800 12px var(--f-texte); color: #b9bcc2; min-width: 58px; }
+.proto button { min-height: 36px; padding: 0 10px; border: 2px solid var(--case); background: transparent; color: var(--case); font: 700 13px var(--f-texte); }
+.proto button[aria-pressed='true'] { background: var(--case); color: var(--encre); }
+
+/* Barre d'état de l'app */
+.barre { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; margin-inline: -16px; padding: 10px 16px; background: var(--case); border-bottom: var(--trait) solid var(--encre); display: flex; align-items: center; gap: 12px; min-height: 58px; }
+.chrono { font: 800 30px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.liaison { display: flex; align-items: center; gap: 6px; font: 600 14px var(--f-texte); }
+.pastille { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--encre); background: var(--succes); display: inline-block; }
+.jenny { margin-left: auto; font: 800 22px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.jenny small { font: 600 15px var(--f-texte); margin-left: 3px; }
+
+/* ---------- Onglets ---------- */
+.onglets { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, 1fr); background: var(--case); border-top: var(--trait) solid var(--encre); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.onglets button { position: relative; min-height: 64px; border: 0; border-right: 1.5px solid var(--encre); background: transparent; display: grid; justify-items: center; align-content: center; gap: 3px; font: 800 12.5px/1 var(--f-texte); padding: 6px 2px; }
+.onglets button:last-child { border-right: 0; }
+.onglets svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.onglets button[aria-current='page'] { background: var(--encre); color: var(--case); }
+.onglets .plus-un { position: absolute; top: -30px; left: 50%; translate: -50% 0; font: 400 22px/1 var(--f-titre); color: var(--encre); background: var(--case); border: var(--trait) solid var(--encre); padding: 3px 8px; pointer-events: none; }
+.jenny { position: relative; }
+.flotte { position: absolute; right: 0; top: 100%; font: 800 18px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; padding: 4px 7px; background: var(--case); border: 2px solid var(--encre); pointer-events: none; white-space: nowrap; }
+.flotte.gain { color: var(--succes); }
+.flotte.perte { color: var(--rouge); }
+
+.aide { font: 400 15px/1.35 var(--f-texte); color: var(--encre-2); margin: 0; }
+.case { background: var(--case); border: var(--trait) solid var(--encre); padding: 14px 16px; display: grid; gap: 12px; }
+.case h2 { margin: 0; font: 400 20px/1.1 var(--f-titre); }
+.case p { margin: 0; }
+
+/* ---------- En-tête : retour et enseigne suspendue ---------- */
+.tete-ville { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding-top: 8px; }
+.retour { min-height: 44px; padding: 0 12px 0 8px; border: var(--trait) solid var(--encre); background: var(--case); font: 800 15px var(--f-texte); display: inline-flex; align-items: center; gap: 4px; justify-self: start; }
+.retour svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.enseigne { justify-self: center; position: relative; padding-top: 22px; transform-origin: 50% 0; animation: balance 5s ease-in-out infinite; }
+@keyframes balance { 0%, 100% { rotate: -1.6deg; } 50% { rotate: 0.6deg; } }
+/* Deux chaînes, puis la planche noire au double filet. */
+.enseigne::before, .enseigne::after { content: ''; position: absolute; top: 0; width: 4px; height: 24px; background: repeating-linear-gradient(var(--encre) 0 5px, transparent 5px 7px); border-inline: 1px solid var(--encre); }
+.enseigne::before { left: 18%; }
+.enseigne::after { right: 18%; }
+.planche { background: var(--encre); color: var(--case); padding: 10px 18px 9px; border-radius: 3px; box-shadow: inset 0 0 0 3px var(--encre), inset 0 0 0 5px var(--case), 0 6px 0 -2px rgba(17, 17, 17, 0.25); display: grid; justify-items: center; gap: 4px; }
+.planche h1 { margin: 0; font: 400 clamp(26px, 8.4vw, 36px)/1 var(--f-titre); letter-spacing: 0.04em; }
+.planche span { font: 400 13px/1 var(--f-jeu); color: var(--or-vif); letter-spacing: 0.08em; }
+.distance { justify-self: center; display: inline-flex; gap: 8px; align-items: center; font: 800 14px var(--f-texte); padding: 6px 10px; border: 2px dashed var(--bleu); color: var(--bleu); background: var(--case); }
+.distance b { font: 800 15px var(--f-chiffre); font-variant-numeric: tabular-nums; }
+
+/* ---------- Carte de Greed Island (copie de @gq/ui) ---------- */
+.gi-carte { container-type: inline-size; aspect-ratio: 63 / 88; width: 100%; position: relative; color: var(--encre); }
+.gi-carte .c-cadre { position: absolute; inset: 0; border-radius: 4.5cqi; padding: 5cqi; background: var(--cadre, var(--rouge)); box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35); display: grid; grid-template-rows: auto 1fr auto; gap: 3cqi; }
+.gi-carte.f-sort { --cadre: var(--bleu); }
+.gi-carte.f-objet { --cadre: var(--jaune); }
+.gi-carte.f-designee .c-txt { font-style: italic; }
+.gi-carte .c-tete { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 3cqi; background: var(--case); border-radius: 2cqi; padding: 2.5cqi 3cqi; box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); }
+.gi-carte .c-num { font: 800 9cqi/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.gi-carte .c-num.long { font-size: 7.4cqi; }
+.gi-carte .c-nom { font: 800 6.4cqi/1.1 var(--f-texte); text-align: center; text-wrap: balance; hyphens: auto; overflow-wrap: break-word; }
+.gi-carte .c-nom.long { font-size: 5.6cqi; }
+.gi-rang { font: 400 7cqi/1 var(--f-titre); padding: 1.6cqi 2.4cqi; border-radius: 1.6cqi; white-space: nowrap; color: var(--encre); background: var(--matiere, var(--case)); box-shadow: 0 0 0 0.6cqi var(--encre); }
+.gi-carte .c-art { border-radius: 2cqi; background: #f4f2ea radial-gradient(var(--trame) 0.9px, transparent 1.1px) 0 0 / 5px 5px; box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); display: grid; place-items: center; overflow: hidden; min-height: 0; }
+.gi-carte .c-filigrane { font: 400 30cqi/1 var(--f-titre); color: transparent; -webkit-text-stroke: 0.9cqi rgba(17, 17, 17, 0.55); letter-spacing: -0.02em; }
+.gi-carte .c-txt { margin: 0; background: var(--case); border-radius: 2cqi; padding: 3cqi 3.5cqi; font: 400 5.6cqi/1.3 var(--f-texte); box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); }
+.r-SS { --matiere: linear-gradient(125deg, #9c7a1c 0%, #f6dc85 28%, #c39a2c 50%, #fbe7a6 72%, #a8841f 100%); }
+.r-S  { --matiere: linear-gradient(125deg, #8d949b 0%, #f1f3f5 35%, #aab1b8 60%, #e9ecef 100%); }
+.r-A  { --matiere: linear-gradient(125deg, #c97a4a 0%, #f2b48a 45%, #d88a58 100%); }
+.r-B  { --matiere: linear-gradient(125deg, #6fb596 0%, #b6e0cc 50%, #82c2a6 100%); }
+.r-C  { --matiere: linear-gradient(125deg, #9eb0c4 0%, #d6dfea 50%, #aebfd1 100%); }
+.r-D, .r-sort, .r-objet { --matiere: var(--case); }
+@container (max-width: 130px) {
+  .gi-carte .c-nom, .gi-carte .c-txt { display: none; }
+  .gi-carte .c-tete { grid-template-columns: 1fr auto; padding: 4cqi; }
+  .gi-carte .c-num { font-size: 17cqi; }
+  .gi-carte .gi-rang { font-size: 13cqi; padding: 2.5cqi 4cqi; }
+  .gi-carte .gi-rang .lim, .gi-carte .r-sort, .gi-carte .r-objet { display: none; }
+  .gi-carte.f-sort .c-tete, .gi-carte.f-objet .c-tete { grid-template-columns: 1fr; }
+  .gi-carte .c-cadre { padding: 6cqi; gap: 5cqi; grid-template-rows: auto 1fr; }
+}
+.gi-carte.dos .c-cadre { background: #15233f; box-shadow: inset 0 0 0 1.2cqi #15233f, inset 0 0 0 2.2cqi var(--or), inset 0 0 0 3.4cqi #15233f, inset 0 0 0 4cqi var(--or); place-items: center; grid-template-rows: 1fr; }
+.gi-carte.dos svg { width: 58%; height: auto; }
+
+/* ---------- Boîte du jeu ---------- */
+.gi-annonce { position: fixed; z-index: 70; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 70px); width: min(calc(100% - 24px), 440px); transform: translate(-50%, calc(-100% - 120px)); visibility: hidden; transition: transform 0.45s var(--sortie), visibility 0s 0.45s; background: var(--nuit); color: #f6f6f2; border-radius: 6px; box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f6f6f2, inset 0 0 0 8px var(--nuit), inset 0 0 0 9px #f6f6f2, 0 16px 30px -14px rgba(0, 0, 0, 0.6); padding: 22px 22px 18px; display: grid; gap: 8px; }
+.gi-annonce.visible { transform: translate(-50%, 0); visibility: visible; transition: transform 0.45s var(--sortie), visibility 0s; }
+.a-qui { justify-self: start; font: 400 15px/1 var(--f-jeu); background: #f6f6f2; color: var(--nuit); padding: 4px 8px; }
+.t-sort .a-qui { background: var(--bleu-vif); }
+.gi-annonce .a-texte { font: 400 20px/1.4 var(--f-jeu); margin: 0; }
+.gi-annonce .a-actions { display: flex; gap: 10px; }
+.gi-annonce .a-actions button { background: #f6f6f2; color: var(--nuit); border: 0; font: 400 16px var(--f-jeu); padding: 10px 14px; min-height: 44px; }
+.gi-dialogue { background: var(--nuit); color: #f6f6f2; border-radius: 6px; box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f6f6f2, inset 0 0 0 8px var(--nuit), inset 0 0 0 9px #f6f6f2, 0 10px 24px -10px rgba(0, 0, 0, 0.6); padding: 18px 20px 16px; display: grid; gap: 10px; }
+.gi-dialogue .a-texte { font: 400 19px/1.45 var(--f-jeu); margin: 0; min-height: 1.45em; }
+.t-vente .a-qui { background: var(--or-vif); }
+/* ---------- Le paquet : sachet métallisé marine et or, sertis en dents de scie ---------- */
+.paquet { --pw: 112px; position: relative; width: var(--pw); aspect-ratio: 63 / 100; display: grid; grid-template-rows: 9% 1fr 9%; filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.28)); }
+.paquet .serti { background: repeating-linear-gradient(90deg, #8f6614 0 2px, #e9c56a 2px 4px), #c99a2a; clip-path: var(--dents); }
+.paquet .serti.haut { --dents: polygon(0 100%, 0 30%, 5% 0, 10% 30%, 15% 0, 20% 30%, 25% 0, 30% 30%, 35% 0, 40% 30%, 45% 0, 50% 30%, 55% 0, 60% 30%, 65% 0, 70% 30%, 75% 0, 80% 30%, 85% 0, 90% 30%, 95% 0, 100% 30%, 100% 100%); }
+.paquet .serti.bas { --dents: polygon(0 0, 100% 0, 100% 70%, 95% 100%, 90% 70%, 85% 100%, 80% 70%, 75% 100%, 70% 70%, 65% 100%, 60% 70%, 55% 100%, 50% 70%, 45% 100%, 40% 70%, 35% 100%, 30% 70%, 25% 100%, 20% 70%, 15% 100%, 10% 70%, 5% 100%, 0 70%); }
+.paquet .corps { position: relative; overflow: hidden; container-type: inline-size; display: grid; grid-template-rows: auto 1fr auto; justify-items: center; padding: 9cqi 6cqi 7cqi; color: var(--or-vif);
+  background: linear-gradient(115deg, rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0.22) 42%, rgba(255, 255, 255, 0) 54%), linear-gradient(#22396a, var(--marine) 55%, var(--marine-2));
+  box-shadow: inset 0 0 0 2.5cqi var(--marine), inset 0 0 0 3.6cqi var(--or), inset 0 0 0 5.4cqi var(--marine), inset 0 0 0 6cqi rgba(215, 178, 90, 0.6); }
+/* Reflet qui passe sur le métal. */
+.paquet .corps::after { content: ''; position: absolute; inset: -20% -60%; background: linear-gradient(105deg, transparent 42%, rgba(255, 255, 255, 0.28) 50%, transparent 58%); animation: reflet 4.5s ease-in-out infinite; }
+@keyframes reflet { 0%, 55% { translate: -60% 0; } 85%, 100% { translate: 60% 0; } }
+.paquet .marque { font: 400 10.5cqi/1 var(--f-titre); letter-spacing: 0.08em; color: var(--case); }
+.paquet .embleme { width: 64cqi; align-self: center; }
+.paquet .embleme svg { width: 100%; height: auto; display: block; }
+.paquet .nombre { display: grid; justify-items: center; gap: 2cqi; }
+.paquet .nombre b { font: 400 16cqi/1 var(--f-titre); color: var(--or-vif); }
+.paquet .nombre span { font: 800 8cqi/1 var(--f-texte); letter-spacing: 0.14em; text-transform: uppercase; color: var(--case); }
+
+/* ---------- Raid de la Brigade : acier sombre, alarme rouge, éclats blancs ---------- */
+:root {
+  --acier: #16181d;
+  --acier-2: #262a32;
+  --alarme: #e0322b;
+  --alarme-vif: #ff5a4a;
+  --braise: #ffb08a;
+  --os: #f1ece2;
+  --marine: #15233f;
+  --marine-2: #0b1426;
+}
+
+/* Le combat : une case sombre, le boss face à toi, sa barre de vie en grand. */
+.ring { position: relative; overflow: hidden; border: var(--trait) solid var(--encre); color: var(--os); display: grid; gap: 10px; padding: 12px 14px 16px;
+  background: radial-gradient(ellipse 80% 55% at 50% 42%, rgba(224, 50, 43, 0.32), transparent 72%), radial-gradient(rgba(255, 255, 255, 0.05) 0.8px, transparent 1.2px) 0 0 / 4px 4px, linear-gradient(#2a1414, var(--acier) 60%, #0b0c0f); }
+.ring .lignes-c { position: absolute; inset: -40%; opacity: 0.1; pointer-events: none; animation: tourne-lent 40s linear infinite; }
+.ring .lignes-c svg { width: 100%; height: 100%; }
+@keyframes tourne-lent { to { rotate: 360deg; } }
+.ring > :not(.lignes-c) { position: relative; }
+.ring .tete-raid { display: flex; align-items: center; gap: 10px; }
+.ring .tete-raid h2 { margin: 0; font: 400 clamp(17px, 5.4vw, 22px)/1.05 var(--f-titre); color: #fff; -webkit-text-stroke: 1.5px var(--alarme); paint-order: stroke fill; }
+.ring .temps { margin-left: auto; display: grid; justify-items: end; }
+.ring .temps span { font: 600 11px/1 var(--f-texte); letter-spacing: 0.1em; text-transform: uppercase; color: #b9b3a8; }
+.ring .temps b { font: 800 26px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--braise); }
+.ring .temps.urgent b { color: var(--alarme-vif); animation: presse 0.8s steps(2) infinite; }
+
+/* Le boss, sur sa scène. */
+.scene-boss { position: relative; height: clamp(170px, 46vw, 230px); display: grid; place-items: end center; }
+.boss { height: 100%; aspect-ratio: 200 / 220; max-width: 100%; transform-origin: 50% 100%; animation: respire 3.2s ease-in-out infinite; filter: drop-shadow(0 0 14px rgba(224, 50, 43, 0.55)); }
+.boss svg { width: 100%; height: 100%; display: block; overflow: visible; }
+@keyframes respire { 0%, 100% { scale: 1 1; } 50% { scale: 1.015 0.99; } }
+.boss .grin { opacity: 0; }
+.boss.rit .grin { opacity: 1; }
+.boss.rit .moue { opacity: 0; }
+.boss.rit { animation: ricane 0.18s ease-in-out 6 alternate; }
+@keyframes ricane { from { translate: 0 0; } to { translate: 0 -4px; } }
+.boss .yeux { animation: lueur-yeux 2.4s ease-in-out infinite; }
+@keyframes lueur-yeux { 50% { opacity: 0.7; } }
+/* La bulle du boss quand il ricane. */
+.bulle { position: absolute; top: 4px; right: 0; max-width: 46%; background: var(--case); color: var(--encre); border: var(--trait) solid var(--encre); border-radius: 50% 46% 48% 44% / 60% 56% 60% 52%; padding: 10px 14px; font: 400 16px/1.1 var(--f-titre); text-align: center; opacity: 0; scale: 0.6; transition: opacity 0.15s, scale 0.25s cubic-bezier(.3, 1.6, .5, 1); pointer-events: none; }
+.bulle::after { content: ''; position: absolute; left: 10px; bottom: -14px; width: 18px; height: 16px; background: var(--case); border-left: var(--trait) solid var(--encre); border-bottom: var(--trait) solid var(--encre); transform: skewX(30deg) rotate(-20deg); }
+.bulle.visible { opacity: 1; scale: 1; }
+/* Les coups des autres joueurs : petits éclats nommés autour du boss. */
+.coup-autre { position: absolute; font: 800 13px/1 var(--f-texte); color: var(--os); background: rgba(11, 12, 15, 0.8); border: 1.5px solid var(--braise); padding: 3px 6px; white-space: nowrap; pointer-events: none; }
+.coup-autre b { color: var(--alarme-vif); font-family: var(--f-chiffre); }
+.moins-un { position: absolute; left: 50%; top: 30%; font: 400 46px/1 var(--f-titre); color: #fff; -webkit-text-stroke: 3px var(--alarme); paint-order: stroke fill; pointer-events: none; }
+
+/* La barre de vie : énorme, segments de 10 PV, la perte reste blanche un instant. */
+.vie { display: grid; gap: 6px; }
+.jauge { position: relative; height: 26px; border: var(--trait) solid var(--os); background: #0b0c0f; overflow: hidden; }
+.jauge i { position: absolute; inset: 0 auto 0 0; display: block; }
+.jauge .perte { background: var(--os); transition: width 0.5s ease-in 0.35s; }
+.jauge .reste { background: linear-gradient(#ff6a55, var(--alarme) 55%, #a8151a); transition: width 0.12s; }
+.jauge.bas .reste { animation: presse 0.7s steps(2) infinite; }
+.jauge .crans { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(var(--cran) - 2px), rgba(11, 12, 15, 0.85) calc(var(--cran) - 2px) var(--cran)); }
+.vie .chiffres { display: flex; align-items: baseline; gap: 8px; font: 600 14px/1 var(--f-texte); color: #c9c2b6; }
+.vie .chiffres b { font: 800 24px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; color: #fff; }
+.vie .chiffres .equipe { margin-left: auto; text-align: right; }
+
+/* La question : une case de manga, papier clair. */
+.question { position: relative; background: var(--case); border: var(--trait) solid var(--encre); padding: 14px 16px 16px; display: grid; gap: 12px; box-shadow: 6px 6px 0 var(--encre); margin-right: 6px; }
+.question .q-tete { display: flex; align-items: baseline; gap: 10px; font: 400 13px/1 var(--f-jeu); letter-spacing: 0.06em; color: var(--encre-2); }
+.question .q-tete .mes-coups { margin-left: auto; font: 800 14px/1 var(--f-texte); color: var(--encre); letter-spacing: 0; }
+.question .q-tete .mes-coups b { font-family: var(--f-chiffre); color: var(--alarme); }
+.question h3 { margin: 0; font: 800 20px/1.25 var(--f-texte); text-wrap: balance; }
+.choix-raid { display: grid; gap: 8px; }
+.choix-raid button { position: relative; min-height: 52px; border: var(--trait) solid var(--encre); background: var(--case); font: 800 16px/1.2 var(--f-texte); padding: 8px 14px 8px 46px; text-align: left; box-shadow: 0 4px 0 -1px rgba(17, 17, 17, 0.28); }
+.choix-raid button::before { content: attr(data-lettre); position: absolute; left: 10px; top: 50%; translate: 0 -50%; width: 24px; height: 24px; display: grid; place-items: center; background: var(--encre); color: var(--case); font: 400 13px/1 var(--f-titre); }
+.choix-raid button:active:not(:disabled) { translate: 0 3px; box-shadow: none; }
+.choix-raid button.juste { background: var(--encre); color: var(--case); }
+.choix-raid button.juste::before { background: var(--alarme); }
+.choix-raid button.faux { text-decoration: line-through 3px var(--alarme); color: var(--encre-2); }
+.choix-raid button:disabled:not(.juste):not(.faux) { opacity: 0.45; }
+.verdict { margin: 0; min-height: 1.3em; font: 400 18px/1.3 var(--f-jeu); }
+.verdict.touche { color: var(--alarme); }
+.fini { text-align: center; justify-items: center; }
+.fini b.gros-chiffre { font: 800 54px/1 var(--f-chiffre); color: var(--alarme); }
+.regle { font: 400 14px/1.35 var(--f-texte); color: var(--encre-2); margin: 0; }
+
+/* Bandeau du raid, sous la barre, sur toutes les autres pages. */
+.bandeau-raid { margin-top: -14px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 58px); z-index: 29; margin-inline: -16px; width: calc(100% + 32px); padding: 8px 16px; border: 0; border-bottom: var(--trait) solid var(--encre); background: #3b0d0d; color: var(--os); display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; font: 800 15px/1.2 var(--f-texte); text-align: left; }
+.bandeau-raid .oeil { width: 12px; height: 12px; border-radius: 50%; background: var(--alarme-vif); box-shadow: 0 0 0 3px rgba(224, 50, 43, 0.4); animation: presse 0.9s steps(2) infinite; }
+.bandeau-raid .mini { height: 6px; border: 1.5px solid var(--os); background: #0b0c0f; grid-column: 1 / -1; position: relative; }
+.bandeau-raid .mini i { position: absolute; inset: 0 auto 0 0; background: var(--alarme-vif); }
+.bandeau-raid b { font: 800 17px var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--braise); }
+
+/* Accueil (pour montrer le bandeau hors de la page). */
+.mini-accueil { display: grid; gap: 14px; }
+
+/* ---------- Effets : un seul canvas au-dessus de tout ---------- */
+#fx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 90; pointer-events: none; }
+
+/* ---------- Alarme : le raid commence ---------- */
+.alarme { position: fixed; inset: 0; z-index: 66; overflow: hidden; visibility: hidden; display: grid; color: var(--os); }
+.alarme.joue { visibility: visible; }
+.alarme .nuit { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 60%, #4a0f0f 0, #1a0606 50%, #050202 95%); opacity: 0; }
+/* Deux faisceaux de sirène qui tournent. */
+.alarme .sirene { position: absolute; left: 50%; top: 50%; width: 170vmax; height: 170vmax; margin: -85vmax 0 0 -85vmax; opacity: 0;
+  background: conic-gradient(from 0deg, rgba(255, 70, 50, 0.55) 0deg, transparent 28deg, transparent 180deg, rgba(255, 70, 50, 0.55) 180deg, transparent 208deg, transparent 360deg); animation: sirene 1.6s linear infinite; }
+@keyframes sirene { to { rotate: 360deg; } }
+.alarme .bords { position: absolute; inset: 0; box-shadow: inset 0 0 0 0 var(--alarme); animation: bords 0.8s ease-in-out infinite; opacity: 0; }
+@keyframes bords { 50% { box-shadow: inset 0 0 50px 14px var(--alarme); } }
+.alarme .lignes { position: absolute; inset: -30%; opacity: 0; }
+.alarme .lignes svg { width: 100%; height: 100%; }
+.alarme .ombre { position: absolute; left: 50%; bottom: calc(max(20px, env(safe-area-inset-bottom, 0px)) + 236px); height: min(40dvh, 84vw); aspect-ratio: 200 / 220; translate: -50% 0; opacity: 0; filter: brightness(0) drop-shadow(0 0 2px #ff5a4a); }
+.alarme .ombre svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.alarme .ombre .yeux { filter: brightness(100); }
+.alarme .yeux-seuls { position: absolute; left: 50%; bottom: calc(max(20px, env(safe-area-inset-bottom, 0px)) + 236px); height: min(40dvh, 84vw); aspect-ratio: 200 / 220; translate: -50% 0; opacity: 0; pointer-events: none; }
+.alarme .yeux-seuls svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.alarme .cri { position: absolute; left: 0; right: 0; top: max(28px, 9dvh); display: grid; justify-items: center; gap: 2px; rotate: -4deg; opacity: 0; }
+.alarme .cri .l1 { font: 400 min(26vw, 140px)/0.88 var(--f-titre); color: #fff; -webkit-text-stroke: 5px var(--alarme); paint-order: stroke fill; letter-spacing: -0.02em; }
+.alarme .cri .l2 { font: 400 min(8.4vw, 42px)/1 var(--f-titre); color: #fff; -webkit-text-stroke: 3px var(--alarme); paint-order: stroke fill; white-space: nowrap; }
+.alarme .infos { position: absolute; left: 50%; bottom: max(20px, env(safe-area-inset-bottom, 0px)); width: min(calc(100% - 24px), 440px); translate: -50% 0; display: grid; gap: 10px; opacity: 0; }
+.alarme .infos .a-texte { font: 400 19px/1.4 var(--f-jeu); margin: 0; }
+.alarme .infos .a-texte b { font-family: var(--f-chiffre); color: var(--braise); }
+.alarme .au-combat { min-height: 60px; border: 0; background: var(--alarme); color: #fff; font: 400 21px/1 var(--f-titre); box-shadow: 0 5px 0 -1px #6d0c0c; letter-spacing: 0.02em; }
+.alarme .au-combat:active { translate: 0 3px; box-shadow: none; }
+.alarme .plus-tard { min-height: 44px; border: 2px solid rgba(241, 236, 226, 0.5); background: transparent; color: var(--os); font: 400 16px var(--f-jeu); }
+.alarme .passer, .cine .passer { pointer-events: none; position: absolute; bottom: max(16px, env(safe-area-inset-bottom, 0px)); left: 50%; translate: -50% 0; font: 600 13px var(--f-texte); color: rgba(235, 238, 242, 0.75); white-space: nowrap; opacity: 0; transition: opacity 0.25s; }
+.alarme.intro .passer, .cine.intro .passer { opacity: 1; transition-delay: 0.6s; }
+
+/* ---------- Victoire : le boss s'effondre, puis le paquet ---------- */
+.cine { --pw: min(40vw, 170px); --cw: min(34vw, 150px, calc((100dvh - 420px) * 63 / 88)); position: fixed; inset: 0; z-index: 65; pointer-events: none; overflow: hidden; visibility: hidden; }
+.cine.joue { visibility: visible; pointer-events: auto; cursor: pointer; }
+.cine .nuit { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 46%, #3d1414 0, #170808 50%, #040203 92%); opacity: 0; }
+.cine .nuit.bleue { background: radial-gradient(ellipse at 50% 42%, #1c3366 0, #0d1730 46%, #04060c 92%); }
+.cine .lignes { position: absolute; inset: -30%; opacity: 0; }
+.cine .lignes svg { width: 100%; height: 100%; }
+.cine .c-boss { position: absolute; left: 50%; top: 50%; height: min(52dvh, 100vw); aspect-ratio: 200 / 220; translate: -50% -55%; transform-origin: 50% 100%; opacity: 0; }
+.cine .c-boss svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.cine .c-boss .grin { opacity: 0; }
+.cine .c-boss.ko .yeux { opacity: 0; }
+.cine .c-boss .croix { opacity: 0; }
+.cine .c-boss.ko .croix { opacity: 1; }
+.cine .cri { position: absolute; left: 0; right: 0; top: max(24px, 8dvh); display: grid; justify-items: center; rotate: -5deg; opacity: 0; }
+.cine .cri .l1 { font: 400 min(16vw, 92px)/0.9 var(--f-titre); color: #fff; -webkit-text-stroke: 4px var(--alarme); paint-order: stroke fill; }
+.cine .cri .l2 { font: 400 min(12vw, 70px)/0.95 var(--f-titre); color: #fff; -webkit-text-stroke: 4px var(--alarme); paint-order: stroke fill; }
+.cine .tes-coups { position: absolute; left: 0; right: 0; top: calc(max(24px, 8dvh) + min(30vw, 170px)); text-align: center; font: 400 18px/1.2 var(--f-jeu); color: var(--braise); opacity: 0; }
+.cine .rayons { position: absolute; left: 50%; top: 46%; width: 150vmax; height: 150vmax; margin: -75vmax 0 0 -75vmax; opacity: 0; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, rgba(191, 214, 255, 0.5) 0deg 4deg, rgba(191, 214, 255, 0) 4deg 15deg);
+  -webkit-mask: radial-gradient(closest-side, #000 0, rgba(0, 0, 0, 0.6) 30%, transparent 70%); mask: radial-gradient(closest-side, #000 0, rgba(0, 0, 0, 0.6) 30%, transparent 70%); }
+.cine .scene { position: absolute; left: 50%; top: 46%; width: 0; height: 0; }
+.cine .scene > * { position: absolute; }
+.cine .c-paquet { left: calc(var(--pw) / -2); top: calc(var(--pw) * -50 / 63); z-index: 2; opacity: 0; }
+.cine .c-paquet .paquet { --pw: min(40vw, 170px); }
+.cine .c-paquet.embrase .paquet { filter: drop-shadow(0 0 10px #cfe0ff) drop-shadow(0 0 28px #6f9bff); }
+.cine .dechirure { position: absolute; z-index: 4; left: 4%; right: 4%; top: 12.5%; height: 3px; background: #fff; box-shadow: 0 0 8px 2px #cfe0ff, 0 0 22px 6px #6f9bff; transform-origin: left; scale: 0 1; opacity: 0; }
+.cine .c-carte { z-index: 1; width: var(--cw); left: calc(var(--cw) / -2); top: calc(var(--cw) * 88 / 63 / -2); perspective: 1100px; opacity: 0; }
+.cine .retourne { position: relative; transform-style: preserve-3d; }
+.cine .retourne > .gi-carte { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.cine .retourne > .gi-carte:not(.dos) .c-cadre { box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35), 0 18px 30px rgba(0, 0, 0, 0.55); }
+.cine .retourne > .dos { position: absolute; inset: 0; transform: rotateY(180deg); }
+.cine .flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+.cine .dialogue { pointer-events: none; position: absolute; left: 50%; bottom: max(18px, env(safe-area-inset-bottom, 0px)); width: min(calc(100% - 24px), 440px); translate: -50% 0; opacity: 0; }
+.cine .dialogue .a-qui { background: var(--alarme-vif); color: #fff; }
+.cine .dialogue .a-indice { margin: 0; font: 600 14px/1.3 var(--f-texte); color: #c3c6cc; opacity: 0; transition: opacity 0.3s; }
+.cine .dialogue .a-indice.visible { opacity: 1; }
+
+/* ---------- Défaite : la Brigade s'enfuit en riant ---------- */
+.fuite { position: fixed; inset: 0; z-index: 64; display: grid; align-content: center; justify-items: center; gap: 12px; padding: 16px; background: rgba(12, 6, 6, 0.86); visibility: hidden; opacity: 0; transition: opacity 0.3s, visibility 0s 0.3s; cursor: pointer; text-align: center; color: var(--os); overflow: hidden; }
+.fuite.joue { visibility: visible; opacity: 1; transition: opacity 0.25s; }
+.fuite .piste { position: relative; width: 100%; height: min(34dvh, 220px); }
+.fuite .f-boss { position: absolute; bottom: 0; left: 50%; height: 100%; aspect-ratio: 200 / 220; translate: -50% 0; filter: brightness(0) drop-shadow(0 0 2px #ff5a4a); }
+.fuite .f-boss svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.fuite .ha { position: absolute; font: 400 30px/1 var(--f-titre); color: #fff; -webkit-text-stroke: 2px var(--alarme); paint-order: stroke fill; opacity: 0; }
+.fuite .tampon { width: min(70vw, 280px); rotate: -9deg; }
+.fuite .tampon svg { width: 100%; height: auto; overflow: visible; }
+.fuite .tampon.frappe { animation: frapper 0.34s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes frapper { from { scale: 2.2; opacity: 0; } 65% { scale: 0.93; opacity: 1; } }
+.fuite p { margin: 0; font: 400 18px/1.4 var(--f-jeu); max-width: 30ch; }
+.fuite small { font: 600 13px var(--f-texte); color: rgba(235, 238, 242, 0.7); }
+
+@keyframes presse { 50% { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+.alarme .yeux-seuls svg > :not(.yeux) { opacity: 0; }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Encre des tampons : bord mangé et manques. -->
+    <filter id="encre" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" result="grain"/>
+      <feDisplacementMap in="SourceGraphic" in2="grain" scale="3.2" result="bord"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.22" numOctaves="2" seed="11" result="taches"/>
+      <feColorMatrix in="taches" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2.3 2.2" result="masque"/>
+      <feComposite in="bord" in2="masque" operator="in"/>
+    </filter>
+  </defs>
+</svg>
+
+<div class="app">
+  <div class="proto" role="group" aria-label="Commandes du prototype">
+    <p>Prototype : tu es Gon, 12 joueurs actifs, le boss a 12 × 5 = 60 PV. Le GM lance le raid, les autres joueurs frappent en direct.</p>
+    <div class="rang"><span>GM</span>
+      <button id="p-lancer">lance le raid (alarme)</button>
+    </div>
+    <div class="rang"><span>Équipe</span>
+      <button id="p-equipe" aria-pressed="true">les autres frappent</button>
+      <button id="p-presque">boss à 3 PV</button>
+    </div>
+    <div class="rang"><span>Fin</span>
+      <button id="p-victoire">victoire</button>
+      <button id="p-sans">victoire sans coup de Gon</button>
+      <button id="p-fuite">temps écoulé</button>
+    </div>
+    <div class="rang"><span>Ailleurs</span>
+      <button id="p-ailleurs">aller à l'accueil</button>
+    </div>
+  </div>
+
+  <header class="barre" aria-label="État de la partie">
+    <span class="chrono">1:12:40</span>
+    <span class="liaison"><i class="pastille"></i>En ligne</span>
+    <span class="jenny" id="jenny"><span id="mes-jenny">85</span><small>J</small></span>
+  </header>
+  <button class="bandeau-raid" id="bandeau" hidden><i class="oeil"></i><span>Raid de la Brigade · <span id="bandeau-pv">47</span> PV</span><b id="bandeau-temps">7:42</b><span class="mini"><i id="bandeau-jauge"></i></span></button>
+
+  <div id="page-raid" style="display:grid;gap:14px">
+    <div class="tete-ville">
+      <button class="retour" id="retour"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Accueil</button>
+    </div>
+
+    <section class="ring" id="ring" aria-labelledby="t-raid">
+      <div class="lignes-c" id="lignes-c" aria-hidden="true"></div>
+      <div class="tete-raid">
+        <h2 id="t-raid">RAID DE LA BRIGADE</h2>
+        <div class="temps" id="temps"><span>Il reste</span><b id="temps-b">7:42</b></div>
+      </div>
+      <div class="scene-boss" id="scene-boss">
+        <div class="boss" id="boss" aria-hidden="true"></div>
+        <div class="bulle" id="bulle">Hé hé hé !</div>
+      </div>
+      <div class="vie">
+        <div class="jauge" id="jauge" role="progressbar" aria-label="Points de vie du boss" aria-valuemin="0" aria-valuemax="60" aria-valuenow="47">
+          <i class="perte" id="jauge-perte"></i><i class="reste" id="jauge-reste"></i><span class="crans" id="crans"></span>
+        </div>
+        <div class="chiffres"><b id="pv">47</b>/ <span id="pv-max">60</span> PV<span class="equipe" id="equipe">8 joueurs ont frappé</span></div>
+      </div>
+    </section>
+
+    <section class="question" id="question" aria-live="polite"></section>
+
+    <p class="regle">Chaque bonne réponse retire 1 PV au boss. Une seule réponse par question. Si la Brigade tombe avant la fin, chaque joueur qui a porté au moins un coup reçoit un paquet de 3 sorts.</p>
+  </div>
+
+  <div id="page-accueil" class="mini-accueil" hidden>
+    <h1 style="margin:0;font:400 30px/1 var(--f-titre)">Accueil</h1>
+    <section class="case">
+      <h2>Les villes</h2>
+      <p class="aide">Ici, l'accueil n'est montré que pour le bandeau du raid : il reste sous la barre sur toutes les pages, et le toucher ramène au combat.</p>
+    </section>
+  </div>
+</div>
+
+<nav class="onglets" aria-label="Navigation">
+  <button data-onglet="accueil" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 3l9 8M6 9.5V21h12V9.5M10 21v-6h4v6"/></svg>Accueil</button>
+  <button data-onglet="scan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5M7 12h10"/></svg>Scanner</button>
+  <button data-onglet="livre"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2zM5 19a2 2 0 0 1 2-2h12M9 7h6"/></svg>Book</button>
+  <button data-onglet="sorts" id="onglet-sorts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 2.6 6.6L21 9.5l-5 4.4 1.6 6.6L12 17l-5.6 3.5L8 13.9 3 9.5l6.4-.9z"/></svg>Sorts</button>
+  <button data-onglet="echanges"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg>Échanges</button>
+</nav>
+
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<!-- Alarme : le raid commence -->
+<div class="alarme" id="alarme" role="alertdialog" aria-labelledby="al-titre" aria-hidden="true">
+  <div class="nuit" id="al-nuit"></div>
+  <div class="sirene" id="al-sirene"></div>
+  <div class="lignes" id="al-lignes"></div>
+  <div class="ombre" id="al-ombre"></div>
+  <div class="yeux-seuls" id="al-yeux"></div>
+  <div class="bords" id="al-bords"></div>
+  <div class="cri" id="al-cri"><span class="l1" id="al-titre">RAID</span><span class="l2">DE LA BRIGADE !</span></div>
+  <div class="infos gi-dialogue" id="al-infos">
+    <span class="a-qui" style="background:var(--alarme-vif);color:#fff">Raid</span>
+    <p class="a-texte">Le chef de la Brigade débarque sur l'île : <b>60 PV</b>, <b>10:00</b> pour l'abattre. Chaque bonne réponse le frappe.</p>
+    <button class="au-combat" id="al-combat">Au combat !</button>
+    <button class="plus-tard" id="al-tard">Plus tard</button>
+  </div>
+  <span class="passer">Touche pour passer</span>
+</div>
+
+<!-- Victoire -->
+<div class="cine" id="cine" aria-hidden="true">
+  <div class="nuit" id="c-nuit"></div>
+  <div class="lignes" id="c-lignes"></div>
+  <div class="rayons" id="c-rayons"></div>
+  <div class="c-boss" id="c-boss"></div>
+  <div class="cri" id="c-cri"><span class="l1">BRIGADE</span><span class="l2">VAINCUE !</span></div>
+  <div class="tes-coups" id="c-coups"></div>
+  <div class="scene" id="scene"><div class="c-paquet" id="c-paquet"></div></div>
+  <div class="flash" id="c-flash"></div>
+  <div class="dialogue gi-dialogue" id="c-dialogue" role="status">
+    <span class="a-qui">Raid</span>
+    <p class="a-texte" id="c-texte"></p>
+    <p class="a-indice" id="c-indice">Touche pour continuer</p>
+  </div>
+  <span class="passer">Touche pour passer</span>
+</div>
+
+<!-- Défaite -->
+<div class="fuite" id="fuite" aria-hidden="true" role="status">
+  <div class="piste" id="f-piste"><div class="f-boss" id="f-boss"></div></div>
+  <div class="tampon" id="f-tampon"></div>
+  <p id="f-texte"></p>
+  <small>Touche pour fermer</small>
+</div>
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const BOSS = `<svg viewBox="0 0 200 220" aria-hidden="true"><path d="M8 220 L22 132 Q30 116 60 112 L140 112 Q170 116 178 132 L192 220 Z" fill="#2b2f37" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M60 112 L84 170 M140 112 L116 170" stroke="#111" stroke-width="3" fill="none"/>
+      <path d="M40 150 Q46 132 62 128 M160 150 Q154 132 138 128" stroke="#4a505c" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <circle cx="100" cy="138" r="13" fill="#1b1d22" stroke="#111" stroke-width="3"/>
+      <path d="M94 131 V145 M94 131 H101 Q106 131 106 135 Q106 138 101 138 H94 M101 138 Q107 138 107 141.5 Q107 145 101 145 H94" stroke="#e0322b" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+      <rect x="28" y="160" width="112" height="28" rx="13" fill="#3a3f49" stroke="#111" stroke-width="4" transform="rotate(-8 84 174)"/>
+      <rect x="60" y="164" width="112" height="28" rx="13" fill="#343943" stroke="#111" stroke-width="4" transform="rotate(8 116 178)"/>
+      <circle cx="40" cy="176" r="15" fill="#c98b5e" stroke="#111" stroke-width="4"/>
+      <circle cx="162" cy="181" r="15" fill="#b8784c" stroke="#111" stroke-width="4"/>
+      <path d="M34 170 Q40 166 46 170 M156 175 Q162 171 168 175" stroke="#111" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <path d="M84 98 L86 116 L114 116 L116 98 Z" fill="#b8784c" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M58 30 Q40 10 30 2 Q34 26 54 50 Z" fill="#e9e1cf" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M142 30 Q160 10 170 2 Q166 26 146 50 Z" fill="#e9e1cf" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M56 70 Q56 26 100 24 Q144 26 144 70 L140 96 Q122 108 100 108 Q78 108 60 96 Z" fill="#c98b5e" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M54 66 Q54 22 100 20 Q146 22 146 66 L146 62 Q100 50 54 62 Z" fill="#2b2f37" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M72 34 L80 44 M118 30 L124 40" stroke="#4a505c" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M56 66 L144 66 L144 86 Q100 80 56 86 Z" fill="#141519" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+      <g class="yeux"><path d="M68 72 L92 76 L88 81 L70 78 Z" fill="#ff3b30"/><path d="M132 72 L108 76 L112 81 L130 78 Z" fill="#ff3b30"/></g>
+      <g class="croix" stroke="#f1ece2" stroke-width="3.5" stroke-linecap="round" opacity="0"><path d="M72 70 L86 82 M86 70 L72 82"/><path d="M114 70 L128 82 M128 70 L114 82"/></g>
+      <path d="M118 88 L126 104" stroke="#8a5a36" stroke-width="2.5" stroke-linecap="round"/>
+      <path class="moue" d="M84 96 Q100 92 116 96" stroke="#111" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <g class="grin"><path d="M78 92 Q100 108 122 92 Q100 100 78 92 Z" fill="#fff" stroke="#111" stroke-width="3.5" stroke-linejoin="round"/><path d="M86 95 L88 100 M94 97 L95 102 M101 98 L101 103 M108 97 L107 102 M115 95 L113 100" stroke="#111" stroke-width="2"/></g></svg>`;
+['#boss', '#c-boss', '#al-ombre', '#al-yeux', '#f-boss'].forEach((s) => ($(s).innerHTML = BOSS));
+
+// ---------- Données du prototype (dans l'app : GET /raid, POST /raid/reponse, évènements `raid`, `evenement`, `evenement_fin`, `recompense_raid`) ----------
+const QUESTIONS = [
+  ['Combien de cartes désignées compte le Book ?', ['20', '30', '50'], 1],
+  ['Quel rang est le plus rare ?', ['S', 'SS', 'A'], 1],
+  ['Combien de sorts contient un paquet de Masadora ?', ['1', '3', '5'], 1],
+  ['Combien de temps dure l’immunité après un sort subi ?', ['2 min', '5 min', '10 min'], 1],
+  ['Que révèle le sort Analyse ?', ['La position d’un joueur', 'Les contrefaçons d’une page', 'Une balise rare'], 1],
+  ['Peut-on revendre une carte SS ?', ['Oui', 'Non'], 1],
+  ['Où se déroulent les enchères ?', ['Masadora', 'Antokiba', 'Soufrabi'], 1],
+  ['Combien d’emplacements libres compte le Book ?', ['10', '15', '30'], 1],
+  ['Quel sort annule le prochain sort offensif reçu ?', ['Mur défensif', 'Voile d’ombre', 'Trace'], 0],
+  ['Que faut-il montrer au PNJ de l’arène ?', ['Son Book', 'Sa licence', 'Un sort'], 1],
+].map(([texte, choix, bonne]) => ({ texte, choix, bonne }));
+const SORTS = [
+  ['1023', 'Vol', 'Prend une carte désignée au hasard à un joueur proche.'],
+  ['1003', 'Mur défensif', 'Annule le prochain sort offensif reçu.'],
+  ['1027', 'Trace', 'Montre la zone de la dernière position d’un joueur.'],
+  ['1030', 'Guide', 'Montre la zone d’une balise rare active.'],
+  ['1010', 'Mimétisme', 'Copie une carte de ton Book.'],
+  ['1001', 'Voyance', 'Montre les emplacements libres d’un joueur déjà croisé.'],
+].map(([num, nom, txt]) => ({ num, nom, txt, genre: 'sort' }));
+const AUTRES = ['Kirua', 'Leolio', 'Kurapika', 'Biscuit', 'Goreinu', 'Hisoka', 'Tsezguerra', 'Ponzu', 'Kastro', 'Nobu', 'Kaito'];
+// etat : 'combat' | 'vaincu' | 'enfuie'
+const S = { etat: 'combat', pv: 47, pvMax: 60, reste: 462, q: 2, coups: 2, frappeurs: new Set(['Gon', 'Kirua', 'Leolio', 'Kurapika', 'Biscuit', 'Ponzu', 'Nobu', 'Kaito']), ailleurs: false, equipe: true, attente: false };
+
+// ---------- Outils ----------
+const vibrer = (p) => navigator.vibrate?.(p);
+const mmss = (s) => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.max(0, s) % 60).padStart(2, '0')}`;
+const centre = (el) => { const b = el.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2]; };
+const DOS_SVG = '<svg viewBox="0 0 100 100" fill="none" stroke="#d7b25a" aria-hidden="true"><circle cx="50" cy="50" r="42" stroke-width="2.5"/><circle cx="50" cy="50" r="34" stroke-width="1"/><path d="m50 8 8 34 34 8-34 8-8 34-8-34-34-8 34-8z" stroke-width="2"/><circle cx="50" cy="50" r="9" stroke-width="2.5"/></svg>';
+const DOS = `<div class="gi-carte dos"><div class="c-cadre">${DOS_SVG}</div></div>`;
+const PAQUET = `<div class="serti haut"></div><div class="corps"><span class="marque">BRIGADE</span><span class="embleme">${DOS_SVG}</span><span class="nombre"><b>×3</b><span>cartes de sort</span></span></div><div class="serti bas"></div>`;
+const carteHTML = (c) => `<div class="gi-carte f-sort"><div class="c-cadre"><div class="c-tete"><span class="c-num long">${c.num}</span><span class="c-nom${c.nom.length > 10 ? ' long' : ''}">${c.nom}</span><span class="gi-rang r-sort">Sort</span></div><div class="c-art"><span class="c-filigrane">${c.num.slice(-3)}</span></div><p class="c-txt">${c.txt}</p></div></div>`;
+const tampon = (mots) => `<svg viewBox="-80 -36 160 72" aria-hidden="true"><g filter="url(#encre)" fill="none" stroke="#e0463c">
+  <rect x="-76" y="-32" width="152" height="64" rx="5" stroke-width="5"/><rect x="-68" y="-25" width="136" height="50" rx="2" stroke-width="1.5"/>
+  ${mots.map((m, i) => `<text y="${mots.length === 1 ? 8 : -4 + i * 20}" text-anchor="middle" fill="#e0463c" stroke="none" style="font: 400 ${i ? 13 : 24}px 'Dela Gothic One', 'Arial Black', sans-serif; letter-spacing: .5px">${m}</text>`).join('')}
+</g></svg>`;
+const enListe = (n) => (n.length > 1 ? `${n.slice(0, -1).join(', ')} et ${n[n.length - 1]}` : n[0]);
+function lignesSVG(couleur, graine) {
+  let s = graine; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  let d = '';
+  for (let i = 0; i < 130; i++) {
+    const a = r() * Math.PI * 2, r0 = 40 + r() * 26, w = 0.004 + r() * 0.014;
+    const p = (ang, rad) => `${(Math.cos(ang) * rad).toFixed(1)} ${(Math.sin(ang) * rad).toFixed(1)}`;
+    d += `M${p(a, r0)}L${p(a - w, 170)}L${p(a + w, 170)}Z`;
+  }
+  return `<svg viewBox="-100 -100 200 200" preserveAspectRatio="xMidYMid slice"><path d="${d}" fill="${couleur}"/></svg>`;
+}
+$('#lignes-c').innerHTML = lignesSVG('#ffd2c4', 17);
+$('#al-lignes').innerHTML = lignesSVG('#ffd2c4', 23);
+$('#c-lignes').innerHTML = lignesSVG('#ffd2c4', 29);
+
+// ---------- Effets (canvas) : étincelles, ondes, entailles ----------
+const cv = $('#fx'), ctx = cv.getContext('2d');
+let dpr = 1, parts = [], ondes = [], entailles = [], image = 0, dernierT = 0;
+function taille() { dpr = Math.min(1.5, devicePixelRatio || 1); cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; }
+addEventListener('resize', taille); taille();
+const lueurs = {};
+function lueur(col) {
+  if (lueurs[col]) return lueurs[col];
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d'), rg = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  rg.addColorStop(0, col); rg.addColorStop(0.35, col + '99'); rg.addColorStop(1, col + '00');
+  g.fillStyle = rg; g.fillRect(0, 0, 64, 64); return (lueurs[col] = c);
+}
+function etincelles(x, y, n, col, force = 1, haut = false, g = 60) {
+  lancerBoucle();
+  n = Math.min(n, 360 - parts.length);
+  for (let i = 0; i < n; i++) {
+    const a = haut ? -Math.PI / 2 + (Math.random() - 0.5) * 1.6 : Math.random() * Math.PI * 2, v = (240 + Math.random() * 620) * force;
+    parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, col, vie: 0, max: 0.45 + Math.random() * 0.7, t: 2 + Math.random() * 4, g });
+  }
+}
+function onde(x, y, col, max = 1.4) { lancerBoucle(); ondes.push({ x, y, col, vie: 0, max: 0.55, rmax: Math.max(innerWidth, innerHeight) * 0.55 * max }); }
+// Une entaille : un trait de lumière en travers du boss, tracé vite puis qui s'éteint.
+function entaille(x, y, long, angle, epais = 1) {
+  lancerBoucle();
+  const dx = Math.cos(angle) * long / 2, dy = Math.sin(angle) * long / 2;
+  entailles.push({ x1: x - dx, y1: y - dy, x2: x + dx, y2: y + dy, vie: 0, max: 0.5, epais });
+}
+function boucle(now) {
+  const dt = Math.max(0, Math.min(0.05, (now - dernierT) / 1000)); dernierT = now;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, innerWidth, innerHeight);
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i]; p.vie += dt;
+    const a = 1 - p.vie / p.max; if (a <= 0) { parts.splice(i, 1); continue; }
+    p.vx *= 0.94; p.vy = p.vy * 0.94 + p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+    const t = p.t * (0.4 + a * 0.8);
+    ctx.globalAlpha = a; ctx.drawImage(lueur(p.col), p.x - t * 3, p.y - t * 3, t * 6, t * 6);
+  }
+  for (let i = ondes.length - 1; i >= 0; i--) {
+    const o = ondes[i]; o.vie += dt; const k = o.vie / o.max; if (k >= 1) { ondes.splice(i, 1); continue; }
+    ctx.globalAlpha = (1 - k) * 0.9; ctx.strokeStyle = o.col; ctx.lineWidth = 10 * (1 - k) + 1;
+    ctx.beginPath(); ctx.arc(o.x, o.y, o.rmax * (1 - Math.pow(1 - k, 3)), 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.lineCap = 'round';
+  for (let i = entailles.length - 1; i >= 0; i--) {
+    const e = entailles[i]; e.vie += dt; const k = e.vie / e.max; if (k >= 1) { entailles.splice(i, 1); continue; }
+    const trace = Math.min(1, k * 6), a = k < 0.25 ? 1 : 1 - (k - 0.25) / 0.75;
+    const x2 = e.x1 + (e.x2 - e.x1) * trace, y2 = e.y1 + (e.y2 - e.y1) * trace;
+    ctx.globalAlpha = a;
+    ctx.strokeStyle = '#ff5a4a'; ctx.lineWidth = 16 * e.epais; ctx.beginPath(); ctx.moveTo(e.x1, e.y1); ctx.lineTo(x2, y2); ctx.stroke();
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 5 * e.epais; ctx.beginPath(); ctx.moveTo(e.x1, e.y1); ctx.lineTo(x2, y2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  image = parts.length || ondes.length || entailles.length ? requestAnimationFrame(boucle) : 0;
+}
+const lancerBoucle = () => { if (!image && !reduit) { dernierT = performance.now(); image = requestAnimationFrame(boucle); } };
+
+// ---------- La page ----------
+function dessinerVie() {
+  const pc = (S.pv / S.pvMax) * 100;
+  $('#jauge-reste').style.width = `${pc}%`;
+  $('#jauge-perte').style.width = `${pc}%`;
+  $('#jauge').classList.toggle('bas', S.pv > 0 && pc <= 25);
+  $('#jauge').setAttribute('aria-valuenow', S.pv);
+  $('#jauge').setAttribute('aria-valuemax', S.pvMax);
+  $('#crans').style.setProperty('--cran', `${(10 / S.pvMax) * 100}%`);
+  $('#pv').textContent = S.pv; $('#pv-max').textContent = S.pvMax;
+  const n = S.frappeurs.size;
+  $('#equipe').textContent = n ? `${n} joueur${n > 1 ? 's' : ''} ${n > 1 ? 'ont' : 'a'} frappé` : 'Personne n’a encore frappé';
+  $('#bandeau-pv').textContent = S.pv;
+  $('#bandeau-jauge').style.width = `${pc}%`;
+  $('#boss').classList.toggle('ko', S.etat === 'vaincu');
+  $('#boss').querySelector('.croix').style.opacity = S.etat === 'vaincu' ? 1 : 0;
+  $('#boss').querySelector('.yeux').style.opacity = S.etat === 'vaincu' ? 0 : '';
+}
+function dessinerTemps() {
+  $('#temps-b').textContent = mmss(S.reste);
+  $('#temps').classList.toggle('urgent', S.etat === 'combat' && S.reste <= 60);
+  $('#bandeau-temps').textContent = mmss(S.reste);
+  $('#bandeau').hidden = S.etat !== 'combat' || !S.ailleurs;
+}
+function dessinerQuestion() {
+  const q = $('#question');
+  q.classList.remove('fini');
+  if (S.etat === 'vaincu') {
+    q.classList.add('fini');
+    q.innerHTML = S.coups
+      ? `<h3>La Brigade est tombée !</h3><b class="gros-chiffre">${S.coups}</b><p class="verdict">coup${S.coups > 1 ? 's' : ''} porté${S.coups > 1 ? 's' : ''} par toi. Ton paquet de 3 sorts est dans tes Sorts.</p>`
+      : `<h3>La Brigade est tombée.</h3><p class="verdict">Tu n’as pas porté de coup : pas de paquet cette fois.</p>`;
+    return;
+  }
+  if (S.etat === 'enfuie') {
+    q.classList.add('fini');
+    q.innerHTML = `<h3>La Brigade s’est enfuie</h3><p class="verdict">Le temps est écoulé avec ${S.pv} PV restants. Pas de récompense cette fois.</p>`;
+    return;
+  }
+  if (S.q >= QUESTIONS.length) {
+    q.classList.add('fini');
+    q.innerHTML = `<h3>Tu as répondu aux ${QUESTIONS.length} questions</h3><b class="gros-chiffre">${S.coups}</b><p class="verdict">coup${S.coups > 1 ? 's' : ''} porté${S.coups > 1 ? 's' : ''}. Les autres joueurs peuvent encore l’achever : il lui reste ${S.pv} PV.</p>`;
+    return;
+  }
+  const qq = QUESTIONS[S.q];
+  q.innerHTML = `<div class="q-tete"><span>Question ${S.q + 1} sur ${QUESTIONS.length}</span><span class="mes-coups">Tes coups : <b>${S.coups}</b></span></div>
+    <h3>${qq.texte}</h3>
+    <div class="choix-raid">${qq.choix.map((c, i) => `<button data-i="${i}" data-lettre="${'ABC'[i]}">${c}</button>`).join('')}</div>
+    <p class="verdict" id="verdict"></p>`;
+  q.querySelectorAll('[data-i]').forEach((b) => b.addEventListener('click', () => repondre(+b.dataset.i)));
+}
+function dessiner() { dessinerVie(); dessinerTemps(); dessinerQuestion(); }
+
+// ---------- Répondre : un coup, ou le boss ricane ----------
+function repondre(i) {
+  if (S.attente || S.etat !== 'combat') return;
+  S.attente = true;
+  const qq = QUESTIONS[S.q], btns = [...document.querySelectorAll('.choix-raid button')];
+  btns.forEach((b) => (b.disabled = true));
+  const juste = i === qq.bonne;
+  btns[i].classList.add(juste ? 'juste' : 'faux');
+  const v = $('#verdict');
+  if (juste) {
+    v.textContent = 'Touché !'; v.className = 'verdict touche';
+    S.coups++; S.frappeurs.add('Gon');
+    frapper('Gon');
+  } else {
+    v.textContent = 'Raté ! La question est fermée.'; v.className = 'verdict';
+    ricaner();
+  }
+  setTimeout(() => { S.attente = false; if (S.etat !== 'combat') return; S.q++; dessinerQuestion(); }, juste ? 900 : 1500);
+}
+
+function frapper(qui) {
+  if (S.etat !== 'combat' || S.pv <= 0) return;
+  S.pv--;
+  const boss = $('#boss'), moi = qui === 'Gon';
+  const visible = !$('#page-raid').hidden;
+  if (visible) {
+    const b = boss.getBoundingClientRect();
+    const x = b.left + b.width * (0.3 + Math.random() * 0.4), y = b.top + b.height * (0.25 + Math.random() * 0.4);
+    if (moi) {
+      entaille(x, y, b.width * 0.9, -0.7 + Math.random() * 0.3 - (Math.random() < 0.5 ? 0 : 1.6), 1);
+      etincelles(x, y, 40, '#ff5a4a', 0.7); etincelles(x, y, 18, '#ffffff', 0.6);
+      onde(x, y, '#ffb08a', 0.5);
+      if (!reduit) {
+        try { boss.animate([{ translate: '0 0', filter: 'brightness(2.4)' }, { translate: '-9px 3px' }, { translate: '7px -2px' }, { translate: '-3px 1px' }, { translate: '0 0', filter: 'none' }], { duration: 300, composite: 'add' }); } catch {}
+        try { $('#ring').animate([{ translate: '0 0' }, { translate: '-4px 2px' }, { translate: '3px -2px' }, { translate: '0 0' }], { duration: 220 }); } catch {}
+      }
+      const m = document.createElement('span'); m.className = 'moins-un'; m.textContent = '−1';
+      $('#scene-boss').append(m);
+      m.animate([{ opacity: 0, transform: 'translate(-50%, 0) scale(2)' }, { opacity: 1, transform: 'translate(-50%, -10px) scale(1)', offset: 0.2 }, { opacity: 1, offset: 0.7 }, { opacity: 0, transform: 'translate(-50%, -40px) scale(1)' }], { duration: reduit ? 900 : 1000, easing: 'ease-out', fill: 'forwards' }).finished.then(() => m.remove());
+      vibrer(60);
+    } else {
+      // Coup d'un autre joueur : petit éclat et son nom.
+      entaille(x, y, b.width * 0.32, Math.random() * Math.PI, 0.45);
+      etincelles(x, y, 10, '#ffb08a', 0.35);
+      const t = document.createElement('span'); t.className = 'coup-autre'; t.innerHTML = `${qui} <b>−1</b>`;
+      const sb = $('#scene-boss').getBoundingClientRect();
+      t.style.left = `${Math.max(0, Math.min(sb.width - 90, x - sb.left - 40))}px`; t.style.top = `${y - sb.top}px`;
+      $('#scene-boss').append(t);
+      t.animate([{ opacity: 0, translate: '0 6px' }, { opacity: 1, translate: '0 0', offset: 0.15 }, { opacity: 1, offset: 0.75 }, { opacity: 0, translate: '0 -18px' }], { duration: 1300, fill: 'forwards' }).finished.then(() => t.remove());
+      if (!reduit) try { boss.animate([{ translate: '0 0' }, { translate: '-3px 0' }, { translate: '2px 0' }, { translate: '0 0' }], { duration: 160, composite: 'add' }); } catch {}
+    }
+  }
+  dessinerVie();
+  if (S.pv === 0) { S.etat = 'vaincu'; dessinerTemps(); setTimeout(() => victoire(moi), visible ? 650 : 0); }
+}
+
+let finRire = 0;
+function ricaner() {
+  const boss = $('#boss'), bulle = $('#bulle');
+  bulle.textContent = ['Hé hé hé !', 'Raté, gamin !', 'C’est tout ?'][Math.floor(Math.random() * 3)];
+  boss.classList.remove('rit'); void boss.offsetWidth; boss.classList.add('rit');
+  bulle.classList.add('visible');
+  vibrer([20, 40, 20]);
+  clearTimeout(finRire);
+  finRire = setTimeout(() => { boss.classList.remove('rit'); bulle.classList.remove('visible'); }, 1400);
+}
+
+// Le temps du raid, et les autres joueurs qui frappent en direct.
+setInterval(() => {
+  if (S.etat !== 'combat') return;
+  S.reste--;
+  if (S.reste <= 0) { S.reste = 0; dessinerTemps(); fuite(); return; }
+  dessinerTemps();
+  if (S.equipe && !$('#alarme').classList.contains('joue') && Math.random() < 0.45) {
+    const qui = AUTRES[Math.floor(Math.random() * AUTRES.length)];
+    S.frappeurs.add(qui);
+    frapper(qui);
+  }
+}, 1000);
+
+// ---------- Navigation ----------
+function allerAccueil() { S.ailleurs = true; $('#page-raid').hidden = true; $('#page-accueil').hidden = false; dessinerTemps(); scrollTo(0, 0); }
+function allerRaid() { S.ailleurs = false; $('#page-raid').hidden = false; $('#page-accueil').hidden = true; dessiner(); scrollTo(0, 0); }
+$('#retour').addEventListener('click', allerAccueil);
+$('#p-ailleurs').addEventListener('click', allerAccueil);
+$('#bandeau').addEventListener('click', allerRaid);
+
+// ---------- Animations des cinématiques ----------
+let anims = [], attentes = new Set(), saute = false, phase = 'repos', attenteToucher = null, revelA = 0;
+// L'opacité finale est aussi posée en style (leçon des pages ⑧ et ⑪ : sur certains téléphones, le `fill` ne tient pas).
+const A = (el, k, o) => {
+  const a = el.animate(k, { fill: 'both', easing: 'cubic-bezier(.16,1,.3,1)', ...o, duration: reduit || saute ? 1 : o.duration, delay: reduit || saute ? 0 : o.delay || 0 });
+  anims.push(a);
+  const fin = k[k.length - 1];
+  if (fin.opacity !== undefined) el.style.opacity = String(fin.opacity);
+  return a;
+};
+function pause(ms) {
+  return new Promise((res) => {
+    if (saute || reduit) return res();
+    const f = () => { clearTimeout(t); attentes.delete(f); res(); };
+    const t = setTimeout(f, ms); attentes.add(f);
+  });
+}
+const finAnim = (a) => a.finished.catch(() => {});
+function sauter() { if (saute) return; saute = true; [...attentes].forEach((f) => f()); anims.forEach((a) => { try { a.finish(); } catch {} }); }
+function taper(el, texte) {
+  el.textContent = '';
+  if (reduit || saute) { el.textContent = texte; return Promise.resolve(); }
+  return new Promise((res) => { let n = 0; const pas = () => { if (saute) { el.textContent = texte; return res(); } el.textContent = texte.slice(0, ++n); n >= texte.length ? res() : setTimeout(pas, 22); }; pas(); });
+}
+function toucher() { return new Promise((res) => { attenteToucher = res; }); }
+function nettoyer() { anims.forEach((a) => a.cancel()); anims = []; parts = []; ondes = []; entailles = []; saute = false; }
+
+// ---------- Alarme : le raid commence ----------
+const alarme = $('#alarme');
+alarme.addEventListener('pointerdown', (e) => { if (phase === 'alarme' && !e.target.closest('button')) sauter(); });
+async function lancerRaid() {
+  nettoyer(); fermerFuite();
+  Object.assign(S, { etat: 'combat', pv: 60, pvMax: 60, reste: 600, q: 0, coups: 0, frappeurs: new Set(), attente: false });
+  dessiner();
+  phase = 'alarme';
+  const nuit = $('#al-nuit'), sirene = $('#al-sirene'), bords = $('#al-bords'), lignes = $('#al-lignes'), ombre = $('#al-ombre'), yeux = $('#al-yeux'), cri = $('#al-cri'), infos = $('#al-infos');
+  [nuit, sirene, bords, lignes, ombre, yeux, cri, infos].forEach((e) => (e.style.opacity = '0'));
+  infos.style.pointerEvents = 'none';
+  alarme.classList.add('joue', 'intro'); alarme.setAttribute('aria-hidden', 'false');
+  // 1. La nuit rouge, la sirène, les bords qui battent.
+  vibrer([200, 100, 200, 100, 400]);
+  A(nuit, [{ opacity: 0 }, { opacity: 1 }], { duration: 260 });
+  A(sirene, [{ opacity: 0 }, { opacity: 1 }], { duration: 400 });
+  A(bords, [{ opacity: 0 }, { opacity: 1 }], { duration: 300 });
+  await pause(700);
+  // 2. La silhouette du chef monte du bas ; ses yeux s'allument.
+  A(ombre, [{ opacity: 1, transform: 'translateY(45%) scale(.9)' }, { opacity: 1, transform: 'none' }], { duration: 900, easing: 'cubic-bezier(.2,.8,.3,1)' });
+  A(yeux, [{ opacity: 0, transform: 'translateY(45%) scale(.9)' }, { opacity: 0, transform: 'none', offset: 0.7 }, { opacity: 1, transform: 'none' }], { duration: 1100, easing: 'cubic-bezier(.2,.8,.3,1)' });
+  await pause(1100);
+  // 3. « RAID DE LA BRIGADE ! » frappé.
+  const [cx, cy] = centre(cri);
+  A(cri, [{ opacity: 0, scale: 2.6 }, { opacity: 1, scale: 1 }], { duration: 320, easing: 'cubic-bezier(.3,1.5,.5,1)' });
+  A(lignes, [{ opacity: 0, scale: 1.3 }, { opacity: 0.18, scale: 1 }], { duration: 400 });
+  await pause(220);
+  onde(cx, cy, '#ff5a4a', 1.3); etincelles(cx, cy, 70, '#ff5a4a', 1); etincelles(cx, cy, 30, '#ffffff', 0.8);
+  vibrer(140);
+  if (!reduit && !saute) try { alarme.animate([{ translate: '0 0' }, { translate: '-8px 5px' }, { translate: '6px -4px' }, { translate: '-3px 2px' }, { translate: '0 0' }], { duration: 260 }); } catch {}
+  await pause(700);
+  // 4. Ce qu'il faut savoir, et « Au combat ! ».
+  alarme.classList.remove('intro');
+  A(infos, [{ opacity: 0, translate: '-50% 24px' }, { opacity: 1, translate: '-50% 0' }], { duration: 320 });
+  infos.style.pointerEvents = '';
+  phase = 'choix';
+  $('#al-combat').focus({ preventScroll: true });
+}
+function fermerAlarme() {
+  const a = alarme.animate([{ opacity: 1 }, { opacity: 0 }], { duration: reduit ? 1 : 260 });
+  a.finished.then(() => { alarme.classList.remove('joue', 'intro'); alarme.setAttribute('aria-hidden', 'true'); phase = 'repos'; nettoyer(); });
+}
+$('#al-combat').addEventListener('click', () => { fermerAlarme(); allerRaid(); });
+$('#al-tard').addEventListener('click', () => { fermerAlarme(); allerAccueil(); });
+$('#p-lancer').addEventListener('click', lancerRaid);
+
+// ---------- Victoire : le boss s'effondre, « BRIGADE VAINCUE ! », puis le paquet ----------
+const cine = $('#cine');
+cine.addEventListener('pointerdown', () => {
+  if (phase === 'intro') sauter();
+  else if (phase === 'revele' && !attenteToucher) sauter();
+  else if (phase === 'revele' && attenteToucher && performance.now() - revelA > 350) { const r = attenteToucher; attenteToucher = null; r(); }
+});
+addEventListener('keydown', (e) => {
+  if (!['Enter', ' ', 'Escape'].includes(e.key)) return;
+  if (cine.classList.contains('joue')) { e.preventDefault(); cine.dispatchEvent(new PointerEvent('pointerdown')); }
+  else if ($('#fuite').classList.contains('joue')) { e.preventDefault(); fermerFuite(); }
+});
+
+async function victoire(coupFinal) {
+  if (alarme.classList.contains('joue')) { alarme.classList.remove('joue', 'intro'); alarme.setAttribute('aria-hidden', 'true'); }
+  nettoyer(); phase = 'intro';
+  S.etat = 'vaincu'; S.pv = 0; dessiner();
+  const nuit = $('#c-nuit'), lignes = $('#c-lignes'), rayons = $('#c-rayons'), boss = $('#c-boss'), cri = $('#c-cri'), coups = $('#c-coups'), flash = $('#c-flash'), dlg = $('#c-dialogue'), scene = $('#scene'), cp = $('#c-paquet');
+  // Le boss et les cartes sont recréés à chaque fois (leçon de la page ⑮ : Chromium peut garder l'ancienne image).
+  boss.replaceWith(Object.assign(document.createElement('div'), { id: 'c-boss', className: 'c-boss', innerHTML: BOSS }));
+  const b2 = $('#c-boss');
+  scene.querySelectorAll('.c-carte').forEach((e) => e.remove());
+  cp.innerHTML = `<div class="paquet">${PAQUET}</div><span class="dechirure"></span>`;
+  cp.classList.remove('embrase');
+  nuit.classList.remove('bleue');
+  [nuit, lignes, rayons, b2, cri, coups, flash, dlg, cp].forEach((e) => (e.style.opacity = '0'));
+  $('#c-indice').classList.remove('visible'); $('#c-texte').textContent = '';
+  cine.classList.add('joue', 'intro'); cine.setAttribute('aria-hidden', 'false');
+  vibrer([40, 40, 40]);
+  // 1. La nuit ; le chef est là, au centre.
+  A(nuit, [{ opacity: 0 }, { opacity: 1 }], { duration: 300 });
+  A(b2, [{ opacity: 0, scale: 1.08 }, { opacity: 1, scale: 1 }], { duration: 360 });
+  await pause(420);
+  // 2. Trois entailles : le dernier coup.
+  const bb = b2.getBoundingClientRect();
+  for (const [fx, fy, ang] of [[0.5, 0.35, -0.6], [0.45, 0.5, 0.7], [0.5, 0.42, -0.1]]) {
+    if (saute) break;
+    const x = bb.left + bb.width * fx, y = bb.top + bb.height * fy;
+    entaille(x, y, bb.width * 1.1, ang, 1.3);
+    etincelles(x, y, 40, '#ff5a4a', 0.8); etincelles(x, y, 16, '#ffffff', 0.7);
+    A(flash, [{ opacity: 0.35 }, { opacity: 0 }], { duration: 160, easing: 'ease-out' });
+    if (!reduit) try { b2.animate([{ translate: '-50% -55%' }, { translate: 'calc(-50% - 10px) calc(-55% + 4px)' }, { translate: 'calc(-50% + 8px) -55%' }, { translate: '-50% -55%' }], { duration: 200 }); } catch {}
+    vibrer(50);
+    await pause(240);
+  }
+  // 3. Les yeux s'éteignent ; il s'effondre dans la poussière.
+  b2.classList.add('ko');
+  b2.querySelector('.croix').style.opacity = 1; b2.querySelector('.yeux').style.opacity = 0;
+  await pause(380);
+  const chute = A(b2, [{ opacity: 1, transform: 'none' }, { opacity: 1, transform: 'rotate(-6deg) translateY(2%)', offset: 0.3 }, { opacity: 0, transform: 'rotate(12deg) translateY(40%) scaleY(.7)' }], { duration: 900, easing: 'cubic-bezier(.5,0,.8,.5)' });
+  await pause(520);
+  const [sx, sy] = [innerWidth / 2, bb.bottom - bb.height * 0.1];
+  for (let i = -2; i <= 2; i++) etincelles(sx + i * bb.width * 0.15, sy, 18, '#a89f94', 0.35, true, 260);
+  onde(sx, sy, '#ffb08a', 1.6);
+  vibrer([120, 60, 200]);
+  if (!reduit && !saute) try { cine.animate([{ translate: '0 0' }, { translate: '0 8px' }, { translate: '0 -4px' }, { translate: '0 0' }], { duration: 300 }); } catch {}
+  // 4. « BRIGADE VAINCUE ! »
+  A(cri, [{ opacity: 0, scale: 2.4 }, { opacity: 1, scale: 1 }], { duration: 320, easing: 'cubic-bezier(.3,1.5,.5,1)' });
+  A(lignes, [{ opacity: 0, scale: 1.3 }, { opacity: 0.2, scale: 1 }], { duration: 400 });
+  await finAnim(chute);
+  coups.textContent = S.coups ? `Tes coups : ${S.coups}${coupFinal ? ' · le coup final est le tien !' : ''}` : 'Tu n’as pas porté de coup.';
+  A(coups, [{ opacity: 0, translate: '0 10px' }, { opacity: 1, translate: '0 0' }], { duration: 300 });
+  await pause(1300);
+  cine.classList.remove('intro');
+  if (!S.coups) {
+    // Pas de coup, pas de paquet : on le dit simplement.
+    phase = 'revele';
+    A(dlg, [{ opacity: 0, translate: '-50% 20px' }, { opacity: 1, translate: '-50% 0' }], { duration: 300 });
+    await taper($('#c-texte'), 'La Brigade est tombée sans toi : pas de coup porté, pas de paquet cette fois.');
+    $('#c-indice').textContent = 'Touche pour fermer'; $('#c-indice').classList.add('visible');
+    revelA = performance.now();
+    await toucher();
+    A(dlg, [{ opacity: 1 }, { opacity: 0 }], { duration: 200 });
+    A(cri, [{ opacity: 1 }, { opacity: 0 }], { duration: 200 }); A(coups, [{ opacity: 1 }, { opacity: 0 }], { duration: 200 });
+    await finAnim(A(nuit, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 }));
+    finCine(); return;
+  }
+  // 5. La récompense : la nuit devient bleue, le paquet de la Brigade tombe du ciel.
+  phase = 'intro'; saute = false; cine.classList.add('intro');
+  A(cri, [{ opacity: 1 }, { opacity: 0, translate: '0 -20px' }], { duration: 300 });
+  A(coups, [{ opacity: 1 }, { opacity: 0 }], { duration: 300 });
+  A(nuit, [{ opacity: 1 }, { opacity: 0.2 }], { duration: 260 });
+  await pause(260);
+  nuit.classList.add('bleue');
+  A(nuit, [{ opacity: 0.2 }, { opacity: 1 }], { duration: 300 });
+  const sorts = [...SORTS].sort(() => Math.random() - 0.5).slice(0, 3);
+  scene.insertAdjacentHTML('beforeend', sorts.map((s) => `<div class="c-carte"><div class="retourne" style="transform:rotateY(180deg)">${carteHTML(s)}${DOS}</div></div>`).join(''));
+  const cartes = [...scene.querySelectorAll('.c-carte')];
+  cartes.forEach((c, i) => { c.style.zIndex = i === 1 ? '1' : '0'; c.style.opacity = '0'; });
+  const pw = cp.querySelector('.paquet').getBoundingClientRect().width || 170, ph = pw * 100 / 63;
+  A(cp, [{ opacity: 1, transform: `translate(0, ${-innerHeight * 0.6}px) rotate(-20deg) scale(.6)` }, { opacity: 1, transform: 'translate(0,0) rotate(4deg) scale(1.06)', offset: 0.75 }, { opacity: 1, transform: 'none' }], { duration: 640, easing: 'cubic-bezier(.3,0,.2,1)' });
+  await pause(660);
+  const [px, py] = centre(cp);
+  onde(px, py + ph * 0.45, '#cfe0ff', 0.8); vibrer(60);
+  // Il tremble, la lumière monte dedans, la déchirure court, le haut saute.
+  cp.classList.add('embrase');
+  A(cp.querySelector('.paquet'), [{ translate: '0 0' }, { translate: '-4px 0', rotate: '-2deg' }, { translate: '4px 0', rotate: '2deg' }, { translate: '-3px 0', rotate: '-1deg' }, { translate: '0 0', rotate: '0deg' }], { duration: 380, easing: 'linear' });
+  etincelles(px, py, 24, '#8fb2ff', 0.4);
+  await pause(400);
+  const dech = cp.querySelector('.dechirure');
+  A(dech, [{ opacity: 1, scale: '0 1' }, { opacity: 1, scale: '1 1' }], { duration: 280, easing: 'cubic-bezier(.5,0,.5,1)' });
+  await pause(280);
+  A(cp.querySelector('.serti.haut'), [{ transform: 'none', opacity: 1 }, { transform: `translate(${pw * 0.7}px,${-ph * 0.5}px) rotate(38deg)`, opacity: 0 }], { duration: 620, easing: 'cubic-bezier(.2,.6,.4,1)' });
+  A(dech, [{ opacity: 1 }, { opacity: 0 }], { duration: 260 });
+  A(flash, [{ opacity: 0.55 }, { opacity: 0 }], { duration: 300, easing: 'ease-out' });
+  const yOuv = py - ph * 0.42;
+  onde(px, yOuv, '#cfe0ff', 1.1); etincelles(px, yOuv, 60, '#ffffff', 0.9, true); etincelles(px, yOuv, 36, '#8fb2ff', 0.8, true);
+  A(rayons, [{ opacity: 0, rotate: '0deg', scale: 0.4 }, { opacity: 0.85, rotate: '12deg', scale: 1 }], { duration: 700 });
+  vibrer(80);
+  // Trois cartes montent, le sachet tombe, éventail, puis elles se retournent une à une.
+  const ch = cartes[0].getBoundingClientRect().height || 150, cw = cartes[0].getBoundingClientRect().width || 108;
+  const yHors = -ph * 0.62;
+  cartes.forEach((c, i) => A(c, [{ opacity: 1, transform: `translate(0,${ch * 0.1}px)` }, { opacity: 1, transform: `translate(${(i - 1) * 14}px,${yHors}px) rotate(${(i - 1) * 6}deg)` }], { duration: 500, delay: 100 + i * 100, easing: 'cubic-bezier(.2,.9,.3,1)' }));
+  await pause(700);
+  A(cp, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translate(0,${innerHeight * 0.45}px) rotate(8deg)` }], { duration: 540, easing: 'cubic-bezier(.55,0,.8,.4)' });
+  const pas = Math.min(cw * 0.76, (innerWidth - 24 - cw) / 2), yEv = Math.min(-ch * 0.15, 0);
+  cartes.forEach((c, i) => A(c, [{ opacity: 1, transform: `translate(${(i - 1) * 14}px,${yHors}px) rotate(${(i - 1) * 6}deg)` }, { opacity: 1, transform: `translate(${(i - 1) * pas}px,${yEv + Math.abs(i - 1) * 14}px) rotate(${(i - 1) * 7}deg)` }], { duration: 540, easing: 'cubic-bezier(.3,1.3,.5,1)' }));
+  A(rayons, [{ opacity: 0.85, rotate: '12deg' }, { opacity: 0.4, rotate: '40deg' }], { duration: 2400, easing: 'linear' });
+  await pause(540);
+  phase = 'revele';
+  for (const c of cartes) {
+    A(c.querySelector('.retourne'), [{ transform: 'rotateY(180deg)' }, { transform: 'rotateY(0deg)' }], { duration: 500, easing: 'cubic-bezier(.3,1.3,.5,1)' });
+    await pause(240);
+    const [x, y] = centre(c); etincelles(x, y, 24, '#cfe0ff', 0.5); vibrer(25);
+    await pause(180);
+  }
+  if (saute) anims.forEach((a) => { try { a.finish(); } catch {} });
+  cine.classList.remove('intro');
+  // 6. Le jeu nomme les sorts.
+  A(dlg, [{ opacity: 0, translate: '-50% 20px' }, { opacity: 1, translate: '-50% 0' }], { duration: 300 });
+  await taper($('#c-texte'), `Récompense du raid : tu as obtenu ${enListe(sorts.map((s) => s.nom))}.`);
+  $('#c-indice').textContent = 'Touche pour ranger dans tes Sorts'; $('#c-indice').classList.add('visible');
+  revelA = performance.now();
+  await toucher();
+  // 7. Les cartes filent vers l'onglet Sorts : « +3 ».
+  phase = 'fin'; saute = false;
+  const [ox, oy] = centre($('#onglet-sorts'));
+  A(dlg, [{ opacity: 1 }, { opacity: 0 }], { duration: 200 });
+  A(rayons, [{ opacity: 0.4 }, { opacity: 0 }], { duration: 300 });
+  const vols = cartes.map((c, i) => { const [x, y] = centre(c); const a = c.animate([{ translate: '0 0', scale: 1, opacity: 1 }, { translate: `${ox - x}px ${oy - y}px`, scale: 0.16, opacity: 0.2 }], { duration: reduit ? 1 : 560, delay: reduit ? 0 : i * 80, easing: 'cubic-bezier(.55,0,.75,.3)', fill: 'both' }); anims.push(a); return a; });
+  A(nuit, [{ opacity: 1 }, { opacity: 0 }], { duration: 520, delay: 220 });
+  A(lignes, [{ opacity: 0.2 }, { opacity: 0 }], { duration: 300 });
+  await Promise.all(vols.map(finAnim));
+  cartes.forEach((c) => (c.style.opacity = '0'));
+  const p = document.createElement('span'); p.className = 'plus-un'; p.textContent = '+3';
+  $('#onglet-sorts').append(p);
+  p.animate([{ opacity: 0, translate: '-50% 8px' }, { opacity: 1, translate: '-50% 0', offset: 0.2 }, { opacity: 1, offset: 0.8 }, { opacity: 0 }], { duration: 1600 }).finished.then(() => p.remove());
+  vibrer(30);
+  await pause(320);
+  finCine();
+}
+function finCine() { cine.classList.remove('joue', 'intro'); cine.setAttribute('aria-hidden', 'true'); phase = 'repos'; nettoyer(); dessiner(); }
+
+// ---------- Défaite : la Brigade s'enfuit en riant ----------
+let finFuiteT = 0, rires = [];
+function fuite() {
+  S.etat = 'enfuie'; dessiner();
+  const f = $('#fuite'), boss = $('#f-boss'), t = $('#f-tampon'), piste = $('#f-piste');
+  piste.querySelectorAll('.ha').forEach((e) => e.remove());
+  t.innerHTML = tampon(['ENFUIE']);
+  $('#f-texte').textContent = `Le temps est écoulé : la Brigade s’est enfuie avec ${S.pv} PV. Pas de récompense cette fois.`;
+  f.classList.add('joue'); f.setAttribute('aria-hidden', 'false');
+  vibrer([60, 50, 60]);
+  if (!reduit) {
+    // Il tourne les talons et file vers la droite en sautillant.
+    boss.animate([{ transform: 'translateX(0) scaleX(1)' }, { transform: 'translateX(0) scaleX(-1)', offset: 0.12 }, { transform: 'translateX(18vw) scaleX(-1) translateY(-6%)', offset: 0.3 }, { transform: 'translateX(36vw) scaleX(-1)', offset: 0.48 }, { transform: 'translateX(54vw) scaleX(-1) translateY(-6%)', offset: 0.66 }, { transform: 'translateX(90vw) scaleX(-1)' }], { duration: 2800, easing: 'ease-in', fill: 'forwards' });
+    rires.forEach(clearTimeout);
+    rires = [0, 1, 2, 3, 4].map((i) => setTimeout(() => {
+      const h = document.createElement('span'); h.className = 'ha'; h.textContent = 'HA';
+      h.style.left = `${46 + i * 9}%`; h.style.top = `${4 + (i % 2) * 14}%`;
+      piste.append(h);
+      h.animate([{ opacity: 0, scale: 0.4, rotate: `${(i % 2 ? 1 : -1) * 14}deg` }, { opacity: 1, scale: 1.1, offset: 0.25 }, { opacity: 0, scale: 1, translate: '0 -22px' }], { duration: 900, fill: 'forwards' });
+    }, 300 + i * 380));
+  }
+  t.classList.remove('frappe'); void t.offsetWidth; t.classList.add('frappe');
+  clearTimeout(finFuiteT);
+  finFuiteT = setTimeout(fermerFuite, 3800);
+}
+function fermerFuite() {
+  clearTimeout(finFuiteT); rires.forEach(clearTimeout);
+  const f = $('#fuite'); f.classList.remove('joue'); f.setAttribute('aria-hidden', 'true');
+  $('#f-boss').getAnimations().forEach((a) => a.cancel());
+}
+$('#fuite').addEventListener('click', fermerFuite);
+
+// ---------- Commandes du prototype ----------
+$('#p-equipe').addEventListener('click', (e) => { S.equipe = !S.equipe; e.currentTarget.setAttribute('aria-pressed', String(S.equipe)); });
+$('#p-presque').addEventListener('click', () => { if (S.etat !== 'combat') return; S.pv = 3; dessinerVie(); });
+$('#p-victoire').addEventListener('click', () => { if (!S.coups) { S.coups = 1; S.frappeurs.add('Gon'); } victoire(true); });
+$('#p-sans').addEventListener('click', () => { S.coups = 0; victoire(false); });
+$('#p-fuite').addEventListener('click', () => { if (S.etat !== 'combat') { Object.assign(S, { etat: 'combat', pv: 23 }); } S.reste = 0; fuite(); });
+
+dessiner();
+</script>

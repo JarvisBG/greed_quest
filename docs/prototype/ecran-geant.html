@@ -1,14 +1,15 @@
 <meta charset="utf-8">
 <title>Écran géant de Greed Island</title>
-<meta name="description" content="Prototype de l'écran géant (apps/tracker) : accueil avec QR, partie en cours en plans qui tournent, balises en halos flous, cinématiques des grands moments et fin de partie.">
+<meta name="description" content="Prototype v2 de l'écran géant (apps/tracker) : retransmission, un seul sujet en plein écran à la fois (la course au Book, le duel de tête, l'île, le fait marquant, comment jouer), cinématiques des grands moments.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@500;800&family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,800;1,400&family=Dela+Gothic+One&family=DotGothic16&display=swap">
 <style>
-/* Écran géant : une planche de manga de 1920 × 1080 lue à 8 m (aucun texte sous 24 px), sans interaction.
-   Pendant le jeu : planche claire (papier, encre, cases cernées), couleur réservée aux objets du jeu.
-   Grands moments : la planche s'éteint, nuit de Greed Island et cinématique en couleur, puis retour.
+/* Écran géant v2 : une retransmission. Un seul sujet en plein écran à la fois (~20 s), lu à 8 m
+   (aucun texte sous 24 px), sans interaction. Habillage réduit au chrono, aux évènements en cours
+   et à une ligne du bas. Planche claire pendant le jeu ; nuit et couleur pour les grands moments.
    Un seul monde assumé (pas de thème sombre de l'hôte) : toutes les couleurs sont posées ici. */
+@property --k { syntax: '<number>'; inherits: true; initial-value: 0; }
 :root {
   color-scheme: light;
   --papier: #eeefe9;
@@ -34,166 +35,187 @@
   --f-texte: 'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif;
   --f-chiffre: 'Atkinson Hyperlegible Mono', ui-monospace, monospace;
   --f-jeu: 'DotGothic16', ui-monospace, monospace;
-  --trait: 5px;
+  --trait: 6px;
   --sortie: cubic-bezier(0.16, 1, 0.3, 1);
+  --trame-fond: radial-gradient(var(--trame) 1px, transparent 1.3px) 0 0 / 8px 8px;
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 body { margin: 0; overflow: hidden; background: #050506; color: var(--encre); font: 400 28px/1.3 var(--f-texte); -webkit-font-smoothing: antialiased; }
 ::selection { background: var(--jaune); color: var(--encre); }
 :focus-visible { outline: 3px solid var(--jaune); outline-offset: 3px; }
-
-/* ---------- L'écran (1920 × 1080, mis à l'échelle de la fenêtre) ---------- */
-.ecran {
-  position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden;
-  background: var(--papier) radial-gradient(var(--trame) 1px, transparent 1.3px) 0 0 / 8px 8px;
-  display: grid; grid-template-rows: 124px 1fr auto 150px; gap: 16px; padding: 20px 24px 24px;
-}
-.case { position: relative; background: var(--case); box-shadow: 0 0 0 var(--trait) var(--encre); }
-/* Rangées fixes : la case principale prend la place des bannières quand il n'y en a pas. */
-.haut { grid-row: 1; } .heros { grid-row: 2; } .bannieres { grid-row: 3; } .bas { grid-row: 4; }
-
-/* Bandeau du haut */
-.haut { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 32px; padding: 0 28px; }
-.marque { display: grid; gap: 2px; }
-.marque b { font: 400 54px/1 var(--f-titre); letter-spacing: 0.01em; }
-.marque span { font: 600 26px/1.1 var(--f-texte); color: var(--encre-2); }
-.etat { justify-self: center; display: flex; align-items: center; gap: 18px; }
-.pastille { display: inline-flex; align-items: center; gap: 12px; height: 60px; padding: 0 24px; background: var(--encre); color: var(--case); font: 400 30px/1 var(--f-titre); }
-.pastille i { width: 16px; height: 16px; border-radius: 50%; background: #3fd36b; }
-.pastille.finale { background: var(--alerte); }
-.pastille.finale i, .pastille.pause i { background: var(--case); }
-.pastille.pause { background: var(--case); color: var(--encre); box-shadow: inset 0 0 0 4px var(--encre); }
-.reco { display: none; align-items: center; gap: 10px; font: 600 26px var(--f-texte); color: var(--encre-2); }
-.reco.on { display: inline-flex; }
-.reco svg { width: 30px; height: 30px; animation: tourne 1.2s linear infinite; }
-.chrono { font: 800 100px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
-.chrono.rouge { color: var(--alerte); }
-
-/* Case principale (plans qui tournent) */
-.heros { display: grid; grid-template-rows: 70px 1fr; overflow: hidden; }
-.plans-tete { display: flex; align-items: stretch; border-bottom: var(--trait) solid var(--encre); }
-.plans-tete .onglet { position: relative; flex: 0 0 auto; display: flex; align-items: center; gap: 14px; padding: 0 30px; font: 400 30px/1 var(--f-titre); color: var(--encre-2); border-right: 3px solid var(--encre); }
-.plans-tete .onglet small { font: 800 24px var(--f-chiffre); }
-.plans-tete .onglet.actif { background: var(--encre); color: var(--case); }
-.plans-tete .onglet .barre { position: absolute; left: 0; bottom: 0; height: 7px; width: 0; background: var(--jaune); }
-.plans-tete .reste { margin-left: auto; display: flex; align-items: center; padding: 0 26px; font: 600 26px var(--f-texte); color: var(--encre-2); }
-.plans { position: relative; overflow: hidden; }
-.plan { position: absolute; inset: 0; padding: 26px 32px; display: none; }
-.plan.vu { display: grid; }
-.plan.entre { animation: volet 0.62s var(--sortie) both; }
-@keyframes volet { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0 0 0 0); } }
-
-/* Bannières d'évènements (entre la case et le bas, seulement s'il y en a) */
-.bannieres { display: none; gap: 16px; }
-.bannieres.on { display: flex; }
-.banniere { flex: 1; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 22px; height: 76px; padding: 0 26px; background: var(--alerte); color: #fff; box-shadow: 0 0 0 var(--trait) var(--encre); }
-.banniere b { font: 400 32px/1 var(--f-titre); }
-.banniere span { font: 600 28px/1.1 var(--f-texte); }
-.banniere time { font: 800 40px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
-.banniere.maudite { background: var(--nuit); }
-.banniere.entre { animation: tombe 0.5s var(--sortie) both; }
-@keyframes tombe { from { transform: translateY(-30px); opacity: 0; } }
-
-/* Bande du bas : top 3 permanent + dernière annonce du jeu */
-.bas { display: grid; grid-template-columns: 1020px 1fr; gap: 16px; }
-.podium-mini { display: grid; grid-template-columns: repeat(3, 1fr); }
-.pm { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 18px; padding: 0 22px; border-right: 3px solid var(--encre); min-width: 0; }
-.pm:last-child { border-right: 0; }
-.pm .med { width: 70px; height: 70px; display: grid; place-items: center; font: 400 38px/1 var(--f-titre); background: var(--matiere); box-shadow: 0 0 0 4px var(--encre); border-radius: 6px; }
-.pm b { display: block; font: 800 34px/1.1 var(--f-texte); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pm span { font: 600 26px/1.2 var(--f-texte); color: var(--encre-2); white-space: nowrap; }
-.pm.monte { animation: eclat 0.9s var(--sortie); }
-@keyframes eclat { 0% { background: var(--jaune); } 100% { background: transparent; } }
-/* Boîte de dialogue du jeu (Joy Station) : aplat noir, double filet blanc, police pixel. */
-.annonce { position: relative; display: grid; align-content: center; gap: 6px; padding: 0 34px; background: var(--nuit); color: #f4f4ef; box-shadow: 0 0 0 var(--trait) var(--encre), inset 0 0 0 5px var(--nuit), inset 0 0 0 8px #f4f4ef, inset 0 0 0 11px var(--nuit), inset 0 0 0 13px #f4f4ef; }
-.annonce .qui { font: 400 24px/1 var(--f-jeu); color: #b9b9b2; }
-.annonce .txt { font: 400 34px/1.2 var(--f-jeu); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.annonce .txt::after { content: '▼'; display: inline-block; margin-left: 14px; font-size: 22px; vertical-align: middle; animation: clign 1s steps(2) infinite; }
-@keyframes clign { 50% { opacity: 0; } }
-
-/* ---------- Plan Classement ---------- */
-.p-classement { grid-template-rows: auto minmax(0, 1fr); gap: 6px; padding-block: 18px 14px; }
-.cl-tete, .cl-ligne { display: grid; grid-template-columns: 96px minmax(0, 1fr) 610px 130px 170px 200px; align-items: center; gap: 22px; }
-.cl-tete { font: 600 24px var(--f-texte); color: var(--encre-2); padding: 0 18px 8px; border-bottom: 3px solid var(--encre); }
-.cl-tete :nth-child(n+4) { text-align: right; }
-.cl-liste { position: relative; display: grid; grid-template-rows: repeat(10, minmax(0, 1fr)); min-height: 0; }
-.cl-ligne { height: 100%; max-height: 64px; padding: 0 18px; border-bottom: 2px solid var(--case-2); }
-.cl-ligne .r { font: 800 40px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
-.cl-ligne:nth-child(-n+3) .r { width: 60px; height: 44px; display: grid; place-items: center; font: 400 32px/1 var(--f-titre); background: var(--matiere); box-shadow: 0 0 0 4px var(--encre); border-radius: 6px; }
-.cl-ligne .p { font: 800 38px/1 var(--f-texte); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cl-ligne .n, .cl-ligne .pts, .cl-ligne .j { text-align: right; font: 800 34px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
-.cl-ligne .j { color: var(--encre-2); }
-.cl-ligne .n small { font-size: 24px; color: var(--encre-2); }
-/* Les pochettes du Book : une case par carte désignée, remplie en rouge (cadre des cartes désignées). */
-.poch { display: grid; grid-template-columns: repeat(30, 1fr); gap: 4px; height: 30px; }
-.poch i { background: var(--case); box-shadow: inset 0 0 0 2px var(--encre-2); }
-.poch i.ok { background: var(--rouge); box-shadow: inset 0 0 0 2px var(--encre); }
-.cl-ligne.monte { animation: eclat 1.2s var(--sortie); }
 .r-SS, .m1 { --matiere: linear-gradient(125deg, #9c7a1c 0%, #f6dc85 28%, #c39a2c 50%, #fbe7a6 72%, #a8841f 100%); }
 .r-S, .m2 { --matiere: linear-gradient(125deg, #8d949b 0%, #f1f3f5 35%, #aab1b8 60%, #e9ecef 100%); }
 .r-A, .m3 { --matiere: linear-gradient(125deg, #c97a4a 0%, #f2b48a 45%, #d88a58 100%); }
 .r-B { --matiere: linear-gradient(125deg, #6fb596 0%, #b6e0cc 50%, #82c2a6 100%); }
+.r-C { --matiere: linear-gradient(125deg, #7d93b8 0%, #c5d3ea 50%, #8ea3c6 100%); }
 
-/* ---------- Plan L'île ---------- */
-.p-ile { grid-template-columns: 1fr 460px; gap: 28px; padding: 18px 26px; }
-.ile-cadre { position: relative; background: var(--parchemin); box-shadow: 0 0 0 4px var(--encre), inset 0 0 60px rgba(120, 85, 30, 0.3); overflow: hidden; }
+/* ---------- L'écran (1920 × 1080, mis à l'échelle de la fenêtre) ---------- */
+.ecran {
+  position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden;
+  background: var(--papier) var(--trame-fond);
+  display: grid; grid-template-rows: 104px 1fr 84px; gap: 18px; padding: 22px 30px 26px;
+}
+
+/* Habillage du haut : posé sur le papier, sans case, pour laisser toute la place au plan. */
+.haut { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 36px; }
+.marque { display: flex; align-items: center; gap: 22px; }
+.marque b { font: 400 50px/1 var(--f-titre); letter-spacing: 0.01em; }
+.pastille { display: inline-flex; align-items: center; gap: 12px; height: 54px; padding: 0 22px; background: var(--encre); color: var(--case); font: 400 28px/1 var(--f-titre); }
+.pastille i { width: 16px; height: 16px; border-radius: 50%; background: #3fd36b; animation: pouls 2s ease-in-out infinite; }
+@keyframes pouls { 50% { opacity: 0.35; } }
+.pastille.finale { background: var(--alerte); }
+.pastille.finale i, .pastille.pause i { background: var(--case); }
+.pastille.pause { background: var(--case); color: var(--encre); box-shadow: inset 0 0 0 4px var(--encre); }
+.pastille.pause i { background: var(--encre); animation: none; }
+.reco { display: none; align-items: center; gap: 10px; font: 600 26px var(--f-texte); color: var(--encre-2); }
+.reco.on { display: inline-flex; }
+.reco svg { width: 30px; height: 30px; animation: tourne 1.2s linear infinite; }
+.evs { justify-self: center; display: flex; gap: 16px; min-width: 0; }
+.ev { display: inline-flex; align-items: center; gap: 18px; height: 60px; padding: 0 24px; background: var(--alerte); color: #fff; transform: rotate(-1.5deg); box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18); }
+.ev b { font: 400 28px/1 var(--f-titre); white-space: nowrap; }
+.ev span { font: 600 28px/1 var(--f-texte); white-space: nowrap; }
+.ev time { font: 800 32px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.ev.maudite { background: var(--nuit); }
+.ev.entre { animation: colle 0.6s cubic-bezier(.2, 1.5, .4, 1) both; }
+@keyframes colle { from { transform: rotate(-8deg) scale(1.6); opacity: 0; } }
+.chrono { font: 800 104px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
+.chrono.rouge { color: var(--alerte); animation: bat 1s steps(2) infinite; }
+@keyframes bat { 50% { color: var(--encre); } }
+
+/* La case unique : un plan à la fois, qui la remplit. */
+.plateau { position: relative; overflow: hidden; background: var(--case); box-shadow: 0 0 0 var(--trait) var(--encre), 0 18px 40px rgba(0, 0, 0, 0.14); }
+.plan { position: absolute; inset: 0; display: none; }
+.plan.vu { display: grid; }
+.plan.entre { animation: volet 0.7s var(--sortie) both; }
+@keyframes volet { from { clip-path: polygon(100% 0, 100% 0, 100% 100%, 100% 100%); } to { clip-path: polygon(-12% 0, 100% 0, 100% 100%, 0 100%); } }
+.avance { position: absolute; left: 0; bottom: 0; height: 8px; width: 0; background: var(--jaune); z-index: 2; }
+.heros.en-raid .plan, .heros.en-raid .avance { visibility: hidden; }
+.titre-plan { margin: 0; font: 400 76px/1 var(--f-titre); letter-spacing: 0.005em; text-wrap: balance; }
+
+/* Ligne du bas : les trois premiers (noms seuls) et la dernière annonce du jeu. */
+.bas { display: grid; grid-template-columns: auto 1fr; gap: 26px; align-items: stretch; }
+.tete3 { display: flex; align-items: center; gap: 28px; padding-right: 6px; }
+.tete3 span { display: inline-flex; align-items: center; gap: 12px; font: 800 34px/1 var(--f-texte); white-space: nowrap; }
+.tete3 i { width: 46px; height: 46px; display: grid; place-items: center; font: 400 26px/1 var(--f-titre); font-style: normal; background: var(--matiere); box-shadow: 0 0 0 3px var(--encre); border-radius: 5px; }
+.tete3 span.monte { animation: eclat 1.2s var(--sortie); }
+@keyframes eclat { 0% { background: var(--jaune); } 100% { background: transparent; } }
+/* Boîte de dialogue du jeu (Joy Station) : aplat noir, double filet blanc, police pixel. */
+.annonce { position: relative; display: flex; align-items: center; gap: 22px; min-width: 0; padding: 0 30px; background: var(--nuit); color: #f4f4ef; box-shadow: inset 0 0 0 5px var(--nuit), inset 0 0 0 8px #f4f4ef; }
+.annonce .txt { font: 400 34px/1.2 var(--f-jeu); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.annonce .txt::after { content: '▼'; display: inline-block; margin-left: 14px; font-size: 22px; vertical-align: middle; animation: clign 1s steps(2) infinite; }
+.annonce .txt.neuf { animation: tape 0.6s steps(18) both; }
+@keyframes tape { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes clign { 50% { opacity: 0; } }
+
+/* ---------- Plan : la course au Book ---------- */
+.p-course { grid-template-rows: auto auto 1fr; gap: 10px; padding: 34px 52px 40px; }
+.course-tete { display: flex; align-items: baseline; justify-content: space-between; gap: 30px; }
+.course-tete p { margin: 0; font: 600 32px/1.2 var(--f-texte); color: var(--encre-2); }
+.course-tete p b { color: var(--encre); }
+.reperes, .couloir { display: grid; grid-template-columns: 74px 300px 1fr; align-items: center; gap: 22px; }
+.reperes { font: 600 26px/1 var(--f-texte); color: var(--encre-2); padding-top: 8px; }
+.reperes .voie-rep { display: flex; justify-content: space-between; }
+.reperes .voie-rep b { font: 400 30px/1 var(--f-titre); color: var(--encre); }
+.piste { position: relative; display: grid; grid-template-rows: repeat(8, minmax(0, 1fr)); min-height: 0; }
+.couloir { border-bottom: 3px solid var(--case-2); }
+.couloir:last-child { border-bottom: 0; }
+.couloir .cr { width: 64px; height: 56px; display: grid; place-items: center; font: 800 36px/1 var(--f-chiffre); }
+.couloir.c1 .cr, .couloir.c2 .cr, .couloir.c3 .cr { font: 400 32px/1 var(--f-titre); background: var(--matiere); box-shadow: 0 0 0 4px var(--encre); border-radius: 6px; }
+.couloir .cn { font: 800 44px/1 var(--f-texte); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.couloir.c1 .cn { font-size: 50px; }
+.voie { position: relative; height: 100%; }
+/* Ligne de couloir en pointillés, et la ligne d'arrivée en damier. */
+.voie::before { content: ''; position: absolute; left: 0; right: 30px; top: 50%; border-top: 3px dashed rgba(17, 17, 17, 0.25); }
+.voie::after { content: ''; position: absolute; right: 0; top: 6px; bottom: 6px; width: 24px; background: conic-gradient(var(--encre) 25%, var(--case) 0 50%, var(--encre) 0 75%, var(--case) 0) 0 0 / 12px 12px; box-shadow: 0 0 0 3px var(--encre); }
+.trace { position: absolute; left: 0; top: 50%; height: 10px; translate: 0 -50%; width: calc(var(--k) * (100% - 112px) + 20px); background: var(--encre); }
+.couloir.c1 .trace { height: 22px; background: repeating-linear-gradient(90deg, var(--encre) 0 26px, transparent 26px 34px), var(--encre); mask: linear-gradient(90deg, transparent, #000 40%); }
+.pion { position: absolute; top: 50%; left: calc(var(--k) * (100% - 112px)); translate: 0 -50%; width: 62px; height: 84%; max-height: 82px; display: grid; place-items: center; border-radius: 7px; background: var(--rouge); box-shadow: 0 0 0 4px var(--encre), 0 8px 14px rgba(0, 0, 0, 0.2); }
+.pion b { width: 80%; padding: 4px 0; display: block; text-align: center; background: var(--case); border-radius: 4px; font: 800 30px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.couloir.c1 .pion { width: 74px; box-shadow: 0 0 0 4px var(--encre), 0 0 0 10px var(--jaune), 0 10px 18px rgba(0, 0, 0, 0.25); }
+.boum { position: absolute; z-index: 3; font: 400 64px/1 var(--f-titre); color: var(--jaune); -webkit-text-stroke: 3px var(--encre); paint-order: stroke fill; transform: rotate(-8deg); pointer-events: none; white-space: nowrap; }
+
+/* ---------- Plan : le duel de tête ---------- */
+.p-duel { grid-template-rows: auto 1fr; padding: 40px 60px 50px; background: var(--case); overflow: hidden; }
+.p-duel::before { content: ''; position: absolute; inset: -30%; background: repeating-conic-gradient(from 0deg at 28% 58%, rgba(17, 17, 17, 0.07) 0deg 1.2deg, transparent 1.2deg 5deg); pointer-events: none; }
+.p-duel .titre-plan { position: relative; font-size: 104px; text-align: center; }
+.duel { position: relative; display: grid; grid-template-columns: 1fr 300px 1fr; align-items: center; }
+.duelliste { display: grid; justify-items: center; gap: 8px; text-align: center; min-width: 0; }
+.duelliste .med { width: 96px; height: 96px; display: grid; place-items: center; font: 400 52px/1 var(--f-titre); background: var(--matiere); box-shadow: 0 0 0 5px var(--encre); border-radius: 8px; }
+.duelliste .nom { max-width: 100%; font: 400 132px/1.05 var(--f-titre); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.duelliste .n { font: 800 210px/0.9 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: -0.04em; }
+.duelliste .n small { font-size: 64px; letter-spacing: 0; color: var(--encre-2); }
+.duelliste.second .nom { font-size: 96px; color: var(--encre-2); }
+.duelliste.second .n { font-size: 150px; color: var(--encre-2); }
+.ecart { justify-self: center; display: grid; place-items: center; gap: 10px; width: 270px; padding: 30px 10px; background: var(--encre); color: var(--case); text-align: center; transform: rotate(-4deg); box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25); }
+.ecart b { font: 800 120px/0.9 var(--f-chiffre); }
+.ecart span { font: 600 32px/1.15 var(--f-texte); }
+.ecart.egal b { font: 400 64px/1 var(--f-titre); }
+
+/* ---------- Plan : l'île ---------- */
+.p-ile { grid-template-columns: 560px 1fr; gap: 40px; padding: 36px 40px 40px 56px; }
+.ile-cote { display: grid; align-content: space-between; gap: 30px; }
+.ile-cote .gros-n { font: 800 260px/0.85 var(--f-chiffre); letter-spacing: -0.04em; }
+.ile-cote h3 { margin: 10px 0 0; font: 400 60px/1.05 var(--f-titre); text-wrap: balance; }
+.ile-cote p { margin: 0; font: 400 32px/1.35 var(--f-texte); color: var(--encre-2); text-wrap: pretty; }
+.ile-cadre { position: relative; background: var(--parchemin); box-shadow: 0 0 0 5px var(--encre), inset 0 0 60px rgba(120, 85, 30, 0.3); overflow: hidden; }
 .ile-cadre svg { display: block; width: 100%; height: 100%; }
-.ile-cote { display: grid; grid-template-rows: auto 1fr auto; gap: 18px; min-height: 0; }
-.ile-cote h3 { margin: 0; font: 400 38px/1.1 var(--f-titre); }
-.ile-cote p { margin: 0; font: 400 24px/1.3 var(--f-texte); color: var(--encre-2); }
-.zl { display: grid; align-content: start; }
-.zl div { display: grid; grid-template-columns: 1fr auto; align-items: center; height: 52px; border-bottom: 2px solid var(--case-2); font: 800 32px var(--f-texte); }
-.zl div.flash { animation: eclat 1.6s var(--sortie); }
-.zl div.maudite { color: var(--alerte); text-decoration: line-through 4px; }
-.zl b { min-width: 60px; text-align: center; padding: 4px 10px; font: 800 32px/1 var(--f-chiffre); background: var(--encre); color: var(--case); }
-.zl b.vide { background: transparent; color: var(--encre-2); box-shadow: inset 0 0 0 3px var(--encre-2); }
-.legende { display: flex; flex-wrap: wrap; gap: 10px 26px; font: 600 24px/1.2 var(--f-texte); }
-.legende span { display: inline-flex; align-items: center; gap: 10px; }
-.legende svg { width: 40px; height: 30px; }
+.legende { display: grid; gap: 14px; font: 600 28px/1.2 var(--f-texte); }
+.legende span { display: inline-flex; align-items: center; gap: 16px; }
+.legende svg { width: 56px; height: 40px; flex: none; }
 .zone-forme { stroke: var(--encre-carte); stroke-width: 2.4; stroke-linejoin: round; fill: none; }
 .zone-ville .zone-forme { stroke-width: 3.2; }
 .zone-maudite .zone-forme { stroke: #a8231f; stroke-width: 4; stroke-dasharray: 9 6; }
-.zone-nom { font: 400 13px/1 var(--f-titre); fill: var(--encre-carte); paint-order: stroke; stroke: var(--parchemin); stroke-width: 4px; stroke-linejoin: round; }
+.zone-nom { font: 400 15px/1 var(--f-titre); fill: var(--encre-carte); paint-order: stroke; stroke: var(--parchemin); stroke-width: 4px; stroke-linejoin: round; }
 .zone-flash { fill: var(--jaune); opacity: 0; }
 .zone-flash.on { animation: allume 3.2s ease-out; }
 @keyframes allume { 0% { opacity: 0; } 8% { opacity: 0.75; } 30% { opacity: 0.45; } 100% { opacity: 0; } }
 .halo { transition: opacity 1.4s ease, transform 1.4s var(--sortie); transform-box: fill-box; transform-origin: center; }
 .halos.cache .halo { opacity: 0; transform: scale(0.4); }
-.scan-bulle { position: absolute; left: 50%; bottom: 24px; translate: -50% 0; padding: 14px 26px; background: var(--nuit); color: #f4f4ef; font: 400 32px/1.2 var(--f-jeu); white-space: nowrap; box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f4f4ef; opacity: 0; transition: opacity 0.3s; }
+.scan-bulle { position: absolute; left: 50%; bottom: 26px; translate: -50% 0; padding: 16px 30px; background: var(--nuit); color: #f4f4ef; font: 400 36px/1.2 var(--f-jeu); white-space: nowrap; box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f4f4ef; opacity: 0; transition: opacity 0.3s; }
 .scan-bulle.on { opacity: 1; }
 .ev-etiquette rect { fill: #a8231f; }
 .ev-etiquette text { font: 800 11px/1 var(--f-texte); fill: #fff; }
 
-/* ---------- Plan Le fil ---------- */
-.p-fil { align-content: start; gap: 14px; }
-.fil-ligne { display: grid; grid-template-columns: 170px 1fr auto; align-items: center; gap: 26px; min-height: 92px; padding: 0 34px; background: var(--nuit); color: #f4f4ef; box-shadow: inset 0 0 0 5px var(--nuit), inset 0 0 0 8px #f4f4ef; }
-.fil-ligne time { font: 400 26px/1.1 var(--f-jeu); color: #b9b9b2; }
-.fil-ligne p { margin: 0; font: 400 38px/1.2 var(--f-jeu); }
-.fil-ligne .rg { font: 400 32px/1 var(--f-titre); color: var(--encre); padding: 8px 14px; background: var(--matiere, var(--case)); box-shadow: 0 0 0 3px #f4f4ef; border-radius: 6px; }
-.fil-ligne.gm { box-shadow: inset 0 0 0 5px var(--nuit), inset 0 0 0 8px var(--or); }
-.fil-ligne.gm p { color: var(--or-clair); }
-.fil-ligne.neuf { animation: arrive 0.6s var(--sortie); }
-@keyframes arrive { from { transform: translateX(-60px); opacity: 0; } }
+/* ---------- Plan : le fait marquant (un seul, en très grand) ---------- */
+.p-fait { grid-template-columns: minmax(0, 1fr); align-items: center; padding: 40px 70px 50px; overflow: hidden; }
+.fait { position: relative; width: 100%; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 70px; }
+.fait.sans-carte { grid-template-columns: 1fr; justify-items: center; margin-top: 210px; }
+.fait.sans-carte .bulle p { font-size: 92px; }
+.fait.gm .mot { color: var(--or-clair); }
+.fait .porte { width: 500px; }
+.fait .mot { position: absolute; left: 50%; top: 0; translate: -50% -86%; rotate: -4deg; font: 400 230px/1 var(--f-titre); color: var(--jaune); -webkit-text-stroke: 7px var(--encre); paint-order: stroke fill; white-space: nowrap; pointer-events: none; }
+.fait .bulle { position: relative; display: grid; gap: 22px; padding: 44px 56px; background: var(--nuit); color: #f4f4ef; box-shadow: inset 0 0 0 7px var(--nuit), inset 0 0 0 11px #f4f4ef, 0 20px 40px rgba(0, 0, 0, 0.22); max-width: 1500px; }
+.fait .bulle time { font: 400 34px/1 var(--f-jeu); word-spacing: 0.3em; color: #b9b9b2; }
+.fait .bulle p { margin: 0; font: 400 84px/1.18 var(--f-jeu); text-wrap: balance; }
+.fait .bulle .rg { justify-self: start; font: 400 48px/1 var(--f-titre); color: var(--encre); padding: 12px 22px; background: var(--matiere); box-shadow: 0 0 0 4px #f4f4ef; border-radius: 8px; }
+.fait.gm .bulle { box-shadow: inset 0 0 0 7px var(--nuit), inset 0 0 0 11px var(--or), 0 20px 40px rgba(0, 0, 0, 0.22); }
+.fait.gm .bulle p { color: var(--or-clair); }
+.points-fait { position: absolute; right: 44px; bottom: 30px; display: flex; gap: 14px; }
+.points-fait i, .points-jouer i { width: 18px; height: 18px; border-radius: 50%; box-shadow: inset 0 0 0 3px var(--encre); }
+.points-fait i.on, .points-jouer i.on { background: var(--encre); }
 
-/* ---------- Plan Comment jouer ---------- */
-.p-jouer { grid-template-columns: repeat(3, 1fr) 470px; gap: 26px; }
-.etape { display: grid; grid-template-rows: 1fr auto; gap: 18px; padding: 26px; background: var(--case); box-shadow: 0 0 0 4px var(--encre); }
-.etape:nth-child(2) { transform: rotate(-1deg); }
-.etape svg { width: 100%; height: 100%; min-height: 0; }
-.etape h3 { margin: 0; font: 400 38px/1.1 var(--f-titre); text-wrap: balance; }
-.etape p { margin: 6px 0 0; font: 400 28px/1.3 var(--f-texte); color: var(--encre-2); }
-.inscr { display: grid; align-content: center; justify-items: center; gap: 18px; padding: 26px; background: var(--encre); color: var(--case); text-align: center; }
-.inscr b { font: 400 40px/1.1 var(--f-titre); }
-.inscr span { font: 600 28px/1.3 var(--f-texte); }
-.qr { background: #fff; padding: 18px; }
-.qr svg { display: block; }
+/* ---------- Plan : comment jouer (une étape à la fois) ---------- */
+.p-jouer { grid-template-columns: 820px 1fr; align-items: center; gap: 70px; padding: 40px 90px 50px 70px; }
+.p-jouer .dessin { height: 100%; max-height: 640px; display: grid; place-items: center; }
+.p-jouer .dessin svg { width: 100%; height: 100%; }
+.p-jouer h3 { margin: 0; font: 400 104px/1.02 var(--f-titre); text-wrap: balance; }
+.p-jouer p { margin: 30px 0 0; font: 400 44px/1.3 var(--f-texte); color: var(--encre-2); text-wrap: pretty; max-width: 22ch; }
+.points-jouer { display: flex; gap: 16px; margin-top: 50px; }
+.etape-entre { animation: glisse 0.7s var(--sortie) both; }
+@keyframes glisse { from { transform: translateX(80px); opacity: 0; } }
 
-/* ---------- Raid (remplace la case principale tant qu'il dure) ---------- */
+/* ---------- Évènement qui commence : une case qui claque sur la planche ---------- */
+.claque { position: absolute; inset: 0; z-index: 15; display: none; place-items: center; background: rgba(238, 239, 233, 0.6); }
+.claque.on { display: grid; }
+.claque .boite { display: grid; justify-items: center; gap: 18px; padding: 50px 100px 56px; background: var(--alerte); color: #fff; text-align: center; transform: rotate(-3deg); box-shadow: 0 0 0 var(--trait) var(--encre), 0 30px 60px rgba(0, 0, 0, 0.3); }
+.claque .boite.nuit { background: var(--nuit); }
+.claque .boite b { font: 400 150px/1 var(--f-titre); }
+.claque .boite span { font: 600 48px/1.2 var(--f-texte); }
+
+/* Raid (remplace le plan tant qu'il dure) */
 .raid { position: absolute; inset: 0; display: none; grid-template-columns: 640px 1fr; gap: 40px; padding: 34px 44px; background: radial-gradient(ellipse at 25% 70%, #3a0d0f 0%, var(--nuit) 70%); color: #f4f4ef; }
 .raid.on { display: grid; }
-.heros.en-raid { grid-template-rows: 0 1fr; }
-.heros.en-raid .plans-tete { visibility: hidden; border: 0; }
 .raid .scene { position: relative; display: grid; place-items: end center; }
 .raid .boss { width: 560px; transform-origin: 50% 100%; animation: respire 3.2s ease-in-out infinite; filter: drop-shadow(0 0 30px rgba(224, 50, 43, 0.55)); }
 .raid .boss.touche { animation: touche 0.25s ease-in-out; }
@@ -216,25 +238,26 @@ body { margin: 0; overflow: hidden; background: #050506; color: var(--encre); fo
 .coup b { color: var(--alerte); }
 .raid .pied { display: flex; gap: 40px; font: 600 30px var(--f-texte); color: #d8d8d0; }
 .raid .pied b { font: 800 44px/1 var(--f-chiffre); color: #f4f4ef; font-variant-numeric: tabular-nums; }
+.heros .raid { z-index: 1; }
 
-/* ---------- Avant le démarrage ---------- */
-.accueil { position: absolute; inset: 0; display: none; grid-template-columns: 560px 540px 1fr; gap: 40px; padding: 60px 60px 56px; background: var(--papier) radial-gradient(var(--trame) 1px, transparent 1.3px) 0 0 / 8px 8px; z-index: 5; }
+/* ---------- Avant le démarrage : les cartes à gagner, et les Hunters qui entrent ---------- */
+.accueil { position: absolute; inset: 0; z-index: 5; display: none; grid-template-columns: 1fr 560px; gap: 90px; padding: 80px 110px 80px 110px; background: var(--papier) var(--trame-fond); overflow: hidden; }
 .accueil.on { display: grid; }
-.acc-texte { display: grid; align-content: space-between; }
-.acc-texte h1 { margin: 0; font: 400 112px/0.95 var(--f-titre); }
-.acc-texte h1 small { display: block; margin-top: 18px; font: 600 34px/1.2 var(--f-texte); color: var(--encre-2); }
-.consignes { margin: 0; padding: 0; list-style: none; display: grid; gap: 22px; counter-reset: c; }
-.consignes li { display: grid; grid-template-columns: 70px 1fr; align-items: center; gap: 20px; font: 800 36px/1.2 var(--f-texte); counter-increment: c; }
-.consignes li::before { content: counter(c); width: 70px; height: 70px; display: grid; place-items: center; background: var(--encre); color: var(--case); font: 400 40px/1 var(--f-titre); }
-.inscrits { font: 600 32px var(--f-texte); color: var(--encre-2); }
-.inscrits b { font: 800 56px/1 var(--f-chiffre); color: var(--encre); }
-.acc-qr { display: grid; align-content: center; justify-items: center; gap: 26px; padding: 40px; background: var(--case); box-shadow: 0 0 0 var(--trait) var(--encre); transform: rotate(-1.2deg); }
-.acc-qr b { font: 400 44px/1.1 var(--f-titre); text-align: center; }
-.acc-qr span { font: 600 28px/1.3 var(--f-texte); color: var(--encre-2); text-align: center; }
-.acc-ile { display: grid; align-content: center; gap: 22px; }
-.acc-ile h2 { margin: 0; font: 400 44px/1.1 var(--f-titre); }
-.acc-ile p { margin: 0; font: 400 28px/1.35 var(--f-texte); color: var(--encre-2); }
-.acc-ile .ile-cadre { aspect-ratio: 420 / 320; }
+.acc-gauche { display: grid; grid-template-rows: auto 1fr auto; gap: 40px; min-width: 0; }
+.acc-gauche h1 { margin: 0; font: 400 200px/0.88 var(--f-titre); letter-spacing: -0.01em; }
+.acc-gauche h1 small { display: block; margin-top: 30px; font: 600 46px/1.2 var(--f-texte); letter-spacing: 0; color: var(--encre-2); }
+.compte { align-self: end; display: flex; align-items: baseline; gap: 26px; }
+.compte b { font: 800 190px/0.85 var(--f-chiffre); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.compte span { font: 400 54px/1.05 var(--f-titre); }
+.arrivants { display: flex; flex-wrap: wrap; gap: 14px 34px; font: 800 38px/1.2 var(--f-texte); color: var(--encre-2); min-height: 46px; }
+.arrivants span:first-child { color: var(--encre); background: var(--jaune); padding: 0 12px; }
+.vitrine { display: grid; align-content: center; gap: 34px; perspective: 1800px; }
+.vitrine .gi-carte { filter: drop-shadow(0 26px 34px rgba(0, 0, 0, 0.28)); }
+.vitrine p { margin: 0; font: 600 34px/1.25 var(--f-texte); color: var(--encre-2); text-align: center; text-wrap: balance; }
+.entree { position: absolute; left: -60px; right: -60px; top: 50%; z-index: 2; display: none; justify-items: center; gap: 12px; padding: 44px 0 52px; background: var(--nuit); color: #f4f4ef; transform: translateY(-50%) rotate(-3deg); box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3); }
+.entree.on { display: grid; }
+.entree b { font: 400 190px/1 var(--f-titre); color: var(--or-clair); }
+.entree span { font: 400 54px/1.2 var(--f-jeu); }
 
 /* ---------- Pause ---------- */
 .pause-voile { position: absolute; inset: 0; z-index: 6; display: none; place-items: center; background: rgba(238, 239, 233, 0.55); backdrop-filter: grayscale(1) contrast(0.85); }
@@ -244,18 +267,24 @@ body { margin: 0; overflow: hidden; background: #050506; color: var(--encre); fo
 .tampon span { font: 800 40px var(--f-texte); color: var(--encre); }
 @keyframes tamponne { from { transform: rotate(-6deg) scale(1.8); opacity: 0; } }
 
-/* ---------- Fin de partie (écran figé) ---------- */
-.fin { position: absolute; inset: 0; z-index: 5; display: none; grid-template-columns: 1fr 820px; grid-template-rows: auto 1fr; gap: 26px 36px; padding: 44px 48px; background: var(--papier) radial-gradient(var(--trame) 1px, transparent 1.3px) 0 0 / 8px 8px; }
+/* ---------- Fin de partie (figée) : le classement, puis la révélation des QR, en alternance ---------- */
+.fin { position: absolute; inset: 0; z-index: 5; display: none; padding: 60px 90px 70px; background: var(--papier) var(--trame-fond); }
 .fin.on { display: grid; }
-.fin h1 { grid-column: 1 / -1; margin: 0; display: flex; align-items: baseline; gap: 30px; font: 400 76px/1 var(--f-titre); }
-.fin h1 span { font: 600 32px var(--f-texte); color: var(--encre-2); }
-.fin .case { padding: 22px 28px; display: grid; grid-template-rows: auto 1fr; gap: 12px; min-height: 0; }
-.fin .case h2 { margin: 0; font: 400 38px/1.1 var(--f-titre); }
-.fin .cl-tete, .fin .cl-ligne { grid-template-columns: 96px minmax(0, 1fr) 150px 180px; }
-.fin .cl-ligne { max-height: 66px; }
-.fin .revele { display: grid; grid-template-rows: auto 1fr; }
-.fin .case > div:not(.ile-cadre) { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
-.fin .cl-ligne .p { font-size: 40px; }
+.fv { display: none; }
+.fv.vu { display: grid; }
+.fv.entre { animation: volet 0.7s var(--sortie) both; }
+.fv-classement { grid-template-rows: auto 1fr; gap: 40px; }
+.fv-classement h1, .fv-ile h1 { margin: 0; font: 400 110px/1 var(--f-titre); }
+.final { display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: column; grid-template-rows: repeat(5, 1fr); gap: 0 90px; }
+.fl { display: grid; grid-template-columns: 90px minmax(0, 1fr) auto; align-items: center; gap: 28px; border-bottom: 3px solid var(--encre); }
+.fl .r { width: 76px; height: 66px; display: grid; place-items: center; font: 800 44px/1 var(--f-chiffre); }
+.fl.m1 .r, .fl.m2 .r, .fl.m3 .r { font: 400 40px/1 var(--f-titre); background: var(--matiere); box-shadow: 0 0 0 4px var(--encre); border-radius: 7px; }
+.fl .p { font: 800 60px/1 var(--f-texte); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fl .n { font: 800 44px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; text-align: right; }
+.fl .n small { font-size: 28px; color: var(--encre-2); }
+.fv-ile { grid-template-columns: 1fr 1000px; gap: 70px; align-items: center; }
+.fv-ile p { margin: 34px 0 0; font: 400 40px/1.3 var(--f-texte); color: var(--encre-2); }
+.fv-ile .ile-cadre { aspect-ratio: 420 / 320; }
 
 /* ---------- Cinématiques (nuit de Greed Island) ---------- */
 .cine { position: absolute; inset: 0; z-index: 20; display: none; place-items: center; overflow: hidden; background: var(--nuit); color: #f4f4ef; }
@@ -339,128 +368,102 @@ body { margin: 0; overflow: hidden; background: #050506; color: var(--encre); fo
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+.p-ile .ile-cadre { height: 100%; aspect-ratio: 420 / 320; justify-self: end; }
 </style>
 
 <div class="ecran" id="ecran">
-  <header class="case haut" aria-label="État de la partie">
-    <div class="marque"><b>Greed Island</b><span id="nom-partie">Partie du parc de la Tête d'Or</span></div>
-    <div class="etat">
+  <header class="haut" aria-label="État de la partie">
+    <div class="marque">
+      <b>Greed Island</b>
       <span class="pastille" id="pastille"><i></i><span id="pastille-txt">En cours</span></span>
       <span class="reco" id="reco"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="square"><path d="M20 12a8 8 0 1 1-3-6.2M20 4v5h-5"/></svg>Reconnexion…</span>
     </div>
+    <div class="evs" id="evs" aria-label="Évènements en cours"></div>
     <div class="chrono" id="chrono" aria-label="Temps restant">1:24:10</div>
   </header>
 
-  <section class="case heros" aria-label="Plans">
-    <nav class="plans-tete" id="onglets" aria-hidden="true"></nav>
-    <div class="plans" id="plans">
-      <div class="plan p-classement" data-plan="classement">
-        <div class="cl-tete"><span>Rang</span><span>Hunter</span><span>Book · cartes désignées</span><span></span><span>Points</span><span>Jenny</span></div>
-        <div class="cl-liste" id="cl-liste"></div>
+  <section class="plateau heros" aria-label="Plan en cours">
+    <div class="plan p-course" data-plan="course">
+      <div class="course-tete"><h2 class="titre-plan">La course au Book</h2><p>Le premier à <b id="n-clear">30 cartes</b> fait Clear</p></div>
+      <div class="reperes"><span></span><span></span><div class="voie-rep"><span>Départ</span><b>Clear</b></div></div>
+      <div class="piste" id="piste"></div>
+    </div>
+    <div class="plan p-duel" data-plan="duel" id="duel-plan"></div>
+    <div class="plan p-ile" data-plan="ile">
+      <div class="ile-cote">
+        <div><div class="gros-n" id="n-actives">13</div><h3>QR à trouver dans l'île</h3></div>
+        <p>Chaque halo cache un QR. Il dit « par ici », jamais « ici ».</p>
+        <div class="legende" id="legende-ile"></div>
       </div>
-      <div class="plan p-ile" data-plan="ile">
-        <div class="ile-cadre"><svg id="ile-svg" viewBox="0 0 420 320" role="img" aria-label="Carte de l'île"></svg><div class="scan-bulle" id="scan-bulle"></div></div>
-        <div class="ile-cote">
-          <div><h3>Balises actives</h3><p>Les QR sont cachés dans toute l'île. Le halo dit « par ici », jamais « ici ».</p></div>
-          <div class="zl" id="zl"></div>
-          <div class="legende" id="legende-ile"></div>
+      <div class="ile-cadre"><svg id="ile-svg" viewBox="0 0 420 320" role="img" aria-label="Carte de l'île"></svg><div class="scan-bulle" id="scan-bulle"></div></div>
+    </div>
+    <div class="plan p-fait" data-plan="fait" id="fait-plan"></div>
+    <div class="plan p-jouer" data-plan="jouer" id="jouer-plan"></div>
+    <div class="raid" id="raid">
+      <div class="scene"><div class="boss" id="boss"></div></div>
+      <div class="info">
+        <div><h2>Raid de la Brigade</h2><div class="sous">Répondez aux questions des PNJ pour lui retirer des PV.</div></div>
+        <div class="pv">
+          <div class="pv-barre"><u id="pv-u"></u><i id="pv-i"></i></div>
+          <div class="pv-chiffres"><span id="pv-txt">2 000 / 2 000 PV</span><span id="pv-pct">100 %</span></div>
         </div>
-      </div>
-      <div class="plan p-fil" data-plan="fil" id="fil-plan"></div>
-      <div class="plan p-jouer" data-plan="jouer">
-        <div class="etape">
-          <svg viewBox="0 0 300 220" aria-hidden="true"><rect x="40" y="40" width="96" height="96" fill="#fff" stroke="#111" stroke-width="5"/><g fill="#111"><rect x="52" y="52" width="26" height="26"/><rect x="98" y="52" width="26" height="26"/><rect x="52" y="98" width="26" height="26"/><rect x="92" y="92" width="10" height="10"/><rect x="108" y="108" width="14" height="14"/></g><rect x="170" y="30" width="86" height="160" rx="12" fill="#fbfbf7" stroke="#111" stroke-width="5"/><rect x="182" y="52" width="62" height="96" fill="#ecece6" stroke="#111" stroke-width="3"/><path d="M190 60h14M190 60v14M236 60h-14M236 60v14M190 140h14M190 140v-14M236 140h-14M236 140v-14" stroke="#c0272d" stroke-width="4"/><path d="M150 88h14M138 70l14 18-14 18" stroke="#111" stroke-width="5" fill="none"/><path d="M20 200 Q90 180 150 200" stroke="#111" stroke-width="3" fill="none" stroke-dasharray="4 7"/></svg>
-          <div><h3>Trouve un QR et scanne-le</h3><p>Ils sont cachés partout dans l'île. Chaque scan tire une carte.</p></div>
-        </div>
-        <div class="etape">
-          <svg viewBox="0 0 300 220" aria-hidden="true"><path d="M150 50 Q100 30 40 40 V190 Q100 180 150 200 Q200 180 260 190 V40 Q200 30 150 50 Z" fill="#5a1a1e" stroke="#111" stroke-width="5" stroke-linejoin="round"/><path d="M150 56 Q104 40 54 48 V180 Q104 172 150 188 Z" fill="#fbfbf7" stroke="#111" stroke-width="3"/><path d="M150 56 Q196 40 246 48 V180 Q196 172 150 188 Z" fill="#fbfbf7" stroke="#111" stroke-width="3"/><g stroke="#111" stroke-width="3"><rect x="66" y="66" width="30" height="40" fill="#c0272d"/><rect x="104" y="66" width="30" height="40" fill="#c0272d"/><rect x="66" y="116" width="30" height="40" fill="none" stroke-dasharray="4 4"/><rect x="104" y="116" width="30" height="40" fill="#c0272d"/><rect x="166" y="66" width="30" height="40" fill="#c0272d"/><rect x="204" y="66" width="30" height="40" fill="none" stroke-dasharray="4 4"/><rect x="166" y="116" width="30" height="40" fill="none" stroke-dasharray="4 4"/><rect x="204" y="116" width="30" height="40" fill="#c0272d"/></g></svg>
-          <div><h3>Remplis ton Book</h3><p>Le premier Hunter qui réunit toutes les cartes désignées gagne la partie.</p></div>
-        </div>
-        <div class="etape">
-          <svg viewBox="0 0 300 220" aria-hidden="true"><g stroke="#111" stroke-width="5" fill="#fbfbf7" stroke-linejoin="round"><circle cx="70" cy="70" r="26"/><path d="M30 190 Q36 110 70 106 Q104 110 110 190 Z"/><circle cx="230" cy="70" r="26"/><path d="M190 190 Q196 110 230 106 Q264 110 270 190 Z"/></g><rect x="118" y="80" width="44" height="60" rx="5" fill="#1f4a9c" stroke="#111" stroke-width="4" transform="rotate(-12 140 110)"/><path d="M114 60 L186 60 M176 50 L190 60 L176 70" stroke="#111" stroke-width="5" fill="none" stroke-linecap="square"/><g stroke="#111" stroke-width="3"><path d="M150 150 l-10 24 M164 150 l4 26 M136 146 l-22 16"/></g></svg>
-          <div><h3>Défie les autres Hunters</h3><p>Sorts sur les joueurs proches, échanges, enchères, arène.</p></div>
-        </div>
-        <div class="inscr" id="inscr"></div>
-      </div>
-      <div class="raid" id="raid">
-        <div class="scene"><div class="boss" id="boss"></div></div>
-        <div class="info">
-          <div><h2>Raid de la Brigade</h2><div class="sous">Répondez aux questions des PNJ pour lui retirer des PV.</div></div>
-          <div class="pv">
-            <div class="pv-barre"><u id="pv-u"></u><i id="pv-i"></i></div>
-            <div class="pv-chiffres"><span id="pv-txt">2 000 / 2 000 PV</span><span id="pv-pct">100 %</span></div>
-          </div>
-          <div class="coups" id="coups"></div>
-          <div class="pied"><span>Temps <b id="raid-temps">10:00</b></span><span>Au combat <b id="raid-n">0</b></span></div>
-        </div>
+        <div class="coups" id="coups"></div>
+        <div class="pied"><span>Temps <b id="raid-temps">10:00</b></span><span>Au combat <b id="raid-n">0</b></span></div>
       </div>
     </div>
+    <div class="avance" id="avance"></div>
   </section>
 
-  <div class="bannieres" id="bannieres"></div>
-
   <footer class="bas">
-    <div class="case podium-mini" id="podium-mini" aria-label="Les trois premiers"></div>
-    <div class="annonce" aria-live="polite"><span class="qui">Annonce du jeu</span><span class="txt" id="annonce-txt"></span></div>
+    <div class="tete3" id="tete3" aria-label="Les trois premiers"></div>
+    <div class="annonce" aria-live="polite"><span class="txt" id="annonce-txt"></span></div>
   </footer>
 
   <!-- Avant le démarrage -->
   <div class="accueil" id="accueil">
-    <div class="acc-texte">
-      <h1>Greed Island<small>Une chasse aux cartes grandeur nature</small></h1>
-      <ol class="consignes">
-        <li>Scanne ce QR avec ton téléphone</li>
-        <li>Passe l'examen de Hunter</li>
-        <li>Trouve les QR cachés dans l'île</li>
-      </ol>
-      <div class="inscrits"><b id="inscrits">23</b> Hunters inscrits</div>
+    <div class="acc-gauche">
+      <h1>Greed<br>Island<small>Une chasse aux cartes grandeur nature</small></h1>
+      <div class="compte"><b id="inscrits">23</b><span>Hunters<br>inscrits</span></div>
+      <div class="arrivants" id="arrivants"></div>
     </div>
-    <div class="acc-qr">
-      <div class="qr" id="qr-accueil"></div>
-      <b>Entre dans le jeu</b>
-      <span>QR de démonstration · dans l'app : lien d'accueil de la partie</span>
-    </div>
-    <div class="acc-ile">
-      <h2>Les QR sont cachés partout</h2>
-      <div class="ile-cadre"><svg id="acc-svg" viewBox="0 0 420 320" aria-hidden="true"></svg></div>
-      <p>Chaque halo cache un QR. À toi de le trouver.</p>
-    </div>
+    <div class="vitrine" id="vitrine"></div>
+    <div class="entree" id="entree"><b id="entree-nom">Kirua</b><span>entre dans Greed Island</span></div>
   </div>
 
   <!-- Fin de partie (figée) -->
   <div class="fin" id="fin">
-    <h1>Classement final <span>La partie est terminée</span></h1>
-    <div class="case">
-      <h2>Les Hunters</h2>
-      <div><div class="cl-tete"><span>Rang</span><span>Hunter</span><span style="text-align:right">Cartes</span><span style="text-align:right">Points</span></div><div class="cl-liste" id="fin-liste"></div></div>
-    </div>
-    <div class="case revele">
-      <h2>Voilà où se cachaient les QR</h2>
-      <div class="ile-cadre"><svg id="fin-svg" viewBox="0 0 420 320" aria-hidden="true"></svg></div>
-    </div>
+    <div class="fv fv-classement" data-fv="classement"><h1>Classement final</h1><div class="final" id="final"></div></div>
+    <div class="fv fv-ile" data-fv="ile"><div><h1>Voilà où se cachaient les QR</h1><p>Les 20 balises de la partie, à leur vraie place.</p></div><div class="ile-cadre"><svg id="fin-svg" viewBox="0 0 420 320" aria-hidden="true"></svg></div></div>
   </div>
 
+  <div class="claque" id="claque"></div>
   <div class="pause-voile" id="pause"><div class="tampon"><b>PAUSE</b><span>Le chrono est arrêté</span></div></div>
   <div class="cine" id="cine" aria-live="assertive"></div>
 </div>
 
+<template id="svg-1"><svg viewBox="0 0 300 220" aria-hidden="true"><rect x="40" y="40" width="96" height="96" fill="#fff" stroke="#111" stroke-width="5"/><g fill="#111"><rect x="52" y="52" width="26" height="26"/><rect x="98" y="52" width="26" height="26"/><rect x="52" y="98" width="26" height="26"/><rect x="92" y="92" width="10" height="10"/><rect x="108" y="108" width="14" height="14"/></g><rect x="170" y="30" width="86" height="160" rx="12" fill="#fbfbf7" stroke="#111" stroke-width="5"/><rect x="182" y="52" width="62" height="96" fill="#ecece6" stroke="#111" stroke-width="3"/><path d="M190 60h14M190 60v14M236 60h-14M236 60v14M190 140h14M190 140v-14M236 140h-14M236 140v-14" stroke="#c0272d" stroke-width="4"/><path d="M150 88h14M138 70l14 18-14 18" stroke="#111" stroke-width="5" fill="none"/><path d="M20 200 Q90 180 150 200" stroke="#111" stroke-width="3" fill="none" stroke-dasharray="4 7"/></svg></template>
+<template id="svg-2"><svg viewBox="0 0 300 220" aria-hidden="true"><path d="M150 50 Q100 30 40 40 V190 Q100 180 150 200 Q200 180 260 190 V40 Q200 30 150 50 Z" fill="#5a1a1e" stroke="#111" stroke-width="5" stroke-linejoin="round"/><path d="M150 56 Q104 40 54 48 V180 Q104 172 150 188 Z" fill="#fbfbf7" stroke="#111" stroke-width="3"/><path d="M150 56 Q196 40 246 48 V180 Q196 172 150 188 Z" fill="#fbfbf7" stroke="#111" stroke-width="3"/><g stroke="#111" stroke-width="3"><rect x="66" y="66" width="30" height="40" fill="#c0272d"/><rect x="104" y="66" width="30" height="40" fill="#c0272d"/><rect x="66" y="116" width="30" height="40" fill="none" stroke-dasharray="4 4"/><rect x="104" y="116" width="30" height="40" fill="#c0272d"/><rect x="166" y="66" width="30" height="40" fill="#c0272d"/><rect x="204" y="66" width="30" height="40" fill="none" stroke-dasharray="4 4"/><rect x="166" y="116" width="30" height="40" fill="none" stroke-dasharray="4 4"/><rect x="204" y="116" width="30" height="40" fill="#c0272d"/></g></svg></template>
+<template id="svg-3"><svg viewBox="0 0 300 220" aria-hidden="true"><g stroke="#111" stroke-width="5" fill="#fbfbf7" stroke-linejoin="round"><circle cx="70" cy="70" r="26"/><path d="M30 190 Q36 110 70 106 Q104 110 110 190 Z"/><circle cx="230" cy="70" r="26"/><path d="M190 190 Q196 110 230 106 Q264 110 270 190 Z"/></g><rect x="118" y="80" width="44" height="60" rx="5" fill="#1f4a9c" stroke="#111" stroke-width="4" transform="rotate(-12 140 110)"/><path d="M114 60 L186 60 M176 50 L190 60 L176 70" stroke="#111" stroke-width="5" fill="none" stroke-linecap="square"/><g stroke="#111" stroke-width="3"><path d="M150 150 l-10 24 M164 150 l4 26 M136 146 l-22 16"/></g></svg></template>
+
 <div class="proto" id="proto" role="group" aria-label="Commandes du prototype">
-  <div class="proto-tete"><b>Prototype · l'écran réel n'a aucune commande</b><button id="p-plier" aria-expanded="true">Replier</button></div>
+  <div class="proto-tete"><b>Prototype v2 · l'écran réel n'a aucune commande</b><button id="p-plier" aria-expanded="true">Replier</button></div>
   <div class="rang"><span>État</span>
     <button data-etat="inscriptions">Inscriptions</button>
     <button data-etat="en_cours" aria-pressed="true">En cours</button>
     <button data-etat="finale">Phase finale</button>
     <button data-etat="pause">Pause</button>
+    <button data-etat="terminee">Terminée</button>
     <button id="p-reco" aria-pressed="false">Connexion perdue</button>
   </div>
   <div class="rang"><span>Partie</span>
     <button id="p-plan">Plan suivant</button>
-    <button id="p-vite" aria-pressed="false">Rotation rapide (6 s)</button>
+    <button id="p-vite" aria-pressed="false">Rotation rapide (8 s)</button>
     <button id="p-fil">Annonce</button>
     <button id="p-scan">Scan dans une zone</button>
     <button id="p-depasse">Dépassement</button>
     <button id="p-rotation">Rotation des QR</button>
-    <button id="p-ev" aria-pressed="true">Évènements</button>
+    <button id="p-ev">Évènement qui commence</button>
+    <button id="p-inscrit">Nouvel inscrit</button>
   </div>
   <div class="rang"><span>Cinématiques</span>
     <button id="p-ss">Tirage SS</button>
@@ -483,6 +486,7 @@ const attendre = (ms) => new Promise((r) => setTimeout(r, calme ? Math.min(ms, 4
 const ecran = $('#ecran');
 // La secousse porte sur la cinématique : l'écran, lui, garde sa mise à l'échelle.
 function secouer() { if (calme) return; const c = $('#cine'); c.classList.remove('secoue'); void c.offsetWidth; c.classList.add('secoue'); setTimeout(() => c.classList.remove('secoue'), 520); }
+const A = (el, k, o) => (calme ? el.animate(k.slice(-1), { duration: 1, fill: 'both' }) : el.animate(k, { fill: 'both', easing: 'cubic-bezier(.16,1,.3,1)', ...o }));
 
 // ---------- Mise à l'échelle : l'écran garde ses 1920 × 1080, centré dans la fenêtre ----------
 function echelle() {
@@ -501,9 +505,15 @@ let joueurs = [
 ];
 const CARTES = {
   '000': { nom: 'Le bonheur du détenteur', rang: 'SS', lim: 1, texte: 'Un château et sa ville de 10 000 habitants, qui vivent selon les lois de son détenteur.', img: 'img-cartes/designee/000.webp' },
+  '001': { nom: "Le bois secret d'un Tsubo", rang: 'S', lim: 3, texte: "L'entrée du Jardin du Dieu de la Montagne, peuplé d'espèces uniques et dociles.", img: 'img-cartes/designee/001.webp' },
   '017': { nom: 'Le souffle du grand ange', rang: 'S', lim: 2, texte: "Le souffle d'un ange, qui guérit toutes les blessures et toutes les maladies. Une seule fois.", img: 'img-cartes/designee/017.webp' },
   '081': { nom: 'Blue planet', rang: 'S', lim: 2, texte: "Un joyau bleu inconnu de la science, tombé de l'espace.", img: 'img-cartes/designee/081.webp' },
+  '009': { nom: "L'arbre de la bonne récolte", rang: 'A', lim: 10, texte: 'Un arbre chargé de tous les fruits du monde, plein à nouveau chaque matin.', img: 'img-cartes/designee/009.webp' },
+  '015': { nom: 'Le génie capricieux', rang: 'A', lim: 10, texte: 'Un génie qui exauce trois vœux, choisis parmi mille propositions toutes différentes.', img: 'img-cartes/designee/015.webp' },
+  '094': { nom: "L'épée du vol", rang: 'A', lim: 10, texte: 'Une épée légendaire dont chaque coup vole une carte.', img: 'img-cartes/designee/094.webp' },
+  '047': { nom: 'La jeune fille endormie', rang: 'A', lim: 11, texte: 'Une jeune fille qui dort à la place de son maître, éveillé jour et nuit.', img: 'img-cartes/designee/047.webp' },
 };
+const VITRINE = ['000', '017', '094', '001', '015', '081', '047', '009'];
 const ZONES = [
   { id: 'masadora', nom: 'Masadora', type: 'ville', pts: [[22, 24], [138, 16], [150, 92], [96, 118], [30, 104]] },
   { id: 'prairie', nom: 'Prairie', type: 'sauvage', pts: [[164, 18], [292, 26], [300, 120], [262, 178], [176, 170], [160, 100]] },
@@ -516,20 +526,23 @@ const ZONES = [
 const BALISES = [[60, 50], [112, 82], [190, 50], [252, 70], [282, 112], [200, 140], [240, 160], [342, 60], [382, 108],
   [50, 160], [92, 204], [60, 262], [122, 280], [204, 222], [252, 252], [192, 282], [332, 180], [372, 222], [340, 272], [388, 282]];
 let actives = { masadora: 1, prairie: 5, antokiba: 0, foret: 3, rives: 2, soufrabi: 2 };
-let heat = [];
-let halos = [];
+let heat = [], halos = [];
 let evenements = [
   { type: 'Double gain', zone: 'Prairie', fin: 8 * 60 + 12 },
   { type: 'Une carte maudite circule', zone: '', fin: 12 * 60 + 40, maudite: true },
 ];
+const EV_SUIVANTS = [
+  { type: 'Pluie de cartes', zone: 'Forêt', fin: 5 * 60, phrase: 'Les cartes tombent plus souvent dans la Forêt' },
+  { type: 'Double gain', zone: 'Prairie', fin: 8 * 60 + 12, phrase: 'Chaque scan de la Prairie compte double' },
+  { type: 'Une carte maudite circule', zone: '', fin: 12 * 60 + 40, maudite: true, phrase: "Quelqu'un la porte sans le savoir" },
+];
+let iEv = 0, iEvVu = 0, tEv = 0;
 
 // Graine fixe pour un rendu stable.
 let graine = 7;
 const alea = () => (graine = (graine * 16807) % 2147483647) / 2147483647;
 // Décalage tiré par le serveur à chaque rotation (20 min) : halo d'environ 40 m autour d'un point décalé.
-function tirerHalos() {
-  halos = BALISES.map(([x, y]) => { const a = alea() * Math.PI * 2, d = 6 + alea() * 14; return [x + Math.cos(a) * d, y + Math.sin(a) * d]; });
-}
+function tirerHalos() { halos = BALISES.map(([x, y]) => { const a = alea() * Math.PI * 2, d = 6 + alea() * 14; return [x + Math.cos(a) * d, y + Math.sin(a) * d]; }); }
 function tirerHeat() {
   const foyers = [[220, 110, 9], [80, 220, 6], [360, 230, 5], [90, 60, 3], [230, 250, 4]];
   heat = [];
@@ -537,7 +550,7 @@ function tirerHeat() {
 }
 tirerHalos(); tirerHeat();
 
-// ---------- Dessin de l'île ----------
+// ---------- Dessin de l'île (repris de la v1) ----------
 const centre = (pts) => { let x = 0, y = 0; pts.forEach((p) => { x += p[0]; y += p[1]; }); return [x / pts.length, y / pts.length]; };
 const DEFS = (P) => `
   <pattern id="${P}hachure" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0v7" stroke="#1b150c" stroke-width="1" opacity=".22"/></pattern>
@@ -546,25 +559,21 @@ const DEFS = (P) => `
   <filter id="${P}flou" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>`;
 const CHEMINS = ['M150 92 C 170 120, 150 150, 160 186', 'M300 120 C 312 132, 304 142, 306 152', 'M262 178 C 270 186, 268 190, 266 196', 'M100 136 C 130 124, 150 112, 160 100'];
 const QR_GLYPHE = '<g><rect x="-5" y="-5" width="10" height="10" fill="#fff" stroke="#1b150c" stroke-width="1.4"/><rect x="-3.6" y="-3.6" width="3" height="3" fill="#1b150c"/><rect x=".6" y="-3.6" width="3" height="3" fill="#1b150c"/><rect x="-3.6" y=".6" width="3" height="3" fill="#1b150c"/><rect x="1.2" y="1.2" width="1.8" height="1.8" fill="#1b150c"/></g>';
-
-function dessinerIle(svg, P, { halos: avecHalos = true, chaleur = false, comptes = true, exact = false, maudite = null, double = null } = {}) {
+function dessinerIle(svg, P, { halos: avecHalos = true, chaleur = false, comptes = true, exact = false, double = null } = {}) {
   const d = [`<defs>${DEFS(P)}</defs>`, `<rect width="420" height="320" fill="url(#${P}hachure)" opacity=".5"/>`];
   d.push(`<g>${CHEMINS.map((c) => `<path d="${c}" fill="none" stroke="#b99a5b" stroke-width="2" stroke-dasharray="2 5" stroke-linecap="round"/>`).join('')}</g>`);
   for (const z of ZONES) {
     const pts = z.pts.map((p) => p.join(',')).join(' ');
     d.push(`<polygon class="zone-flash" data-flash="${z.id}" points="${pts}"/>`);
-    d.push(`<g class="zone zone-${z.type}${maudite === z.id ? ' zone-maudite' : ''}"><polygon class="zone-forme" points="${pts}" filter="url(#${P}plume)"/></g>`);
+    d.push(`<g class="zone zone-${z.type}"><polygon class="zone-forme" points="${pts}" filter="url(#${P}plume)"/></g>`);
   }
   if (chaleur) d.push(`<g filter="url(#${P}flou)" opacity=".9">${heat.map(([x, y]) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="9" fill="#c0272d"/>`).join('')}</g>`);
   if (avecHalos) d.push(`<g class="halos">${halos.map(([x, y]) => `<g class="halo"><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="24" fill="url(#${P}halo)"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="19" fill="none" stroke="#8a6a12" stroke-width="1.2" stroke-dasharray="3 4" opacity=".8"/></g>`).join('')}</g>`);
-  if (exact) d.push(`<g>${BALISES.map(([x, y], i) => `<g class="vraie" transform="translate(${x} ${y}) scale(1.7)">${QR_GLYPHE}</g>`).join('')}</g>`);
+  if (exact) d.push(`<g>${BALISES.map(([x, y]) => `<g class="vraie" transform="translate(${x} ${y}) scale(1.7)">${QR_GLYPHE}</g>`).join('')}</g>`);
   for (const z of ZONES) {
     const [cx, cy] = centre(z.pts), n = actives[z.id] ?? 0;
     let g = `<g transform="translate(${cx} ${cy - 6})"><text class="zone-nom" text-anchor="middle">${z.nom}</text>`;
-    if (comptes) {
-      const w = n >= 10 ? 26 : 20;
-      g += `<g transform="translate(0 6)"><rect x="${-w / 2}" width="${w}" height="18" ${n ? 'fill="#1b150c"' : 'fill="#f1e6c8" stroke="#1b150c" stroke-width="1.6"'}/><text text-anchor="middle" y="13.5" style="font:800 13px var(--f-chiffre);fill:${n ? '#f1e6c8' : '#1b150c'}">${n}</text></g>`;
-    }
+    if (comptes) { const w = n >= 10 ? 28 : 22; g += `<g transform="translate(0 7)"><rect x="${-w / 2}" width="${w}" height="20" ${n ? 'fill="#1b150c"' : 'fill="#f1e6c8" stroke="#1b150c" stroke-width="1.6"'}/><text text-anchor="middle" y="15" style="font:800 15px var(--f-chiffre);fill:${n ? '#f1e6c8' : '#1b150c'}">${n}</text></g>`; }
     g += '</g>';
     if (double === z.id) { const tw = 92; g += `<g class="ev-etiquette" transform="translate(${cx - tw / 2} ${Math.min(...z.pts.map((p) => p[1])) + 6})"><rect width="${tw}" height="17"/><text x="6" y="12.5">Double gain</text></g>`; }
     d.push(g);
@@ -574,102 +583,230 @@ function dessinerIle(svg, P, { halos: avecHalos = true, chaleur = false, comptes
 }
 const evActif = (t) => evenements.find((e) => e.type === t);
 function dessinerIles() {
-  const dbl = evActif('Double gain') ? 'prairie' : null;
-  dessinerIle($('#ile-svg'), 'i', { chaleur: true, double: dbl });
-  dessinerIle($('#acc-svg'), 'a', { comptes: false });
-  $('#zl').innerHTML = ZONES.map((z) => { const n = actives[z.id] ?? 0; return `<div data-z="${z.id}"><span>${z.nom}</span><b class="${n ? '' : 'vide'}">${n}</b></div>`; }).join('');
+  dessinerIle($('#ile-svg'), 'i', { chaleur: true, double: evActif('Double gain') ? 'prairie' : null });
+  $('#n-actives').textContent = Object.values(actives).reduce((a, b) => a + b, 0);
 }
 $('#legende-ile').innerHTML = `
-  <span><svg viewBox="0 0 40 30"><defs><radialGradient id="lg-h"><stop offset="0" stop-color="#d9a11a" stop-opacity=".7"/><stop offset="1" stop-color="#d9a11a" stop-opacity="0"/></radialGradient></defs><circle cx="20" cy="15" r="14" fill="url(#lg-h)"/></svg>Un QR par ici</span>
-  <span><svg viewBox="0 0 40 30"><g opacity=".75"><circle cx="14" cy="15" r="6" fill="#c0272d"/><circle cx="25" cy="13" r="5" fill="#c0272d"/><circle cx="22" cy="21" r="4" fill="#c0272d"/></g></svg>Hunters, il y a 2 min</span>`;
+  <span><svg viewBox="0 0 40 30"><defs><radialGradient id="lg-h"><stop offset="0" stop-color="#d9a11a" stop-opacity=".8"/><stop offset="1" stop-color="#d9a11a" stop-opacity="0"/></radialGradient></defs><circle cx="20" cy="15" r="14" fill="url(#lg-h)"/></svg>Un QR par ici</span>
+  <span><svg viewBox="0 0 40 30"><g opacity=".8"><circle cx="14" cy="15" r="6" fill="#c0272d"/><circle cx="25" cy="13" r="5" fill="#c0272d"/><circle cx="22" cy="21" r="4" fill="#c0272d"/></g></svg>Des Hunters, il y a 2 min</span>`;
 
-// ---------- Classement ----------
-const ligneCl = (j, i, fin = false) => {
-  const poch = fin ? '' : `<div class="poch">${Array.from({ length: N }, (_, k) => `<i class="${k < j.n ? 'ok' : ''}"></i>`).join('')}</div>`;
-  return `<div class="cl-ligne" data-p="${j.p}"><span class="r ${['m1', 'm2', 'm3'][i] ?? ''}">${i + 1}</span><span class="p">${j.p}</span>${poch}<span class="n">${j.n}<small> / ${N}</small></span><span class="pts">${j.pts}</span>${fin ? '' : `<span class="j">${j.j.toLocaleString('fr-FR')} J</span>`}</div>`;
-};
+// ---------- Classement : la course, le duel, la ligne du bas ----------
 function trier() { joueurs.sort((a, b) => b.n - a.n || b.pts - a.pts); }
-function dessinerClassement(monte) {
-  const liste = $('#cl-liste');
-  // FLIP : chaque ligne glisse de son ancienne place vers la nouvelle.
-  const avant = new Map($$('.cl-ligne', liste).map((el) => [el.dataset.p, el.getBoundingClientRect().top]));
+$('#n-clear').textContent = `${N} cartes`;
+function dessinerCourse(monte) {
+  const piste = $('#piste');
+  // FLIP : chaque couloir glisse de son ancienne place vers la nouvelle.
+  const avant = new Map($$('.couloir', piste).map((el) => [el.dataset.p, el.getBoundingClientRect().top]));
   trier();
-  liste.innerHTML = joueurs.slice(0, 10).map((j, i) => ligneCl(j, i)).join('');
+  piste.innerHTML = joueurs.slice(0, 8).map((j, i) => `<div class="couloir c${i + 1}${i < 3 ? ` m${i + 1}` : ''}" data-p="${j.p}" style="--k:${j.n / N}"><span class="cr">${i + 1}</span><span class="cn">${j.p}</span><div class="voie"><i class="trace"></i><span class="pion"><b>${j.n}</b></span></div></div>`).join('');
   const k = ecran.getBoundingClientRect().height / 1080;
-  for (const el of $$('.cl-ligne', liste)) {
+  for (const el of $$('.couloir', piste)) {
     const t = avant.get(el.dataset.p);
-    if (t !== undefined && !calme) { const dy = (t - el.getBoundingClientRect().top) / k; if (Math.abs(dy) > 1) el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 900, easing: 'cubic-bezier(.16,1,.3,1)' }); }
-    if (el.dataset.p === monte) el.classList.add('monte');
+    if (t !== undefined && !calme) { const dy = (t - el.getBoundingClientRect().top) / k; if (Math.abs(dy) > 1) el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 1000, easing: 'cubic-bezier(.16,1,.3,1)' }); }
+    if (el.dataset.p === monte) boum(el);
   }
-  $('#podium-mini').innerHTML = joueurs.slice(0, 3).map((j, i) => `<div class="pm${j.p === monte && i < 3 ? ' monte' : ''}"><span class="med m${i + 1}">${i + 1}</span><div><b>${j.p}</b><span>${j.n} / ${N} cartes</span></div></div>`).join('');
 }
+// À l'entrée du plan : les pions partent du départ et filent à leur place, le premier en dernier.
+function lancerCourse() {
+  if (calme) return;
+  $$('#piste .couloir').reverse().forEach((el, i) => el.animate([{ '--k': 0 }, { '--k': el.style.getPropertyValue('--k') }], { duration: 1500, delay: 200 + i * 110, easing: 'cubic-bezier(.2,.9,.25,1)', fill: 'backwards' }));
+}
+function boum(couloir) {
+  const pion = $('.pion', couloir), r = pion.getBoundingClientRect(), p = $('.plateau').getBoundingClientRect(), k = p.height / $('.plateau').offsetHeight;
+  const b = document.createElement('span'); b.className = 'boum'; b.textContent = 'DÉPASSEMENT !';
+  b.style.left = `${Math.min((r.left - p.left) / k - 120, 1300)}px`; b.style.top = `${(r.top - p.top) / k - 70}px`;
+  $('.plateau').append(b);
+  A(b, [{ transform: 'rotate(-8deg) scale(2.2)', opacity: 0 }, { transform: 'rotate(-8deg) scale(1)', opacity: 1, offset: 0.25 }, { transform: 'rotate(-8deg) scale(1)', opacity: 1, offset: 0.8 }, { transform: 'rotate(-8deg) translateY(-30px)', opacity: 0 }], { duration: 2200, delay: 700, easing: 'ease-out' }).finished.then(() => b.remove());
+}
+function dessinerDuel() {
+  trier();
+  const [a, b] = joueurs, e = a.n - b.n;
+  const titre = e === 0 ? 'À égalité !' : e <= 1 ? 'Au coude à coude' : e >= 4 ? `${a.p} s'envole` : `${a.p} mène la course`;
+  const ecart = e === 0 ? '<div class="ecart egal"><b>=</b><span>même nombre de cartes</span></div>' : `<div class="ecart"><b>${e}</b><span>carte${e > 1 ? 's' : ''} d'avance</span></div>`;
+  $('#duel-plan').innerHTML = `<h2 class="titre-plan">${titre}</h2><div class="duel">
+    <div class="duelliste m1"><span class="med">1</span><span class="nom">${a.p}</span><span class="n">${a.n}<small> / ${N}</small></span></div>
+    ${ecart}
+    <div class="duelliste second m2"><span class="med">2</span><span class="nom">${b.p}</span><span class="n">${b.n}<small> / ${N}</small></span></div></div>`;
+}
+function entrerDuel() {
+  if (calme) return;
+  const p = $('#duel-plan');
+  A($('.titre-plan', p), [{ transform: 'scale(1.4)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 600, easing: 'cubic-bezier(.2,1.3,.4,1)' });
+  A($('.duelliste:not(.second)', p), [{ transform: 'translateX(-200px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 800, delay: 250 });
+  A($('.duelliste.second', p), [{ transform: 'translateX(200px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 800, delay: 350 });
+  A($('.ecart', p), [{ transform: 'rotate(-30deg) scale(2)', opacity: 0 }, { transform: 'rotate(-4deg)', opacity: 1 }], { duration: 500, delay: 900, easing: 'cubic-bezier(.2,1.5,.4,1)' });
+}
+function dessinerTete3(monte) {
+  trier();
+  $('#tete3').innerHTML = joueurs.slice(0, 3).map((j, i) => `<span class="m${i + 1}${j.p === monte ? ' monte' : ''}"><i>${i + 1}</i>${j.p}</span>`).join('');
+}
+function dessinerClassement(monte) { dessinerCourse(monte); dessinerDuel(); dessinerTete3(monte); }
 
-// ---------- Le fil (voix du jeu) ----------
+// ---------- Le fil (voix du jeu) : un fait à la fois, en très grand ----------
 let fil = [
-  { t: 1, type: 'tirage', txt: 'Kirua a tiré « Blue planet »', rang: 'S' },
-  { t: 3, type: 'sort', txt: 'Hisoka a lancé Vol sur Gon : réussi' },
-  { t: 4, type: 'echange', txt: 'Échange de cartes rares entre Biscuit et Leolio' },
-  { t: 6, type: 'regard', txt: "Quelqu'un a utilisé Regard" },
-  { t: 7, type: 'arene', txt: "Kurapika gagne à l'arène : « Le zaurus qui s'emballe »", rang: 'A' },
-  { t: 9, type: 'gm', txt: 'Leolio a trouvé une carte de Maître du jeu' },
+  { t: 1, type: 'tirage', txt: 'Kirua a tiré « Blue planet »', rang: 'S', num: '081' },
+  { t: 3, type: 'sort', txt: 'Hisoka a lancé Vol sur Gon : réussi', mot: 'VOL !' },
+  { t: 4, type: 'echange', txt: 'Échange de cartes rares entre Biscuit et Leolio', mot: 'ÉCHANGE' },
+  { t: 6, type: 'regard', txt: "Quelqu'un a utilisé Regard", mot: 'REGARD' },
+  { t: 7, type: 'arene', txt: "Kurapika gagne à l'arène : « La jeune fille endormie »", rang: 'A', num: '047' },
 ];
 const NOUVELLES = [
-  { type: 'tirage', txt: "Gon a tiré « L'arbre de la bonne récolte »", rang: 'A' },
-  { type: 'sort', txt: 'Palm a lancé Pickpocket sur Shoot : raté' },
-  { type: 'echange', txt: 'Échange de cartes rares entre Morel et Knuckle' },
-  { type: 'regard', txt: "Quelqu'un a utilisé Regard" },
-  { type: 'sort', txt: 'Biscuit a lancé Mur défensif' },
+  { type: 'tirage', txt: "Gon a tiré « L'arbre de la bonne récolte »", rang: 'A', num: '009' },
+  { type: 'sort', txt: 'Palm a lancé Pickpocket sur Shoot : raté', mot: 'PICKPOCKET' },
+  { type: 'gm', txt: 'Leolio a trouvé une carte de Maître du jeu', mot: 'GM' },
+  { type: 'echange', txt: 'Échange de cartes rares entre Morel et Knuckle', mot: 'ÉCHANGE' },
+  { type: 'regard', txt: "Quelqu'un a utilisé Regard", mot: 'REGARD' },
 ];
-let iNouv = 0;
+let iNouv = 0, iFait = -1;
 const ilYa = (t) => (t < 1 ? "à l'instant" : `il y a ${t} min`);
-function dessinerFil(neuf) {
-  $('#fil-plan').innerHTML = fil.slice(0, 5).map((f, i) => `<div class="fil-ligne${f.type === 'gm' ? ' gm' : ''}${neuf && i === 0 ? ' neuf' : ''}"><time>${ilYa(f.t)}</time><p>${f.txt}</p>${f.rang ? `<span class="rg r-${f.rang}">${f.rang}</span>` : '<span></span>'}</div>`).join('');
-  const d = fil[0];
-  $('#annonce-txt').textContent = d.txt + (d.rang ? ` · rang ${d.rang}` : '');
+const carteHTML = (num) => { const c = CARTES[num]; return `<div class="gi-carte r-${c.rang}"><div class="c-cadre"><div class="c-tete"><span class="c-num">${num}</span><span class="c-nom">${c.nom}</span><span class="gi-rang r-${c.rang}">${c.rang}<span class="lim">-${c.lim}</span></span></div><div class="c-art"><img src="${c.img}" alt=""></div><div class="c-bas"><p class="c-txt">${c.texte}</p></div></div></div>`; };
+const insecable = (t) => t.replace(/« /g, '« ').replace(/ »/g, ' »');
+function dessinerFait(i) {
+  if (i === iFait) return;
+  iFait = i;
+  const f = fil[i];
+  const carte = f.num && CARTES[f.num];
+  $('#fait-plan').innerHTML = `<div class="fait${carte ? '' : ' sans-carte'}${f.type === 'gm' ? ' gm' : ''}">
+    ${carte ? '' : `<span class="mot" aria-hidden="true">${f.mot ?? ''}</span>`}
+    ${carte ? `<div class="porte">${carteHTML(f.num)}</div>` : ''}
+    <div class="bulle"><time>${ilYa(f.t)}</time><p>${insecable(f.txt)}</p>${f.rang ? `<span class="rg r-${f.rang}">Rang ${f.rang}</span>` : ''}</div></div>
+    <div class="points-fait">${[0, 1, 2].map((k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('')}</div>`;
+  if (calme) return;
+  const p = $('#fait-plan');
+  const porte = $('.porte', p);
+  if (porte) A(porte, [{ transform: 'translateY(200px) rotate(8deg)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 900 });
+  const mot = $('.mot', p);
+  if (mot) A(mot, [{ scale: 1.5, opacity: 0 }, { scale: 1, opacity: 1 }], { duration: 900 });
+  A($('.bulle', p), [{ transform: 'translateX(120px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 700, delay: 200 });
+  A($('.bulle p', p), [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }], { duration: 900, delay: 500, easing: 'steps(24)' });
 }
-function annoncer(e) { fil.forEach((f) => f.t++); fil.unshift({ t: 0, ...e }); fil = fil.slice(0, 30); dessinerFil(true); }
+function majAnnonce() {
+  const d = fil[0], el = $('#annonce-txt');
+  el.textContent = d.txt + (d.rang ? ` · rang ${d.rang}` : '');
+  el.classList.remove('neuf'); void el.offsetWidth; el.classList.add('neuf');
+}
+function annoncer(e) {
+  fil.forEach((f) => f.t++); fil.unshift({ t: 0, ...e }); fil = fil.slice(0, 30); majAnnonce();
+  if (PLANS[iPlan][0] === 'fait') { iFait = -1; dessinerFait(0); debutPlan = performance.now(); }
+}
+
+// ---------- Comment jouer (une étape à la fois, sans QR) ----------
+const ETAPES = [
+  ['Trouve un QR et scanne-le', "Ils sont cachés partout dans l'île. Chaque scan tire une carte."],
+  ['Remplis ton Book', 'Le premier Hunter qui réunit toutes les cartes désignées gagne.'],
+  ['Défie les autres Hunters', 'Sorts sur les joueurs proches, échanges, enchères, arène.'],
+];
+let iEtape = -1;
+function dessinerEtape(i) {
+  if (i === iEtape) return;
+  iEtape = i;
+  const [h, p] = ETAPES[i];
+  $('#jouer-plan').innerHTML = `<div class="dessin${calme ? '' : ' etape-entre'}">${$(`#svg-${i + 1}`).innerHTML}</div><div class="${calme ? '' : 'etape-entre'}" style="animation-delay:.12s"><h3>${h}</h3><p>${p}</p><div class="points-jouer">${[0, 1, 2].map((k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('')}</div></div>`;
+}
 
 // ---------- Plans qui tournent ----------
-const PLANS = [['classement', 'Classement'], ['ile', "L'île"], ['fil', 'Le fil'], ['jouer', 'Comment jouer']];
-let iPlan = 0, debutPlan = performance.now(), dureePlan = 25000, raidEnCours = false;
-$('#onglets').innerHTML = PLANS.map(([id, nom], i) => `<div class="onglet" data-o="${id}"><small>${i + 1}</small>${nom}<span class="barre"></span></div>`).join('') + '<div class="reste" id="reste"></div>';
+const PLANS = [['course', 'La course'], ['duel', 'Le duel'], ['ile', "L'île"], ['fait', 'Le fait'], ['jouer', 'Comment jouer']];
+let iPlan = 0, debutPlan = performance.now(), dureePlan = 21000, raidEnCours = false;
 function montrerPlan(i, anime = true) {
   iPlan = i; debutPlan = performance.now();
   const id = PLANS[i][0];
   for (const p of $$('.plan')) { const vu = p.dataset.plan === id; p.classList.toggle('vu', vu); p.classList.remove('entre'); if (vu && anime && !calme) { void p.offsetWidth; p.classList.add('entre'); } }
-  $$('.onglet').forEach((o) => o.classList.toggle('actif', o.dataset.o === id));
+  if (id === 'course') lancerCourse();
+  if (id === 'duel') { dessinerDuel(); entrerDuel(); }
+  if (id === 'fait') { iFait = -1; dessinerFait(0); }
+  if (id === 'jouer') { iEtape = -1; dessinerEtape(0); }
+}
+// Fin de partie : classement final et révélation des QR, en alternance.
+let fvVue = 'classement', fvDebut = performance.now();
+function montrerFv(v) {
+  fvVue = v; fvDebut = performance.now();
+  $$('.fv').forEach((el) => { const vu = el.dataset.fv === v; el.classList.toggle('vu', vu); el.classList.remove('entre'); if (vu && !calme) { void el.offsetWidth; el.classList.add('entre'); } });
+  if (v === 'ile') reveler();
 }
 function tic() {
-  if (!raidEnCours && etat !== 'pause' && etat !== 'inscriptions' && etat !== 'terminee' && !cineEnCours) {
-    const k = (performance.now() - debutPlan) / dureePlan;
+  const occupe = raidEnCours || cineEnCours;
+  if (!occupe && (etat === 'en_cours' || etat === 'finale')) {
+    const ecoule = performance.now() - debutPlan, k = ecoule / dureePlan;
     if (k >= 1) montrerPlan((iPlan + 1) % PLANS.length);
-    const barre = $(`.onglet[data-o="${PLANS[iPlan][0]}"] .barre`);
-    if (barre) barre.style.width = `${Math.min(1, k) * 100}%`;
-    const suivant = PLANS[(iPlan + 1) % PLANS.length][1];
-    $('#reste').textContent = `Ensuite : ${suivant}`;
+    else {
+      // Le fait et Comment jouer découpent leur plan en trois temps.
+      const tiers = Math.min(2, Math.floor(k * 3));
+      if (PLANS[iPlan][0] === 'fait') dessinerFait(tiers);
+      if (PLANS[iPlan][0] === 'jouer') dessinerEtape(tiers);
+    }
+    $('#avance').style.width = `${Math.min(1, k) * 100}%`;
   }
+  if (etat === 'terminee' && !cineEnCours && performance.now() - fvDebut > 18000) montrerFv(fvVue === 'classement' ? 'ile' : 'classement');
   requestAnimationFrame(tic);
 }
 
-// ---------- Chrono et évènements ----------
+// ---------- Chrono et évènements (étiquettes dans l'habillage du haut) ----------
 let restant = 84 * 60 + 10;
 const fmt = (s) => { s = Math.max(0, Math.round(s)); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return h ? `${h}:${String(m).padStart(2, '0')}:${String(x).padStart(2, '0')}` : `${String(m).padStart(2, '0')}:${String(x).padStart(2, '0')}`; };
-const mmss = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.max(0, s) % 60).padStart(2, '0')}`;
-function dessinerBannieres(neuf) {
-  const b = $('#bannieres');
-  b.classList.toggle('on', evenements.length > 0 && !raidEnCours);
-  b.innerHTML = evenements.map((e) => `<div class="banniere${e.maudite ? ' maudite' : ''}${neuf ? ' entre' : ''}"><b>${e.type}</b><span>${e.zone}</span><time>${mmss(e.fin)}</time></div>`).join('');
+const mmss = (s) => `${String(Math.floor(Math.max(0, s) / 60)).padStart(2, '0')}:${String(Math.max(0, s) % 60).padStart(2, '0')}`;
+function dessinerEvenements(neuf) {
+  // Un seul évènement à la fois dans l'habillage ; s'il y en a plusieurs, ils alternent.
+  const vus = raidEnCours || !evenements.length ? [] : [evenements[iEvVu % evenements.length]];
+  $('#evs').innerHTML = vus.map((e, i) => `<div class="ev${e.maudite ? ' maudite' : ''}${neuf && i === 0 ? ' entre' : ''}"><b>${e.type}</b>${e.zone ? `<span>${e.zone}</span>` : ''}<time>${mmss(e.fin)}</time></div>`).join('');
 }
+const dessinerBannieres = dessinerEvenements; // nom gardé pour le code du raid repris de la v1
 setInterval(() => {
   if (etat === 'pause' || etat === 'inscriptions' || etat === 'terminee') return;
   restant--; $('#chrono').textContent = fmt(restant);
   evenements.forEach((e) => e.fin--);
-  $$('.banniere time').forEach((t, i) => { if (evenements[i]) t.textContent = mmss(evenements[i].fin); });
+  evenements = evenements.filter((e) => e.fin > 0);
+  if (evenements.length > 1 && ++tEv % 6 === 0) { iEvVu++; dessinerEvenements(true); }
+  const t = $('#evs time'); if (t && evenements.length) t.textContent = mmss(evenements[iEvVu % evenements.length].fin);
 }, 1000);
+// Un évènement qui commence claque sur la planche, puis rejoint l'habillage du haut.
+function evenementCommence() {
+  const e = { ...EV_SUIVANTS[iEv++ % EV_SUIVANTS.length] };
+  jouer(async () => {
+    cine.classList.remove('on');
+    const c = $('#claque');
+    c.innerHTML = `<div class="boite${e.maudite ? ' nuit' : ''}"><b>${e.type}</b><span>${e.zone ? `${e.zone} · ` : ''}${e.phrase} · ${Math.round(e.fin / 60)} min</span></div>`;
+    c.classList.add('on');
+    A($('.boite', c), [{ transform: 'rotate(-14deg) scale(2)', opacity: 0 }, { transform: 'rotate(-3deg) scale(1)', opacity: 1 }], { duration: 450, easing: 'cubic-bezier(.2,1.5,.4,1)' });
+    await attendre(3800);
+    await A($('.boite', c), [{ transform: 'rotate(-3deg)', opacity: 1 }, { transform: 'rotate(-3deg) translateY(-500px) scale(.3)', opacity: 0 }], { duration: 600, easing: 'cubic-bezier(.6,0,.8,.4)' }).finished;
+    c.classList.remove('on'); c.innerHTML = '';
+    evenements = [e, ...evenements.filter((x) => x.type !== e.type)]; iEvVu = 0;
+    dessinerEvenements(true); dessinerIles();
+  });
+}
+
+// ---------- Avant le démarrage : les cartes à gagner, et chaque Hunter qui entre ----------
+let iVitrine = 0, inscrits = ['Melody', 'Ikalgo', 'Morel', 'Palm', 'Shoot', 'Knuckle'];
+const ATTENTE = ['Kite', 'Goreinu', 'Tsezgerra', 'Bara', 'Ging', 'Razor', 'Genthru', 'Nobunaga'];
+function dessinerVitrine() {
+  const num = VITRINE[iVitrine++ % VITRINE.length], c = CARTES[num];
+  $('#vitrine').innerHTML = `${carteHTML(num)}<p>Une des ${N} cartes à gagner dans l'île · rang ${c.rang}</p>`;
+  if (!calme) A($('#vitrine .gi-carte'), [{ transform: 'rotateY(-90deg) scale(.9)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 900 });
+}
+function dessinerInscrits() {
+  $('#inscrits').textContent = 17 + inscrits.length;
+  $('#arrivants').innerHTML = inscrits.slice(0, 6).map((p) => `<span>${p}</span>`).join('');
+}
+let entreeEnCours = false;
+async function nouvelInscrit() {
+  if (etat !== 'inscriptions' || entreeEnCours) return;
+  entreeEnCours = true;
+  const nom = ATTENTE.shift() ?? `Hunter ${inscrits.length + 1}`;
+  const e = $('#entree'); $('#entree-nom').textContent = nom; e.classList.add('on');
+  A(e, [{ transform: 'translateY(-50%) rotate(-3deg) translateX(110%)' }, { transform: 'translateY(-50%) rotate(-3deg)' }], { duration: 600 });
+  await attendre(2600);
+  await A(e, [{ transform: 'translateY(-50%) rotate(-3deg)', opacity: 1 }, { transform: 'translateY(-50%) rotate(-3deg) translateX(-110%)', opacity: 1 }], { duration: 500, easing: 'cubic-bezier(.6,0,.8,.4)' }).finished;
+  e.classList.remove('on');
+  inscrits.unshift(nom); dessinerInscrits();
+  entreeEnCours = false;
+}
+setInterval(() => { if (etat === 'inscriptions' && !entreeEnCours) dessinerVitrine(); }, 5200);
+setInterval(() => { if (etat === 'inscriptions') nouvelInscrit(); }, 11000);
 
 // ---------- États de la partie ----------
 let etat = 'en_cours';
 function poserEtat(e) {
+  const avant = etat;
   etat = e;
   $$('[data-etat]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.etat === e)));
   $('#accueil').classList.toggle('on', e === 'inscriptions');
@@ -682,23 +819,10 @@ function poserEtat(e) {
   if (e === 'en_cours' && restant < 20 * 60) restant = 84 * 60 + 10;
   $('#chrono').classList.toggle('rouge', e === 'finale');
   $('#chrono').textContent = fmt(restant);
-  dessinerInscr();
+  if (e === 'inscriptions') { dessinerVitrine(); dessinerInscrits(); }
+  if (e === 'terminee') { dessinerFin(); montrerFv('classement'); }
+  if ((e === 'en_cours' || e === 'finale') && avant !== 'en_cours' && avant !== 'finale' && avant !== 'pause') montrerPlan(0);
 }
-function dessinerInscr() {
-  // Partie lancée : les inscriptions sont closes, le QR mène à la page de l'organisateur (prochaines parties).
-  $('#inscr').innerHTML = `<b>Envie de jouer ?</b><div class="qr">${qrSvg(260)}</div><span>Cette partie a commencé. Prochaine partie : demande à l'équipe.</span>`;
-}
-
-// ---------- QR de démonstration (motif, pas un vrai lien) ----------
-function qrSvg(taille) {
-  const n = 29; let g = 99; const r = () => (g = (g * 48271) % 2147483647) / 2147483647;
-  const m = Array.from({ length: n }, () => Array.from({ length: n }, () => r() > 0.52));
-  const finder = (ox, oy) => { for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) m[oy + y][ox + x] = x === 0 || y === 0 || x === 6 || y === 6 || (x >= 2 && x <= 4 && y >= 2 && y <= 4); for (let k = -1; k <= 7; k++) for (const [a, b] of [[ox + k, oy - 1], [ox + k, oy + 7], [ox - 1, oy + k], [ox + 7, oy + k]]) if (m[b] && m[b][a] !== undefined) m[b][a] = false; };
-  finder(0, 0); finder(n - 7, 0); finder(0, n - 7);
-  let d = ''; m.forEach((row, y) => row.forEach((v, x) => { if (v) d += `M${x} ${y}h1v1h-1z`; }));
-  return `<svg width="${taille}" height="${taille}" viewBox="0 0 ${n} ${n}" shape-rendering="crispEdges"><path d="${d}" fill="#111"/></svg>`;
-}
-$('#qr-accueil').innerHTML = qrSvg(440);
 
 // ---------- Scan dans une zone (la zone s'allume, jamais la balise) ----------
 let bulleT;
@@ -706,11 +830,10 @@ function scanZone(id) {
   const avec = ZONES.filter((x) => (actives[x.id] ?? 0) > 0);
   const z = ZONES.find((x) => x.id === id) ?? avec[Math.floor(Math.random() * avec.length)];
   for (const el of $$(`[data-flash="${z.id}"]`)) { el.classList.remove('on'); void el.getBoundingClientRect(); el.classList.add('on'); }
-  const ligne = $(`#zl [data-z="${z.id}"]`); if (ligne) { ligne.classList.remove('flash'); void ligne.offsetWidth; ligne.classList.add('flash'); }
   const b = $('#scan-bulle'); b.textContent = `Un QR vient d'être scanné : ${z.nom}`; b.classList.add('on');
   clearTimeout(bulleT); bulleT = setTimeout(() => b.classList.remove('on'), 3200);
 }
-setInterval(() => { if (etat === 'en_cours' || etat === 'finale') scanZone(); }, 7000);
+setInterval(() => { if ((etat === 'en_cours' || etat === 'finale') && PLANS[iPlan][0] === 'ile') scanZone(); }, 6000);
 
 // ---------- Cinématiques (une à la fois, en file) ----------
 const cine = $('#cine');
@@ -728,8 +851,6 @@ async function suite() {
   cine.className = 'cine'; cine.innerHTML = '';
   suite();
 }
-const A = (el, k, o) => (calme ? el.animate(k.slice(-1), { duration: 1, fill: 'both' }) : el.animate(k, { fill: 'both', easing: 'cubic-bezier(.16,1,.3,1)', ...o }));
-const carteHTML = (num) => { const c = CARTES[num]; return `<div class="gi-carte r-${c.rang}"><div class="c-cadre"><div class="c-tete"><span class="c-num">${num}</span><span class="c-nom">${c.nom}</span><span class="gi-rang r-${c.rang}">${c.rang}<span class="lim">-${c.lim}</span></span></div><div class="c-art"><img src="${c.img}" alt=""></div><div class="c-bas"><p class="c-txt">${c.texte}</p></div></div></div>`; };
 
 function cineTirage(num, pseudo) {
   return async () => {
@@ -861,58 +982,60 @@ function cineFin() {
       A($('span', m), [{ opacity: 0 }, { opacity: 1 }], { duration: 500, delay: t + 800 });
     });
     await attendre(7600);
-    poserEtat('terminee'); dessinerFin();
+    poserEtat('terminee');
   };
 }
+
+// ---------- Fin de partie : classement figé, puis les vraies positions des QR ----------
 function dessinerFin() {
   trier();
-  $('#fin-liste').innerHTML = joueurs.slice(0, 10).map((j, i) => ligneCl(j, i, true)).join('');
+  $('#final').innerHTML = joueurs.slice(0, 10).map((j, i) => `<div class="fl${i < 3 ? ` m${i + 1}` : ''}"><span class="r">${i + 1}</span><span class="p">${j.p}</span><span class="n">${j.n}<small> / ${N}</small></span></div>`).join('');
+  if (!calme) $$('#final .fl').forEach((el, i) => A(el, [{ transform: 'translateY(30px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 600, delay: 200 + i * 90 }));
+}
+function reveler() {
   dessinerIle($('#fin-svg'), 'f', { halos: false, comptes: false, exact: true });
-  if (!calme) $$('#fin-svg .vraie').forEach((g, i) => g.animate([{ opacity: 0, transform: `${g.getAttribute('transform')} scale(3)` }, { opacity: 1, transform: g.getAttribute('transform') }], { duration: 500, delay: 400 + i * 120, fill: 'both', easing: 'cubic-bezier(.2,1.4,.4,1)' }));
+  if (!calme) $$('#fin-svg .vraie').forEach((g, i) => g.animate([{ opacity: 0, transform: `${g.getAttribute('transform')} scale(3)` }, { opacity: 1, transform: g.getAttribute('transform') }], { duration: 500, delay: 500 + i * 120, fill: 'both', easing: 'cubic-bezier(.2,1.4,.4,1)' }));
 }
 
 // ---------- Commandes du prototype ----------
 $$('[data-etat]').forEach((b) => b.addEventListener('click', () => poserEtat(b.dataset.etat)));
 $('#p-reco').addEventListener('click', (e) => { const on = !$('#reco').classList.contains('on'); $('#reco').classList.toggle('on', on); e.currentTarget.setAttribute('aria-pressed', String(on)); });
 $('#p-plan').addEventListener('click', () => montrerPlan((iPlan + 1) % PLANS.length));
-$('#p-vite').addEventListener('click', (e) => { dureePlan = dureePlan === 25000 ? 6000 : 25000; e.currentTarget.setAttribute('aria-pressed', String(dureePlan === 6000)); debutPlan = performance.now(); });
+$('#p-vite').addEventListener('click', (e) => { dureePlan = dureePlan === 21000 ? 8000 : 21000; e.currentTarget.setAttribute('aria-pressed', String(dureePlan === 8000)); debutPlan = performance.now(); });
 $('#p-fil').addEventListener('click', () => { annoncer(NOUVELLES[iNouv++ % NOUVELLES.length]); });
-$('#p-scan').addEventListener('click', () => { if (PLANS[iPlan][0] !== 'ile') montrerPlan(1); setTimeout(() => scanZone(), 700); });
+$('#p-scan').addEventListener('click', () => { if (PLANS[iPlan][0] !== 'ile') montrerPlan(2); setTimeout(() => scanZone(), 800); });
 $('#p-depasse').addEventListener('click', () => {
   trier();
-  const i = 1 + Math.floor(Math.random() * 6), j = joueurs[i];
-  j.n = joueurs[i - 1].n + (Math.random() < 0.5 ? 0 : 1); j.pts = joueurs[i - 1].pts + 4;
-  if (PLANS[iPlan][0] !== 'classement') montrerPlan(0);
-  setTimeout(() => dessinerClassement(j.p), 700);
+  const i = 1 + Math.floor(Math.random() * 5), j = joueurs[i];
+  j.n = joueurs[i - 1].n + 1; j.pts = joueurs[i - 1].pts + 6;
+  if (PLANS[iPlan][0] !== 'course') montrerPlan(0);
+  setTimeout(() => dessinerClassement(j.p), 2000);
 });
 $('#p-rotation').addEventListener('click', () => {
-  if (PLANS[iPlan][0] !== 'ile') montrerPlan(1);
+  if (PLANS[iPlan][0] !== 'ile') montrerPlan(2);
   setTimeout(() => {
-    const g = $('#ile-svg .halos'); g.classList.add('cache');
+    $('#ile-svg .halos').classList.add('cache');
     setTimeout(() => { tirerHalos(); tirerHeat(); dessinerIles(); const n = $('#ile-svg .halos'); n.classList.add('cache'); void n.getBoundingClientRect(); n.classList.remove('cache'); }, 1400);
-  }, 700);
+  }, 800);
 });
-$('#p-ev').addEventListener('click', (e) => {
-  const on = evenements.length === 0;
-  evenements = on ? [{ type: 'Double gain', zone: 'Prairie', fin: 8 * 60 + 12 }, { type: 'Une carte maudite circule', zone: '', fin: 12 * 60 + 40, maudite: true }] : [];
-  e.currentTarget.setAttribute('aria-pressed', String(on)); dessinerBannieres(on); dessinerIles();
-});
-$('#p-ss').addEventListener('click', () => { jouer(cineTirage('000', 'Biscuit')); annoncer({ type: 'tirage', txt: 'Biscuit a tiré « Le bonheur du détenteur »', rang: 'SS' }); });
-$('#p-s').addEventListener('click', () => { jouer(cineTirage('017', 'Kurapika')); annoncer({ type: 'tirage', txt: 'Kurapika a tiré « Le souffle du grand ange »', rang: 'S' }); });
-$('#p-jarvis').addEventListener('click', () => { jouer(cineJarvis()); annoncer({ type: 'gm', txt: 'Jarvis a parlé : Gon reçoit « Blue planet »' }); });
-$('#p-ange').addEventListener('click', () => { jouer(cineAnge()); annoncer({ type: 'gm', txt: 'Leolio a scellé le Book de Kurapika' }); });
+$('#p-ev').addEventListener('click', evenementCommence);
+$('#p-inscrit').addEventListener('click', () => { if (etat !== 'inscriptions') poserEtat('inscriptions'); setTimeout(nouvelInscrit, 300); });
+$('#p-ss').addEventListener('click', () => { jouer(cineTirage('000', 'Biscuit')); annoncer({ type: 'tirage', txt: 'Biscuit a tiré « Le bonheur du détenteur »', rang: 'SS', num: '000' }); });
+$('#p-s').addEventListener('click', () => { jouer(cineTirage('017', 'Kurapika')); annoncer({ type: 'tirage', txt: 'Kurapika a tiré « Le souffle du grand ange »', rang: 'S', num: '017' }); });
+$('#p-jarvis').addEventListener('click', () => { jouer(cineJarvis()); annoncer({ type: 'gm', txt: 'Jarvis a parlé : Gon reçoit « Blue planet »', mot: 'JARVIS' }); });
+$('#p-ange').addEventListener('click', () => { jouer(cineAnge()); annoncer({ type: 'gm', txt: 'Leolio a scellé le Book de Kurapika', mot: 'SCEAU' }); });
 $('#p-raid').addEventListener('click', lancerRaid);
 $('#p-raid-v').addEventListener('click', () => finirRaid(true));
 $('#p-raid-f').addEventListener('click', () => finirRaid(false));
 $('#p-clear').addEventListener('click', () => {
   const k = joueurs.find((j) => j.p === 'Kirua'); k.n = N; k.pts += 60; dessinerClassement('Kirua');
-  annoncer({ type: 'clear', txt: 'Kirua a fait Clear !' });
+  annoncer({ type: 'clear', txt: 'Kirua a fait Clear !', mot: 'CLEAR' });
   jouer(cineClear('Kirua')); jouer(cineFin());
 });
 $('#p-fin').addEventListener('click', () => jouer(cineFin()));
 $('#p-plier').addEventListener('click', (e) => { const f = $('#proto').classList.toggle('ferme'); e.currentTarget.textContent = f ? 'Déplier' : 'Replier'; e.currentTarget.setAttribute('aria-expanded', String(!f)); });
 
 // ---------- Démarrage ----------
-dessinerIles(); dessinerClassement(); dessinerFil(); dessinerBannieres(); poserEtat('en_cours'); montrerPlan(0, false);
+dessinerIles(); dessinerClassement(); majAnnonce(); dessinerEvenements(); poserEtat('en_cours'); montrerPlan(0, false); lancerCourse();
 requestAnimationFrame(tic);
 </script>

@@ -11,6 +11,9 @@ import { IconeAccueil, IconeBook, IconeEchanges, IconeScanner, IconeSorts } from
 import { Inscription, type Kit as KitRecu } from './ecrans/Inscription';
 import { Kit } from './ecrans/Kit';
 import { Book } from './ecrans/book/Book';
+import { BandeauClear } from './ecrans/clear/BandeauClear';
+import { CineClear } from './ecrans/clear/CineClear';
+import { Lots } from './ecrans/clear/Lots';
 import { Licence } from './ecrans/licence/Licence';
 import { Masadora } from './ecrans/masadora/Masadora';
 import { Adjuge } from './ecrans/antokiba/Adjuge';
@@ -105,6 +108,7 @@ export function App() {
 
   const moi = jeu.moi;
   const partie = jeu.partie;
+  const clear = jeu.clear.etat;
   /** Page ⑪ : gel subi (Gel, Accompagnement), pour le bandeau, l'onglet Scanner givré et la cinématique. */
   const gel = useGel(moi);
   const moiRef = useRef(moi);
@@ -157,6 +161,15 @@ export function App() {
       )}
       {enJeu && ecran === 'accueil' && <BandeauZetsu moi={moi} />}
       {enJeu && ecran === 'accueil' && <BandeauGel moi={moi} par={jeu.gelePar} />}
+      {/* Page ⑰ : Clear déclaré, en attente du Game Master, sur toutes les pages sauf la licence. */}
+      {enJeu && ecran === 'accueil' && clear.etat === 'declare' && !(onglet === 'accueil' && sous === 'licence') && (
+        <BandeauClear
+          onLicence={() => {
+            setOnglet('accueil');
+            setSous('licence');
+          }}
+        />
+      )}
       {/* Page ⑮ : combat en cours à l'arène, sur toutes les pages sauf l'arène elle-même. */}
       {enJeu && ecran === 'accueil' && !(onglet === 'accueil' && sous === 'arene') && (
         <BandeauCombat
@@ -272,7 +285,16 @@ export function App() {
                 key={baliseLien ?? 'camera'}
               />
             )}
-            {ecran === 'accueil' && onglet === 'livre' && <Book partieId={partie.id} version={jeu.version} apresAction={jeu.apresAction} positionAction={jeu.positionAction} onSorts={() => setOnglet('sorts')} />}
+            {ecran === 'accueil' && onglet === 'livre' && (
+              <Book
+                partieId={partie.id}
+                version={jeu.version}
+                apresAction={jeu.apresAction}
+                positionAction={jeu.positionAction}
+                onSorts={() => setOnglet('sorts')}
+                onClearDeclare={jeu.clear.declare}
+              />
+            )}
             {ecran === 'accueil' && onglet === 'sorts' && (
               <Sorts
                 partieId={partie.id}
@@ -353,7 +375,11 @@ export function App() {
                 onRetour={() => setSous(null)}
               />
             )}
-            {ecran === 'accueil' && onglet === 'accueil' && sous === null && (
+            {/* Page ⑰ : le gagnant choisit ses 3 lots, puis garde le récapitulatif à montrer à l'organisateur. */}
+            {ecran === 'accueil' && onglet === 'accueil' && sous === null && clear.etat === 'gagne' && (
+              <Lots etat={clear} partieNom={partie.nom} choisir={jeu.clear.choisirLots} />
+            )}
+            {ecran === 'accueil' && onglet === 'accueil' && sous === null && clear.etat !== 'gagne' && (
               <Accueil
                 partie={partie}
                 moi={moi}
@@ -481,6 +507,23 @@ export function App() {
         />
       )}
       {!tirages.courant && jeu.raid.issue?.type === 'fuite' && <Fuite key={jeu.raid.issue.id} issue={jeu.raid.issue} onFini={jeu.raid.finIssue} />}
+      {/* Page ⑰ : sceau du Clear déclaré, refus du GM, Book en gloire, annonce aux autres joueurs. */}
+      {enJeu && !tirages.courant && jeu.clear.cine && (
+        <CineClear
+          key={jeu.clear.cineN}
+          cine={jeu.clear.cine}
+          pseudo={moi.pseudo}
+          cartes={clear.etat === 'gagne' ? clear.lots : []}
+          onFini={() => {
+            // Après le Book en gloire : le choix des lots (à l'accueil).
+            if (jeu.clear.cine?.type === 'gloire') {
+              setOnglet('accueil');
+              setSous(null);
+            }
+            jeu.clear.finCine();
+          }}
+        />
+      )}
       {tirages.courant && <Tirage key={tirages.courant.id} demande={tirages.courant} onFini={tirages.terminer} />}
       {/* Page ⑪ : sorts reçus qui frappent, un par un, après un tirage en cours. */}
       {!tirages.courant && jeu.sortRecu && jeu.partieId && (

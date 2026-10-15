@@ -1937,3 +1937,116 @@ dialog.fiche[open] { animation: monte 0.35s var(--sortie); }
 @media (prefers-reduced-motion: reduce) {
   .rd-lignes, .rd-boss, .rd-boss .yeux, .rd-boss.rit, .rd-ring .temps.urgent b, .vie-raid .jauge.bas .reste, .rd-bandeau .oeil, .rd-alarme .sirene, .rd-alarme .bords, .rd-fuite, .rd-fuite .tampon { animation: none; }
 }
+
+/* ---------- Page ⑰ : le Clear (prototype validé : docs/prototype/clear.html) ----------
+   L'or est réservé au Clear : sceau, bandeau, nuit dorée de la cinématique, sceaux des lots. */
+.cl-cine, .cl-bandeau, .cl-lots, .page-book { --or-vif: #ffd877; --lumiere: #fff1c9; --cire-or: radial-gradient(circle at 35% 30%, #fff6cf 0, #f7dc8a 30%, #c99a2a 72%, #8f6614 100%); }
+.cl-sceau-h { font: 400 11px var(--f-titre); letter-spacing: 2px; }
+.cl-sceau-b { font: 400 10px var(--f-titre); letter-spacing: 1.5px; }
+.cl-tampon-1 { font: 400 22px var(--f-titre); letter-spacing: 0.5px; }
+.cl-tampon-2 { font: 400 13px var(--f-titre); letter-spacing: 0.5px; }
+
+/* Bouton « Clear ! » du Book et de la fiche : en or. */
+.btn-clear { background: linear-gradient(120deg, #9c7a1c, #f6dc85 30%, #c39a2a 55%, #fbe7a6 80%, #a8841f); color: var(--encre); font: 400 24px/1 var(--f-titre); letter-spacing: 0.04em; box-shadow: 0 5px 0 -1px var(--encre); }
+.btn-clear:active:not(:disabled) { translate: 0 3px; box-shadow: none; }
+
+/* Bandeau doré : Clear déclaré, sur toutes les pages. */
+.cl-bandeau { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 58px); z-index: 29; margin-inline: -16px; padding: 8px 12px 8px 16px; border-bottom: var(--trait) solid var(--encre); background: linear-gradient(100deg, #2b2006, #4a3809 60%, #2b2006); color: var(--lumiere); display: flex; align-items: center; gap: 10px; font: 800 15px/1.25 var(--f-texte); }
+.cl-bandeau .mini-sceau { flex: none; width: 26px; height: 26px; }
+.cl-bandeau span { flex: 1; min-width: 0; }
+.cl-bandeau span b { color: var(--or-vif); }
+.cl-bandeau button { flex: none; min-height: 40px; padding: 0 10px; border: 2px solid var(--or-vif); background: transparent; color: var(--or-vif); font: 800 14px var(--f-texte); }
+
+/* Book scellé : pages voilées, le sceau doré posé dessus (il laisse passer les touchers). */
+.cl-book-zone { position: relative; display: grid; gap: inherit; }
+.cl-book-zone.scelle .livre-zone { filter: grayscale(0.6) brightness(0.92); }
+.cl-sceau-book { position: absolute; left: 50%; top: 42%; width: min(52vw, 200px); translate: -50% -50%; rotate: -10deg; pointer-events: none; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35)); z-index: 3; }
+
+/* Cinématiques */
+.cl-cine { position: fixed; inset: 0; z-index: 66; overflow: hidden; cursor: pointer; color: #f6f1e2; touch-action: none; }
+.cl-nuit { position: absolute; inset: 0; opacity: 0; background: radial-gradient(ellipse at 50% 44%, #4a3608 0, #1f1504 48%, #070502 92%); }
+.cl-nuit.sombre { background: radial-gradient(ellipse at 50% 44%, #2a2a33 0, #121216 50%, #040405 92%); }
+.cl-lignes { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+.cl-lignes svg { width: 100%; height: 100%; }
+.cl-lignes path { fill: #ffe7a6; }
+.cl-rayons { position: absolute; left: 50%; top: 44%; width: 150vmax; height: 150vmax; margin: -75vmax 0 0 -75vmax; opacity: 0; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 216, 119, 0.5) 0deg 4deg, rgba(255, 216, 119, 0) 4deg 14deg);
+  -webkit-mask: radial-gradient(closest-side, #000 0, rgba(0, 0, 0, 0.6) 30%, transparent 70%); mask: radial-gradient(closest-side, #000 0, rgba(0, 0, 0, 0.6) 30%, transparent 70%); }
+.cl-flash { position: absolute; inset: 0; background: radial-gradient(circle at 50% 44%, #fffbe8, #ffd877 55%, #c99a2a); opacity: 0; pointer-events: none; }
+.cl-toile, .cl-toile-page { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.cl-toile-page { position: fixed; z-index: 70; }
+.cl-dialogue { z-index: 6; }
+.cl-dialogue .a-qui.or { background: var(--or-vif); }
+.cl-dialogue .a-qui.rouge { background: #ff5a4a; color: #fff; }
+.cl-cine.intro .cl-passer { opacity: 1; transition-delay: 0.6s; }
+/* « CLEAR ! » en or, frappé. */
+.cl-cri { position: absolute; left: 0; right: 0; top: max(22px, 7dvh); display: grid; justify-items: center; gap: 4px; rotate: -5deg; opacity: 0; pointer-events: none; }
+.cl-cine.autre .cl-cri { top: 30%; }
+.cl-cri .l1 { white-space: nowrap; font: 400 min(18vw, 100px)/0.9 var(--f-titre); letter-spacing: -0.03em; color: transparent; background: linear-gradient(180deg, #fffbe8 0%, #ffd877 38%, #c99a2a 62%, #fbe7a6 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-stroke: 3px #3a2804; paint-order: stroke fill; filter: drop-shadow(0 4px 0 #3a2804) drop-shadow(0 0 18px rgba(255, 216, 119, 0.55)); }
+.cl-cri .l2 { font: 400 min(5.4vw, 24px)/1.15 var(--f-titre); color: #fff; -webkit-text-stroke: 2px #3a2804; paint-order: stroke fill; text-align: center; padding-inline: 12px; }
+/* Le Book de la cinématique : couverture de cuir qui s'ouvre sur la page des pochettes. */
+.cl-book { --bw: min(64vw, 280px, calc((100dvh - 330px) * 0.74)); position: absolute; left: 50%; top: 46%; width: var(--bw); aspect-ratio: 0.74; margin: calc(var(--bw) / -0.74 / 2) 0 0 calc(var(--bw) / -2); perspective: 1400px; opacity: 0; }
+.cl-volume { position: absolute; inset: 0; transform-style: preserve-3d; }
+.cl-page { position: absolute; inset: 0; border-radius: 3px 8px 8px 3px; background: var(--case); box-shadow: inset 0 0 0 2px var(--encre), inset 0 4px 0 2px var(--rouge), 0 18px 40px rgba(0, 0, 0, 0.55); padding: 9% 7% 7%; display: grid; grid-template-rows: auto 1fr; gap: 5%; }
+.cl-page h3 { margin: 0; font: 400 calc(var(--bw) * 0.06)/1 var(--f-titre); color: var(--encre); display: flex; justify-content: space-between; align-items: baseline; }
+.cl-page h3 b { font: 800 calc(var(--bw) * 0.06)/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.cl-slots { display: grid; grid-auto-rows: 1fr; gap: calc(var(--bw) * 0.025); min-height: 0; }
+.cl-slot { position: relative; border-radius: 3px; background: #e9e7de; box-shadow: inset 0 0 0 1.5px var(--trame); display: grid; place-items: center; overflow: hidden; min-height: 0; }
+.cl-mini { position: absolute; inset: 7%; border-radius: 2px; background: var(--rouge); box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, 0.35); display: grid; grid-template-rows: auto 1fr; padding: 6%; gap: 6%; }
+.cl-mini i { display: flex; justify-content: space-between; align-items: center; background: var(--case); border-radius: 2px; padding: 4% 6%; font: 800 calc(var(--bw) * 0.038)/1 var(--f-chiffre); font-style: normal; color: var(--encre); }
+.cl-mini i em { font: 400 calc(var(--bw) * 0.03)/1 var(--f-titre); font-style: normal; padding: 1px 3px; border-radius: 2px; background: var(--matiere, var(--case)); box-shadow: 0 0 0 1px var(--encre); }
+.cl-mini u { border-radius: 2px; background: #f4f2ea radial-gradient(var(--trame) 0.9px, transparent 1.1px) 0 0 / 4px 4px; }
+.cl-lueur { position: absolute; inset: 0; border-radius: 3px; background: radial-gradient(closest-side, #fffbe8, rgba(255, 216, 119, 0.85) 45%, rgba(255, 216, 119, 0)); opacity: 0; mix-blend-mode: screen; }
+.cl-slot.allume { box-shadow: inset 0 0 0 2px #c99a2a, 0 0 12px 2px rgba(255, 216, 119, 0.8); }
+.cl-slot.embleme { background: none; box-shadow: none; color: var(--or-fonce); }
+.cl-slot.embleme svg { width: 70%; }
+.cl-couv { position: absolute; inset: 0; border-radius: 3px 8px 8px 3px; transform-origin: left center; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  background-color: var(--cuir); background-image: radial-gradient(rgba(255, 255, 255, 0.07) 0.8px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.45) 0, rgba(0, 0, 0, 0) 22px, rgba(255, 255, 255, 0.08) 26px, rgba(0, 0, 0, 0) 40px); background-size: 3px 3px, 100% 100%;
+  box-shadow: inset 0 0 0 2px #2b0a0d, inset 0 0 0 9px var(--cuir), inset 0 0 0 11px var(--or-fonce), inset 0 0 0 14px var(--cuir), inset 0 0 0 15px var(--or-fonce), 0 18px 40px rgba(0, 0, 0, 0.55);
+  display: grid; place-items: center; align-content: center; gap: 14px; color: var(--or); }
+.cl-couv svg { width: 46%; height: auto; }
+.cl-couv strong { font: 400 calc(var(--bw) * 0.13)/1 var(--f-titre); letter-spacing: 0.32em; margin-right: -0.32em; }
+.cl-couv-dos { position: absolute; inset: 0; border-radius: 8px 3px 3px 8px; transform-origin: left center; transform: rotateY(180deg); backface-visibility: hidden; -webkit-backface-visibility: hidden; background: #3d1013; box-shadow: inset 0 0 0 2px #2b0a0d, inset 0 0 0 10px #4a1418; }
+.cl-sceau-pose, .cl-moitie { position: absolute; left: 50%; top: 52%; width: 74%; translate: -50% -50%; rotate: -10deg; opacity: 0; }
+.cl-sceau-pose { filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.5)); }
+.cl-sceau-pose svg, .cl-moitie svg { width: 100%; height: auto; display: block; overflow: visible; }
+.cl-moitie.g { clip-path: polygon(0 0, 54% 0, 44% 38%, 56% 62%, 46% 100%, 0 100%); }
+.cl-moitie.d { clip-path: polygon(54% 0, 100% 0, 100% 100%, 46% 100%, 56% 62%, 44% 38%); }
+.cl-compte { position: absolute; left: 0; right: 0; top: calc(46% + min(64vw, 280px, calc((100dvh - 330px) * 0.74)) / 0.74 / 2 + 14px); text-align: center; font: 400 18px/1 var(--f-jeu); color: var(--or-vif); opacity: 0; }
+.cl-compte b { font: 800 22px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+
+/* Choix des 3 lots */
+.cl-tete { display: grid; gap: 6px; padding-top: 8px; text-align: center; justify-items: center; }
+.cl-tete h1 { margin: 0; font: 400 clamp(26px, 8vw, 34px)/1 var(--f-titre); }
+.cl-tete p { margin: 0; font: 400 15px/1.35 var(--f-texte); color: var(--encre-2); max-width: 34ch; }
+.cl-sceaux { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 58px); z-index: 20; margin-inline: -16px; padding: 10px 16px; background: var(--papier); border-bottom: 1.5px solid var(--trame); display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.cl-sceau-lot { display: grid; justify-items: center; gap: 4px; border: 0; background: none; padding: 0; color: var(--encre); min-width: 0; }
+.cl-sceau-lot .rond { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; font: 400 22px/1 var(--f-titre); color: #a9a79e; background: var(--case); box-shadow: inset 0 0 0 2px #c9c6bb, 0 0 0 2px var(--papier), 0 0 0 4px #c9c6bb; }
+.cl-sceau-lot.plein .rond { font-size: 16px; color: var(--encre); background: var(--cire-or); box-shadow: inset 0 0 0 2px var(--encre), 0 0 0 2px var(--papier), 0 0 0 4px var(--encre); }
+.cl-sceau-lot .rond.frappe { animation: cl-frappe 0.34s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes cl-frappe { from { scale: 1.8; opacity: 0; } 65% { scale: 0.92; opacity: 1; } }
+.cl-sceau-lot small { font: 800 12px/1.15 var(--f-texte); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
+.cl-sceau-lot small.vide { color: #6f6c63; font-weight: 600; }
+.cl-grille { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 10px; }
+.cl-choix { position: relative; border: 0; padding: 0; background: none; display: grid; gap: 5px; text-align: center; align-content: start; color: var(--encre); }
+.cl-choix .lot-court { font: 600 12px/1.2 var(--f-texte); color: var(--encre-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.cl-choix.pris .gi-carte { outline: 4px solid var(--or); outline-offset: 2px; border-radius: 6px; }
+.cl-choix .badge { position: absolute; top: -8px; right: -6px; z-index: 2; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font: 400 15px/1 var(--f-titre); background: var(--cire-or); box-shadow: 0 0 0 2px var(--encre); }
+.cl-choix.grise { opacity: 0.45; }
+.cl-pied { position: sticky; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); z-index: 20; display: grid; gap: 8px; }
+.cl-pied .erreur { margin: 0; background: var(--case); padding: 6px 10px; border: 2px solid var(--alerte); }
+.cl-pied .gi-btn-encre:disabled { background: #8d8a80; border-color: #8d8a80; color: var(--case); opacity: 1; }
+.cl-grande { width: min(56vw, 220px); justify-self: center; }
+.cl-ticket { display: grid; gap: 2px; padding: 10px 14px 10px 18px; background: #fbf3d6; border: 2px solid var(--encre); border-left-width: 8px; border-left-color: var(--or); }
+.cl-ticket span { font: 400 13px/1 var(--f-jeu); color: var(--or-fonce); letter-spacing: 0.06em; }
+.cl-ticket b { font: 800 18px/1.25 var(--f-texte); }
+.cl-ticket.sans b { font-weight: 600; color: var(--encre-2); }
+/* Récapitulatif : à montrer à l'organisateur. */
+.cl-recap { display: grid; gap: 12px; }
+.cl-recap .ligne { display: grid; grid-template-columns: 34px 64px 1fr; gap: 12px; align-items: center; background: var(--case); border: var(--trait) solid var(--encre); padding: 8px 12px 8px 8px; }
+.cl-recap .ligne .rond { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font: 400 16px/1 var(--f-titre); background: var(--cire-or); box-shadow: 0 0 0 2px var(--encre); }
+.cl-recap .ligne p { margin: 0; display: grid; gap: 2px; }
+.cl-recap .ligne p span { font: 600 13px/1.2 var(--f-texte); color: var(--encre-2); }
+.cl-recap .ligne p b { font: 800 17px/1.2 var(--f-texte); }
+.cl-tampon { justify-self: center; width: min(70vw, 260px); rotate: -6deg; }
+.cl-tampon svg { width: 100%; height: auto; overflow: visible; }

@@ -20,6 +20,8 @@ export interface ActionsFiche {
   deplacer: (itemId: string, cacher: boolean) => Promise<void>;
   utiliser: (objet: ObjetType, itemId: string, carteItemId?: string) => Promise<ResultatObjet>;
   declarerClear: () => Promise<string>;
+  /** Page ⑰ : Clear accepté par le serveur, la fiche se ferme et le sceau s'imprime (cinématique). */
+  clearDeclare: () => void;
   /** Fin d'une action dont le résultat a été montré : le Book et le profil se rechargent. */
   rafraichir: () => void;
   ouvrirSorts: () => void;
@@ -302,43 +304,33 @@ function Boussole({ direction, message }: { direction: Direction; message: strin
   );
 }
 
+// Page ⑰ : la déclaration. Acceptée, la fiche se ferme sur la cinématique du sceau ; refusée (contrefaçon, RG-13.1),
+// le refus du serveur s'affiche au-dessus des boutons, avec la page mais jamais la carte.
 function FicheClear({ ctx }: { ctx: Ctx }) {
-  const [reponse, setReponse] = useState<string | null>(null);
-  if (reponse) {
-    return (
-      <>
-        <p className="gros clear-titre" id="fiche-titre">
-          Clear !
-        </p>
-        <Dialogue qui="Greed Island">{reponse}.</Dialogue>
-        <Boutons ctx={ctx} />
-      </>
-    );
-  }
   return (
     <>
       <p className="gros clear-titre" id="fiche-titre">
         Déclarer le Clear
       </p>
-      <p className="fiche-texte">
-        Tes {ctx.livre.total} cartes désignées sont en place. En déclarant le Clear, ton Book est <b>gelé</b> (les sorts ne l’atteignent plus) jusqu’à ce que le Game Master le vérifie en scannant ta licence : va le voir aussitôt.
-      </p>
-      <p className="doux">Si une contrefaçon s’y cache, le Clear est refusé et la page t’est indiquée.</p>
-      <Boutons ctx={ctx}>
+      <Dialogue qui="Greed Island">Tes {ctx.livre.total} cartes désignées sont en place. Ton Book sera scellé jusqu’à ce que le Game Master vérifie ta licence.</Dialogue>
+      <div className="actions">
         <button
-          className="gi-btn-encre"
+          className="gi-btn-encre btn-clear"
           disabled={ctx.envoi}
           onClick={async () => {
             const m = await ctx.envoyer(ctx.actions.declarerClear);
             if (m !== null) {
-              ctx.marquer();
-              setReponse(m);
+              ctx.fermer();
+              ctx.actions.clearDeclare();
             }
           }}
         >
           {ctx.envoi ? 'Un instant…' : 'Déclarer le Clear'}
         </button>
-      </Boutons>
+        <button className="gi-btn-trait" onClick={ctx.fermer}>
+          Pas encore
+        </button>
+      </div>
     </>
   );
 }

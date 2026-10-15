@@ -14,11 +14,13 @@ export interface Effets {
   trainee(point: (() => [number, number]) | null): void;
   /** Plusieurs traînées à la fois, chacune de ses couleurs (les deux comètes croisées de l'échange, page ⑫). */
   trainees(liste: { point: () => [number, number]; couleurs: string[] }[]): void;
+  /** Paillettes qui tombent doucement du haut de l'écran pendant `ms` (pluie d'or du Clear, page ⑰). */
+  pluie(ms: number, couleurs: string[]): void;
   vider(): void;
   arreter(): void;
 }
 
-interface Particule { fumee: boolean; x: number; y: number; vx: number; vy: number; r: number; couleur: string; vie: number; max: number }
+interface Particule { pluie?: boolean; fumee: boolean; x: number; y: number; vx: number; vy: number; r: number; couleur: string; vie: number; max: number }
 interface Onde { x: number; y: number; couleur: string; vie: number; rmax: number }
 
 const ONDE_S = 0.55;
@@ -61,6 +63,8 @@ export function creerEffets(cv: HTMLCanvasElement, carte: () => DOMRect): Effets
   let fuiteCouleur = '#ffffff';
   let fuiteTaux = 0;
   let suivis: { point: () => [number, number]; couleurs: string[] }[] = [];
+  let pluieJusqua = 0;
+  let pluieCouleurs: string[] = [];
   const COMETE = ['#ffffff', '#8fb2ff', '#8fb2ff'];
   let image = 0;
   let dernier = 0;
@@ -94,6 +98,12 @@ export function creerEffets(cv: HTMLCanvasElement, carte: () => DOMRect): Effets
         parts.push({ fumee: false, x: ox + (Math.random() - 0.5) * 18, y: oy + (Math.random() - 0.5) * 18, vx: (Math.random() - 0.5) * 50, vy: (Math.random() - 0.5) * 50, r: 3 + Math.random() * 4, couleur: couleurs[i % couleurs.length]!, vie: 0, max: 0.3 + Math.random() * 0.35 });
       }
     }
+    if (pluieJusqua > now) {
+      for (let i = 0; i < 3 && parts.length < MAX_PARTICULES; i++) {
+        const couleur = pluieCouleurs[Math.floor(Math.random() * pluieCouleurs.length)]!;
+        parts.push({ pluie: true, fumee: false, x: Math.random() * innerWidth, y: -10, vx: (Math.random() - 0.5) * 40, vy: 120 + Math.random() * 160, r: 1.5 + Math.random() * 2.5, couleur, vie: 0, max: 3 + Math.random() * 2 });
+      }
+    }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, innerWidth, innerHeight);
 
@@ -117,7 +127,7 @@ export function creerEffets(cv: HTMLCanvasElement, carte: () => DOMRect): Effets
       const p = parts[i]!;
       p.vie += dt;
       const a = 1 - p.vie / p.max;
-      if (a <= 0) {
+      if (a <= 0 || p.y > innerHeight + 20) {
         parts.splice(i, 1);
         continue;
       }
@@ -133,6 +143,14 @@ export function creerEffets(cv: HTMLCanvasElement, carte: () => DOMRect): Effets
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.fill();
+      } else if (p.pluie) {
+        p.vx += Math.sin(now / 300 + i) * 4 * dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        const t = p.r * (0.4 + a * 0.8);
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = Math.min(1, a * 2);
+        ctx.drawImage(lueur(p.couleur), p.x - t * 3, p.y - t * 3, t * 6, t * 6);
       } else {
         p.vx *= 0.94;
         p.vy = p.vy * 0.94 + 60 * dt;
@@ -163,7 +181,7 @@ export function creerEffets(cv: HTMLCanvasElement, carte: () => DOMRect): Effets
     }
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
-    const vivant = parts.length || ondes.length || fuiteTaux || fuite > 0.01 || suivis.length;
+    const vivant = parts.length || ondes.length || fuiteTaux || fuite > 0.01 || suivis.length || pluieJusqua > now;
     image = vivant ? requestAnimationFrame(boucle) : 0;
   };
   // Relancée à chaque émission : la boucle s'arrête d'elle-même quand il n'y a plus rien à dessiner.
@@ -209,9 +227,15 @@ export function creerEffets(cv: HTMLCanvasElement, carte: () => DOMRect): Effets
       suivis = liste;
       lancer();
     },
+    pluie(ms, couleurs) {
+      pluieJusqua = performance.now() + ms;
+      pluieCouleurs = couleurs;
+      lancer();
+    },
     vider() {
       parts = [];
       ondes = [];
+      pluieJusqua = 0;
       fuite = 0;
       fuiteTaux = 0;
       suivis = [];

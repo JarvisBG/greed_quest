@@ -13,6 +13,7 @@ import { useLivre } from '../../lib/useLivre';
 import { Feuillets } from './Feuillets';
 import { Fiche, type ActionsFiche, type ResultatObjet, type Sujet } from './Fiche';
 import { Invocation, type PocheApercu } from './Invocation';
+import { Sceau } from '../clear/Sceau';
 
 export function Book({
   partieId,
@@ -20,12 +21,15 @@ export function Book({
   apresAction,
   positionAction,
   onSorts,
+  onClearDeclare,
 }: {
   partieId: string;
   version: number;
   apresAction: () => void;
   positionAction: (envoyer?: boolean) => Promise<PositionInput>;
   onSorts: () => void;
+  /** Page ⑰ : Clear provisoire accepté (Book gelé) ; l'App joue le sceau. */
+  onClearDeclare: () => void;
 }) {
   const { livre, erreur } = useLivre(partieId, version);
   const calme = useRef(matchMedia('(prefers-reduced-motion: reduce)').matches).current;
@@ -48,6 +52,10 @@ export function Book({
       return api.post<ResultatObjet>(`/parties/${partieId}/objet`, corps);
     },
     declarerClear: async () => (await api.post<{ message: string }>(`/parties/${partieId}/clear`)).message,
+    clearDeclare: () => {
+      onClearDeclare();
+      apresAction();
+    },
     rafraichir: apresAction,
     ouvrirSorts: onSorts,
   };
@@ -80,7 +88,13 @@ export function Book({
         </div>
         {!livre && <p className="doux">{erreur ?? 'Le Book arrive…'}</p>}
         {livre && <Bandeaux livre={livre} horsLigne={!!erreur} />}
-        {livre && <Feuillets livre={livre} onPoche={ouvrir} />}
+        {livre && (
+          <div className={`cl-book-zone${livre.gele ? ' scelle' : ''}`}>
+            <Feuillets livre={livre} onPoche={ouvrir} />
+            {/* Page ⑰ : Clear déclaré, le sceau doré posé sur le Book. */}
+            {livre.gele && <Sceau className="cl-sceau-book" />}
+          </div>
+        )}
         {livre && clearPossible(livre) && (
           <button className="gi-btn-encre btn-clear" onClick={() => ouvrir({ type: 'clear' })}>
             Clear !
@@ -98,7 +112,7 @@ export function Book({
 function Bandeaux({ livre, horsLigne }: { livre: LivreRecu; horsLigne: boolean }) {
   return (
     <>
-      {livre.gele && <Dialogue qui="Book">Ton Book est gelé : va voir le Game Master.</Dialogue>}
+      {livre.gele && <Dialogue qui="Book">Ton Book est gelé : plus rien ne peut le toucher. Montre ta licence au Game Master.</Dialogue>}
       {!livre.gele && livre.libresUtilises >= FREE_SLOTS && <Dialogue qui="Book">Emplacements libres pleins : libère une place pour scanner à nouveau.</Dialogue>}
       {horsLigne && <p className="doux hors-ligne">Hors ligne : dernier état connu du Book.</p>}
     </>

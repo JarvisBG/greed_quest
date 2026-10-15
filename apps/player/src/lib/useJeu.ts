@@ -14,6 +14,7 @@ import { ilYaRecu, issueRecu, texteSortRecu, type SortRecu } from './sorts';
 import { texteAnnulee, texteEntree, type EtatArene, type EvArene, type IssueArene } from './arene';
 import { texteFinRaid } from './raid';
 import { useRaid } from './useRaid';
+import { useClear } from './useClear';
 import type { SuiviCible } from './accompagnement';
 import { partieFromUrl, type Session } from './session';
 import { creerSuivi, type Suivi } from './suivi';
@@ -91,9 +92,6 @@ const ANNONCES: Partial<Record<string, { genre: Alerte['genre']; qui: string }>>
   carte_maudite: { genre: 'sanction', qui: 'Malédiction' },
   malediction: { genre: 'sanction', qui: 'Malédiction' },
   perte: { genre: 'sort', qui: 'Perte' },
-  clear: { genre: 'evenement', qui: 'Clear' },
-  clear_refuse: { genre: 'sanction', qui: 'Clear refusé' },
-  clear_confirme: { genre: 'evenement', qui: 'Clear' },
 };
 
 export interface Notif {
@@ -169,6 +167,12 @@ export function useJeu() {
   const raid = useRaid(sess?.partieId ?? null, sess?.joueurId ?? null);
   const raidRecevoir = useRef(raid.recevoir);
   raidRecevoir.current = raid.recevoir;
+  /** Page ⑰ : le Clear (bandeau, cinématiques, choix des lots). */
+  const pseudoRef = useRef<string | null>(null);
+  pseudoRef.current = moi?.pseudo ?? null;
+  const clear = useClear(sess?.partieId ?? null, () => pseudoRef.current);
+  const clearRecevoir = useRef(clear.recevoir);
+  clearRecevoir.current = clear.recevoir;
 
   const rafraichir = useCallback(async () => {
     if (!partieId) return;
@@ -278,6 +282,7 @@ export function useJeu() {
           void rattraper();
           void lireEncheres();
           void raid.charger();
+          void clear.charger();
         }
       },
       evenement: (nom, data) => {
@@ -371,6 +376,11 @@ export function useJeu() {
         notifier(message);
         // Page ⑯ : l'alarme, la victoire ou la fuite prennent l'écran à la place de la boîte.
         if (raidRecevoir.current(nom, data)) return;
+        // Page ⑰ : le Clear (sceau brisé, Book en gloire, annonce aux autres) aussi.
+        if (clearRecevoir.current(nom, data)) {
+          void rafraichir();
+          return;
+        }
         const annonce = ANNONCES[nom];
         if (annonce) {
           setAlerte({ n: Date.now(), ...annonce, texte: message });
@@ -585,6 +595,8 @@ export function useJeu() {
     },
     /** Page ⑯ : raid. */
     raid,
+    /** Page ⑰ : Clear. */
+    clear,
     /** Page ⑮ : arène de Soufrabi. */
     arene: {
       etat: arene,

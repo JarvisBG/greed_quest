@@ -57,7 +57,8 @@ Périmètre exact et direction artistique : `docs/PROMPT_INTERFACES.md` (§ 4.1)
 
 ## Phase 5 — Écran géant (`apps/tracker`)
 - [ ] 5.1 Fil d'actualité, classement live, balises par zone, heatmap décalée, bannières d'événements, raid, QR d'accueil avant le démarrage, Clear plein écran, podium et classement final (`docs/PROMPT_INTERFACES.md` § 4.2)
-  - 2026-10-15 : choix de design faits, amendement balises en halos flous (RG-6.5), prototype `docs/prototype/ecran-geant.html` publié ; reste retours de Sivraj, manques API, portage.
+  - 2026-10-15 : choix de design faits, amendement balises en halos flous (RG-6.5), prototype `docs/prototype/ecran-geant.html` publié ; v4 (voix off) validée par Sivraj.
+  - 2026-10-15 : **PORTÉ** dans `apps/tracker` (manques API comblés) et vérifié avec la vraie API ; en attente de l'essai de Sivraj sur le vrai écran.
 
 ## Phase 5 bis — Refonte de l'app joueur (`apps/player`)
 - [ ] 5.2 Présentation refaite avec `@gq/ui` (logique et tests inchangés) + écrans manquants : objets, recharge du Nen, Spécialisation, Regard, Texture Surprise SS, arène, Clear, abandon, fin de partie, sanctions (`docs/PROMPT_INTERFACES.md` § 4.3)

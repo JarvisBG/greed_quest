@@ -1,5 +1,6 @@
 // Intentions de terrain : envoi de position (RG-10.9) et scan de balise (RG-7, tirage RG-8.3).
 import {
+  carteGmDeScan,
   ROTATION_INTERVAL_MS,
   SCAN_RATE_WINDOW_MS,
   SHARED_PHOTO_WINDOW_MS,
@@ -24,7 +25,7 @@ import {
   type DrawResult,
   type Position,
 } from '@gq/engine';
-import { RANK_POINTS, ScanIntent, PositionInput } from '@gq/shared';
+import { CARTES_GM, RANK_POINTS, ScanIntent, PositionInput } from '@gq/shared';
 import { and, eq, gte, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { requireRole } from '../auth/guard.js';
@@ -35,6 +36,8 @@ import { recordPosition } from '../core/position.js';
 import type { ActionCtx } from '../core/runner.js';
 import {
   actionPatch,
+  cartesGmLibres,
+  donnerCarteGm,
   catalogForDraw,
   limitesOf,
   vueCarte,
@@ -145,6 +148,8 @@ export async function scanRoutes(app: FastifyInstance) {
         player: {
           status: j.statut,
           geleJusqua: j.geleJusqua,
+          figeJusqua: j.figeJusqua, // RG-8.19
+          scelleJusqua: j.scelleJusqua, // RG-8.20
           // Position prise au moment du scan (RG-7.5 : un scan hors ligne garde la sienne).
           positionValide: isValidPosition(pos, pos.a),
           historiqueTirages: j.historiqueTirages,
@@ -200,6 +205,13 @@ export async function scanRoutes(app: FastifyInstance) {
           }
         }
       }
+      // RG-8.16 : une carte de Maître du jeu encore au Maître du jeu peut tomber, par pur hasard.
+      const gmTiree = carteGmDeScan(await cartesGmLibres(c.tx, partieId, CARTES_GM), p.chanceCarteGmPct, c.rng);
+      const gmItem = gmTiree ? await donnerCarteGm(c.tx, partieId, gmTiree, c.now) : null;
+      if (gmItem) {
+        after = addItem(after, gmItem);
+        recus.push(gmItem);
+      }
       await saveBooks(c.tx, partieId, c.now, [{ joueurId: j.id, before: book, after }]);
       await updateJoueur(c.tx, j.id, {
         ...actionPatch(j, c.now),
@@ -233,7 +245,10 @@ export async function scanRoutes(app: FastifyInstance) {
             ? { kind: 'sort' as const, sort: g.spell }
             : { kind: 'jenny' as const, montant: g.amount },
       );
-      const vueObjets = objetsRecus.map((o) => ({ kind: 'objet' as const, objet: o }));
+      const vueObjets = [
+        ...objetsRecus.map((o) => ({ kind: 'objet' as const, objet: o })),
+        ...(gmItem ? [{ kind: 'gm' as const, gm: gmItem.gm }] : []),
+      ];
       await c.log({
         action: 'scan',
         resultat: 'ok',
@@ -248,6 +263,11 @@ export async function scanRoutes(app: FastifyInstance) {
         if (g.kind === 'carte' && RANK_POINTS[g.rang] >= RANK_POINTS.A) {
           c.emit({ type: 'tracker' }, 'fil', { type: 'tirage', pseudo: j.pseudo, carte: g.nom, rang: g.rang, heureJeu: c.now });
         }
+      }
+      if (gmItem) {
+        await c.log({ action: 'carte_gm_obtenue', resultat: 'scan', details: { gm: gmItem.gm, joueurId: j.id, baliseId: beacon.id } }); // RG-8.21
+        c.emit({ type: 'tracker' }, 'fil', { type: 'carte_gm', pseudo: j.pseudo, gm: gmItem.gm, heureJeu: c.now });
+        c.emit({ type: 'staff' }, 'carte_gm', { gm: gmItem.gm, joueurId: j.id, pseudo: j.pseudo, par: 'scan' });
       }
       const distinctes = layoutBook(after, cat.designees).designes.filter((d) => d.slot.etat === 'plein').length;
       c.emit({ type: 'tracker' }, 'progression', { joueurId: j.id, pseudo: j.pseudo, cartes: distinctes });

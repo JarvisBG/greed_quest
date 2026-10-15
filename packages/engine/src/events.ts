@@ -1,6 +1,6 @@
 // Événements lancés par le GM (RG-12) et retour en jeu des SS (RG-8.12).
 // Toutes les heures sont en horloge de jeu : la pause suspend les comptes à rebours.
-import type { GameState, PlayerStatus, Rank, SpellType } from '@gq/shared';
+import type { CarteGm, GameState, PlayerStatus, Rank, SpellType } from '@gq/shared';
 import { removeItem, type Book, type BookItem, type CardItem, type SpellItem } from './book.js';
 import { initialStock, type Beacon, type BeaconChange, type BeaconUpdate } from './beacons.js';
 import { pick, randomInt, weightedPick, type Rng } from './rng.js';
@@ -36,7 +36,16 @@ export type EventData =
   | { type: 'apparition'; baliseId: string }
   | { type: 'double_gain' }
   | { type: 'zone_maudite' }
-  | { type: 'raid'; pvMax: number; pv: number; participants: readonly string[]; reponses: readonly string[] }
+  | {
+      type: 'raid';
+      pvMax: number;
+      pv: number;
+      participants: readonly string[];
+      reponses: readonly string[];
+      /** RG-8.16 : carte de Maître du jeu promise au meilleur chasseur, et bonnes réponses de chacun. */
+      carteGm?: CarteGm;
+      coups?: Readonly<Record<string, number>>;
+    }
   | { type: 'krach' }
   | { type: 'carte_maudite'; itemId: string }
   | { type: 'mission_secrete'; joueurId: string; objectif: string; recompenseJenny: number };
@@ -144,10 +153,18 @@ export function endApparition(event: GameEvent, beacons: readonly Beacon[]): Bea
 // --- Raid de la Brigade ---
 
 /** PV du boss : paramètre pvBoss (J × 5, RG-14 amendé). */
-export function startRaid(b: StartBase, pvBoss: number): StartResult {
+export function startRaid(b: StartBase, pvBoss: number, carteGm?: CarteGm): StartResult {
   const err = checkStart(b, 'raid', null);
   if (err) return { ok: false, message: err };
-  return { ok: true, event: make(b, null, { type: 'raid', pvMax: pvBoss, pv: pvBoss, participants: [], reponses: [] }) };
+  return { ok: true, event: make(b, null, { type: 'raid', pvMax: pvBoss, pv: pvBoss, participants: [], reponses: [], ...(carteGm ? { carteGm, coups: {} } : {}) }) };
+}
+
+/** RG-8.16 : meilleur chasseur d'un raid réussi (le plus de bonnes réponses ; à égalité, le premier à avoir frappé). */
+export function meilleurChasseur(event: GameEvent): string | null {
+  const d = event.data;
+  if (d.type !== 'raid' || !event.reussi || d.participants.length === 0) return null;
+  const coups = d.coups ?? {};
+  return d.participants.reduce((best, p) => ((coups[p] ?? 0) > (coups[best] ?? 0) ? p : best), d.participants[0]!);
 }
 
 /**
@@ -163,7 +180,7 @@ export function answerRaid(event: GameEvent, playerId: string, questionId: strin
   if (!correcte) return { ...event, data: { ...d, reponses } };
   const pv = Math.max(0, d.pv - 1);
   const participants = d.participants.includes(playerId) ? d.participants : [...d.participants, playerId];
-  const data = { ...d, pv, participants, reponses };
+  const data = { ...d, pv, participants, reponses, ...(d.coups ? { coups: { ...d.coups, [playerId]: (d.coups[playerId] ?? 0) + 1 } } : {}) };
   return pv === 0 ? { ...event, data, etat: 'termine', reussi: true, fin: now } : { ...event, data };
 }
 

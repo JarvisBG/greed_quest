@@ -198,6 +198,12 @@ export async function joueursRoutes(app: FastifyInstance) {
       villesVisitees: j.villesVisitees,
       retour: j.retourVille && (j.retourJusqua ?? 0) > now ? { ville: j.retourVille, resteMs: j.retourJusqua! - now } : null,
       accompagne: Math.max(0, (j.accompagneJusqua ?? 0) - now),
+      // RG-8.19, RG-8.20 : états posés par les cartes de Maître du jeu, en ms restantes (bandeaux de l'app).
+      etatsGm: {
+        fige: Math.max(0, (j.figeJusqua ?? 0) - now),
+        scelle: Math.max(0, (j.scelleJusqua ?? 0) - now),
+        intouchable: Math.max(0, (j.intouchableJusqua ?? 0) - now),
+      },
       // Pour l'écran des sorts : délais restants, en ms ; `pouvoir` = recharge du pouvoir de Nen, `reserve` = Matérialisation.
       delais: {
         pouvoir,

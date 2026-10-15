@@ -26,6 +26,7 @@ export const PARAM_KEYS = [
   'areneDelaiMin',
   'objetsReplisPct',
   'coffreMin',
+  'chanceCarteGmPct',
   'rechargeRenforcementMin',
   'rechargeEmissionMin',
   'rechargeManipulationMin',
@@ -96,6 +97,8 @@ export const AUTO_FORMULAS: Record<ParamKey, (c: ParamContext) => number> = {
   // Amendement 2026-10-10 : 1 repli « carte épuisée » sur 3 donne un objet en plus des jenny ; Coffre scellé 20 min.
   objetsReplisPct: () => 33,
   coffreMin: () => 20,
+  // RG-8.16 (amendement 2026-10-15) : chance par scan qu'une carte de Maître du jeu encore libre tombe, en %.
+  chanceCarteGmPct: () => 0.5,
   // Amendement 2026-10-10 : pouvoirs de Nen rechargeables (document : une fois par partie) ; Matérialisation
   // reçoit en plus un tirage bonus de réserve toutes les 40 min.
   rechargeRenforcementMin: () => 30,

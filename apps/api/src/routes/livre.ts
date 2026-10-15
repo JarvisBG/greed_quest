@@ -1,7 +1,7 @@
 // Livre du joueur (RG-8.5) : pages de 10, provenance (RG-8.14), emplacements perdus (RG-8.13),
 // contrefaçons vues selon ce que le joueur sait (RG-8.9). Un joueur ne voit que son propre Livre (RG-3) ;
 // le GM voit tout Livre, avec la vérité sur chaque carte (corrections RG-3.1, vérification d'un Clear RG-13.2).
-import { PLACES_OBJETS, deplacerCarte, describeLoss, layoutBook, objetsDe, viewCard, type Origine, type Slot } from '@gq/engine';
+import { PLACES_OBJETS, blocageGm, cartesGmDe, deplacerCarte, describeLoss, layoutBook, objetsDe, viewCard, type Origine, type Slot } from '@gq/engine';
 import { DeplacementIntent } from '@gq/shared';
 import type { FastifyInstance } from 'fastify';
 import { requireRole } from '../auth/guard.js';
@@ -57,6 +57,8 @@ export async function vueLivre(c: ActionCtx, partieId: string, joueurId: string,
         return 'Kit de départ';
       case 'correction_gm':
         return o.par === 'evenement' ? 'Événement' : 'Game Master';
+      case 'decret':
+        return 'Décret de Jarvis'; // RG-8.19
     }
   };
   // `designe` : emplacement réservé à une carte du catalogue (RG-8.5) ; vide, il montre quelle carte manque.
@@ -67,7 +69,7 @@ export async function vueLivre(c: ActionCtx, partieId: string, joueurId: string,
     }
     const i = x.item;
     if (i.kind === 'sort') return { etat: 'plein' as const, designe: false, kind: 'sort' as const, itemId: i.id, sort: i.spell };
-    if (i.kind === 'objet') return { etat: 'vide' as const, designe: false }; // jamais : les objets ont leur section
+    if (i.kind === 'objet' || i.kind === 'gm') return { etat: 'vide' as const, designe: false }; // jamais : les objets ont leur section
     const v = viewCard(i, true);
     return {
       etat: 'plein' as const,
@@ -114,6 +116,8 @@ export async function vueLivre(c: ActionCtx, partieId: string, joueurId: string,
       .sort((a, b) => a.obtenuA - b.obtenuA)
       .map((o) => ({ itemId: o.id, objet: o.objet, obtenu: heureAffichee(o.obtenuA, c.now, c.realNow), engage: engagees.has(o.id) })),
     placesObjets: PLACES_OBJETS,
+    // RG-8.15 : cartes de Maître du jeu, dans la page Objets hors des 8 places.
+    cartesGm: cartesGmDe(book).map((g) => ({ itemId: g.id, gm: g.gm, obtenu: heureAffichee(g.obtenuA, c.now, c.realNow), engage: engagees.has(g.id) })),
   };
 }
 
@@ -141,6 +145,8 @@ export async function livreRoutes(app: FastifyInstance) {
       if (c.partie.etat === 'terminee') return deny('partie_terminee', 'La partie est terminée');
       if (j.statut === 'disqualifie' || j.statut === 'abandon') return deny('joueur_exclu', 'Tu ne joues plus');
       if (await isLivreGele(c.tx, j.id)) return deny('livre_gele', 'Ton Book est gelé : va voir le Game Master'); // RG-13.1
+      const scelle = blocageGm(j, c.now, 'livre'); // RG-8.20
+      if (scelle) return deny('livre_scelle', scelle);
       if ((await engagedItems(c.tx, partieId, j.id, c.now)).has(input.itemId)) return deny(ENGAGEE.code, ENGAGEE.message);
       const [book, cat] = await Promise.all([loadBook(c.tx, j.id), loadCatalogue(c.tx, partieId)]);
       const o = deplacerCarte(book, cat.designees, input.itemId, input.cacher);

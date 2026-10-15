@@ -1,7 +1,7 @@
 // Cartes objets (amendement 2026-10-10) : Ticket de la Fortune, Boussole du chercheur, Coffre scellé.
 // La Pépite d'or se revend à Masadora (boutique.ts), le Second souffle s'utilise au scan (scan.ts),
 // le Voile d'ombre agit seul contre Radar et Regard (sorts.ts).
-import { gratterTicket, utiliserBoussole, utiliserCoffre, type Book } from '@gq/engine';
+import { blocageGm, gratterTicket, utiliserBoussole, utiliserCoffre, type Book } from '@gq/engine';
 import { ObjetIntent } from '@gq/shared';
 import { and, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
@@ -39,6 +39,8 @@ export async function objetsRoutes(app: FastifyInstance) {
       const engagees = await engagedItems(c.tx, partieId, j.id, c.now);
       if (engagees.has(input.itemId) || (input.objet === 'coffre' && engagees.has(input.carteItemId))) return deny(ENGAGEE.code, ENGAGEE.message);
       if (await isLivreGele(c.tx, j.id)) return deny('livre_gele', 'Ton Book est gelé : va voir le Game Master'); // RG-13.1
+      const scelle = blocageGm(j, c.now, 'objet'); // RG-8.20
+      if (scelle) return deny('livre_scelle', scelle);
       const joueur = { status: j.statut, book };
 
       let after: Book;

@@ -113,6 +113,13 @@
       "when": 1791812762084,
       "tag": "0015_echange_vente",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792062856765,
+      "tag": "0016_cartes_gm",
+      "breakpoints": true
     }
   ]
 }

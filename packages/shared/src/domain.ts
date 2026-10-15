@@ -65,6 +65,13 @@ export type SpellType = (typeof SPELL_TYPES)[number];
 export const OBJET_TYPES = ['pepite', 'ticket', 'boussole', 'souffle', 'voile', 'coffre'] as const;
 export type ObjetType = (typeof OBJET_TYPES)[number];
 
+/**
+ * RG-8.15 (amendement 2026-10-15) : cartes de Maître du jeu, cadre noir, chacune unique dans la partie.
+ * « Jarvis tout-puissant » (Décret + Jugement, RG-8.19) et « Le Sceau d'Ange » (RG-8.20).
+ */
+export const CARTES_GM = ['jarvis', 'ange'] as const;
+export type CarteGm = (typeof CARTES_GM)[number];
+
 /** Amendement 2026-10-10 : pouvoirs de Spécialisation (RG-5.4), un tiré au hasard pour chaque Spécialiste. */
 export const POUVOIRS_SPE = ['alchimie', 'bandit', 'zetsu', 'fortune'] as const;
 export type PouvoirSpe = (typeof POUVOIRS_SPE)[number];

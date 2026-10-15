@@ -1,14 +1,15 @@
 // Enchères d'Antokiba (RG-11.4, 11.5) : un PNJ met une carte en vente 3 min ; les joueurs scannent
 // le QR de l'enchère sur place puis surenchérissent dans l'app ; seul le gagnant est débité.
 import { addItem, closeAuction, joinAuction, openAuction, placeBid, type Auction } from '@gq/engine';
-import { EnchereInscription, EnchereOffre, EnchereOuverture } from '@gq/shared';
+import { EnchereInscription, EnchereOffre, EnchereOuverture, type CarteGm } from '@gq/shared';
 import { and, eq, lte } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { STAFF, requireRole } from '../auth/guard.js';
 import { paramsOf } from '../core/params.js';
 import { recordPosition } from '../core/position.js';
 import type { ActionCtx } from '../core/runner.js';
-import { circulation, limitesOf, loadBook, loadCatalogue, loadJoueur, saveBooks, updateJoueur, actionPatch, vueCarte } from '../core/state.js';
+import { cartesGmLibres, circulation, donnerCarteGm, limitesOf, loadBook, loadCatalogue, loadJoueur, saveBooks, updateJoueur, actionPatch, vueCarte } from '../core/state.js';
+import { NOMS_GM } from './cartesGm.js';
 import { encheres, joueurs } from '../db/schema.js';
 import { introuvable } from '../errors.js';
 import { refus, send } from '../http.js';
@@ -22,7 +23,8 @@ type EnchereRow = typeof encheres.$inferSelect;
 
 const auctionOf = (r: EnchereRow): Auction => ({
   id: r.id,
-  cardId: r.carteId,
+  // RG-8.16 : un lot « carte de Maître du jeu » est repéré par « gm:<type> ».
+  cardId: r.carteId ?? `gm:${r.carteGm}`,
   prixDepart: r.prixDepart,
   debut: r.debut,
   fin: r.fin,
@@ -32,15 +34,22 @@ const auctionOf = (r: EnchereRow): Auction => ({
 
 const gameOpen = (etat: string) => etat === 'en_cours' || etat === 'phase_finale';
 
+/** RG-8.16 : un lot « carte de Maître du jeu » porte l'id « gm:<type> ». */
+const carteGmDuLot = (cardId: string): CarteGm | null => (cardId.startsWith('gm:') ? (cardId.slice(3) as CarteGm) : null);
+
 /** Vue publique : carte (fiche complète, page ⑭), fin, meilleure offre (pseudo, et id pour que chacun sache s'il mène). */
 async function publicView(c: ActionCtx, a: Auction) {
   const cat = await loadCatalogue(c.tx, c.partie.id);
   const limites = limitesOf(await paramsOf(c.tx, c.partie));
   const best = a.offres.at(-1);
   const pseudo = best ? (await loadJoueur(c.tx, best.playerId))?.pseudo ?? '?' : null;
+  // RG-8.16 : lot « carte de Maître du jeu ».
+  const gm = carteGmDuLot(a.cardId);
   return {
     id: a.id,
-    carte: { id: a.cardId, ...vueCarte(cat, a.cardId, limites), nom: cat.nomDe(a.cardId), rang: cat.rangDe(a.cardId) },
+    carte: gm
+      ? { id: a.cardId, gm, numero: null, nom: NOMS_GM[gm], rang: null, texte: null, limite: 1 }
+      : { id: a.cardId, ...vueCarte(cat, a.cardId, limites), nom: cat.nomDe(a.cardId), rang: cat.rangDe(a.cardId) },
     fin: a.fin,
     /** Temps restant (heure de jeu) au moment de l'envoi : l'app le décompte. */
     resteMs: Math.max(0, a.fin - c.now),
@@ -73,8 +82,11 @@ export async function closeDueAuctions(c: ActionCtx): Promise<void> {
       if (!jenny.has(o.playerId)) jenny.set(o.playerId, (await loadJoueur(c.tx, o.playerId))?.jenny ?? 0);
     }
     const { gagnant } = closeAuction(a, (id) => jenny.get(id) ?? 0);
-    const enCirculation = (await circulation(c.tx, c.partie.id)).get(a.cardId) ?? 0;
-    const vendable = gagnant !== null && enCirculation < limites[cat.rangDe(a.cardId)];
+    const gm = carteGmDuLot(a.cardId);
+    const enCirculation = gm ? 0 : ((await circulation(c.tx, c.partie.id)).get(a.cardId) ?? 0);
+    // RG-8.16 : une carte de Maître du jeu ne se vend que si elle est toujours au Maître du jeu.
+    const itemGm = gm && gagnant ? await donnerCarteGm(c.tx, c.partie.id, gm, c.now) : null;
+    const vendable = gagnant !== null && (gm ? itemGm !== null : enCirculation < limites[cat.rangDe(a.cardId)]);
     if (!vendable) {
       await c.tx.update(encheres).set({ etat: 'invendue' }).where(eq(encheres.id, a.id));
       await c.log({ action: 'enchere_cloture', resultat: 'invendue', details: { enchereId: a.id, carteId: a.cardId, limiteAtteinte: gagnant !== null } });
@@ -84,16 +96,17 @@ export async function closeDueAuctions(c: ActionCtx): Promise<void> {
     }
     const j = (await loadJoueur(c.tx, gagnant.playerId))!;
     const book = await loadBook(c.tx, j.id);
-    const after = addItem(book, { kind: 'carte', id: newId(), cardId: a.cardId, origine: { type: 'enchere', enchereId: a.id }, obtenuA: c.now });
+    const after = addItem(book, itemGm ?? { kind: 'carte', id: newId(), cardId: a.cardId, origine: { type: 'enchere', enchereId: a.id }, obtenuA: c.now });
     await saveBooks(c.tx, c.partie.id, c.now, [{ joueurId: j.id, before: book, after }]);
     await updateJoueur(c.tx, j.id, { jenny: j.jenny - gagnant.montant });
     await c.tx.update(encheres).set({ etat: 'vendue', gagnantId: j.id, prix: gagnant.montant }).where(eq(encheres.id, a.id));
     await c.log({ action: 'enchere_cloture', resultat: 'vendue', details: { enchereId: a.id, carteId: a.cardId, gagnant: j.id, prix: gagnant.montant } });
-    const fin = { id: a.id, vendue: true, pseudo: j.pseudo, joueurId: j.id, prix: gagnant.montant, carte: cat.nomDe(a.cardId) };
+    const fin = { id: a.id, vendue: true, pseudo: j.pseudo, joueurId: j.id, prix: gagnant.montant, carte: gm ? NOMS_GM[gm] : cat.nomDe(a.cardId) };
     c.emit({ type: 'joueurs' }, 'enchere_close', fin);
     c.emit({ type: 'staff' }, 'enchere_close', fin);
     // Page ⑭ : la cinématique « ADJUGÉ ! » montre la carte gagnée et débite la jenny à ce moment-là.
-    c.emit({ type: 'joueur', id: j.id }, 'enchere_gagnee', { ...fin, lot: { id: a.cardId, ...vueCarte(cat, a.cardId, limites) }, jenny: j.jenny - gagnant.montant });
+    const lot = gm ? { id: a.cardId, gm, numero: null, nom: NOMS_GM[gm], rang: null, texte: null, limite: 1 } : { id: a.cardId, ...vueCarte(cat, a.cardId, limites) };
+    c.emit({ type: 'joueur', id: j.id }, 'enchere_gagnee', { ...fin, lot, jenny: j.jenny - gagnant.montant });
   }
 }
 
@@ -107,14 +120,24 @@ export async function encheresRoutes(app: FastifyInstance) {
     const input = parse(EnchereOuverture, req.body);
     const r = await runner.run(partieId, { type: s.role === 'gm' ? 'gm' : 'pnj', id: s.sub }, async (c) => {
       if (!gameOpen(c.partie.etat)) return refus('partie_fermee', 'Les enchères sont fermées pour le moment');
-      const cat = await loadCatalogue(c.tx, partieId);
-      if (!cat.cartes.some((x) => x.id === input.carteId)) return refus('carte_inconnue', 'Carte inconnue');
-      const limite = limitesOf(await paramsOf(c.tx, c.partie))[cat.rangDe(input.carteId)];
-      if (((await circulation(c.tx, partieId)).get(input.carteId) ?? 0) >= limite) {
-        return refus('limite_atteinte', 'Cette carte a atteint sa limite d’exemplaires'); // RG-8.2
+      let a;
+      if (input.carteGm) {
+        // RG-8.16 : seul le GM met en vente une carte de Maître du jeu, et seulement si elle est libre.
+        if (s.role !== 'gm') return refus('interdit', 'Seul le Game Master met en vente une carte de Maître du jeu');
+        if (!(await cartesGmLibres(c.tx, partieId, [input.carteGm])).length) return refus('deja_en_jeu', 'Cette carte est déjà dans le Book d’un joueur');
+        a = openAuction(newId(), `gm:${input.carteGm}`, c.now, input.prixDepart);
+        await c.tx.insert(encheres).values({ id: a.id, partieId, carteId: null, carteGm: input.carteGm, pnjId: s.sub, prixDepart: a.prixDepart, debut: a.debut, fin: a.fin });
+      } else {
+        const carteId = input.carteId!;
+        const cat = await loadCatalogue(c.tx, partieId);
+        if (!cat.cartes.some((x) => x.id === carteId)) return refus('carte_inconnue', 'Carte inconnue');
+        const limite = limitesOf(await paramsOf(c.tx, c.partie))[cat.rangDe(carteId)];
+        if (((await circulation(c.tx, partieId)).get(carteId) ?? 0) >= limite) {
+          return refus('limite_atteinte', 'Cette carte a atteint sa limite d’exemplaires'); // RG-8.2
+        }
+        a = openAuction(newId(), carteId, c.now, input.prixDepart);
+        await c.tx.insert(encheres).values({ id: a.id, partieId, carteId: a.cardId, pnjId: s.sub, prixDepart: a.prixDepart, debut: a.debut, fin: a.fin });
       }
-      const a = openAuction(newId(), input.carteId, c.now, input.prixDepart);
-      await c.tx.insert(encheres).values({ id: a.id, partieId, carteId: a.cardId, pnjId: s.sub, prixDepart: a.prixDepart, debut: a.debut, fin: a.fin });
       await c.log({ action: 'enchere_ouverture', resultat: 'ok', details: { enchereId: a.id, carteId: a.cardId, prixDepart: a.prixDepart } });
       const vue = await publicView(c, a);
       c.emit({ type: 'joueurs' }, 'enchere', vue);

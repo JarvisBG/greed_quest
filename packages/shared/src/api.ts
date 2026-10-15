@@ -71,6 +71,8 @@ export const SortIntent = z.discriminatedUnion('sort', [
     emission: z.boolean().optional(),
     /** Bandit (Spécialisation, Vol avec source « pouvoir ») : carte du catalogue visée. */
     carteVoulueId: z.string().optional(),
+    /** RG-8.18 : Vol qui vise la carte de Maître du jeu de la cible. */
+    viserCarteGm: z.boolean().optional(),
     position: PositionInput,
   }),
   z.object({
@@ -107,6 +109,21 @@ export const ObjetIntent = z.discriminatedUnion('objet', [
 ]);
 export type ObjetIntent = z.infer<typeof ObjetIntent>;
 
+/** RG-8.19, RG-8.20 : jouer une carte de Maître du jeu (Décret : carte du catalogue choisie ; Sceau : joueur visé). */
+export const CarteGmIntent = z.discriminatedUnion('gm', [
+  z.object({ gm: z.literal('jarvis'), itemId: z.string(), carteId: z.string(), position: PositionInput }),
+  z.object({ gm: z.literal('ange'), itemId: z.string(), cibleId: z.string(), position: PositionInput }),
+]);
+export type CarteGmIntent = z.infer<typeof CarteGmIntent>;
+
+/** RG-8.16 : le GM donne une carte de Maître du jeu (récompense d'évènement ou don direct), motif journalisé. */
+export const DonCarteGmIntent = z.object({
+  gm: z.enum(['jarvis', 'ange']),
+  joueurId: z.string(),
+  motif: z.string().trim().min(1, 'Motif requis').max(120),
+});
+export type DonCarteGmIntent = z.infer<typeof DonCarteGmIntent>;
+
 /** Amendement 2026-10-10 : pouvoir de Spécialisation (Bandit passe par POST /sort, Vol avec source « pouvoir »). */
 export const SpecialisationIntent = z.discriminatedUnion('pouvoir', [
   z.object({ pouvoir: z.literal('zetsu') }),
@@ -139,7 +156,10 @@ export const EchangeReponse = z.object({ accepte: z.boolean() });
 export const EchangeOffre = z.object({ itemIds: z.array(z.string()).max(30), jenny: z.number().int().min(0) });
 
 /** RG-11.4 : un PNJ met une carte aux enchères. */
-export const EnchereOuverture = z.object({ carteId: z.string(), prixDepart: z.number().int().min(1).default(1) });
+/** RG-11.4 : une carte du catalogue, ou (GM seulement, RG-8.16) une carte de Maître du jeu encore libre. */
+export const EnchereOuverture = z
+  .object({ carteId: z.string().optional(), carteGm: z.enum(['jarvis', 'ange']).optional(), prixDepart: z.number().int().min(1).default(1) })
+  .refine((x) => (x.carteId === undefined) !== (x.carteGm === undefined), 'Choisis une carte');
 /** RG-11.4 : participer exige le QR de l'enchère, scanné sur place. */
 export const EnchereInscription = z.object({ qr: z.string().max(100).optional(), position: PositionInput });
 export const EnchereOffre = z.object({ montant: z.number().int().min(1) });
@@ -207,6 +227,8 @@ export const EvenementIntent = z.object({
   joueurId: z.string().optional(),
   objectif: z.string().max(200).optional(),
   recompenseJenny: z.number().int().min(0).optional(),
+  /** RG-8.16 : raid seulement, carte de Maître du jeu promise au meilleur chasseur. */
+  carteGm: z.enum(['jarvis', 'ange']).optional(),
 });
 export const RaidReponse = z.object({ questionId: z.string(), choix: z.number().int().min(0) });
 

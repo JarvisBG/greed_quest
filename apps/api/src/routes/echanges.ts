@@ -43,6 +43,9 @@ const party = async (c: ActionCtx, j: JoueurRow, book: Book): Promise<TradeParty
   book,
   jenny: j.jenny,
   livreGele: await isLivreGele(c.tx, j.id),
+  // RG-8.19, RG-8.20 : figé par le Jugement ou Book scellé = pas d'échange.
+  figeJusqua: j.figeJusqua,
+  scelleJusqua: j.scelleJusqua,
 });
 
 /**
@@ -241,7 +244,7 @@ export async function echangesRoutes(app: FastifyInstance) {
     await updateJoueur(c.tx, a.id, { ...actionPatch(a, c.now), jenny: res.a.jenny });
     await updateJoueur(c.tx, b.id, { ...actionPatch(b, c.now), jenny: res.b.jenny });
     const conclu = concludeTrade(v.session);
-    const resume = (items: typeof res.recuParA) => items.map((i) => (i.kind === 'carte' ? ctx.cat.nomDe(i.cardId) : i.kind === 'sort' ? i.spell : i.objet));
+    const resume = (items: typeof res.recuParA) => items.map((i) => (i.kind === 'carte' ? ctx.cat.nomDe(i.cardId) : i.kind === 'sort' ? i.spell : i.kind === 'objet' ? i.objet : i.gm));
     // RG-15 : valeur de chaque part, pour repérer les échanges répétés déséquilibrés.
     const rangs = (items: typeof res.recuParA) => items.flatMap((i) => (i.kind === 'carte' ? [ctx.cat.rangDe(i.cardId)] : []));
     const valeurA = tradeSideValue({ rangs: rangs(res.recuParB), jenny: s.donneA.jenny });

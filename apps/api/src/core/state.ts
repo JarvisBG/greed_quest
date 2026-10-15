@@ -8,14 +8,16 @@ import {
   type CardItem,
   type CatalogCard,
   type GameEvent,
+  type GmItem,
   type ObjetItem,
   type Perte,
   type SpellItem,
 } from '@gq/engine';
-import type { Rank } from '@gq/shared';
+import type { CarteGm, Rank } from '@gq/shared';
 import { and, eq, inArray, notInArray } from 'drizzle-orm';
 import type { DbOrTx } from '../db/client.js';
-import { balises, cartes, evenements, exemplaires, joueurs, livres, objets, pertes, sorts } from '../db/schema.js';
+import { balises, cartes, cartesGm, evenements, exemplaires, joueurs, livres, objets, pertes, sorts } from '../db/schema.js';
+import { newId } from '../ids.js';
 
 export type JoueurRow = typeof joueurs.$inferSelect;
 type ExemplaireRow = typeof exemplaires.$inferSelect;
@@ -56,6 +58,11 @@ export async function loadBooks(db: DbOrTx, joueurIds: readonly string[]): Promi
   for (const r of await db.select().from(objets).where(and(inArray(objets.joueurId, ids), eq(objets.utilise, false)))) {
     const item: ObjetItem = { kind: 'objet', id: r.id, objet: r.type, obtenuA: r.obtenuA };
     books.get(r.joueurId)!.items.push(item);
+  }
+  // RG-8.15 : cartes de Maître du jeu détenues (page Objets, hors des 8 places).
+  for (const r of await db.select().from(cartesGm).where(inArray(cartesGm.joueurId, ids))) {
+    const item: GmItem = { kind: 'gm', id: r.id, gm: r.type, obtenuA: r.obtenuA ?? 0 };
+    books.get(r.joueurId!)!.items.push(item);
   }
   for (const r of await db.select().from(pertes).where(inArray(pertes.joueurId, ids)).orderBy(pertes.id)) {
     books.get(r.joueurId)!.pertes.push({ cardId: r.carteId, cause: r.cause, a: r.a, ...(r.par ? { par: r.par } : {}) });
@@ -112,6 +119,9 @@ export async function saveBooks(db: DbOrTx, partieId: string, now: number, chang
       // Un objet peut changer de main (échange).
       const row = { id, partieId, joueurId, type: item.objet, obtenuA: item.obtenuA };
       await db.insert(objets).values(row).onConflictDoUpdate({ target: objets.id, set: row });
+    } else if (item.kind === 'gm') {
+      // RG-8.17 : la carte de Maître du jeu (ligne unique de la partie) change de détenteur.
+      await db.update(cartesGm).set({ joueurId, obtenuA: item.obtenuA }).where(eq(cartesGm.id, id));
     } else if (!old) {
       await db.insert(sorts).values({ id, partieId, joueurId, type: item.spell, obtenuA: item.obtenuA });
     }
@@ -124,12 +134,38 @@ export async function saveBooks(db: DbOrTx, partieId: string, now: number, chang
   if (sortsUtilises.length > 0) await db.update(sorts).set({ utilise: true, utiliseA: now }).where(inArray(sorts.id, sortsUtilises));
   const objetsUtilises = sortis.filter((i) => i.kind === 'objet').map((i) => i.id);
   if (objetsUtilises.length > 0) await db.update(objets).set({ utilise: true, utiliseA: now }).where(inArray(objets.id, objetsUtilises));
+  // RG-8.17 : une carte de Maître du jeu qui ne figure plus dans aucun Livre revient au Maître du jeu.
+  for (const i of sortis) {
+    if (i.kind === 'gm') await db.update(cartesGm).set({ joueurId: null }).where(and(eq(cartesGm.id, i.id), eq(cartesGm.joueurId, proprietaireAvant.get(i.id)!)));
+  }
 
   for (const c of changes) {
     const nouvelles = c.after.pertes.slice(c.before.pertes.length);
     if (nouvelles.length === 0) continue;
     await db.insert(pertes).values(nouvelles.map((p) => ({ joueurId: c.joueurId, carteId: p.cardId, cause: p.cause, par: p.par ?? null, a: p.a })));
   }
+}
+
+// --- Cartes de Maître du jeu (RG-8.15 à 8.17) ---
+
+/** Ligne unique de la carte dans la partie (créée au besoin) ; son id est celui de l'élément du Book. */
+export async function ligneCarteGm(db: DbOrTx, partieId: string, gm: CarteGm) {
+  const [l] = await db.select().from(cartesGm).where(and(eq(cartesGm.partieId, partieId), eq(cartesGm.type, gm)));
+  if (l) return l;
+  const [n] = await db.insert(cartesGm).values({ id: newId(), partieId, type: gm }).returning();
+  return n!;
+}
+
+/** RG-8.16 : cartes encore au Maître du jeu (jamais sorties, jouées ou rendues). */
+export async function cartesGmLibres(db: DbOrTx, partieId: string, types: readonly CarteGm[]): Promise<CarteGm[]> {
+  const prises = new Set((await db.select().from(cartesGm).where(eq(cartesGm.partieId, partieId))).filter((l) => l.joueurId !== null).map((l) => l.type));
+  return types.filter((t) => !prises.has(t));
+}
+
+/** RG-8.16 : élément du Book d'une carte de Maître du jeu qui arrive chez un joueur (refusé si elle est déjà en jeu). */
+export async function donnerCarteGm(db: DbOrTx, partieId: string, gm: CarteGm, now: number): Promise<GmItem | null> {
+  const l = await ligneCarteGm(db, partieId, gm);
+  return l.joueurId === null ? { kind: 'gm', id: l.id, gm, obtenuA: now } : null;
 }
 
 // --- Joueurs ---

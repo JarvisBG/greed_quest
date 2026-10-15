@@ -71,6 +71,10 @@ async function spellPlayer(c: ActionCtx, j: JoueurRow, book: Book): Promise<Spel
     dernierOffensifA: j.dernierOffensifA,
     geleJusqua: j.geleJusqua,
     accompagneJusqua: j.accompagneJusqua,
+    // RG-8.19, RG-8.20 : états posés par les cartes de Maître du jeu.
+    figeJusqua: j.figeJusqua,
+    scelleJusqua: j.scelleJusqua,
+    intouchableJusqua: j.intouchableJusqua,
     livreGele: await isLivreGele(c.tx, j.id),
   };
 }
@@ -102,6 +106,7 @@ export function positionAccompagnee(cible: { id: string; pseudo: string; positio
 function vueItemCible(item: BookItem, avant: Book, designees: readonly string[], cat: Parameters<typeof vueCarte>[0], limites: Parameters<typeof vueCarte>[2]) {
   if (item.kind === 'sort') return { kind: 'sort' as const, itemId: item.id, sort: item.spell, emplacement: 'libre' as const };
   if (item.kind === 'objet') return { kind: 'objet' as const, itemId: item.id, objet: item.objet, emplacement: 'libre' as const };
+  if (item.kind === 'gm') return { kind: 'gm' as const, itemId: item.id, gm: item.gm, emplacement: 'libre' as const }; // RG-8.18
   const fixe = cartesParEmplacement(avant, designees).fixes.some((x) => x.id === item.id);
   return { kind: 'carte' as const, itemId: item.id, carteId: item.cardId, ...vueCarte(cat, item.cardId, limites), emplacement: fixe ? ('fixe' as const) : ('libre' as const) };
 }
@@ -235,6 +240,7 @@ export async function sortsRoutes(app: FastifyInstance) {
               ...(input.sort === 'accompagnement' ? { rencontre: await seSontRencontres(c.tx, j.id, cible!.id) } : {}),
               ...(input.sort === 'echange_force' ? { carteDonneeId: input.carteDonneeId } : {}),
               ...(input.sort === 'vol' && input.carteVoulueId ? { carteVoulueId: input.carteVoulueId } : {}),
+              ...(input.sort === 'vol' && input.viserCarteGm ? { viserCarteGm: true } : {}),
             },
             c.rng,
           );
@@ -270,7 +276,7 @@ export async function sortsRoutes(app: FastifyInstance) {
           const o = castRadar(w, {
             lanceur,
             itemId: input.itemId,
-            cible: { id: cible!.id, position: cible!.position, book: cible!.book, zetsuJusqua: cible!.zetsuJusqua ?? null },
+            cible: { id: cible!.id, position: cible!.position, book: cible!.book, zetsuJusqua: cible!.zetsuJusqua ?? null, intouchableJusqua: cible!.intouchableJusqua ?? null },
             zones: zs.map((z) => ({ id: z.id, polygon: z.polygone })),
           });
           if (o.ok && o.voile) pourCible = { protection: 'voile' };
@@ -296,7 +302,7 @@ export async function sortsRoutes(app: FastifyInstance) {
           const o = castRegard(w, {
             lanceur,
             itemId: input.itemId,
-            cible: { id: cible!.id, book: cible!.book, livreGele: cible!.livreGele, zetsuJusqua: cible!.zetsuJusqua ?? null },
+            cible: { id: cible!.id, book: cible!.book, livreGele: cible!.livreGele, zetsuJusqua: cible!.zetsuJusqua ?? null, intouchableJusqua: cible!.intouchableJusqua ?? null },
             rencontre: await seSontRencontres(c.tx, j.id, cible!.id),
             sort: input.sort,
           });

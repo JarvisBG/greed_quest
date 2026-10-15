@@ -3,6 +3,9 @@
 // ne fait que ce qui est dû. L'horloge étant arrêtée en pause, rien n'avance pendant la pause (RG-4.4).
 import {
   EVENT_TYPES,
+  cartesGmDe,
+  doitRendreCartesGm,
+  rendreCartesGm,
   J_RECALC_INTERVAL_MS,
   ROTATION_INTERVAL_MS,
   ZONE_EVENTS,
@@ -185,6 +188,16 @@ async function returnSS(c: ActionCtx) {
     const cartes = r.rendues.map((i) => (i.kind === 'carte' ? cat.nomDe(i.cardId) : ''));
     await c.log({ action: 'retour_ss', resultat: 'ok', details: { joueurId: j.id, cartes } });
     c.emit({ type: 'joueur', id: j.id }, 'perte', { cause: 'retour_en_jeu', cartes });
+  }
+  // RG-8.17 : ses cartes de Maître du jeu reviennent au Maître du jeu, dans les mêmes cas.
+  const apres = await loadBooks(c.tx, joueurs.map((j) => j.id));
+  for (const j of joueurs) {
+    const before = apres.get(j.id)!;
+    if (cartesGmDe(before).length === 0 || !doitRendreCartesGm({ status: j.statut, derniereActionA: j.derniereActionA ?? 0 }, c.now)) continue;
+    const r = rendreCartesGm(before);
+    await saveBooks(c.tx, c.partie.id, c.now, [{ joueurId: j.id, before, after: r.book }]);
+    await c.log({ action: 'retour_carte_gm', resultat: 'ok', details: { joueurId: j.id, cartes: r.rendues.map((i) => i.gm) } });
+    c.emit({ type: 'joueur', id: j.id }, 'carte_gm_rendue', { gm: r.rendues.map((i) => i.gm) });
   }
 }
 

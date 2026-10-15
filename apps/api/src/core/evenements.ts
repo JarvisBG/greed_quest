@@ -1,10 +1,10 @@
 // Suites des événements (RG-12) à leur fin, qu'elle vienne de l'échéance ou d'une annulation du GM (RG-12.2).
-import { DEFAULT_DRAW_CONFIG, announce, endApparition, raidRewards, triggerCurse, type GameEvent } from '@gq/engine';
+import { DEFAULT_DRAW_CONFIG, addItem, announce, endApparition, meilleurChasseur, raidRewards, triggerCurse, type GameEvent } from '@gq/engine';
 import { and, eq } from 'drizzle-orm';
 import { exemplaires, zones } from '../db/schema.js';
 import { newId } from '../ids.js';
 import type { ActionCtx } from './runner.js';
-import { isLivreGele, loadBeacons, loadBook, loadBooks, loadCatalogue, saveBeacons, saveBooks, saveEvent } from './state.js';
+import { donnerCarteGm, isLivreGele, loadBeacons, loadBook, loadBooks, loadCatalogue, saveBeacons, saveBooks, saveEvent } from './state.js';
 import { emitBeaconChanges } from '../routes/scan.js';
 
 /** Nom des zones, pour les annonces. */
@@ -36,7 +36,7 @@ export async function finishEvent(c: ActionCtx, e: GameEvent, annule: boolean): 
       const appliquer = !annule && !(await isLivreGele(c.tx, ex.joueurId)); // Livre gelé épargné
       const r = triggerCurse(book, d.itemId, c.now, cat.rangDe, c.rng, appliquer);
       await saveBooks(c.tx, c.partie.id, c.now, [{ joueurId: ex.joueurId, before: book, after: r.book }]);
-      const perdues = r.perdues.map((i) => (i.kind === 'carte' ? cat.nomDe(i.cardId) : i.kind === 'sort' ? i.spell : i.objet));
+      const perdues = r.perdues.map((i) => (i.kind === 'carte' ? cat.nomDe(i.cardId) : i.kind === 'sort' ? i.spell : i.kind === 'objet' ? i.objet : i.gm));
       await c.log({ action: 'malediction', resultat: appliquer ? 'appliquee' : 'levee', details: { porteur: ex.joueurId, perdues } });
       c.emit({ type: 'joueur', id: ex.joueurId }, 'malediction', { perdues });
     }
@@ -51,6 +51,15 @@ export async function finishEvent(c: ActionCtx, e: GameEvent, annule: boolean): 
     });
     await saveBooks(c.tx, c.partie.id, c.now, changes);
     for (const [joueurId, items] of recompenses) c.emit({ type: 'joueur', id: joueurId }, 'recompense_raid', { sorts: items.map((i) => i.spell) });
+    // RG-8.16 : la carte de Maître du jeu promise va au meilleur chasseur (si elle est toujours libre).
+    const meilleur = d.carteGm ? meilleurChasseur(e) : null;
+    const item = meilleur && d.carteGm ? await donnerCarteGm(c.tx, c.partie.id, d.carteGm, c.now) : null;
+    if (meilleur && item) {
+      const book = await loadBook(c.tx, meilleur);
+      await saveBooks(c.tx, c.partie.id, c.now, [{ joueurId: meilleur, before: book, after: addItem(book, item) }]);
+      await c.log({ action: 'carte_gm_obtenue', resultat: 'raid', details: { gm: item.gm, joueurId: meilleur, evenementId: e.id } });
+      c.emit({ type: 'joueur', id: meilleur }, 'carte_gm_obtenue', { gm: item.gm, par: 'raid' });
+    }
   }
   await saveEvent(c.tx, c.partie.id, e);
   await c.log({ action: 'evenement_fin', resultat: annule ? 'annule' : e.reussi ? 'reussi' : 'termine', details: { evenementId: e.id, type: d.type } });

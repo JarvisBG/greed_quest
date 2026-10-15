@@ -12,6 +12,7 @@ import { attachRealtime } from './realtime.js';
 import { adminRoutes } from './routes/admin.js';
 import { areneRoutes } from './routes/arene.js';
 import { objetsRoutes } from './routes/objets.js';
+import { cartesGmRoutes } from './routes/cartesGm.js';
 import { specialisationRoutes } from './routes/specialisation.js';
 import { boutiqueRoutes } from './routes/boutique.js';
 import { classementRoutes } from './routes/classement.js';
@@ -107,6 +108,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(encheresRoutes);
   await app.register(areneRoutes);
   await app.register(objetsRoutes);
+  await app.register(cartesGmRoutes);
   await app.register(specialisationRoutes);
   await app.register(gmRoutes);
   await app.register(evenementsRoutes);

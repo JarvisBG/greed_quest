@@ -1,6 +1,6 @@
 // Schéma de la base (entités de docs/REGLES.md « Entités »).
 // Heures « de jeu » : ms d'horloge de jeu (gameClock, integer). Heures réelles : ms epoch (bigint) ou timestamptz.
-import type { GameState, NenType, ObjetType, PlayerStatus, PouvoirSpe, Rank, SpellType, BeaconState, BeaconType } from '@gq/shared';
+import type { CarteGm, GameState, NenType, ObjetType, PlayerStatus, PouvoirSpe, Rank, SpellType, BeaconState, BeaconType } from '@gq/shared';
 import type { Bid, RankingEntry, EventData, GameEvent, JState, ShopConfig, ShopWave, TradeSessionState, TradeSide, Origine, Faux, ParamKey, ParamSetting, ParamSettings, Perte, Position, Polygon } from '@gq/engine';
 import { bigint, boolean, index, integer, jsonb, pgTable, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 
@@ -120,6 +120,12 @@ export const joueurs = pgTable(
     /** Amendement 2026-10-10 : sous Accompagnement (gelé, position montrée au lanceur) jusqu'à cette heure, et par qui. */
     accompagneJusqua: heureJeu('accompagne_jusqua'),
     accompagnePar: text('accompagne_par'),
+    /** RG-8.19 : figé par le Jugement de Jarvis (ni scan, ni sort, ni échange) jusqu'à cette heure. */
+    figeJusqua: heureJeu('fige_jusqua'),
+    /** RG-8.20 : Book scellé par Ange (ni scan, ni sort, ni échange, ni déplacement, ni objet) jusqu'à cette heure. */
+    scelleJusqua: heureJeu('scelle_jusqua'),
+    /** RG-8.19 : intouchable (aucun sort ni carte ne peut le viser) jusqu'à cette heure. */
+    intouchableJusqua: heureJeu('intouchable_jusqua'),
     /** Amendement 2026-10-10 : villes dont le QR a été scanné (Retour), et visite à distance en cours. */
     villesVisitees: jsonb('villes_visitees').$type<string[]>().notNull().default([]),
     retourVille: text('retour_ville'),
@@ -195,6 +201,24 @@ export const objets = pgTable(
     utiliseA: heureJeu('utilise_a'),
   },
   (t) => [index('objets_joueur').on(t.joueurId)],
+);
+
+/**
+ * RG-8.15 à 8.17 : cartes de Maître du jeu. Une ligne par carte et par partie (unique) : `joueurId` null = la carte est
+ * au Maître du jeu (jamais sortie, jouée, ou rendue) ; sinon elle est dans la page Objets de ce joueur.
+ */
+export const cartesGm = pgTable(
+  'cartes_gm',
+  {
+    id: text('id').primaryKey(),
+    partieId: text('partie_id').notNull().references(() => parties.id, { onDelete: 'cascade' }),
+    type: text('type').$type<CarteGm>().notNull(),
+    joueurId: text('joueur_id').references(() => joueurs.id, { onDelete: 'set null' }),
+    obtenuA: heureJeu('obtenu_a'),
+    /** Nombre de fois où elle a été jouée dans la partie. */
+    jouee: integer('jouee').notNull().default(0),
+  },
+  (t) => [uniqueIndex('cartes_gm_partie_type').on(t.partieId, t.type), index('cartes_gm_joueur').on(t.joueurId)],
 );
 
 /** RG-8.13 : traces des cartes perdues. */
@@ -293,7 +317,10 @@ export const echanges = pgTable(
 export const encheres = pgTable('encheres', {
   id: text('id').primaryKey(),
   partieId: text('partie_id').notNull().references(() => parties.id, { onDelete: 'cascade' }),
-  carteId: text('carte_id').notNull().references(() => cartes.id),
+  /** Carte mise en vente ; null pour un lot « carte de Maître du jeu » (RG-8.16). */
+  carteId: text('carte_id').references(() => cartes.id),
+  /** RG-8.16 : lot « carte de Maître du jeu », mis en vente par le GM. */
+  carteGm: text('carte_gm').$type<CarteGm>(),
   pnjId: text('pnj_id'),
   prixDepart: integer('prix_depart').notNull(),
   debut: heureJeu('debut').notNull(),

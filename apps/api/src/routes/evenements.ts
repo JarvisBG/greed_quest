@@ -36,6 +36,7 @@ import {
   saveBooks,
   saveEvent,
   updateJoueur,
+  cartesGmLibres,
 } from '../core/state.js';
 import { evenements, journal } from '../db/schema.js';
 import { introuvable } from '../errors.js';
@@ -102,7 +103,11 @@ export async function evenementsRoutes(app: FastifyInstance) {
           res = startSimpleEvent(base, input.type, zoneId);
           break;
         case 'raid':
-          res = startRaid(base, (await paramsOf(c.tx, c.partie)).pvBoss);
+          // RG-8.16 : la carte de Maître du jeu promise doit être encore au Maître du jeu.
+          if (input.carteGm && !(await cartesGmLibres(c.tx, partieId, [input.carteGm])).length) {
+            return refus('deja_en_jeu', 'Cette carte de Maître du jeu est déjà dans le Book d’un joueur');
+          }
+          res = startRaid(base, (await paramsOf(c.tx, c.partie)).pvBoss, input.carteGm);
           break;
         case 'carte_maudite': {
           const joueurs = await loadJoueurs(c.tx, partieId);

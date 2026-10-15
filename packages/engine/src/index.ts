@@ -21,3 +21,4 @@ export * from './arena.js';
 export * from './objets.js';
 export * from './nen.js';
 export * from './specialisation.js';
+export * from './gm.js';

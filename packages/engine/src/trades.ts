@@ -1,6 +1,7 @@
 // Échanges (RG-11.1 amendé, 11.2, 11.3, 11.6) et enchères d'Antokiba (RG-11.4, 11.5).
 import type { GameState, PlayerStatus, Rank } from '@gq/shared';
-import { transferItem, type Book, type BookItem, type CardItem, type ObjetItem } from './book.js';
+import { transferItem, type Book, type BookItem, type CardItem, type GmItem, type ObjetItem } from './book.js';
+import { blocageGm, type EtatsGm } from './gm.js';
 import { isInRange, isValidPosition, type Position, type RangeSettings } from './geo.js';
 import { objetsDe, PLACES_OBJETS } from './objets.js';
 
@@ -13,7 +14,7 @@ export const AUCTION_DURATION_MS = 3 * 60_000; // RG-11.4
 
 const gameOpen = (s: GameState) => s === 'en_cours' || s === 'phase_finale';
 
-export interface TradeParty {
+export interface TradeParty extends EtatsGm {
   id: string;
   status: PlayerStatus;
   book: Book;
@@ -67,11 +68,11 @@ const refuse = (code: TradeRefusalCode, message: string): TradeResult => ({ ok: 
 
 const isEmpty = (s: TradeSide) => s.itemIds.length === 0 && s.jenny <= 0;
 
-function cardsOf(p: TradeParty, side: TradeSide): (CardItem | ObjetItem)[] | null {
+function cardsOf(p: TradeParty, side: TradeSide): (CardItem | ObjetItem | GmItem)[] | null {
   if (new Set(side.itemIds).size !== side.itemIds.length) return null;
   const items = side.itemIds.map((id) => p.book.items.find((i) => i.id === id));
-  // Cartes et objets s'échangent (amendement 2026-10-10) ; les sorts, non.
-  return items.every((i): i is CardItem | ObjetItem => i?.kind === 'carte' || i?.kind === 'objet') ? items : null;
+  // Cartes et objets s'échangent (amendement 2026-10-10), cartes de Maître du jeu aussi (RG-8.17) ; les sorts, non.
+  return items.every((i): i is CardItem | ObjetItem | GmItem => i?.kind === 'carte' || i?.kind === 'objet' || i?.kind === 'gm') ? items : null;
 }
 
 /**
@@ -86,6 +87,7 @@ export function trade(t: TradeInput, rangDe: (cardId: string) => Rank): TradeRes
     if (p.status === 'disqualifie' || p.status === 'abandon' || p.status === 'gele') {
       return refuse('joueur_bloque', 'Un des joueurs ne peut pas échanger maintenant');
     }
+    if (blocageGm(p, t.now, 'echange')) return refuse('joueur_bloque', 'Un des joueurs ne peut pas échanger maintenant'); // RG-8.19, RG-8.20
     if (p.livreGele) return refuse('livre_gele', 'Un Book complet ne peut plus échanger');
   }
   if (isEmpty(t.donneA) || isEmpty(t.donneB)) return refuse('don_pur', 'Chacun doit donner au moins 1 carte ou 1 jenny'); // RG-11.2
@@ -98,7 +100,7 @@ export function trade(t: TradeInput, rangDe: (cardId: string) => Rank): TradeRes
   if (!cartesA || !cartesB) return refuse('element_invalide', 'Une carte de l’offre n’est plus disponible');
   if (t.a.jenny < t.donneA.jenny || t.b.jenny < t.donneB.jenny) return refuse('jenny_insuffisants', 'Jenny insuffisants');
   // Amendement 2026-10-10 : la section Objets a PLACES_OBJETS places ; l'échange ne la fait pas déborder.
-  const objets = (x: TradeParty, donnes: (CardItem | ObjetItem)[], recus: (CardItem | ObjetItem)[]) =>
+  const objets = (x: TradeParty, donnes: (CardItem | ObjetItem | GmItem)[], recus: (CardItem | ObjetItem | GmItem)[]) =>
     objetsDe(x.book).length - donnes.filter((i) => i.kind === 'objet').length + recus.filter((i) => i.kind === 'objet').length;
   if (objets(t.a, cartesA, cartesB) > PLACES_OBJETS || objets(t.b, cartesB, cartesA) > PLACES_OBJETS) {
     return refuse('objets_plein', 'La section Objets d’un des deux Books est pleine');
@@ -185,6 +187,8 @@ export function proposeTrade(p: ProposeInput): SessionResult {
     if (x.status === 'disqualifie' || x.status === 'abandon' || x.status === 'gele') {
       return sessionRefuse('joueur_bloque', 'Ce joueur ne peut pas échanger maintenant');
     }
+    const gm = blocageGm(x, p.now, 'echange'); // RG-8.19, RG-8.20
+    if (gm) return sessionRefuse('joueur_bloque', x === p.a ? gm : 'Ce joueur ne peut pas échanger maintenant');
     if (x.livreGele) return sessionRefuse('livre_gele', 'Un Book complet ne peut plus échanger');
   }
   if (!isValidPosition(p.a.position, p.now)) return sessionRefuse('gps_invalide', 'Position GPS introuvable : active ta localisation');

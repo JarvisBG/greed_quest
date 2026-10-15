@@ -1,6 +1,7 @@
 // Vérifications d'un scan de balise (RG-7), dans l'ordre, arrêt au premier échec.
 // Toutes les heures sont en horloge de jeu (ms), suspendue pendant la pause (RG-4.4).
 import type { BeaconState, GameState, PlayerStatus } from '@gq/shared';
+import { blocageGm } from './gm.js';
 
 export const SCAN_DELAY_MS = 30_000; // RG-7.3
 export const OFFLINE_MAX_AGE_MS = 10 * 60_000; // RG-7.5
@@ -12,6 +13,9 @@ export interface ScanContext {
     status: PlayerStatus;
     /** Fin du gel en cours (sort Gel ou sanction PNJ), null si aucun. */
     geleJusqua: number | null;
+    /** RG-8.19 Jugement (figé), RG-8.20 Sceau (Book scellé). */
+    figeJusqua?: number | null;
+    scelleJusqua?: number | null;
     /** Position récente et précise (calculée par le module géoloc, RG-7.6). */
     positionValide: boolean;
     /** Ids des balises de ses tirages réussis, du plus ancien au plus récent. */
@@ -92,6 +96,8 @@ export function checkScan(c: ScanContext): ScanCheck {
     const reste = player.geleJusqua !== null ? ` encore ${secondes(player.geleJusqua - c.now)} s` : '';
     return refuse('joueur_gele', `Tu es gelé${reste}`);
   }
+  const gm = blocageGm(player, c.now, 'scan'); // RG-8.19, RG-8.20
+  if (gm) return refuse('joueur_gele', gm);
   if (!player.positionValide) return refuse('gps_invalide', 'Position GPS introuvable : active ta localisation');
 
   // 3. Balise active, zone ouverte (RG-6).

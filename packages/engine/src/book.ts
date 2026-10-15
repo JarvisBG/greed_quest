@@ -1,5 +1,5 @@
 // Livre du joueur (RG-8.5), pertes (RG-8.13) et provenance (RG-8.14).
-import type { ObjetType, SpellType } from '@gq/shared';
+import type { CarteGm, ObjetType, SpellType } from '@gq/shared';
 
 export const FREE_SLOTS = 15;
 export const PAGE_SIZE = 10;
@@ -17,6 +17,8 @@ export type Origine =
   /** Alchimie, pouvoir de Spécialisation (amendement 2026-10-10). */
   | { type: 'alchimie' }
   | { type: 'duplication' }
+  /** RG-8.19 : carte créée ou reprise par le Décret de « Jarvis tout-puissant ». */
+  | { type: 'decret' }
   | { type: 'kit' }
   | { type: 'correction_gm'; par: string };
 
@@ -64,12 +66,23 @@ export interface ObjetItem {
   obtenuA: number;
 }
 
-export type BookItem = CardItem | SpellItem | ObjetItem;
+/**
+ * RG-8.15 : carte de Maître du jeu. Rangée dans la page Objets hors des 8 places, unique dans la partie ;
+ * jouée, elle quitte le Book et revient au Maître du jeu (RG-8.17).
+ */
+export interface GmItem {
+  kind: 'gm';
+  id: string;
+  gm: CarteGm;
+  obtenuA: number;
+}
+
+export type BookItem = CardItem | SpellItem | ObjetItem | GmItem;
 
 /** RG-8.13 : trace d'une carte qui a quitté le Livre. */
 export interface Perte {
   cardId: string;
-  cause: 'vol' | 'echange' | 'echange_force' | 'revente' | 'sanction' | 'malediction' | 'retour_en_jeu';
+  cause: 'vol' | 'echange' | 'echange_force' | 'revente' | 'sanction' | 'malediction' | 'retour_en_jeu' | 'decret';
   /** Joueur bénéficiaire (vol, échange). */
   par?: string;
   a: number;
@@ -114,7 +127,7 @@ export function layoutBook(book: Book, designees: readonly string[]): BookLayout
   const libresItems: BookItem[] = [];
 
   for (const item of items) {
-    if (item.kind === 'objet') continue; // section des objets, à part (objets.ts)
+    if (item.kind === 'objet' || item.kind === 'gm') continue; // section des objets, à part (objets.ts, gm.ts)
     // RG-8.9 : une copie démasquée (grisée) libère l'emplacement désigné.
     const grisee = item.kind === 'carte' && item.faux?.nature === 'copie' && item.marque === 'demasquee';
     if (item.kind === 'carte' && !grisee && !item.cachee && designees.includes(item.cardId) && !occupant.has(item.cardId)) {
@@ -253,6 +266,7 @@ export function describeLoss(perte: Perte, nom: (playerId: string) => string, he
     sanction: 'Retirée',
     malediction: 'Perdue (malédiction)',
     retour_en_jeu: 'Remise en jeu',
+    decret: 'Reprise par le Décret de Jarvis',
   }[perte.cause];
   return `${verbe}${qui} à ${heure(perte.a)}`;
 }

@@ -1,0 +1,769 @@
+<title>Clear de Greed Island</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Prototype de la page ⑰ : déclarer le Clear (Book scellé, bandeau doré), refus du GM (le sceau se brise), Clear confirmé (cinématique « Book en gloire »), choix des 3 cartes qui deviennent les lots réels, et l'annonce plein écran aux autres joueurs.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@800&family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,800;1,400&family=Dela+Gothic+One&family=DotGothic16&display=swap">
+<style>
+/* Page ⑰ : le Clear. Planche claire de l'app ; l'or est réservé au Clear (sceau, bandeau, nuit dorée de la
+   cinématique, sceaux des lots). Grands moments : le sceau « CLEAR DÉCLARÉ », le Book en gloire, l'annonce aux autres.
+   Thème clair unique, comme le reste de l'app. */
+:root {
+  color-scheme: light;
+  --papier: #eeefe9;
+  --case: #fbfbf7;
+  --case-2: #ecece6;
+  --encre: #111111;
+  --encre-2: #3b3d40;
+  --trame: rgba(17, 17, 17, 0.16);
+  --rouge: #c0272d;
+  --bleu: #1f4a9c;
+  --jaune: #d9a11a;
+  --cuir: #5a1a1e;
+  --or: #d7b25a;
+  --or-fonce: #8a6a12;
+  --or-vif: #ffd877;
+  --lumiere: #fff1c9;
+  --succes: #17713a;
+  --alerte: #b3161c;
+  --nuit: #0c0c0e;
+  --f-titre: 'Dela Gothic One', 'Arial Black', sans-serif;
+  --f-texte: 'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif;
+  --f-chiffre: 'Atkinson Hyperlegible Mono', ui-monospace, monospace;
+  --f-jeu: 'DotGothic16', ui-monospace, monospace;
+  --trait: 3px;
+  --sortie: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { overflow-x: clip; }
+body { margin: 0; background: var(--papier); color: var(--encre); font: 400 17px/1.45 var(--f-texte); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 3px solid var(--bleu); outline-offset: 3px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { cursor: default; }
+
+.app { max-width: 480px; margin: 0 auto; padding: 0 16px 104px; display: grid; gap: 14px; }
+.app > * { min-width: 0; }
+
+/* Commandes du prototype (pas dans l'app) */
+.proto { display: grid; gap: 7px; padding: 10px 12px; margin-inline: -16px; background: var(--encre); color: var(--case); }
+.proto p { margin: 0; font: 600 13px/1.3 var(--f-texte); }
+.proto .rang { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.proto .rang > span { font: 800 12px var(--f-texte); color: #b9bcc2; min-width: 58px; }
+.proto button { min-height: 36px; padding: 0 10px; border: 2px solid var(--case); background: transparent; color: var(--case); font: 700 13px var(--f-texte); }
+.proto button[aria-pressed='true'] { background: var(--case); color: var(--encre); }
+
+/* Barre d'état et onglets de l'app */
+.barre { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; margin-inline: -16px; padding: 10px 16px; background: var(--case); border-bottom: var(--trait) solid var(--encre); display: flex; align-items: center; gap: 12px; min-height: 58px; }
+.chrono { font: 800 30px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.liaison { display: flex; align-items: center; gap: 6px; font: 600 14px var(--f-texte); }
+.pastille { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--encre); background: var(--succes); display: inline-block; }
+.jenny { margin-left: auto; font: 800 22px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.jenny small { font: 600 15px var(--f-texte); margin-left: 3px; }
+.onglets { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, 1fr); background: var(--case); border-top: var(--trait) solid var(--encre); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.onglets button { position: relative; min-height: 64px; border: 0; border-right: 1.5px solid var(--encre); background: transparent; display: grid; justify-items: center; align-content: center; gap: 3px; font: 800 12.5px/1 var(--f-texte); padding: 6px 2px; }
+.onglets button:last-child { border-right: 0; }
+.onglets svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.onglets button[aria-current='page'] { background: var(--encre); color: var(--case); }
+
+.aide { font: 400 15px/1.35 var(--f-texte); color: var(--encre-2); margin: 0; }
+.case { background: var(--case); border: var(--trait) solid var(--encre); padding: 14px 16px; display: grid; gap: 12px; }
+.case h2 { margin: 0; font: 400 20px/1.1 var(--f-titre); }
+.case p { margin: 0; }
+.btn-encre { min-height: 52px; border: var(--trait) solid var(--encre); background: var(--encre); color: var(--case); font: 800 17px var(--f-texte); padding: 0 16px; }
+.btn-trait { min-height: 48px; border: var(--trait) solid var(--encre); background: var(--case); color: var(--encre); font: 800 16px var(--f-texte); padding: 0 14px; }
+.btn-encre:active, .btn-trait:active { translate: 0 2px; }
+
+/* ---------- Carte de Greed Island (copie de @gq/ui) ---------- */
+.gi-carte { container-type: inline-size; aspect-ratio: 63 / 88; width: 100%; position: relative; color: var(--encre); }
+.gi-carte .c-cadre { position: absolute; inset: 0; border-radius: 4.5cqi; padding: 5cqi; background: var(--cadre, var(--rouge)); box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35); display: grid; grid-template-rows: auto 1fr auto; gap: 3cqi; }
+.gi-carte .c-tete { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 3cqi; background: var(--case); border-radius: 2cqi; padding: 2.5cqi 3cqi; box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); }
+.gi-carte .c-num { font: 800 9cqi/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.gi-carte .c-nom { font: 800 6.4cqi/1.1 var(--f-texte); text-align: center; text-wrap: balance; hyphens: auto; overflow-wrap: break-word; }
+.gi-carte .c-nom.long { font-size: 5.4cqi; }
+.gi-rang { font: 400 7cqi/1 var(--f-titre); padding: 1.6cqi 2.4cqi; border-radius: 1.6cqi; white-space: nowrap; color: var(--encre); background: var(--matiere, var(--case)); box-shadow: 0 0 0 0.6cqi var(--encre); }
+.gi-carte .c-art { border-radius: 2cqi; background: #f4f2ea radial-gradient(var(--trame) 0.9px, transparent 1.1px) 0 0 / 5px 5px; box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); display: grid; place-items: center; overflow: hidden; min-height: 0; }
+.gi-carte .c-filigrane { font: 400 30cqi/1 var(--f-titre); color: transparent; -webkit-text-stroke: 0.9cqi rgba(17, 17, 17, 0.55); letter-spacing: -0.02em; }
+.gi-carte .c-txt { margin: 0; background: var(--case); border-radius: 2cqi; padding: 3cqi 3.5cqi; font: italic 400 5.6cqi/1.3 var(--f-texte); box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); }
+.r-SS { --matiere: linear-gradient(125deg, #9c7a1c 0%, #f6dc85 28%, #c39a2c 50%, #fbe7a6 72%, #a8841f 100%); }
+.r-S  { --matiere: linear-gradient(125deg, #8d949b 0%, #f1f3f5 35%, #aab1b8 60%, #e9ecef 100%); }
+.r-A  { --matiere: linear-gradient(125deg, #c97a4a 0%, #f2b48a 45%, #d88a58 100%); }
+.r-B  { --matiere: linear-gradient(125deg, #6fb596 0%, #b6e0cc 50%, #82c2a6 100%); }
+.r-C  { --matiere: linear-gradient(125deg, #9eb0c4 0%, #d6dfea 50%, #aebfd1 100%); }
+.r-D  { --matiere: var(--case); }
+@container (max-width: 130px) {
+  .gi-carte .c-nom, .gi-carte .c-txt { display: none; }
+  .gi-carte .c-tete { grid-template-columns: 1fr auto; padding: 4cqi; }
+  .gi-carte .c-num { font-size: 17cqi; }
+  .gi-carte .gi-rang { font-size: 13cqi; padding: 2.5cqi 4cqi; }
+  .gi-carte .c-cadre { padding: 6cqi; gap: 5cqi; grid-template-rows: auto 1fr; }
+}
+
+/* ---------- Boîte du jeu ---------- */
+.gi-annonce { position: fixed; z-index: 70; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 70px); width: min(calc(100% - 24px), 440px); transform: translate(-50%, calc(-100% - 120px)); visibility: hidden; transition: transform 0.45s var(--sortie), visibility 0s 0.45s; background: var(--nuit); color: #f6f6f2; border-radius: 6px; box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f6f6f2, inset 0 0 0 8px var(--nuit), inset 0 0 0 9px #f6f6f2, 0 16px 30px -14px rgba(0, 0, 0, 0.6); padding: 22px 22px 18px; display: grid; gap: 8px; }
+.gi-annonce.visible { transform: translate(-50%, 0); visibility: visible; transition: transform 0.45s var(--sortie), visibility 0s; }
+.a-qui { justify-self: start; font: 400 15px/1 var(--f-jeu); background: #f6f6f2; color: var(--nuit); padding: 4px 8px; }
+.a-qui.or { background: var(--or-vif); }
+.a-qui.rouge { background: #ff5a4a; color: #fff; }
+.gi-annonce .a-texte { font: 400 20px/1.4 var(--f-jeu); margin: 0; }
+.gi-dialogue { background: var(--nuit); color: #f6f6f2; border-radius: 6px; box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f6f6f2, inset 0 0 0 8px var(--nuit), inset 0 0 0 9px #f6f6f2, 0 10px 24px -10px rgba(0, 0, 0, 0.6); padding: 18px 20px 16px; display: grid; gap: 10px; }
+.gi-dialogue .a-texte { font: 400 19px/1.45 var(--f-jeu); margin: 0; min-height: 1.45em; }
+.gi-dialogue .a-indice { margin: 0; font: 600 14px/1.3 var(--f-texte); color: #c3c6cc; opacity: 0; transition: opacity 0.3s; }
+.gi-dialogue .a-indice.visible { opacity: 1; }
+.gi-dialogue .a-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.gi-dialogue .a-actions button { flex: 1; min-height: 48px; border: 0; background: #f6f6f2; color: var(--nuit); font: 400 17px var(--f-jeu); padding: 0 12px; }
+.gi-dialogue .a-actions button.or { background: var(--or-vif); }
+.gi-dialogue .a-actions button.creux { background: transparent; color: #f6f6f2; box-shadow: inset 0 0 0 2px rgba(246, 246, 242, 0.5); }
+
+/* ---------- Bandeau doré : Clear déclaré, sur toutes les pages ---------- */
+.bandeau-clear { margin-top: -14px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 58px); z-index: 29; margin-inline: -16px; padding: 8px 12px 8px 16px; border-bottom: var(--trait) solid var(--encre); background: linear-gradient(100deg, #2b2006, #4a3809 60%, #2b2006); color: var(--lumiere); display: flex; align-items: center; gap: 10px; font: 800 15px/1.25 var(--f-texte); }
+.bandeau-clear .mini-sceau { flex: none; width: 26px; height: 26px; }
+.bandeau-clear span { flex: 1; min-width: 0; }
+.bandeau-clear span b { color: var(--or-vif); }
+.bandeau-clear button { flex: none; min-height: 40px; padding: 0 10px; border: 2px solid var(--or-vif); background: transparent; color: var(--or-vif); font: 800 14px var(--f-texte); }
+
+/* ---------- Le Book (onglet) ---------- */
+.book-tete { display: flex; align-items: baseline; gap: 14px; padding-top: 8px; }
+.book-tete h1 { margin: 0; font: 400 30px/1 var(--f-titre); }
+.book-tete span { font: 600 14px var(--f-texte); color: var(--encre-2); }
+.book-tete b { font: 800 20px var(--f-chiffre); color: var(--encre); }
+.feuille { position: relative; background: var(--case); border: var(--trait) solid var(--encre); box-shadow: inset 0 3px 0 var(--rouge); padding: 14px 12px; display: grid; gap: 10px; }
+.feuille h2 { margin: 0; font: 400 16px/1 var(--f-titre); display: flex; justify-content: space-between; }
+.feuille h2 small { font: 400 13px var(--f-jeu); color: var(--encre-2); }
+.poches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.poche { border-radius: 4px; padding: 3px; background: #e9e7de; box-shadow: inset 0 0 0 1.5px var(--trame); }
+.btn-clear { min-height: 60px; border: var(--trait) solid var(--encre); background: linear-gradient(120deg, #9c7a1c, #f6dc85 30%, #c39a2c 55%, #fbe7a6 80%, #a8841f); color: var(--encre); font: 400 24px/1 var(--f-titre); letter-spacing: 0.04em; box-shadow: 0 5px 0 -1px var(--encre); }
+.btn-clear:active { translate: 0 3px; box-shadow: none; }
+/* Book scellé : voile sur les pages, le sceau doré posé dessus. */
+.feuille.scellee .poches { filter: grayscale(0.6) brightness(0.92); }
+.feuille .sceau-pose { position: absolute; left: 50%; top: 50%; width: min(52vw, 200px); translate: -50% -50%; rotate: -10deg; pointer-events: none; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35)); }
+.feuille .sceau-pose svg { width: 100%; height: auto; display: block; }
+.gele-note { margin: 0; text-align: center; font: 400 17px/1.35 var(--f-jeu); }
+
+/* Fiche « Déclarer le Clear » (feuille du bas, comme dans le Book). */
+.fond { position: fixed; inset: 0; z-index: 60; background: rgba(12, 12, 14, 0.55); display: grid; align-items: end; justify-items: center; }
+.feuille-bas { width: min(100%, 480px); max-height: 90dvh; overflow: auto; background: var(--case); border-top: var(--trait) solid var(--encre); padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 14px; animation: monte 0.32s var(--sortie); }
+@keyframes monte { from { translate: 0 40%; opacity: 0; } }
+.feuille-bas h2 { margin: 0; font: 400 24px/1.05 var(--f-titre); }
+.feuille-bas .actions { display: grid; gap: 10px; }
+
+/* ---------- Choix des 3 lots ---------- */
+.lots-tete { display: grid; gap: 6px; padding-top: 8px; text-align: center; justify-items: center; }
+.lots-tete h1 { margin: 0; font: 400 clamp(26px, 8vw, 34px)/1 var(--f-titre); }
+.lots-tete p { margin: 0; font: 400 15px/1.35 var(--f-texte); color: var(--encre-2); max-width: 34ch; }
+/* Trois sceaux numérotés, collés sous la barre. */
+.sceaux { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 58px); z-index: 20; margin-inline: -16px; padding: 10px 16px; background: var(--papier); border-bottom: 1.5px solid var(--trame); display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.sceau-lot { display: grid; justify-items: center; gap: 4px; border: 0; background: none; padding: 0; color: var(--encre); }
+.sceau-lot .rond { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; font: 400 22px/1 var(--f-titre); color: #a9a79e; background: var(--case); box-shadow: inset 0 0 0 2px #c9c6bb, 0 0 0 2px var(--papier), 0 0 0 4px #c9c6bb; }
+.sceau-lot.plein .rond { font-size: 16px; color: var(--encre); background: radial-gradient(circle at 35% 30%, #fff6cf 0, #f7dc8a 30%, #c99a2a 72%, #8f6614 100%); box-shadow: inset 0 0 0 2px var(--encre), 0 0 0 2px var(--papier), 0 0 0 4px var(--encre); }
+.sceau-lot.plein .rond.frappe { animation: frappe-sceau 0.34s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes frappe-sceau { from { scale: 1.8; opacity: 0; } 65% { scale: 0.92; opacity: 1; } }
+.sceau-lot small { font: 800 12px/1.15 var(--f-texte); text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
+.sceau-lot small.vide { color: #8d8a80; font-weight: 600; }
+.grille-lots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 10px; }
+.choix-carte { position: relative; border: 0; padding: 0; background: none; display: grid; gap: 5px; text-align: center; }
+.choix-carte .lot-court { font: 600 12px/1.2 var(--f-texte); color: var(--encre-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.choix-carte.pris .gi-carte { outline: 4px solid var(--or); outline-offset: 2px; border-radius: 6px; }
+.choix-carte .badge { position: absolute; top: -8px; right: -6px; z-index: 2; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font: 400 15px/1 var(--f-titre); background: radial-gradient(circle at 35% 30%, #fff6cf 0, #f7dc8a 30%, #c99a2a 72%, #8f6614 100%); box-shadow: 0 0 0 2px var(--encre); }
+.choix-carte.grise { opacity: 0.45; }
+.pied-lots { position: sticky; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); z-index: 20; display: grid; }
+.pied-lots .btn-encre:disabled { background: #8d8a80; border-color: #8d8a80; }
+/* Fiche d'une carte : grande carte et ticket du lot réel. */
+.fiche-lot .grande { width: min(56vw, 220px); justify-self: center; }
+.ticket { position: relative; display: grid; gap: 2px; padding: 10px 14px 10px 18px; background: #fbf3d6; border: 2px solid var(--encre); border-left-width: 8px; border-left-color: var(--or); }
+.ticket span { font: 400 13px/1 var(--f-jeu); color: var(--or-fonce); letter-spacing: 0.06em; }
+.ticket b { font: 800 18px/1.25 var(--f-texte); }
+.ticket.sans b { font-weight: 600; color: var(--encre-2); }
+/* Récapitulatif : à montrer à l'organisateur. */
+.recap { display: grid; gap: 12px; }
+.recap .ligne { display: grid; grid-template-columns: 34px 64px 1fr; gap: 12px; align-items: center; background: var(--case); border: var(--trait) solid var(--encre); padding: 8px 12px 8px 8px; }
+.recap .ligne .rond { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font: 400 16px/1 var(--f-titre); background: radial-gradient(circle at 35% 30%, #fff6cf 0, #f7dc8a 30%, #c99a2a 72%, #8f6614 100%); box-shadow: 0 0 0 2px var(--encre); }
+.recap .ligne p { margin: 0; display: grid; gap: 2px; }
+.recap .ligne p span { font: 600 13px/1.2 var(--f-texte); color: var(--encre-2); }
+.recap .ligne p b { font: 800 17px/1.2 var(--f-texte); }
+.recap .tampon-clear { justify-self: center; width: min(70vw, 260px); rotate: -6deg; }
+.recap .tampon-clear svg { width: 100%; height: auto; overflow: visible; }
+
+/* Fin de partie (page ⑱, simple renvoi ici). */
+.renvoi { text-align: center; }
+
+/* ---------- Effets : un seul canvas au-dessus de tout ---------- */
+#fx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 90; pointer-events: none; }
+
+/* ---------- Cinématiques ---------- */
+.cine { position: fixed; inset: 0; z-index: 65; overflow: hidden; visibility: hidden; cursor: pointer; color: #f6f1e2; }
+.cine.joue { visibility: visible; }
+.cine .nuit { position: absolute; inset: 0; opacity: 0; background: radial-gradient(ellipse at 50% 44%, #4a3608 0, #1f1504 48%, #070502 92%); }
+.cine .nuit.sombre { background: radial-gradient(ellipse at 50% 44%, #2a2a33 0, #121216 50%, #040405 92%); }
+.cine .lignes { position: absolute; inset: -30%; opacity: 0; pointer-events: none; }
+.cine .lignes svg { width: 100%; height: 100%; }
+.cine .rayons { position: absolute; left: 50%; top: 44%; width: 150vmax; height: 150vmax; margin: -75vmax 0 0 -75vmax; opacity: 0; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 216, 119, 0.5) 0deg 4deg, rgba(255, 216, 119, 0) 4deg 14deg);
+  -webkit-mask: radial-gradient(closest-side, #000 0, rgba(0, 0, 0, 0.6) 30%, transparent 70%); mask: radial-gradient(closest-side, #000 0, rgba(0, 0, 0, 0.6) 30%, transparent 70%); }
+.cine .flash { position: absolute; inset: 0; background: radial-gradient(circle at 50% 44%, #fffbe8, #ffd877 55%, #c99a2a); opacity: 0; pointer-events: none; }
+.cine .dialogue { position: absolute; left: 50%; bottom: max(18px, env(safe-area-inset-bottom, 0px)); width: min(calc(100% - 24px), 440px); translate: -50% 0; opacity: 0; }
+.cine .passer { pointer-events: none; position: absolute; bottom: max(16px, env(safe-area-inset-bottom, 0px)); left: 50%; translate: -50% 0; font: 600 13px var(--f-texte); color: rgba(235, 238, 242, 0.75); white-space: nowrap; opacity: 0; transition: opacity 0.25s; }
+.cine.intro .passer { opacity: 1; transition-delay: 0.6s; }
+/* « CLEAR ! » en or, frappé. */
+.cri-or { position: absolute; left: 0; right: 0; top: max(22px, 7dvh); display: grid; justify-items: center; gap: 4px; rotate: -5deg; opacity: 0; pointer-events: none; }
+.cri-or .l1 { white-space: nowrap; font: 400 min(18vw, 100px)/0.9 var(--f-titre); letter-spacing: -0.03em; color: transparent; background: linear-gradient(180deg, #fffbe8 0%, #ffd877 38%, #c99a2a 62%, #fbe7a6 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-stroke: 3px #3a2804; paint-order: stroke fill; filter: drop-shadow(0 4px 0 #3a2804) drop-shadow(0 0 18px rgba(255, 216, 119, 0.55)); }
+.cri-or .l2 { font: 400 min(5.4vw, 24px)/1.15 var(--f-titre); color: #fff; -webkit-text-stroke: 2px #3a2804; paint-order: stroke fill; text-align: center; padding-inline: 12px; }
+
+/* Le Book de la cinématique : couverture de cuir qui s'ouvre sur la page des pochettes. */
+.c-book { --bw: min(64vw, 280px, calc((100dvh - 330px) * 0.74)); position: absolute; left: 50%; top: 46%; width: var(--bw); aspect-ratio: 0.74; margin: calc(var(--bw) / -0.74 / 2) 0 0 calc(var(--bw) / -2); perspective: 1400px; opacity: 0; }
+.c-book .volume { position: absolute; inset: 0; transform-style: preserve-3d; }
+.c-book .page { position: absolute; inset: 0; border-radius: 3px 8px 8px 3px; background: var(--case); box-shadow: inset 0 0 0 2px var(--encre), inset 0 4px 0 2px var(--rouge), 0 18px 40px rgba(0, 0, 0, 0.55); padding: 9% 7% 7%; display: grid; grid-template-rows: auto 1fr; gap: 5%; }
+.c-book .page h3 { margin: 0; font: 400 calc(var(--bw) * 0.06)/1 var(--f-titre); color: var(--encre); display: flex; justify-content: space-between; align-items: baseline; }
+.c-book .page h3 b { font: 800 calc(var(--bw) * 0.06)/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.c-book .slots { display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 1fr; gap: calc(var(--bw) * 0.025); min-height: 0; }
+.c-book .slot { position: relative; border-radius: 3px; background: #e9e7de; box-shadow: inset 0 0 0 1.5px var(--trame); display: grid; place-items: center; overflow: hidden; }
+.c-book .slot .mini { position: absolute; inset: 7%; border-radius: 2px; background: var(--rouge); box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, 0.35); display: grid; grid-template-rows: auto 1fr; padding: 6%; gap: 6%; }
+.c-book .slot .mini i { display: flex; justify-content: space-between; align-items: center; background: var(--case); border-radius: 2px; padding: 4% 6%; font: 800 calc(var(--bw) * 0.038)/1 var(--f-chiffre); font-style: normal; color: var(--encre); }
+.c-book .slot .mini i em { font: 400 calc(var(--bw) * 0.03)/1 var(--f-titre); font-style: normal; padding: 1px 3px; border-radius: 2px; background: var(--matiere, var(--case)); box-shadow: 0 0 0 1px var(--encre); }
+.c-book .slot .mini u { border-radius: 2px; background: #f4f2ea radial-gradient(var(--trame) 0.9px, transparent 1.1px) 0 0 / 4px 4px; }
+.c-book .slot .lueur { position: absolute; inset: 0; border-radius: 3px; background: radial-gradient(closest-side, #fffbe8, rgba(255, 216, 119, 0.85) 45%, rgba(255, 216, 119, 0)); opacity: 0; mix-blend-mode: screen; }
+.c-book .slot.allume { box-shadow: inset 0 0 0 2px #c99a2a, 0 0 12px 2px rgba(255, 216, 119, 0.8); }
+.c-book .slot.embleme { background: none; box-shadow: none; color: var(--or-fonce); }
+.c-book .slot.embleme svg { width: 70%; }
+.c-book .couv { position: absolute; inset: 0; border-radius: 3px 8px 8px 3px; transform-origin: left center; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  background-color: var(--cuir); background-image: radial-gradient(rgba(255, 255, 255, 0.07) 0.8px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.45) 0, rgba(0, 0, 0, 0) 22px, rgba(255, 255, 255, 0.08) 26px, rgba(0, 0, 0, 0) 40px); background-size: 3px 3px, 100% 100%;
+  box-shadow: inset 0 0 0 2px #2b0a0d, inset 0 0 0 9px var(--cuir), inset 0 0 0 11px var(--or-fonce), inset 0 0 0 14px var(--cuir), inset 0 0 0 15px var(--or-fonce), 0 18px 40px rgba(0, 0, 0, 0.55);
+  display: grid; place-items: center; align-content: center; gap: 14px; color: var(--or); }
+.c-book .couv svg { width: 46%; height: auto; }
+.c-book .couv strong { font: 400 calc(var(--bw) * 0.13)/1 var(--f-titre); letter-spacing: 0.32em; margin-right: -0.32em; }
+.c-book .couv-dos { position: absolute; inset: 0; border-radius: 8px 3px 3px 8px; transform-origin: left center; transform: rotateY(180deg); backface-visibility: hidden; -webkit-backface-visibility: hidden; background: #3d1013; box-shadow: inset 0 0 0 2px #2b0a0d, inset 0 0 0 10px #4a1418; }
+.c-book .sceau-pose { position: absolute; left: 50%; top: 52%; width: 74%; translate: -50% -50%; rotate: -10deg; opacity: 0; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.5)); }
+.c-book .sceau-pose svg { width: 100%; height: auto; display: block; overflow: visible; }
+.c-book .moitie { position: absolute; left: 50%; top: 52%; width: 74%; translate: -50% -50%; rotate: -10deg; opacity: 0; }
+.c-book .moitie svg { width: 100%; height: auto; display: block; overflow: visible; }
+.c-book .moitie.g { clip-path: polygon(0 0, 54% 0, 44% 38%, 56% 62%, 46% 100%, 0 100%); }
+.c-book .moitie.d { clip-path: polygon(54% 0, 100% 0, 100% 100%, 46% 100%, 56% 62%, 44% 38%); }
+.compte { position: absolute; left: 0; right: 0; top: calc(46% + min(64vw, 280px, calc((100dvh - 330px) * 0.74)) / 0.74 / 2 + 14px); text-align: center; font: 400 18px/1 var(--f-jeu); color: var(--or-vif); opacity: 0; }
+.compte b { font: 800 22px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Encre des tampons : bord mangé et manques. -->
+    <filter id="encre" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" result="grain"/>
+      <feDisplacementMap in="SourceGraphic" in2="grain" scale="3.2" result="bord"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.22" numOctaves="2" seed="11" result="taches"/>
+      <feColorMatrix in="taches" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2.3 2.2" result="masque"/>
+      <feComposite in="bord" in2="masque" operator="in"/>
+    </filter>
+    <radialGradient id="cire" cx="38%" cy="32%" r="70%">
+      <stop offset="0" stop-color="#fff3c4"/><stop offset="0.35" stop-color="#f2cd6a"/><stop offset="0.75" stop-color="#b8861f"/><stop offset="1" stop-color="#7a5510"/>
+    </radialGradient>
+  </defs>
+</svg>
+
+<div class="app">
+  <div class="proto" role="group" aria-label="Commandes du prototype">
+    <p>Prototype : tu es Gon, ton Book a ses 14 cartes désignées. Le GM confirme ou refuse ; les autres joueurs voient l'annonce.</p>
+    <div class="rang"><span>Gon</span>
+      <button id="p-book">Book complet</button>
+      <button id="p-faux" aria-pressed="false">contrefaçon cachée</button>
+    </div>
+    <div class="rang"><span>GM</span>
+      <button id="p-refus">refuse</button>
+      <button id="p-confirme">confirme le Clear</button>
+    </div>
+    <div class="rang"><span>Ailleurs</span>
+      <button id="p-autre">un autre joueur voit l'annonce</button>
+      <button id="p-accueil">aller à l'accueil</button>
+    </div>
+  </div>
+
+  <header class="barre" aria-label="État de la partie">
+    <span class="chrono" id="chrono">0:22:40</span>
+    <span class="liaison"><i class="pastille"></i>En ligne</span>
+    <span class="jenny"><span>212</span><small>J</small></span>
+  </header>
+  <div class="bandeau-clear" id="bandeau" hidden>
+    <span class="mini-sceau" id="mini-sceau"></span>
+    <span><b>Clear déclaré</b> : va voir le Game Master</span>
+    <button id="b-licence">Ma licence</button>
+  </div>
+
+  <!-- Le Book -->
+  <div id="page-book" style="display:grid;gap:14px">
+    <div class="book-tete"><h1>Book</h1><span>Désignées <b>14</b>/14</span><span>Libres <b>6</b>/15</span></div>
+    <section class="feuille" id="feuille" aria-label="Emplacements désignés">
+      <h2>Emplacements désignés <small>p. 1–5</small></h2>
+      <div class="poches" id="poches"></div>
+      <div class="sceau-pose" id="sceau-feuille" hidden></div>
+    </section>
+    <p class="gele-note" id="gele-note" hidden>Ton Book est gelé : plus rien ne peut le toucher. Montre ta licence au Game Master.</p>
+    <button class="btn-clear" id="btn-clear">Clear !</button>
+  </div>
+
+  <!-- Accueil (pour montrer le bandeau hors du Book) -->
+  <div id="page-accueil" hidden style="display:grid;gap:14px">
+    <h1 style="margin:8px 0 0;font:400 30px/1 var(--f-titre)">Accueil</h1>
+    <section class="case"><h2>Gon</h2><p class="aide">Ici, l'accueil n'est montré que pour le bandeau doré : il reste sous la barre sur toutes les pages tant que le GM n'a pas tranché.</p></section>
+  </div>
+
+  <!-- Choix des 3 lots -->
+  <div id="page-lots" hidden style="display:grid;gap:14px">
+    <div class="lots-tete">
+      <h1>Tes 3 lots</h1>
+      <p>Choisis 3 cartes de ton Book : elles deviennent les lots que tu recevras de l'organisateur.</p>
+    </div>
+    <div class="sceaux" id="sceaux"></div>
+    <div class="grille-lots" id="grille"></div>
+    <div class="pied-lots"><button class="btn-encre" id="valider" disabled>Choisis encore 3 cartes</button></div>
+  </div>
+
+  <!-- Récapitulatif -->
+  <div id="page-recap" hidden style="display:grid;gap:14px">
+    <div class="lots-tete">
+      <h1>Tes lots</h1>
+      <p>Montre cet écran à l'organisateur pour recevoir tes lots.</p>
+    </div>
+    <div class="recap" id="recap"></div>
+    <button class="btn-trait" id="vers-fin">Voir le classement final</button>
+  </div>
+
+  <!-- Fin de partie : renvoi vers la page ⑱ -->
+  <div id="page-fin" hidden style="display:grid;gap:14px">
+    <section class="case renvoi"><h2>Classement final</h2><p class="aide">Page ⑱ (prochaine page) : classement, ta place, podium des 3 premiers.</p></section>
+  </div>
+</div>
+
+<nav class="onglets" aria-label="Navigation">
+  <button data-onglet="accueil"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 3l9 8M6 9.5V21h12V9.5M10 21v-6h4v6"/></svg>Accueil</button>
+  <button data-onglet="scan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5M7 12h10"/></svg>Scanner</button>
+  <button data-onglet="livre" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2zM5 19a2 2 0 0 1 2-2h12M9 7h6"/></svg>Book</button>
+  <button data-onglet="sorts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 2.6 6.6L21 9.5l-5 4.4 1.6 6.6L12 17l-5.6 3.5L8 13.9 3 9.5l6.4-.9z"/></svg>Sorts</button>
+  <button data-onglet="echanges"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg>Échanges</button>
+</nav>
+
+<div class="gi-annonce" id="annonce" role="status"><span class="a-qui" id="an-qui">Greed Island</span><p class="a-texte" id="an-texte"></p></div>
+
+<!-- Fiche : déclarer le Clear, ou une carte à choisir comme lot -->
+<div class="fond" id="fond" hidden><div class="feuille-bas" id="fiche" role="dialog" aria-modal="true" aria-labelledby="fiche-titre"></div></div>
+
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<!-- Cinématique (sceau, refus, Book en gloire, annonce aux autres) -->
+<div class="cine" id="cine" aria-hidden="true">
+  <div class="nuit" id="c-nuit"></div>
+  <div class="lignes" id="c-lignes"></div>
+  <div class="rayons" id="c-rayons"></div>
+  <div class="c-book" id="c-book">
+    <div class="volume" id="c-volume">
+      <div class="page" id="c-page"><h3><span>Désignées</span><b id="c-n">0/14</b></h3><div class="slots" id="c-slots"></div></div>
+      <div class="couv-dos" id="c-couv-dos"></div>
+      <div class="couv" id="c-couv"><svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><circle cx="50" cy="50" r="44"/><circle cx="50" cy="50" r="36" stroke-width="1.5"/><path d="M50 10v80M10 50h80" stroke-width="1.2"/><path d="M36 38c0-6 4-10 10-10h8M36 38v24c0 6 4 10 10 10h8V52h-8" stroke-width="5"/><path d="M64 28v44" stroke-width="5"/></svg><strong>BOOK</strong></div>
+      <div class="sceau-pose" id="c-sceau"></div>
+      <div class="moitie g" id="c-g"></div>
+      <div class="moitie d" id="c-d"></div>
+    </div>
+  </div>
+  <div class="compte" id="c-compte"></div>
+  <div class="cri-or" id="c-cri"><span class="l1">CLEAR !</span><span class="l2" id="c-l2"></span></div>
+  <div class="flash" id="c-flash"></div>
+  <div class="dialogue gi-dialogue" id="c-dialogue" role="status">
+    <span class="a-qui or" id="c-qui">Greed Island</span>
+    <p class="a-texte" id="c-texte"></p>
+    <div class="a-actions" id="c-actions" hidden></div>
+    <p class="a-indice" id="c-indice">Touche pour continuer</p>
+  </div>
+  <span class="passer">Touche pour passer</span>
+</div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const vibrer = (p) => navigator.vibrate?.(p);
+const centre = (el) => { const b = el.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2]; };
+const num = (n) => String(n).padStart(3, '0');
+
+// ---------- Données du prototype (dans l'app : GET /livre, POST /clear, évènements `clear_confirme`, `clear_refuse`, `clear` ; POST /clear/recompenses) ----------
+// 14 cartes de la banque de l'anime ; lots réels fixés par le GM dans le catalogue (`lot_reel`), certains non définis.
+const CARTES = [
+  [0, 'Le bonheur du détenteur', 'SS', 'Console de jeu portable'],
+  [1, 'Le bois secret d’un Tsubo', 'S', 'Coffret collector HUNTER×HUNTER'],
+  [5, 'La grotte des esprits', 'S', 'Figurine de Gon (20 cm)'],
+  [7, 'La pierre de grossesse', 'A', 'Bon d’achat de 30 €'],
+  [8, 'Le lac du mystère', 'A', 'Sweat Greed Island'],
+  [12, 'Le dictionnaire d’or', 'A', 'Coffret de 3 mangas'],
+  [15, 'Le génie capricieux', 'A', null],
+  [3, 'Le vase de la fontaine', 'B', 'Tasse Greed Island'],
+  [10, 'Le rurubu d’or', 'B', 'Poster de l’île'],
+  [13, 'Le carnet du bonheur', 'B', 'Carnet relié'],
+  [14, 'Les ciseaux coupe-liens', 'C', 'Porte-clés Book'],
+  [22, 'Toraemon', 'C', 'Badge collector'],
+  [11, 'La balance d’or', 'D', 'Autocollants'],
+  [25, 'Le dé du risque', 'D', null],
+].map(([n, nom, rang, lot]) => ({ n, nom, rang, lot }));
+const S = { etat: 'complet', faux: false, choix: [], valide: false, vue: 'book' };
+
+const carteHTML = (c) => `<div class="gi-carte f-designee"><div class="c-cadre"><div class="c-tete"><span class="c-num">${num(c.n)}</span><span class="c-nom${c.nom.length > 20 ? ' long' : ''}">${c.nom}</span><span class="gi-rang r-${c.rang}">${c.rang}</span></div><div class="c-art"><span class="c-filigrane">${num(c.n)}</span></div><p class="c-txt">Carte désignée de Greed Island.</p></div></div>`;
+const embleme = '<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><circle cx="50" cy="50" r="44"/><path d="M36 38c0-6 4-10 10-10h8M36 38v24c0 6 4 10 10 10h8V52h-8" stroke-width="5"/><path d="M64 28v44" stroke-width="5"/></svg>';
+// Le sceau de cire doré : « CLEAR · DÉCLARÉ » autour, l'emblème du Book au centre.
+const sceau = (bas = 'DÉCLARÉ') => `<svg viewBox="-60 -60 120 120" aria-hidden="true">
+  <path d="M0 -56 C14 -58 22 -48 34 -46 C46 -42 46 -30 54 -20 C60 -8 52 4 56 16 C58 30 46 36 40 46 C30 56 18 52 6 58 C-8 62 -16 52 -28 50 C-42 46 -44 34 -52 24 C-60 12 -52 0 -56 -12 C-58 -26 -46 -32 -40 -44 C-30 -54 -14 -54 0 -56 Z" fill="url(#cire)" stroke="#5a3d08" stroke-width="2"/>
+  <circle r="40" fill="none" stroke="#7a5510" stroke-width="2.5"/><circle r="27" fill="none" stroke="#7a5510" stroke-width="1.5"/>
+  <path id="arc-h" d="M-33 0 A33 33 0 0 1 33 0" fill="none"/><path id="arc-b" d="M-33 0 A33 33 0 0 0 33 0" fill="none"/>
+  <text fill="#5a3d08" style="font: 400 11px 'Dela Gothic One', sans-serif; letter-spacing: 2px"><textPath href="#arc-h" startOffset="50%" text-anchor="middle">CLEAR</textPath></text>
+  <text fill="#5a3d08" dy="9" style="font: 400 10px 'Dela Gothic One', sans-serif; letter-spacing: 1.5px"><textPath href="#arc-b" startOffset="50%" text-anchor="middle">${bas}</textPath></text>
+  <g transform="translate(-14 -14) scale(.28)" stroke="#5a3d08" fill="none"><path d="M36 38c0-6 4-10 10-10h8M36 38v24c0 6 4 10 10 10h8V52h-8" stroke-width="7"/><path d="M64 28v44" stroke-width="7"/></g>
+</svg>`;
+const tampon = (mots) => `<svg viewBox="-90 -36 180 72" aria-hidden="true"><g filter="url(#encre)" fill="none" stroke="#b8861f">
+  <rect x="-86" y="-32" width="172" height="64" rx="5" stroke-width="5"/><rect x="-78" y="-25" width="156" height="50" rx="2" stroke-width="1.5"/>
+  ${mots.map((m, i) => `<text y="${-4 + i * 20}" text-anchor="middle" fill="#b8861f" stroke="none" style="font: 400 ${i ? 13 : 22}px 'Dela Gothic One', sans-serif; letter-spacing: .5px">${m}</text>`).join('')}
+</g></svg>`;
+function lignesSVG(couleur, graine) {
+  let s = graine; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  let d = '';
+  for (let i = 0; i < 130; i++) {
+    const a = r() * Math.PI * 2, r0 = 40 + r() * 26, w = 0.004 + r() * 0.014;
+    const p = (ang, rad) => `${(Math.cos(ang) * rad).toFixed(1)} ${(Math.sin(ang) * rad).toFixed(1)}`;
+    d += `M${p(a, r0)}L${p(a - w, 170)}L${p(a + w, 170)}Z`;
+  }
+  return `<svg viewBox="-100 -100 200 200" preserveAspectRatio="xMidYMid slice"><path d="${d}" fill="${couleur}"/></svg>`;
+}
+$('#c-lignes').innerHTML = lignesSVG('#ffe7a6', 31);
+$('#mini-sceau').innerHTML = sceau();
+$('#sceau-feuille').innerHTML = sceau();
+$('#poches').innerHTML = CARTES.map((c) => `<div class="poche">${carteHTML(c)}</div>`).join('');
+
+// ---------- Effets (canvas) : étincelles, ondes, pluie d'or ----------
+const cv = $('#fx'), ctx = cv.getContext('2d');
+let dpr = 1, parts = [], ondes = [], image = 0, dernierT = 0, pluie = 0;
+function taille() { dpr = Math.min(1.5, devicePixelRatio || 1); cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; }
+addEventListener('resize', taille); taille();
+const lueurs = {};
+function lueur(col) {
+  if (lueurs[col]) return lueurs[col];
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d'), rg = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  rg.addColorStop(0, col); rg.addColorStop(0.35, col + '99'); rg.addColorStop(1, col + '00');
+  g.fillStyle = rg; g.fillRect(0, 0, 64, 64); return (lueurs[col] = c);
+}
+function etincelles(x, y, n, col, force = 1, g = 60) {
+  lancerBoucle();
+  n = Math.min(n, 340 - parts.length);
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, v = (240 + Math.random() * 620) * force;
+    parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, col, vie: 0, max: 0.45 + Math.random() * 0.7, t: 2 + Math.random() * 4, g });
+  }
+}
+function onde(x, y, col, max = 1.4) { lancerBoucle(); ondes.push({ x, y, col, vie: 0, max: 0.55, rmax: Math.max(innerWidth, innerHeight) * 0.55 * max }); }
+function boucle(now) {
+  const dt = Math.max(0, Math.min(0.05, (now - dernierT) / 1000)); dernierT = now;
+  // La pluie d'or : des paillettes qui tombent doucement du haut tant qu'elle dure.
+  if (pluie > now) for (let i = 0; i < 3 && parts.length < 340; i++) parts.push({ x: Math.random() * innerWidth, y: -10, vx: (Math.random() - 0.5) * 40, vy: 120 + Math.random() * 160, col: Math.random() < 0.7 ? '#ffd877' : '#fff1c9', vie: 0, max: 3 + Math.random() * 2, t: 1.5 + Math.random() * 2.5, g: 0, pluie: true });
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, innerWidth, innerHeight);
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i]; p.vie += dt;
+    const a = 1 - p.vie / p.max; if (a <= 0 || p.y > innerHeight + 20) { parts.splice(i, 1); continue; }
+    if (!p.pluie) { p.vx *= 0.94; p.vy = p.vy * 0.94 + p.g * dt; } else p.vx += Math.sin(now / 300 + i) * 4 * dt;
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    const t = p.t * (0.4 + a * 0.8);
+    ctx.globalAlpha = p.pluie ? Math.min(1, a * 2) : a; ctx.drawImage(lueur(p.col), p.x - t * 3, p.y - t * 3, t * 6, t * 6);
+  }
+  for (let i = ondes.length - 1; i >= 0; i--) {
+    const o = ondes[i]; o.vie += dt; const k = o.vie / o.max; if (k >= 1) { ondes.splice(i, 1); continue; }
+    ctx.globalAlpha = (1 - k) * 0.9; ctx.strokeStyle = o.col; ctx.lineWidth = 10 * (1 - k) + 1;
+    ctx.beginPath(); ctx.arc(o.x, o.y, o.rmax * (1 - Math.pow(1 - k, 3)), 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  image = parts.length || ondes.length || pluie > now ? requestAnimationFrame(boucle) : 0;
+}
+const lancerBoucle = () => { if (!image && !reduit) { dernierT = performance.now(); image = requestAnimationFrame(boucle); } };
+
+// ---------- Boîte du jeu ----------
+let finAnnonce = 0;
+function annoncer(texte, qui = 'Greed Island', classe = '') {
+  $('#an-qui').textContent = qui; $('#an-qui').className = `a-qui ${classe}`;
+  $('#an-texte').textContent = texte;
+  $('#annonce').classList.add('visible');
+  clearTimeout(finAnnonce); finAnnonce = setTimeout(() => $('#annonce').classList.remove('visible'), 4200);
+}
+$('#annonce').addEventListener('click', () => $('#annonce').classList.remove('visible'));
+
+// ---------- Navigation ----------
+const PAGES = ['book', 'accueil', 'lots', 'recap', 'fin'];
+function aller(v) {
+  S.vue = v;
+  PAGES.forEach((p) => ($(`#page-${p}`).hidden = p !== v));
+  document.querySelectorAll('.onglets button').forEach((b) => {
+    if ((v === 'book' && b.dataset.onglet === 'livre') || (v === 'accueil' && b.dataset.onglet === 'accueil')) b.setAttribute('aria-current', 'page');
+    else b.removeAttribute('aria-current');
+  });
+  dessiner(); scrollTo(0, 0);
+}
+document.querySelectorAll('.onglets button').forEach((b) => b.addEventListener('click', () => { if (S.etat === 'termine') return; if (b.dataset.onglet === 'livre') aller('book'); else aller('accueil'); }));
+function dessiner() {
+  const gele = S.etat === 'declare';
+  $('#bandeau').hidden = !gele;
+  $('#feuille').classList.toggle('scellee', gele);
+  $('#sceau-feuille').hidden = !gele;
+  $('#gele-note').hidden = !gele;
+  $('#btn-clear').hidden = S.etat !== 'complet';
+}
+$('#b-licence').addEventListener('click', () => annoncer('Ta licence s’ouvre ici (page ⑤) : le Game Master la scanne pour confirmer ton Clear.', 'Licence'));
+
+// ---------- Fiche « Déclarer le Clear » ----------
+function ouvrirFiche(html) { $('#fiche').innerHTML = html; $('#fond').hidden = false; $('#fiche').querySelector('button')?.focus({ preventScroll: true }); }
+function fermerFiche() { $('#fond').hidden = true; }
+$('#fond').addEventListener('click', (e) => { if (e.target === $('#fond')) fermerFiche(); });
+$('#btn-clear').addEventListener('click', () => {
+  ouvrirFiche(`<h2 id="fiche-titre">Déclarer le Clear</h2>
+    <div class="gi-dialogue"><span class="a-qui or">Greed Island</span><p class="a-texte">Tes 14 cartes désignées sont en place. Ton Book sera scellé jusqu’à ce que le Game Master vérifie ta licence.</p></div>
+    <div class="actions"><button class="btn-clear" id="f-declarer">Déclarer le Clear</button><button class="btn-trait" id="f-annuler">Pas encore</button></div>`);
+  $('#f-annuler').addEventListener('click', fermerFiche);
+  $('#f-declarer').addEventListener('click', () => {
+    fermerFiche();
+    // RG-13.1 : une contrefaçon fait refuser la demande ; on dit la page, jamais la carte.
+    if (S.faux) { annoncer('Une contrefaçon se cache en page 2 : le Clear est refusé.', 'Clear refusé', 'rouge'); vibrer([60, 60, 60]); return; }
+    cineSceau();
+  });
+});
+
+// ---------- Mécanique des cinématiques ----------
+const cine = $('#cine');
+let anims = [], attentes = new Set(), saute = false, phase = 'repos', attenteToucher = null, revelA = 0;
+// L'opacité finale est aussi posée en style (leçon des pages ⑧ et ⑪ : sur certains téléphones, le `fill` ne tient pas).
+const A = (el, k, o) => {
+  const a = el.animate(k, { fill: 'both', easing: 'cubic-bezier(.16,1,.3,1)', ...o, duration: reduit || saute ? 1 : o.duration, delay: reduit || saute ? 0 : o.delay || 0 });
+  anims.push(a);
+  const fin = k[k.length - 1];
+  if (fin.opacity !== undefined) el.style.opacity = String(fin.opacity);
+  return a;
+};
+function pause(ms) { return new Promise((res) => { if (saute || reduit) return res(); const f = () => { clearTimeout(t); attentes.delete(f); res(); }; const t = setTimeout(f, ms); attentes.add(f); }); }
+const finAnim = (a) => a.finished.catch(() => {});
+function sauter() { if (saute) return; saute = true; [...attentes].forEach((f) => f()); anims.forEach((a) => { try { a.finish(); } catch {} }); }
+function taper(el, texte) {
+  el.textContent = '';
+  if (reduit || saute) { el.textContent = texte; return Promise.resolve(); }
+  return new Promise((res) => { let n = 0; const pas = () => { if (saute) { el.textContent = texte; return res(); } el.textContent = texte.slice(0, ++n); n >= texte.length ? res() : setTimeout(pas, 22); }; pas(); });
+}
+function toucher() { return new Promise((res) => { attenteToucher = res; }); }
+cine.addEventListener('pointerdown', (e) => {
+  if (e.target.closest('button')) return;
+  if (phase === 'intro' || (phase === 'revele' && !attenteToucher)) sauter();
+  else if (phase === 'revele' && attenteToucher && performance.now() - revelA > 350) { const r = attenteToucher; attenteToucher = null; r(); }
+});
+addEventListener('keydown', (e) => { if (cine.classList.contains('joue') && ['Enter', ' ', 'Escape'].includes(e.key)) { e.preventDefault(); cine.dispatchEvent(new PointerEvent('pointerdown')); } });
+const els = () => ({ nuit: $('#c-nuit'), lignes: $('#c-lignes'), rayons: $('#c-rayons'), book: $('#c-book'), volume: $('#c-volume'), couv: $('#c-couv'), dos: $('#c-couv-dos'), sceau: $('#c-sceau'), g: $('#c-g'), d: $('#c-d'), compte: $('#c-compte'), cri: $('#c-cri'), flash: $('#c-flash'), dlg: $('#c-dialogue') });
+function ouvrirCine(sombre = false) {
+  anims.forEach((a) => a.cancel()); anims = []; parts = []; ondes = []; saute = false; pluie = 0;
+  const e = els();
+  Object.values(e).forEach((x) => (x.style.opacity = '0'));
+  [e.volume, e.couv, e.dos, e.book].forEach((x) => (x.style.opacity = ''));
+  e.book.style.opacity = '0';
+  e.nuit.classList.toggle('sombre', sombre);
+  e.couv.style.transform = ''; e.dos.style.transform = '';
+  $('#c-texte').textContent = ''; $('#c-indice').classList.remove('visible'); $('#c-actions').hidden = true; $('#c-indice').hidden = false;
+  $('#c-slots').innerHTML = '';
+  cine.classList.add('joue', 'intro'); cine.setAttribute('aria-hidden', 'false');
+  phase = 'intro';
+  $('#annonce').classList.remove('visible');
+  return e;
+}
+async function fermerCine() {
+  const e = els();
+  await finAnim(A(cine, [{ opacity: 1 }, { opacity: 0 }], { duration: 300 }));
+  cine.classList.remove('joue', 'intro'); cine.setAttribute('aria-hidden', 'true'); cine.style.opacity = '';
+  anims.forEach((a) => a.cancel()); anims = []; phase = 'repos'; pluie = 0;
+}
+async function dire(e, qui, texte, indice = 'Touche pour continuer', classe = 'or') {
+  cine.classList.remove('intro'); phase = 'revele'; saute = false;
+  $('#c-qui').textContent = qui; $('#c-qui').className = `a-qui ${classe}`;
+  if (getComputedStyle(e.dlg).opacity === '0' || e.dlg.style.opacity === '0') A(e.dlg, [{ opacity: 0, translate: '-50% 20px' }, { opacity: 1, translate: '-50% 0' }], { duration: 300 });
+  $('#c-indice').classList.remove('visible');
+  await taper($('#c-texte'), texte);
+  $('#c-indice').textContent = indice; $('#c-indice').classList.add('visible');
+  revelA = performance.now();
+  await toucher();
+}
+
+// ---------- 1. Clear déclaré : le Book se ferme, le sceau doré s'imprime ----------
+async function cineSceau() {
+  const e = ouvrirCine(true);
+  vibrer([30, 40, 30]);
+  A(e.nuit, [{ opacity: 0 }, { opacity: 0.92 }], { duration: 300 });
+  A(e.book, [{ opacity: 0, transform: 'translateY(30%) scale(.8)' }, { opacity: 1, transform: 'none' }], { duration: 560 });
+  await pause(700);
+  // Le sceau tombe et s'écrase sur la couverture.
+  e.sceau.innerHTML = sceau();
+  A(e.sceau, [{ opacity: 0, scale: 2.4 }, { opacity: 1, scale: 0.94, offset: 0.7 }, { opacity: 1, scale: 1 }], { duration: 380, easing: 'cubic-bezier(.3,1.5,.5,1)' });
+  await pause(270);
+  const [x, y] = centre(e.sceau);
+  onde(x, y, '#ffd877', 0.7); etincelles(x, y, 40, '#ffd877', 0.6); vibrer(120);
+  if (!reduit && !saute) try { cine.animate([{ translate: '0 0' }, { translate: '-6px 4px' }, { translate: '5px -3px' }, { translate: '0 0' }], { duration: 240 }); } catch {}
+  await pause(600);
+  S.etat = 'declare'; dessiner();
+  await dire(e, 'Greed Island', 'Book complet ! Ton Book est scellé : plus rien ne peut le toucher. Va voir le Game Master et montre-lui ta licence.', 'Touche pour fermer');
+  await fermerCine();
+}
+
+// ---------- 2. Refus du GM : le sceau se brise ----------
+async function cineRefus(motif) {
+  const e = ouvrirCine(true);
+  A(e.nuit, [{ opacity: 0 }, { opacity: 0.92 }], { duration: 300 });
+  A(e.book, [{ opacity: 0 }, { opacity: 1 }], { duration: 300 });
+  e.sceau.innerHTML = sceau(); e.sceau.style.opacity = '1';
+  await pause(600);
+  // Une fêlure, puis les deux moitiés tombent chacune de leur côté.
+  if (!reduit && !saute) try { e.sceau.animate([{ translate: '-50% -50%' }, { translate: 'calc(-50% - 3px) -50%' }, { translate: 'calc(-50% + 3px) -50%' }, { translate: '-50% -50%' }], { duration: 200, iterations: 2 }); } catch {}
+  vibrer([30, 30, 30]);
+  await pause(420);
+  e.g.innerHTML = sceau(); e.d.innerHTML = sceau(); e.sceau.style.opacity = '0';
+  const [x, y] = centre(e.sceau);
+  etincelles(x, y, 24, '#c99a2a', 0.5, 600); vibrer(90);
+  A(e.g, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translate(-40%, 120%) rotate(-40deg)' }], { duration: 900, easing: 'cubic-bezier(.5,0,.8,.6)' });
+  A(e.d, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translate(40%, 120%) rotate(35deg)' }], { duration: 900, easing: 'cubic-bezier(.5,0,.8,.6)' });
+  await pause(700);
+  S.etat = 'complet'; dessiner();
+  await dire(e, 'Clear refusé', `${motif} Ton Book est dégelé : tu peux de nouveau jouer.`, 'Touche pour fermer', 'rouge');
+  await fermerCine();
+}
+
+// ---------- 3. Clear confirmé : le Book en gloire ----------
+async function cineGloire() {
+  const e = ouvrirCine(false);
+  vibrer([60, 40, 60, 40, 200]);
+  // La nuit dorée ; le Book monte du bas, tourne, se pose au centre.
+  A(e.nuit, [{ opacity: 0 }, { opacity: 1 }], { duration: 400 });
+  A(e.lignes, [{ opacity: 0, scale: 1.3 }, { opacity: 0.16, scale: 1 }], { duration: 600 });
+  e.sceau.innerHTML = sceau(); e.sceau.style.opacity = '1';
+  $('#c-slots').innerHTML = CARTES.map((c) => `<div class="slot"><div class="mini" style="opacity:0"><i class="r-${c.rang}">${num(c.n)}<em>${c.rang}</em></i><u></u></div><span class="lueur"></span></div>`).join('') + `<div class="slot embleme">${embleme}</div>`;
+  $('#c-n').textContent = `0/${CARTES.length}`;
+  A(e.book, [{ opacity: 1, transform: `translateY(${innerHeight * 0.6}px) rotateX(30deg) rotateZ(-12deg) scale(.7)` }, { opacity: 1, transform: 'translateY(-4%) rotateZ(3deg) scale(1.04)', offset: 0.75 }, { opacity: 1, transform: 'none' }], { duration: 900, easing: 'cubic-bezier(.2,.8,.3,1)' });
+  await pause(950);
+  // Le sceau fond en lumière, la couverture s'ouvre.
+  let [bx, by] = centre(e.book);
+  A(e.sceau, [{ opacity: 1, filter: 'brightness(1)' }, { opacity: 0, filter: 'brightness(3)', scale: 1.3 }], { duration: 420 });
+  etincelles(bx, by, 50, '#ffd877', 0.7); vibrer(60);
+  await pause(300);
+  A(e.couv, [{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(-168deg)' }], { duration: 760, easing: 'cubic-bezier(.5,0,.25,1)' });
+  A(e.dos, [{ transform: 'rotateY(180deg)' }, { transform: 'rotateY(12deg)' }], { duration: 760, easing: 'cubic-bezier(.5,0,.25,1)' });
+  A(e.rayons, [{ opacity: 0, scale: 0.4 }, { opacity: 0.55, scale: 1 }], { duration: 800 });
+  await pause(780);
+  // Les pochettes s'allument une à une, de plus en plus vite ; le compteur monte.
+  A(e.compte, [{ opacity: 0 }, { opacity: 1 }], { duration: 200 });
+  const slots = [...document.querySelectorAll('#c-slots .slot:not(.embleme)')];
+  for (let i = 0; i < slots.length; i++) {
+    const s = slots[i];
+    s.classList.add('allume');
+    s.querySelector('.mini').style.opacity = '1';
+    A(s.querySelector('.lueur'), [{ opacity: 1 }, { opacity: 0 }], { duration: 500, easing: 'ease-out' });
+    A(s, [{ scale: 1.18 }, { scale: 1 }], { duration: 260, easing: 'cubic-bezier(.3,1.5,.5,1)' });
+    const [x, y] = centre(s);
+    if (!saute) etincelles(x, y, 8, '#ffd877', 0.25);
+    $('#c-n').textContent = `${i + 1}/${slots.length}`;
+    $('#c-compte').innerHTML = `Cartes désignées <b>${i + 1}</b> / ${slots.length}`;
+    vibrer(12);
+    await pause(Math.max(70, 210 - i * 12));
+  }
+  // La dernière : éclat, onde, « CLEAR ! » frappé en or.
+  await pause(220);
+  [bx, by] = centre(e.book);
+  A(e.flash, [{ opacity: 0.85 }, { opacity: 0 }], { duration: 520, easing: 'ease-out' });
+  onde(bx, by, '#fff1c9', 1.6); etincelles(bx, by, 90, '#ffd877', 1.1); etincelles(bx, by, 40, '#ffffff', 0.9);
+  vibrer([150, 60, 300]);
+  if (!reduit && !saute) try { cine.animate([{ translate: '0 0' }, { translate: '-9px 5px' }, { translate: '7px -4px' }, { translate: '-3px 2px' }, { translate: '0 0' }], { duration: 300 }); } catch {}
+  $('#c-l2').textContent = 'Gon réunit les 14 cartes !';
+  // Le Book descend un peu pour laisser la place au cri.
+  A(e.book, [{ transform: 'none' }, { transform: 'translateY(9%) scale(.8)' }], { duration: 420 });
+  A(e.cri, [{ opacity: 0, scale: 2.6 }, { opacity: 1, scale: 1 }], { duration: 340, easing: 'cubic-bezier(.3,1.5,.5,1)' });
+  A(e.rayons, [{ opacity: 0.55, rotate: '0deg' }, { opacity: 0.85, rotate: '30deg' }], { duration: 3000, easing: 'linear' });
+  pluie = performance.now() + (reduit ? 0 : 9000); lancerBoucle();
+  A(e.compte, [{ opacity: 1 }, { opacity: 0 }], { duration: 300, delay: 600 });
+  await pause(1500);
+  // La voix du jeu, puis le choix des lots.
+  await dire(e, 'Greed Island', 'Félicitations, Gon ! Tu as réuni les 14 cartes désignées. La partie est terminée : tu as gagné le Clear !');
+  await dire(e, 'Greed Island', 'Choisis maintenant 3 cartes de ton Book : elles deviennent les lots que l’organisateur te remettra.', 'Touche pour choisir tes lots');
+  S.etat = 'gagne'; aller('lots');
+  await fermerCine();
+}
+
+// ---------- 4. Les autres joueurs : « CLEAR ! » plein écran ----------
+async function cineAutre() {
+  const e = ouvrirCine(true);
+  vibrer([200, 100, 200]);
+  A(e.nuit, [{ opacity: 0 }, { opacity: 1 }], { duration: 400 });
+  A(e.lignes, [{ opacity: 0, scale: 1.3 }, { opacity: 0.16, scale: 1 }], { duration: 600 });
+  await pause(500);
+  $('#c-l2').textContent = 'Gon a réuni toutes les cartes désignées';
+  e.cri.style.top = '30%';
+  A(e.cri, [{ opacity: 0, scale: 2.6 }, { opacity: 1, scale: 1 }], { duration: 340, easing: 'cubic-bezier(.3,1.5,.5,1)' });
+  await pause(240);
+  const [x, y] = centre(e.cri);
+  onde(x, y, '#ffd877', 1.3); etincelles(x, y, 70, '#ffd877', 1); vibrer(140);
+  A(e.rayons, [{ opacity: 0, scale: 0.6 }, { opacity: 0.45, scale: 1 }], { duration: 700 });
+  await pause(1300);
+  await dire(e, 'Greed Island', 'Gon a réussi le Clear. La partie est terminée : place au classement final.', 'Touche pour voir le classement');
+  e.cri.style.top = '';
+  S.etat = 'termine'; aller('fin');
+  await fermerCine();
+}
+
+// ---------- 5. Choix des 3 lots ----------
+function dessinerLots() {
+  $('#sceaux').innerHTML = [0, 1, 2].map((i) => {
+    const c = CARTES[S.choix[i]];
+    return `<button class="sceau-lot${c ? ' plein' : ''}" data-i="${i}" ${c ? '' : 'disabled'} aria-label="${c ? `Lot ${i + 1} : ${c.nom}, toucher pour revoir` : `Lot ${i + 1} : vide`}"><span class="rond" id="rond-${i}">${c ? num(c.n) : i + 1}</span><small class="${c ? '' : 'vide'}">${c ? c.nom : 'à choisir'}</small></button>`;
+  }).join('');
+  $('#sceaux').querySelectorAll('[data-i]').forEach((b) => b.addEventListener('click', () => ficheCarte(S.choix[+b.dataset.i])));
+  const plein = S.choix.length === 3;
+  $('#grille').innerHTML = CARTES.map((c, k) => {
+    const rang = S.choix.indexOf(k);
+    return `<button class="choix-carte${rang >= 0 ? ' pris' : plein ? ' grise' : ''}" data-k="${k}" aria-label="${c.nom}${rang >= 0 ? `, lot ${rang + 1}` : ''}">${rang >= 0 ? `<span class="badge">${rang + 1}</span>` : ''}${carteHTML(c)}<span class="lot-court">${c.lot ?? 'Lot à voir avec l’organisateur'}</span></button>`;
+  }).join('');
+  $('#grille').querySelectorAll('[data-k]').forEach((b) => b.addEventListener('click', () => ficheCarte(+b.dataset.k)));
+  const reste = 3 - S.choix.length;
+  $('#valider').disabled = reste > 0;
+  $('#valider').textContent = reste > 0 ? `Choisis encore ${reste} carte${reste > 1 ? 's' : ''}` : 'Valider mes 3 lots';
+}
+function ficheCarte(k) {
+  const c = CARTES[k], rang = S.choix.indexOf(k), plein = S.choix.length === 3;
+  ouvrirFiche(`<div class="fiche-lot" style="display:grid;gap:14px"><div class="grande">${carteHTML(c)}</div>
+    <h2 id="fiche-titre">${num(c.n)} ${c.nom}</h2>
+    <div class="ticket${c.lot ? '' : ' sans'}"><span>LOT RÉEL</span><b>${c.lot ?? 'Lot à voir avec l’organisateur'}</b></div>
+    <div class="actions">${rang >= 0 ? `<button class="btn-trait" id="f-retirer">Retirer du lot ${rang + 1}</button>` : plein ? `<p class="aide">Tes 3 lots sont choisis : retire d’abord une carte pour prendre celle-ci.</p>` : `<button class="btn-encre" id="f-choisir">Choisir comme lot ${S.choix.length + 1}</button>`}<button class="btn-trait" id="f-fermer">Fermer</button></div></div>`);
+  $('#f-fermer').addEventListener('click', fermerFiche);
+  $('#f-retirer')?.addEventListener('click', () => { S.choix.splice(rang, 1); fermerFiche(); dessinerLots(); });
+  $('#f-choisir')?.addEventListener('click', () => {
+    S.choix.push(k); fermerFiche(); dessinerLots();
+    const r = $(`#rond-${S.choix.length - 1}`);
+    r.classList.add('frappe');
+    const [x, y] = centre(r); etincelles(x, y, 22, '#ffd877', 0.4); vibrer(40);
+  });
+}
+$('#valider').addEventListener('click', () => {
+  ouvrirFiche(`<h2 id="fiche-titre">Valider tes 3 lots ?</h2>
+    <div class="gi-dialogue"><span class="a-qui or">Greed Island</span><p class="a-texte">C’est définitif : ${S.choix.map((k) => CARTES[k].nom).join(', ').replace(/, ([^,]*)$/, ' et $1')} deviennent tes lots.</p></div>
+    <div class="actions"><button class="btn-encre" id="f-ok">Oui, valider</button><button class="btn-trait" id="f-revoir">Revoir mon choix</button></div>`);
+  $('#f-revoir').addEventListener('click', fermerFiche);
+  $('#f-ok').addEventListener('click', () => { fermerFiche(); S.valide = true; dessinerRecap(); aller('recap'); vibrer([40, 40, 120]); const t = $('.tampon-clear'); if (t) { const [x, y] = centre(t); onde(x, y, '#ffd877', 0.7); etincelles(x, y, 50, '#ffd877', 0.7); } });
+});
+function dessinerRecap() {
+  $('#recap').innerHTML = S.choix.map((k, i) => { const c = CARTES[k]; return `<div class="ligne"><span class="rond">${i + 1}</span>${carteHTML(c)}<p><span>${num(c.n)} ${c.nom}</span><b>${c.lot ?? 'Lot à voir avec l’organisateur'}</b></p></div>`; }).join('')
+    + `<div class="tampon-clear">${tampon(['CLEAR · GON', 'partie du 15/10 · 0:22:40'])}</div>`;
+}
+$('#vers-fin').addEventListener('click', () => aller('fin'));
+
+// ---------- Commandes du prototype ----------
+function remettre() { fermerFiche(); S.choix = []; S.valide = false; }
+$('#p-book').addEventListener('click', () => { remettre(); S.etat = 'complet'; aller('book'); });
+$('#p-faux').addEventListener('click', (e) => { S.faux = !S.faux; e.currentTarget.setAttribute('aria-pressed', String(S.faux)); });
+$('#p-refus').addEventListener('click', () => { if (S.etat !== 'declare') { annoncer('D’abord : Gon déclare le Clear (bouton « Clear ! » du Book).', 'Prototype'); return; } cineRefus('Le Game Master a refusé ton Clear : une carte de ton Book n’est pas celle du catalogue.'); });
+$('#p-confirme').addEventListener('click', () => { remettre(); if (S.etat !== 'declare') { S.etat = 'declare'; dessiner(); } dessinerLots(); cineGloire(); });
+$('#p-autre').addEventListener('click', () => { remettre(); cineAutre(); });
+$('#p-accueil').addEventListener('click', () => { if (S.etat === 'termine' || S.etat === 'gagne') return; aller('accueil'); });
+
+dessinerLots();
+aller('book');
+</script>

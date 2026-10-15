@@ -126,7 +126,7 @@ Nos effets ne changent pas (règles RG-10) ; seuls les noms affichés changent. 
 |---|---|---|---|---|
 | Vol | **Vol** | Thief | 1007 | Vole une carte au hasard dans les emplacements fixes de la cible |
 | Échange forcé | **Échange** | Trade | 1008 | Échange une de tes cartes contre une des siennes au hasard |
-| Gel | **Gel** (création) | — | — | Aucun équivalent : l'anime n'a aucun sort qui entrave un joueur |
+| Gel | **Gel** (création ; image de Stone Throw 1028) | — | — | Aucun équivalent : l'anime n'a aucun sort qui entrave un joueur |
 | Barrière | **Mur défensif** | Defensive Wall | 1003 | Pare une fois un sort offensif |
 | Radar | **Trace** | Trace | 1027 | Position d'un joueur (chez nous : sa zone) |
 | Révélation | **Guide** | Guidepost | 1030 | Lieu d'un objet (chez nous : la zone d'une balise rare) |
@@ -151,9 +151,9 @@ Sorts ajoutés par les amendements du 2026-10-10 (REGLES.md) :
 | Voile d'ombre (objet) | **Rideau noir** (sort 1025) | Blackout Curtain |
 | Coffre scellé (objet) | **Solidité** (sort 1035) | Fortress |
 | Ticket de la Fortune (objet) | **Loterie** (sort 1032) | Lottery |
-| Pépite d'or (objet) | **Pépite d'or** (création ; l'anime a une carte « 10 000 J ») | J10,000 |
-| Boussole du chercheur (objet) | **Boussole** (création) | — |
-| Second souffle (objet) | **Second souffle** (création) | — |
+| Pépite d'or (objet) | **Pépite d'or** (création ; image de la carte 607 « 10000J ») | J10,000 |
+| Boussole du chercheur (objet) | **Boussole** (création ; image de Magnetic Force 1005) | — |
+| Second souffle (objet) | **Second souffle** (création ; image de Recycle 1037) | — |
 | Pouvoir Bandit (Spécialisation) | **L'épée du vol** (carte 094) | Bandit's Blade |
 | Texture Surprise (Transformation) | **Texture Surprise** (pouvoir de Hisoka) | Texture Surprise |
 | Book | **Classeur** (on l'invoque en disant « Book ») | Binder |

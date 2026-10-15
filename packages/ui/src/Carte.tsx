@@ -15,14 +15,24 @@ const IMAGES = import.meta.glob<string>('./cartes/*.webp', { eager: true, query:
 const imageNumero = (n: number): string | null => IMAGES[`./cartes/${n >= 1000 ? n : String(n).padStart(3, '0')}.webp`] ?? null;
 
 /**
+ * Créations sans numéro de l'anime : illustration empruntée à une carte de l'anime, retrouvée par le nom.
+ * Gel ← Stone Throw (1028), Boussole ← Magnetic Force (1005), Second souffle ← Recycle (1037), Pépite ← 10000J (607).
+ */
+const CREATIONS: Record<string, string> = { gel: 'gel', 'boussole du chercheur': 'boussole', 'second souffle': 'souffle', "pépite d'or": 'pepite' };
+const imageCreation = (nom: string): string | null => {
+  const f = CREATIONS[nom.toLowerCase().replace(/’/g, "'").trim()];
+  return f ? (IMAGES[`./cartes/${f}.webp`] ?? null) : null;
+};
+
+/**
  * Illustration d'une carte, ou `null` (filigrane). Une carte désignée n'a son image que si elle est bien celle de la
  * banque à ce numéro (un catalogue composé à la main peut numéroter ses cartes 001..N, RG-8.1) ; une contrefaçon
  * démasquée (« Contrefaçon de … ») garde l'image de la carte imitée. Sorts et objets : numéro de l'anime (1001 et plus).
  */
 export function imageCarte(genre: GenreCarte, numero: number | string | null | undefined, nom: string): string | null {
   const n = typeof numero === 'string' ? Number(numero) : numero;
-  if (n === null || n === undefined || !Number.isInteger(n)) return null;
-  if (genre !== 'designee') return n >= 1000 ? imageNumero(n) : null;
+  if (n === null || n === undefined || !Number.isInteger(n)) return genre === 'designee' ? null : imageCreation(nom);
+  if (genre !== 'designee') return n >= 1000 ? imageNumero(n) : imageCreation(nom);
   const b = BANQUE_CARTES.find((x) => x.numero === n);
   return b && nom.toLowerCase().includes(b.nom.toLowerCase()) ? imageNumero(n) : null;
 }

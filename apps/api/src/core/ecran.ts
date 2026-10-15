@@ -2,7 +2,7 @@
 // RG-10.12 : jamais de position exacte ; la heatmap est anonyme, arrondie et décalée de 2 min.
 import { announce, isActive, remainingMs } from '@gq/engine';
 import { and, desc, eq, gt, gte, isNotNull, lte } from 'drizzle-orm';
-import { balises, fil, joueurs, journal, zones, type Taches } from '../db/schema.js';
+import { balises, fil, journal, zones, type Taches } from '../db/schema.js';
 import { publicEvent } from '../routes/evenements.js';
 import { computeRanking, publicRanking } from './classement.js';
 import { zoneNames } from './evenements.js';
@@ -126,12 +126,17 @@ export async function ecranSnapshot(c: ActionCtx) {
   const vitrine = cat.cartes
     .filter((k) => k.designee && (k.rang === 'SS' || k.rang === 'S' || k.rang === 'A'))
     .map((k) => ({ numero: k.numero, nom: k.nom, rang: k.rang, limite: limites[k.rang], texte: k.texte }));
-  const arrivants = (await c.tx.select({ pseudo: joueurs.pseudo }).from(joueurs).where(eq(joueurs.partieId, p.id)).orderBy(desc(joueurs.inscritA)).limit(6)).map((j) => j.pseudo);
+  // Ordre du Journal : avant le démarrage, l'horloge de jeu est à 0 pour tous les inscrits.
+  const arrivants = (
+    await c.tx.select({ details: journal.details }).from(journal).where(and(eq(journal.partieId, p.id), eq(journal.action, 'inscription'))).orderBy(desc(journal.id)).limit(6)
+  ).map((l) => (l.details as { pseudo: string }).pseudo);
   return {
     partie: {
       id: p.id,
       nom: p.nom,
       etat: p.etat,
+      // Horloge de jeu (RG-4.4) : l'écran date le fil (« il y a 3 min »).
+      heureJeu: c.now,
       restantMs: p.demarreeA === null ? params.dureePartieMin * 60_000 : remainingMs(lifecycleOf(p), c.realNow, params.dureePartieMin * 60_000),
       zones: zs,
     },

@@ -115,7 +115,7 @@ describe('Écran géant : balises en halos (amendement RG-6.5 du 2026-10-15)', (
     expect(e.vitrine.length).toBeGreaterThan(0);
     for (const k of e.vitrine) expect(['SS', 'S', 'A']).toContain(k.rang);
     expect(e.vitrine[0]).toMatchObject({ numero: expect.any(Number), nom: expect.any(String), limite: expect.any(Number) });
-    expect([...e.arrivants].sort()).toEqual(['Gon', 'Kirua']); // inscrits au même instant dans le test
+    expect(e.arrivants).toEqual(['Kirua', 'Gon']); // le dernier entré d'abord
   });
 });
 

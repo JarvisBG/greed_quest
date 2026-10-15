@@ -520,9 +520,10 @@ function activerSon(on) {
   else if ('speechSynthesis' in window) speechSynthesis.cancel();
   const b = $('#p-son'); if (b) { b.setAttribute('aria-pressed', String(on)); b.textContent = on ? 'Son activé' : 'Son coupé'; }
 }
-// Les phrases sont enregistrées à l'avance (voix neuronale Rémy, edge-tts : voix/generer.py) et jouées à la suite,
+// Les phrases sont enregistrées à l'avance (edge-tts : Henri en français, « Greed Island » par Rémy en anglais ; voix/generer.py)
+// et jouées à la suite,
 // sans se couper. Une phrase absente de l'enregistrement est dite par la voix du navigateur, en secours.
-const VOIX = {"Bienvenue dans Greed Island !":"000.mp3","Carte rare ! Biscuit a tiré « Le bonheur du détenteur ». Rang double S !":"001.mp3","Carte rare ! Kurapika a tiré « Le souffle du grand ange ». Rang S !":"002.mp3","Jarvis a parlé !":"003.mp3","Gon reçoit Blue planet par Décret. Quatre Hunters sont gelés.":"004.mp3","Le Sceau d'Ange ! Leolio a scellé le Book de Kurapika.":"005.mp3","Alerte ! La Brigade attaque ! Tous les Hunters au combat !":"006.mp3","La Brigade est vaincue ! Bravo les Hunters !":"007.mp3","La Brigade s'est enfuie.":"008.mp3","Clear ! Kirua a réuni les 30 cartes désignées !":"009.mp3","Fin de la partie !":"010.mp3","Évènement ! Pluie de cartes dans la zone Forêt !":"011.mp3","Évènement ! Double gain dans la zone Prairie !":"012.mp3","Évènement ! Une carte maudite circule !":"013.mp3","Phase finale ! Les dernières minutes commencent !":"014.mp3","La partie est en pause.":"015.mp3","Reprise de la partie !":"016.mp3","Troisième : Kirua.":"017.mp3","Deuxième : Kirua.":"018.mp3","Et la victoire revient à Kirua !":"019.mp3","Kirua prend la tête !":"020.mp3","Dépassement ! Kirua gagne une place !":"021.mp3","Troisième : Gon.":"022.mp3","Deuxième : Gon.":"023.mp3","Et la victoire revient à Gon !":"024.mp3","Gon prend la tête !":"025.mp3","Dépassement ! Gon gagne une place !":"026.mp3","Troisième : Biscuit.":"027.mp3","Deuxième : Biscuit.":"028.mp3","Et la victoire revient à Biscuit !":"029.mp3","Biscuit prend la tête !":"030.mp3","Dépassement ! Biscuit gagne une place !":"031.mp3","Troisième : Kurapika.":"032.mp3","Deuxième : Kurapika.":"033.mp3","Et la victoire revient à Kurapika !":"034.mp3","Kurapika prend la tête !":"035.mp3","Dépassement ! Kurapika gagne une place !":"036.mp3","Troisième : Leolio.":"037.mp3","Deuxième : Leolio.":"038.mp3","Et la victoire revient à Leolio !":"039.mp3","Leolio prend la tête !":"040.mp3","Dépassement ! Leolio gagne une place !":"041.mp3","Troisième : Hisoka.":"042.mp3","Deuxième : Hisoka.":"043.mp3","Et la victoire revient à Hisoka !":"044.mp3","Hisoka prend la tête !":"045.mp3","Dépassement ! Hisoka gagne une place !":"046.mp3","Troisième : Knuckle.":"047.mp3","Deuxième : Knuckle.":"048.mp3","Et la victoire revient à Knuckle !":"049.mp3","Knuckle prend la tête !":"050.mp3","Dépassement ! Knuckle gagne une place !":"051.mp3","Troisième : Shoot.":"052.mp3","Deuxième : Shoot.":"053.mp3","Et la victoire revient à Shoot !":"054.mp3","Shoot prend la tête !":"055.mp3","Dépassement ! Shoot gagne une place !":"056.mp3","Troisième : Palm.":"057.mp3","Deuxième : Palm.":"058.mp3","Et la victoire revient à Palm !":"059.mp3","Palm prend la tête !":"060.mp3","Dépassement ! Palm gagne une place !":"061.mp3","Troisième : Morel.":"062.mp3","Deuxième : Morel.":"063.mp3","Et la victoire revient à Morel !":"064.mp3","Morel prend la tête !":"065.mp3","Dépassement ! Morel gagne une place !":"066.mp3","Troisième : Ikalgo.":"067.mp3","Deuxième : Ikalgo.":"068.mp3","Et la victoire revient à Ikalgo !":"069.mp3","Ikalgo prend la tête !":"070.mp3","Dépassement ! Ikalgo gagne une place !":"071.mp3","Troisième : Melody.":"072.mp3","Deuxième : Melody.":"073.mp3","Et la victoire revient à Melody !":"074.mp3","Melody prend la tête !":"075.mp3","Dépassement ! Melody gagne une place !":"076.mp3","Kite entre dans Greed Island !":"077.mp3","Goreinu entre dans Greed Island !":"078.mp3","Tsezgerra entre dans Greed Island !":"079.mp3","Bara entre dans Greed Island !":"080.mp3","Ging entre dans Greed Island !":"081.mp3","Razor entre dans Greed Island !":"082.mp3","Genthru entre dans Greed Island !":"083.mp3","Nobunaga entre dans Greed Island !":"084.mp3"};
+const VOIX = {"Bienvenue dans Greed Island !":"000.mp3","Un nouveau joueur entre dans Greed Island !":"001.mp3","Carte rare ! Un joueur a tiré une carte de rang double S !":"002.mp3","Carte rare ! Un joueur a tiré une carte de rang S !":"003.mp3","Jarvis a parlé !":"004.mp3","Un joueur reçoit une carte par Décret. Les joueurs autour de lui sont gelés.":"005.mp3","Le Sceau d'Ange ! Un joueur a scellé le Book d'un autre joueur.":"006.mp3","Alerte ! La Brigade attaque ! Tous les Hunters au combat !":"007.mp3","La Brigade est vaincue ! Bravo les Hunters !":"008.mp3","La Brigade s'est enfuie.":"009.mp3","Clear ! Un joueur a réuni toutes les cartes désignées !":"010.mp3","Fin de la partie !":"011.mp3","Troisième place !":"012.mp3","Deuxième place !":"013.mp3","Et voici le vainqueur !":"014.mp3","Un joueur prend la tête !":"015.mp3","Dépassement ! Un joueur gagne une place !":"016.mp3","Évènement ! Pluie de cartes !":"017.mp3","Évènement ! Double gain !":"018.mp3","Évènement ! Une carte maudite circule !":"019.mp3","Phase finale ! Les dernières minutes commencent !":"020.mp3","La partie est en pause.":"021.mp3","Reprise de la partie !":"022.mp3"};
 let fileVoix = Promise.resolve();
 function jouerFichier(f) {
   return new Promise((fini) => { const a = new Audio('voix/' + f); a.onended = fini; a.onerror = fini; a.play().catch(fini); });
@@ -713,7 +714,7 @@ function dessinerCourse(monte) {
   trier();
   if (monte && ordre.length) {
     const avantI = ordre.indexOf(monte), apresI = joueurs.findIndex((j) => j.p === monte);
-    if (avantI !== -1 && apresI < avantI) { bruiter('souffle', 600); dire(apresI === 0 ? `${monte} prend la tête !` : `Dépassement ! ${monte} gagne une place !`, { delai: 700 }); }
+    if (avantI !== -1 && apresI < avantI) { bruiter('souffle', 600); dire(apresI === 0 ? 'Un joueur prend la tête !' : 'Dépassement ! Un joueur gagne une place !', { delai: 700 }); }
   }
   piste.innerHTML = joueurs.slice(0, 8).map((j, i) => `<div class="couloir c${i + 1}${i < 3 ? ` m${i + 1}` : ''}" data-p="${j.p}" style="--k:${j.n / N}"><span class="cr">${i + 1}</span><span class="cn">${j.p}</span><div class="voie"><i class="trace"></i><span class="pion"><b>${j.n}</b></span></div></div>`).join('');
   const k = ecran.getBoundingClientRect().height / 1080;
@@ -884,7 +885,7 @@ function evenementCommence() {
     c.innerHTML = `<div class="boite${e.maudite ? ' nuit' : ''}"><b>${e.type}</b><span>${e.zone ? `${e.zone} · ` : ''}${e.phrase} · ${Math.round(e.fin / 60)} min</span></div>`;
     c.classList.add('on');
     bruiter('impact');
-    dire(`Évènement ! ${e.type}${e.zone ? ` dans la zone ${e.zone}` : ''} !`, { delai: 200 });
+    dire(`Évènement ! ${e.type} !`, { delai: 200 });
     A($('.boite', c), [{ transform: 'rotate(-14deg) scale(2)', opacity: 0 }, { transform: 'rotate(-3deg) scale(1)', opacity: 1 }], { duration: 450, easing: 'cubic-bezier(.2,1.5,.4,1)' });
     await attendre(3800);
     await A($('.boite', c), [{ transform: 'rotate(-3deg)', opacity: 1 }, { transform: 'rotate(-3deg) translateY(-500px) scale(.3)', opacity: 0 }], { duration: 600, easing: 'cubic-bezier(.6,0,.8,.4)' }).finished;
@@ -912,7 +913,7 @@ async function nouvelInscrit() {
   entreeEnCours = true;
   const nom = ATTENTE.shift() ?? `Hunter ${inscrits.length + 1}`;
   const e = $('#entree'); $('#entree-nom').textContent = nom; e.classList.add('on');
-  bruiter('souffle'); dire(`${nom} entre dans Greed Island !`, { delai: 300 });
+  bruiter('souffle'); dire('Un nouveau joueur entre dans Greed Island !', { delai: 300 });
   A(e, [{ transform: 'translateY(-50%) rotate(-3deg) translateX(110%)' }, { transform: 'translateY(-50%) rotate(-3deg)' }], { duration: 600 });
   await attendre(2600);
   await A(e, [{ transform: 'translateY(-50%) rotate(-3deg)', opacity: 1 }, { transform: 'translateY(-50%) rotate(-3deg) translateX(-110%)', opacity: 1 }], { duration: 500, easing: 'cubic-bezier(.6,0,.8,.4)' }).finished;
@@ -981,7 +982,7 @@ function cineTirage(num, pseudo) {
   return async () => {
     const c = CARTES[num];
     bruiter('souffle'); bruiter('impact', 900); bruiter('eclat', 950);
-    dire(`Carte rare ! ${pseudo} a tiré « ${c.nom} ». Rang ${rangDit(c.rang)} !`, { delai: 1000 });
+    dire(`Carte rare ! Un joueur a tiré une carte de rang ${rangDit(c.rang)} !`, { delai: 1000 });
     const lueur = c.rang === 'SS' ? 'rgba(246,220,133,.75)' : 'rgba(225,232,240,.65)';
     cine.innerHTML = `<div class="vitesse"></div><div class="c-tirage"><div class="porte" style="--lueur:${lueur}">${carteHTML(num)}</div><div class="txt"><span class="ligne-jeu" style="text-align:left">Le jeu annonce une carte rare</span><span class="nom-j" style="text-align:left">${pseudo}</span><span class="ligne-jeu" style="text-align:left">a tiré « ${c.nom} »</span><span class="rang-gros r-${c.rang}">Rang ${c.rang}</span></div></div>`;
     const carte = $('.porte .gi-carte', cine), txt = $$('.txt > *', cine);
@@ -997,7 +998,7 @@ function cineJarvis() {
     const carte = $('.gm-carte', cine), gros = $('.gros', cine), lignes = $$('.lignes p', cine);
     bruiter('gong', 1300);
     dire('Jarvis a parlé !', { delai: 1300, vitesse: 0.85, hauteur: 0.6 });
-    dire('Gon reçoit Blue planet par Décret. Quatre Hunters sont gelés.', { delai: 2600 });
+    dire('Un joueur reçoit une carte par Décret. Les joueurs autour de lui sont gelés.', { delai: 2600 });
     A(carte, [{ transform: 'translateY(500px) scale(.7)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 1200 });
     A(gros, [{ transform: 'scale(2.4)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }], { duration: 420, delay: 1300, easing: 'cubic-bezier(.2,1.4,.4,1)' });
     A($('.eclair', cine), [{ opacity: 0 }, { opacity: 0.9 }, { opacity: 0 }], { duration: 500, delay: 1300, easing: 'ease-out' });
@@ -1015,7 +1016,7 @@ function cineAnge() {
     const r = 420, L = Math.ceil(2 * Math.PI * r);
     cine.innerHTML = `<svg class="sceau-cercle" viewBox="-450 -450 900 900" aria-hidden="true" style="left:calc(50% - 900px);top:calc(50% - 450px)"><circle r="${r}" fill="none" stroke="#f4f4ef" stroke-width="6" stroke-dasharray="${L}" stroke-dashoffset="${L}" id="sc1"/><circle r="${r - 30}" fill="none" stroke="#d7b25a" stroke-width="3" stroke-dasharray="12 10" opacity="0" id="sc2"/></svg><div class="c-gm"><div class="gm-carte"><div class="gm-tete"><span>GM·02</span><span>GM</span></div><div class="gm-img"><img src="img-cartes/gm/ange.webp" alt=""><span class="gm-nom">Le Sceau d'Ange</span></div></div><div><div class="gros" style="font-size:128px">LE SCEAU<br>D'ANGE</div><div class="lignes"><p><b>Leolio</b> a scellé le Book de <b>Kurapika</b>.</p><p>Ni scan, ni sort, ni échange pendant <b>5 min</b>.</p></div></div></div>`;
     bruiter('impact', 1200);
-    dire("Le Sceau d'Ange ! Leolio a scellé le Book de Kurapika.", { delai: 1200, vitesse: 0.95 });
+    dire("Le Sceau d'Ange ! Un joueur a scellé le Book d'un autre joueur.", { delai: 1200, vitesse: 0.95 });
     A($('#sc1', cine), [{ strokeDashoffset: L }, { strokeDashoffset: 0 }], { duration: 1600, delay: 600, easing: 'cubic-bezier(.5,0,.3,1)' });
     A($('#sc2', cine), [{ opacity: 0, transform: 'rotate(0deg)' }, { opacity: 1, transform: 'rotate(40deg)' }], { duration: 2200, delay: 1400 });
     A($('.gm-carte', cine), [{ transform: 'translateY(-300px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 1100 });
@@ -1094,7 +1095,7 @@ function cineClear(pseudo) {
     cine.style.background = 'radial-gradient(circle, #4a360a 0%, #0c0c0e 70%)';
     cine.innerHTML = `<div class="vitesse"></div><div class="c-clear"><div class="sceau-clear">CLEAR</div><div class="nom-j" style="font-size:150px;color:var(--or-clair)">${pseudo}</div><div class="ligne-jeu">a réuni les ${N} cartes désignées</div></div>`;
     bruiter('impact', 480); bruiter('fanfare', 800);
-    dire(`Clear ! ${pseudo} a réuni les ${N} cartes désignées !`, { delai: 700, vitesse: 1 });
+    dire('Clear ! Un joueur a réuni toutes les cartes désignées !', { delai: 700, vitesse: 1 });
     A($('.sceau-clear', cine), [{ transform: 'scale(3) rotate(-30deg)', opacity: 0 }, { transform: 'scale(1) rotate(-8deg)', opacity: 1 }], { duration: 520, easing: 'cubic-bezier(.2,1.5,.4,1)' });
     setTimeout(() => { if (!calme) { secouer(); } }, 480);
     $$('.c-clear > :not(.sceau-clear)', cine).forEach((el, i) => A(el, [{ transform: 'translateY(40px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 700, delay: 900 + i * 400 }));
@@ -1116,7 +1117,7 @@ function cineFin() {
     cine.innerHTML = `<div class="vitesse"></div><div class="c-podium">${marche(b, 2)}${marche(a, 1)}${marche(c, 3)}</div>`;
     // Le podium se révèle du troisième au premier.
     bruiter('impact', 300); bruiter('impact', 1600); bruiter('impact', 3100); bruiter('fanfare', 3400);
-    dire(`Troisième : ${c.p}.`, { delai: 500 }); dire(`Deuxième : ${b.p}.`, { delai: 1800 }); dire(`Et la victoire revient à ${a.p} !`, { delai: 3300, vitesse: 0.95 });
+    dire('Troisième place !', { delai: 500 }); dire('Deuxième place !', { delai: 1800 }); dire('Et voici le vainqueur !', { delai: 3300, vitesse: 0.95 });
     [['.p3', 0], ['.p2', 1300], ['.p1', 2800]].forEach(([s, t]) => {
       const m = $(s, cine);
       A($('.bloc', m), [{ transform: 'scaleY(0)', transformOrigin: 'bottom' }, { transform: 'scaleY(1)', transformOrigin: 'bottom' }], { duration: 800, delay: t });

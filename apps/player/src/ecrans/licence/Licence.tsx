@@ -12,6 +12,8 @@ import { NENS } from '../../lib/format';
 import { calculerLicence, decalage, PERIODE_MS } from '../../lib/licence';
 import { IconeRetour } from '../Icones';
 import { QrCode } from '../QrCode';
+import { FiltrePinceau, Rature } from '../fin/Dessins';
+import { FiltreEncre } from '../masadora/Paquet';
 import { creerAura, type Aura } from './aura';
 
 const IMPRESSION_MS = 450;
@@ -24,6 +26,8 @@ export function Licence({
   nen,
   secret,
   onRetour,
+  sortie = null,
+  onQuitter,
 }: {
   partieId: string;
   joueurId: string;
@@ -31,6 +35,10 @@ export function Licence({
   nen: NenType | null;
   secret: string;
   onRetour: () => void;
+  /** Page ⑱ : abandon (licence rayée) ou partie terminée (plus de « Quitter la partie »). */
+  sortie?: 'abandon' | 'terminee' | null;
+  /** Page ⑱ : ouvre la fiche « Quitter la partie » (RG-5.7). */
+  onQuitter?: () => void;
 }) {
   const calme = useRef(matchMedia('(prefers-reduced-motion: reduce)').matches).current;
   const [licence, setLicence] = useState<{ qr: string; expireA: number } | null>(null);
@@ -221,7 +229,7 @@ export function Licence({
 
       <section className="gi-case gi-trame licence-case" aria-label="Ta licence">
         <div ref={r.scene} className={`licence-scene${joue ? ' devant' : ''}`} onClick={passer}>
-          <div ref={r.vol} className="licence-vol">
+          <div ref={r.vol} className={`licence-vol${sortie === 'abandon' ? ' rayee' : ''}`}>
             <div className="licence face" style={allumee && nen ? ({ '--filet': `var(--nen-${nen})` } as CSSProperties) : undefined}>
               <div className="licence-tete">
                 <EmblemeHunter />
@@ -259,16 +267,35 @@ export function Licence({
             <div className="licence dos" aria-hidden="true">
               <EmblemeHunter />
             </div>
+            {sortie === 'abandon' && <Rature />}
           </div>
         </div>
       </section>
 
-      <section className="gi-case licence-consigne">
-        <p>
-          <b>Montre-la à un PNJ ou au GM</b> : checkpoint, enchère, arène, Clear.
-        </p>
-        <p className="doux">Le code change toutes les 30 secondes et marche sans réseau. Si le scan échoue, monte la luminosité.</p>
-      </section>
+      {sortie !== 'abandon' && (
+        <section className="gi-case licence-consigne">
+          <p>
+            <b>Montre-la à un PNJ ou au GM</b> : checkpoint, enchère, arène, Clear.
+          </p>
+          <p className="doux">Le code change toutes les 30 secondes et marche sans réseau. Si le scan échoue, monte la luminosité.</p>
+        </section>
+      )}
+      {sortie === 'abandon' && <p className="doux fp-licence-note">Tu as quitté la partie : ta licence ne sert plus.</p>}
+      {sortie === 'abandon' && (
+        <>
+          <FiltreEncre />
+          <FiltrePinceau />
+        </>
+      )}
+      {/* Page ⑱ : le lien discret pour quitter, tout en bas, loin du QR. */}
+      {!sortie && onQuitter && (
+        <button className="fp-quitter-lien" onClick={onQuitter}>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10" />
+          </svg>
+          Quitter la partie
+        </button>
+      )}
 
       {!calme && (
         <>

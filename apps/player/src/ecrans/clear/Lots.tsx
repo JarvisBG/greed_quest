@@ -22,7 +22,7 @@ function CarteLot({ c }: { c: LotCarte }) {
   return <Carte genre="designee" numero={c.numero} nom={c.nom} rang={c.rang} texte={c.texte} />;
 }
 
-export function Lots({ etat, partieNom, choisir }: { etat: Gagne; partieNom: string; choisir: (itemIds: string[]) => Promise<void> }) {
+export function Lots({ etat, partieNom, choisir, onClassement }: { etat: Gagne; partieNom: string; choisir: (itemIds: string[]) => Promise<void>; onClassement?: () => void }) {
   const toile = useRef<HTMLCanvasElement>(null);
   const fx = useRef<Effets | null>(null);
   useEffect(() => {
@@ -41,7 +41,7 @@ export function Lots({ etat, partieNom, choisir }: { etat: Gagne; partieNom: str
   return (
     <div className="planche cl-lots">
       <FiltreEncre />
-      {etat.recompenses ? <Recap lots={etat.recompenses} gagnant={etat.gagnant} partieNom={partieNom} eclat={eclat} /> : <Choix lots={etat.lots} choisir={choisir} eclat={eclat} />}
+      {etat.recompenses ? <Recap lots={etat.recompenses} gagnant={etat.gagnant} partieNom={partieNom} eclat={eclat} onClassement={onClassement} /> : <Choix lots={etat.lots} choisir={choisir} eclat={eclat} />}
       <canvas ref={toile} className="cl-toile-page" aria-hidden="true" />
     </div>
   );
@@ -209,7 +209,7 @@ function Choix({ lots, choisir, eclat }: { lots: Lot[]; choisir: (itemIds: strin
   );
 }
 
-function Recap({ lots, gagnant, partieNom, eclat }: { lots: LotCarte[]; gagnant: string; partieNom: string; eclat: Eclat }) {
+function Recap({ lots, gagnant, partieNom, eclat, onClassement }: { lots: LotCarte[]; gagnant: string; partieNom: string; eclat: Eclat; onClassement?: (() => void) | undefined }) {
   const tampon = useRef<HTMLDivElement>(null);
   useEffect(() => {
     eclat(tampon.current, 50, 0.7, true);
@@ -237,6 +237,12 @@ function Recap({ lots, gagnant, partieNom, eclat }: { lots: LotCarte[]; gagnant:
           <TamponOr lignes={[`CLEAR · ${gagnant.toUpperCase()}`, partieNom]} />
         </div>
       </div>
+      {/* Page ⑱ : le classement final, une fois le classement figé reçu. */}
+      {onClassement && (
+        <button className="gi-btn-encre" onClick={onClassement}>
+          Voir le classement final
+        </button>
+      )}
     </>
   );
 }

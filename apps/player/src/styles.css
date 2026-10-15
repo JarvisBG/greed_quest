@@ -2050,3 +2050,170 @@ dialog.fiche[open] { animation: monte 0.35s var(--sortie); }
 .cl-recap .ligne p b { font: 800 17px/1.2 var(--f-texte); }
 .cl-tampon { justify-self: center; width: min(70vw, 260px); rotate: -6deg; }
 .cl-tampon svg { width: 100%; height: auto; overflow: visible; }
+
+/* ---------- Page ⑱ : fin de partie et abandon (prototype validé : docs/prototype/fin-partie.html) ---------- */
+/* La fin se joue à l'encre (nuit, gong, tampon rouge) ; les marches du podium prennent les matières des rangs
+   (or, argent, bronze) ; l'or plein reste au Clear. */
+.fp-page, .fp-cine { --rouge-encre: #b3161c; --or-vif: #ffd877; --lumiere: #fff1c9; --gris: #6c6e72;
+  --m-or: linear-gradient(125deg, #9c7a1c 0%, #f6dc85 28%, #c39a2c 50%, #fbe7a6 72%, #a8841f 100%);
+  --m-argent: linear-gradient(125deg, #8d949b 0%, #f1f3f5 35%, #aab1b8 60%, #e9ecef 100%);
+  --m-bronze: linear-gradient(125deg, #c97a4a 0%, #f2b48a 45%, #d88a58 100%); }
+.chrono.fini { font: 400 22px/1 var(--f-titre); letter-spacing: 0; }
+/* Onglets d'action barrés (partie terminée, spectateur). */
+.onglets button.ferme { color: #9a9b9e; }
+.onglets button.ferme::after { content: ''; position: absolute; left: calc(50% - 22px); width: 44px; top: 50%; height: 3px; background: currentColor; rotate: -24deg; translate: 0 -8px; border-radius: 2px; }
+
+/* Spectateur : bandeau gris sous la barre, Book figé, annonces. */
+.fp-bandeau { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 58px); z-index: 29; margin-inline: -16px; padding: 10px 16px; border-bottom: var(--trait) solid var(--encre); background: #2a2b2e repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0 2px, transparent 2px 8px); color: #f2f2ee; display: flex; align-items: center; gap: 10px; font: 600 15px/1.3 var(--f-texte); }
+.fp-bandeau b { font-weight: 800; }
+.fp-bandeau svg { flex: none; width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.fp-spect { gap: 12px; }
+.fp-spect h2 { margin: 0; font: 400 20px/1.1 var(--f-titre); }
+.fp-spect p { margin: 0; }
+.fp-fige { display: grid; grid-template-columns: repeat(3, 1fr); border: 2px solid var(--encre); }
+.fp-fige div { padding: 10px 8px; display: grid; gap: 2px; text-align: center; align-content: start; }
+.fp-fige div + div { border-left: 1.5px solid var(--trame); }
+.fp-fige b { font: 800 22px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.fp-fige span { font: 600 13px/1.2 var(--f-texte); color: var(--encre-2); }
+.fp-fil { margin: 0; padding: 0; list-style: none; display: grid; }
+.fp-fil li { display: grid; grid-template-columns: 52px 1fr; gap: 10px; padding: 9px 0; font: 400 16px/1.35 var(--f-texte); }
+.fp-fil li + li { border-top: 1.5px solid var(--trame); }
+.fp-fil time { font: 800 14px/1.5 var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--encre-2); }
+
+/* Licence : lien discret pour quitter, licence rayée après l'abandon. */
+.fp-quitter-lien { justify-self: center; margin-top: 18px; min-height: 48px; padding: 0 12px; border: 0; background: none; display: inline-flex; align-items: center; gap: 8px; font: 600 15px var(--f-texte); color: var(--encre-2); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1.5px; cursor: pointer; }
+.fp-quitter-lien svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.fp-licence-note { margin: 0; text-align: center; }
+.licence-vol.rayee .licence.face { filter: grayscale(1) brightness(0.72); }
+.licence-vol .fp-rature, .fp-c-licence .fp-rature { position: absolute; inset: -6% -10%; width: 120%; height: 112%; overflow: visible; pointer-events: none; transform: translateZ(2px); }
+.licence-vol .fp-tampon-abandon, .fp-c-licence .fp-tampon-abandon { position: absolute; left: 50%; top: 54%; width: 92%; translate: -50% -50%; rotate: -14deg; pointer-events: none; transform: translateZ(3px); }
+.fp-tampon-abandon svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+/* Fiche « Quitter la partie ». */
+.fp-quitter h2 { margin: 0; font: 400 24px/1.05 var(--f-titre); }
+.fp-quitter > .doux { margin: 0; }
+.fp-pertes { margin: 0; padding: 0; list-style: none; display: grid; border: 2px solid var(--encre); }
+.fp-pertes li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; padding: 10px 12px; font: 400 16px/1.35 var(--f-texte); }
+.fp-pertes li + li { border-top: 1.5px solid var(--trame); }
+.fp-pertes li b { font-weight: 800; }
+.fp-pertes svg { width: 22px; height: 22px; margin-top: 1px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.fp-pertes li.garde svg { color: var(--succes); }
+.fp-pertes li.perd svg { color: #b3161c; }
+/* Bouton à maintenir 2 s : l'encre rouge monte de gauche à droite. */
+.fp-maintien { position: relative; overflow: hidden; min-height: 56px; border: var(--trait) solid #b3161c; background: var(--case); color: #b3161c; font: 800 17px var(--f-texte); padding: 0 16px; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: pointer; }
+.fp-maintien:disabled { opacity: 0.6; }
+.fp-maintien .remplir { position: absolute; inset: 0; background: #b3161c; transform-origin: left; scale: 0 1; }
+.fp-maintien .lib { position: relative; display: inline-flex; align-items: center; gap: 8px; }
+.fp-maintien .lib.sur { position: absolute; inset: 0; justify-content: center; color: #fff; clip-path: inset(0 100% 0 0); }
+.fp-maintien-aide { margin: -4px 0 0; text-align: center; font: 600 14px/1.3 var(--f-texte); color: var(--encre-2); min-height: 1.3em; }
+
+/* Classement final. */
+.fp-page { padding-bottom: 24px; }
+.fp-tete { display: grid; gap: 4px; padding-top: 4px; }
+.fp-tete .titre-ecran { font-size: clamp(28px, 9vw, 36px); }
+.fp-tete p { margin: 0; font: 600 15px/1.35 var(--f-texte); color: var(--encre-2); }
+.fp-ruban { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: var(--trait) solid var(--encre); background: linear-gradient(100deg, #2b2006, #4a3809 60%, #2b2006); color: var(--lumiere); font: 600 16px/1.3 var(--f-texte); }
+.fp-ruban b { color: var(--or-vif); font-weight: 800; }
+.fp-mini-sceau { flex: none; width: 34px; height: 34px; display: block; }
+.fp-mini-sceau svg { width: 100%; height: 100%; display: block; }
+/* Podium : trois marches d'encre, plaque de matière dessus (or, argent, bronze). */
+.fp-podium { --ph: 168px; display: grid; grid-template-columns: 1fr 1.12fr 1fr; align-items: end; gap: 6px; padding: 8px 0 0; border-bottom: var(--trait) solid var(--encre); }
+.fp-marche { display: grid; gap: 6px; justify-items: center; text-align: center; min-width: 0; }
+.fp-marche .qui { display: grid; gap: 1px; min-width: 0; width: 100%; }
+.fp-marche .qui b { font: 400 var(--fs, 17px)/1.1 var(--f-titre); white-space: nowrap; }
+.fp-marche .qui span { font: 600 13px/1.2 var(--f-texte); color: var(--encre-2); font-variant-numeric: tabular-nums; }
+.fp-marche .fp-bloc { width: 100%; position: relative; background: var(--encre); color: var(--case); display: grid; place-items: start center; padding-top: 16px; background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1.2px); background-size: 5px 5px; }
+.fp-marche .fp-bloc::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 10px; background: var(--metal); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.35); }
+.fp-marche .fp-bloc strong { font: 400 40px/1 var(--f-titre); }
+.fp-marche.p1 .fp-bloc { height: var(--ph); --metal: var(--m-or); }
+.fp-marche.p2 .fp-bloc { height: calc(var(--ph) * 0.72); --metal: var(--m-argent); }
+.fp-marche.p3 .fp-bloc { height: calc(var(--ph) * 0.52); --metal: var(--m-bronze); }
+.fp-marche.moi .fp-bloc { background-color: var(--rouge-encre); }
+.fp-marche .toi { font: 400 13px/1 var(--f-jeu); background: var(--rouge-encre); color: #fff; padding: 3px 6px; }
+.fp-sceau-clear { width: 30px; height: 30px; display: block; }
+.fp-sceau-clear svg { width: 100%; height: 100%; display: block; }
+/* Ta fiche : un formulaire de Hunter rempli, tamponné de ta place. */
+.fp-fiche { position: relative; background: var(--case); border: var(--trait) solid var(--encre); padding: 14px 16px 16px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 36%); column-gap: 12px; row-gap: 4px; align-items: center; }
+.fp-fiche h2 { grid-column: 1 / -1; margin: 0 0 6px; font: 400 20px/1.1 var(--f-titre); }
+.fp-fiche .fp-abandon { font: 400 14px var(--f-jeu); color: var(--encre-2); }
+.fp-fiche dl { margin: 0; display: grid; }
+.fp-fiche dl div { display: flex; align-items: baseline; gap: 6px; padding: 5px 0; }
+.fp-fiche dt { font: 600 15px/1.3 var(--f-texte); color: var(--encre-2); white-space: nowrap; }
+.fp-fiche dd { margin: 0 0 0 auto; font: 800 18px/1.3 var(--f-chiffre); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fp-fiche dl div > i { flex: 1; min-width: 12px; border-bottom: 2px dotted var(--trame); translate: 0 -4px; }
+.fp-fiche .note { margin: 6px 0 0; font: 400 14px/1.35 var(--f-texte); color: var(--encre-2); grid-column: 1 / -1; }
+.fp-tampon-place { grid-row: 2; grid-column: 2; width: 100%; max-width: 160px; justify-self: center; rotate: -12deg; }
+.fp-tampon-place svg { width: 100%; height: auto; display: block; overflow: visible; }
+.fp-liste-tete { display: grid; grid-template-columns: 48px 1fr 62px 50px; gap: 8px; padding: 0 12px; font: 600 13px/1.2 var(--f-texte); color: var(--encre-2); }
+.fp-liste-tete span:nth-child(n + 3) { text-align: right; }
+.fp-classement { margin: -6px 0 0; padding: 0; list-style: none; background: var(--case); border: var(--trait) solid var(--encre); }
+.fp-ligne { display: grid; grid-template-columns: 48px 1fr 62px 50px; gap: 8px; align-items: center; min-height: 52px; padding: 6px 12px; }
+.fp-ligne + .fp-ligne { border-top: 1.5px solid var(--trame); }
+.fp-ligne .pl { font: 400 20px/1 var(--f-titre); }
+.fp-ligne .pl small { display: block; margin-top: 3px; font: 600 11px/1 var(--f-texte); color: var(--encre-2); }
+.fp-ligne .ps { font: 800 17px/1.2 var(--f-texte); min-width: 0; overflow-wrap: anywhere; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.fp-ligne .ps em { font: 400 12px/1 var(--f-jeu); font-style: normal; border: 1.5px solid currentColor; padding: 2px 5px; color: var(--gris); }
+.fp-ligne .nb, .fp-ligne .pt { text-align: right; font: 800 17px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.fp-ligne .nb small { font: 600 13px var(--f-texte); color: var(--encre-2); }
+.fp-ligne.moi { background: var(--encre); color: var(--case); }
+.fp-ligne.moi .pl small, .fp-ligne.moi .nb small, .fp-ligne.moi .ps em { color: #c3c6cc; }
+/* Ta ligne épinglée au-dessus des onglets quand elle est hors de l'écran. */
+.fp-epingle { position: fixed; left: 50%; bottom: calc(64px + 3px + env(safe-area-inset-bottom, 0px) + 8px); width: min(calc(100% - 32px), 448px); translate: -50% 0; z-index: 25; border: var(--trait) solid var(--encre); box-shadow: 0 10px 22px -10px rgba(0, 0, 0, 0.55); transition: translate 0.3s var(--sortie), opacity 0.3s; cursor: pointer; }
+.fp-epingle .fp-classement { margin: 0; border: 0; }
+.fp-epingle.cache { translate: -50% 30px; opacity: 0; pointer-events: none; }
+.fp-depart { background: var(--case); border: 2px solid var(--encre); }
+.fp-depart summary { min-height: 48px; padding: 0 14px; display: flex; align-items: center; gap: 8px; font: 800 15px var(--f-texte); cursor: pointer; list-style: none; }
+.fp-depart summary::-webkit-details-marker { display: none; }
+.fp-depart summary svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.6; transition: rotate 0.2s; }
+.fp-depart[open] summary svg { rotate: 90deg; }
+.fp-depart ol { margin: 0; padding: 0 16px 14px 38px; display: grid; gap: 6px; font: 400 15px/1.4 var(--f-texte); }
+
+/* Cinématiques de la fin : gong et podium, abandon. */
+.fp-cine { position: fixed; inset: 0; z-index: 66; overflow: hidden; cursor: pointer; color: #f6f1e2; touch-action: none; }
+.fp-scene { position: absolute; inset: 0; }
+.fp-nuit { position: absolute; inset: 0; opacity: 0; background: radial-gradient(ellipse at 50% 40%, #2a2a31 0, #121216 48%, #040405 92%); }
+.fp-lignes { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+.fp-lignes .gi-concentration { inset: -30%; }
+.fp-lignes path { fill: #e9ecf2; }
+.fp-flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+.fp-toile { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4; }
+.fp-dialogue { z-index: 6; }
+.fp-dialogue .a-qui.or { background: var(--or-vif); }
+.fp-dialogue .a-qui.rouge { background: #ff5a4a; color: #fff; }
+.fp-cine.intro .fp-passer { opacity: 1; transition-delay: 0.6s; }
+.fp-gong { position: absolute; left: 50%; top: 40%; width: min(74vw, 300px, 46dvh); aspect-ratio: 1; translate: -50% -50%; opacity: 0; }
+.fp-gong svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.fp-gong .fp-disque { transform-origin: 50% 24%; transform-box: view-box; }
+.fp-cri { position: absolute; left: 0; right: 0; top: max(26px, 8dvh); display: grid; justify-items: center; gap: 2px; rotate: -4deg; opacity: 0; pointer-events: none; z-index: 2; }
+.fp-cri span { white-space: nowrap; font: 400 min(17vw, 92px)/0.92 var(--f-titre); letter-spacing: -0.03em; color: #fff; -webkit-text-stroke: 4px var(--nuit); paint-order: stroke fill; filter: drop-shadow(0 5px 0 var(--nuit)); }
+.fp-cri span + span { font-size: min(13vw, 70px); }
+.fp-c-ruban { position: absolute; left: 50%; top: calc(max(26px, 8dvh) + min(31vw, 168px)); translate: -50% 0; display: flex; align-items: center; gap: 10px; padding: 8px 18px 8px 10px; background: linear-gradient(100deg, #2b2006, #4a3809 60%, #2b2006); box-shadow: inset 0 0 0 2px var(--or-vif); color: var(--lumiere); font: 600 16px/1.2 var(--f-texte); white-space: nowrap; opacity: 0; clip-path: inset(0 50% 0 50%); z-index: 2; }
+.fp-c-ruban b { color: var(--or-vif); font-weight: 800; }
+.fp-c-ruban .fp-mini-sceau { width: 32px; height: 32px; }
+.fp-c-podium { --ph: min(24dvh, 200px); position: absolute; left: 50%; bottom: calc(max(18px, env(safe-area-inset-bottom, 0px)) + 196px); width: min(94vw, 420px); translate: -50% 0; overflow: hidden; padding-top: 40px; border-bottom: 3px solid #f6f6f2; display: grid; grid-template-columns: 1fr 1.14fr 1fr; align-items: end; gap: 6px; }
+.fp-c-marche { display: grid; justify-items: center; gap: 8px; text-align: center; min-width: 0; }
+.fp-c-marche .fp-nom { display: grid; gap: 2px; opacity: 0; min-width: 0; width: 100%; }
+.fp-c-marche .fp-nom b { font: 400 var(--fs, 22px)/1.05 var(--f-titre); color: #fff; white-space: nowrap; -webkit-text-stroke: 1.5px var(--nuit); paint-order: stroke fill; }
+.fp-c-marche .fp-nom span { font: 600 13px/1.2 var(--f-texte); color: #d6d8dc; font-variant-numeric: tabular-nums; }
+.fp-c-marche .fp-bloc { width: 100%; position: relative; background: #f6f6f2; color: var(--nuit); display: grid; place-items: start center; padding-top: 14px; translate: 0 101%; background-image: radial-gradient(rgba(17, 17, 17, 0.2) 1px, transparent 1.2px); background-size: 5px 5px; box-shadow: inset 0 0 0 3px var(--nuit); }
+.fp-c-marche .fp-bloc::before { content: ''; position: absolute; left: 3px; right: 3px; top: 3px; height: 12px; background: var(--metal); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.35); }
+.fp-c-marche .fp-bloc strong { margin-top: 10px; font: 400 min(13vw, 58px)/1 var(--f-titre); }
+.fp-c-marche.p1 .fp-bloc { height: var(--ph); --metal: var(--m-or); }
+.fp-c-marche.p2 .fp-bloc { height: calc(var(--ph) * 0.72); --metal: var(--m-argent); }
+.fp-c-marche.p3 .fp-bloc { height: calc(var(--ph) * 0.52); --metal: var(--m-bronze); }
+.fp-c-marche.moi .fp-bloc { background-color: #ffd9d6; }
+.fp-c-tampon { position: absolute; left: 50%; top: 44%; width: min(70vw, 300px); translate: -50% -50%; rotate: -12deg; opacity: 0; z-index: 2; filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.45)); }
+.fp-c-tampon svg { width: 100%; height: auto; display: block; overflow: visible; }
+.fp-c-tampon.petit { width: min(27vw, 118px); }
+/* Abandon : la licence au centre, rayée. */
+.fp-c-licence { position: absolute; left: 50%; top: 42%; width: min(62vw, 250px, 40dvh); aspect-ratio: 54 / 85.6; translate: -50% -50%; opacity: 0; }
+.fp-licence { position: absolute; inset: 0; border-radius: 16px; overflow: hidden; color: #eef0f2; padding: 20px 18px 18px; display: grid; grid-template-rows: auto 1fr auto; justify-items: center; align-items: center; gap: 10px; background: #121418 repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.035) 0 2px, transparent 2px 9px); box-shadow: inset 0 0 0 2px #2b2f36, inset 0 0 0 8px #121418, inset 0 0 0 9px #8e949c, 0 16px 28px -14px rgba(0, 0, 0, 0.6); transition: filter 0.6s; }
+.fp-c-licence.rayee .fp-licence { filter: grayscale(1) brightness(0.72); }
+.fp-licence-tete { justify-self: start; display: flex; align-items: center; gap: 10px; }
+.fp-licence-tete svg { width: 38px; height: 38px; flex: none; }
+.fp-licence-tete strong { display: block; font: 400 19px/1 var(--f-titre); letter-spacing: 0.16em; }
+.fp-licence-tete span { display: block; margin-top: 4px; font: 600 12px/1.2 var(--f-texte); color: #c3c8cf; }
+.fp-qr { width: 100%; aspect-ratio: 1; background: #fff; border-radius: 8px; padding: 10px; }
+.fp-qr svg { width: 100%; height: 100%; display: block; }
+.fp-licence-pied { width: 100%; }
+.fp-licence-pied b { font: 400 22px/1 var(--f-titre); }

@@ -14,6 +14,10 @@ import { Book } from './ecrans/book/Book';
 import { BandeauClear } from './ecrans/clear/BandeauClear';
 import { CineClear } from './ecrans/clear/CineClear';
 import { Lots } from './ecrans/clear/Lots';
+import { CineFin } from './ecrans/fin/CineFin';
+import { Classement } from './ecrans/fin/Classement';
+import { Quitter } from './ecrans/fin/Quitter';
+import { BandeauSpectateur, Spectateur } from './ecrans/fin/Spectateur';
 import { Licence } from './ecrans/licence/Licence';
 import { Masadora } from './ecrans/masadora/Masadora';
 import { Adjuge } from './ecrans/antokiba/Adjuge';
@@ -40,6 +44,7 @@ import { baliseDepuisUrl } from './lib/qr';
 import { bossDe } from './lib/raid';
 import type { Question } from './lib/quiz';
 import { etapesDuTirage } from './lib/tirage';
+import { texteFerme } from './lib/fin';
 import { useJeu, type Moi } from './lib/useJeu';
 
 /** Amendement 2026-10-10 : visite à distance (sort Retour) encore ouverte pour cette ville. */
@@ -53,6 +58,8 @@ interface Questionnaires {
 }
 
 type Onglet = 'accueil' | 'scan' | 'livre' | 'sorts' | 'echanges';
+/** Page ⑱ : onglets d'action, barrés après la fin de partie ou l'abandon. */
+const ACTIONS = new Set<Onglet>(['scan', 'sorts', 'echanges']);
 const ONGLETS: { id: Onglet; nom: string; icone: () => React.JSX.Element }[] = [
   { id: 'accueil', nom: 'Accueil', icone: IconeAccueil },
   { id: 'scan', nom: 'Scanner', icone: IconeScanner },
@@ -81,6 +88,9 @@ export function App() {
   /** Page ⑫ : la table scellée laisse place à la cinématique « TRADE ! », puis disparaît sous sa nuit. */
   const [trade, setTrade] = useState(false);
   const [tableCachee, setTableCachee] = useState(false);
+  /** Page ⑱ : fiche « Quitter la partie » ouverte ; le gagnant du Clear passe de ses lots au classement final. */
+  const [quitter, setQuitter] = useState(false);
+  const [voirClassement, setVoirClassement] = useState(false);
   // RG-7.5 : chaque tirage rejoué au retour du réseau a sa cinématique ; le solde suit à la fin.
   useEffect(() => {
     const r = jeu.rejoues[0];
@@ -137,6 +147,10 @@ export function App() {
     void jeu.rafraichir();
   };
   const enJeu = jeu.phase === 'en_jeu' && partie && moi;
+  /** Page ⑱ : partie terminée (RG-4.6) ou joueur parti (abandon, RG-5.7) : plus d'action, seulement suivre. */
+  const termine = partie?.etat === 'terminee';
+  const spectateur = moi?.statut === 'abandon';
+  const classement = jeu.fin.classement;
 
   return (
     <div className="app">
@@ -159,6 +173,7 @@ export function App() {
         )}
       </header>
       )}
+      {enJeu && ecran === 'accueil' && spectateur && !termine && <BandeauSpectateur />}
       {enJeu && ecran === 'accueil' && <BandeauZetsu moi={moi} />}
       {enJeu && ecran === 'accueil' && <BandeauGel moi={moi} par={jeu.gelePar} />}
       {/* Page ⑰ : Clear déclaré, en attente du Game Master, sur toutes les pages sauf la licence. */}
@@ -321,6 +336,8 @@ export function App() {
                 pseudo={moi.pseudo}
                 nen={moi.nen}
                 secret={jeu.licenceSecret}
+                sortie={spectateur ? 'abandon' : termine ? 'terminee' : null}
+                onQuitter={() => setQuitter(true)}
                 onRetour={() => {
                   setSous(retourLicence.current);
                   retourLicence.current = null;
@@ -376,10 +393,18 @@ export function App() {
               />
             )}
             {/* Page ⑰ : le gagnant choisit ses 3 lots, puis garde le récapitulatif à montrer à l'organisateur. */}
-            {ecran === 'accueil' && onglet === 'accueil' && sous === null && clear.etat === 'gagne' && (
-              <Lots etat={clear} partieNom={partie.nom} choisir={jeu.clear.choisirLots} />
+            {ecran === 'accueil' && onglet === 'accueil' && sous === null && clear.etat === 'gagne' && !(classement && voirClassement) && (
+              <Lots etat={clear} partieNom={partie.nom} choisir={jeu.clear.choisirLots} {...(classement && termine ? { onClassement: () => setVoirClassement(true) } : {})} />
             )}
-            {ecran === 'accueil' && onglet === 'accueil' && sous === null && clear.etat !== 'gagne' && (
+            {/* Page ⑱ : la partie terminée, l'accueil devient le classement final. */}
+            {ecran === 'accueil' && onglet === 'accueil' && sous === null && termine && classement && (clear.etat !== 'gagne' || voirClassement) && (
+              <Classement c={classement} {...(clear.etat === 'gagne' ? { onLots: () => setVoirClassement(false) } : {})} />
+            )}
+            {/* Page ⑱ : après l'abandon, l'accueil du spectateur (Book figé, annonces). */}
+            {ecran === 'accueil' && onglet === 'accueil' && sous === null && clear.etat !== 'gagne' && !(termine && classement) && spectateur && (
+              <Spectateur partieId={partie.id} version={jeu.version} jenny={moi.jenny} notifs={jeu.notifs} onBook={() => setOnglet('livre')} />
+            )}
+            {ecran === 'accueil' && onglet === 'accueil' && sous === null && clear.etat !== 'gagne' && !(termine && classement) && !spectateur && (
               <Accueil
                 partie={partie}
                 moi={moi}
@@ -409,9 +434,11 @@ export function App() {
               key={o.id}
               data-onglet={o.id}
               aria-current={onglet === o.id ? 'page' : undefined}
-              className={o.id === 'scan' && gel > 0 ? 'gele' : undefined}
-              style={o.id === 'scan' && gel > 0 ? styleGivre : undefined}
+              className={ACTIONS.has(o.id) && (termine || spectateur) ? 'ferme' : o.id === 'scan' && gel > 0 ? 'gele' : undefined}
+              style={o.id === 'scan' && gel > 0 && !termine && !spectateur ? styleGivre : undefined}
               onClick={() => {
+                // Page ⑱ : après la fin ou l'abandon, les onglets d'action sont barrés ; le refus est dit en clair.
+                if (ACTIONS.has(o.id) && (termine || spectateur)) return jeu.annoncer(texteFerme(termine));
                 // Page ⑪ : gelé, le Scanner reste fermé ; le refus est dit en clair.
                 if (o.id === 'scan' && gel > 0) return jeu.annoncer(`Tu es gelé : plus de scan pendant encore ${minSec(gel)}.`);
                 if (o.id === 'scan') setBaliseLien(null);
@@ -522,6 +549,30 @@ export function App() {
             }
             jeu.clear.finCine();
           }}
+        />
+      )}
+      {/* Page ⑱ : fin de partie (gong et podium) après l'annonce du Clear, ou abandon (licence rayée). */}
+      {enJeu && !tirages.courant && !jeu.clear.cine && jeu.fin.cine && (
+        <CineFin
+          key={jeu.fin.cineN}
+          cine={jeu.fin.cine}
+          classement={classement}
+          pseudo={moi.pseudo}
+          onFini={() => {
+            setOnglet('accueil');
+            setSous(null);
+            jeu.fin.finCine();
+          }}
+        />
+      )}
+      {enJeu && quitter && (
+        <Quitter
+          partieId={partie.id}
+          abandonner={async () => {
+            await jeu.fin.abandonner();
+            void jeu.rafraichir();
+          }}
+          onFermer={() => setQuitter(false)}
         />
       )}
       {tirages.courant && <Tirage key={tirages.courant.id} demande={tirages.courant} onFini={tirages.terminer} />}

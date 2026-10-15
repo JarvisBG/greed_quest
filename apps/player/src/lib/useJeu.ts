@@ -15,6 +15,7 @@ import { texteAnnulee, texteEntree, type EtatArene, type EvArene, type IssueAren
 import { texteFinRaid } from './raid';
 import { useRaid } from './useRaid';
 import { useClear } from './useClear';
+import { useFin } from './useFin';
 import type { SuiviCible } from './accompagnement';
 import { partieFromUrl, type Session } from './session';
 import { creerSuivi, type Suivi } from './suivi';
@@ -173,6 +174,10 @@ export function useJeu() {
   const clear = useClear(sess?.partieId ?? null, () => pseudoRef.current);
   const clearRecevoir = useRef(clear.recevoir);
   clearRecevoir.current = clear.recevoir;
+  /** Page ⑱ : fin de partie (classement figé, cinématique) et abandon. */
+  const fin = useFin(sess?.partieId ?? null, sess?.joueurId ?? null);
+  const finCharger = useRef(fin.charger);
+  finCharger.current = fin.charger;
 
   const rafraichir = useCallback(async () => {
     if (!partieId) return;
@@ -283,6 +288,7 @@ export function useJeu() {
           void lireEncheres();
           void raid.charger();
           void clear.charger();
+          void finCharger.current();
         }
       },
       evenement: (nom, data) => {
@@ -292,6 +298,12 @@ export function useJeu() {
           return;
         }
         setVersion((v) => v + 1);
+        if (nom === 'classement_final') {
+          // Page ⑱ : le classement figé est relu (avec ton détail), puis la cinématique de fin.
+          void finCharger.current();
+          void rafraichir();
+          return;
+        }
         if (nom === 'echange') {
           recevoirEchange(data as EvenementEchange);
           return;
@@ -597,6 +609,8 @@ export function useJeu() {
     raid,
     /** Page ⑰ : Clear. */
     clear,
+    /** Page ⑱ : fin de partie et abandon. */
+    fin,
     /** Page ⑮ : arène de Soufrabi. */
     arene: {
       etat: arene,

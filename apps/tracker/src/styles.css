@@ -1,0 +1,336 @@
+/*
+ * Écran géant (apps/tracker), porté du prototype v4 validé le 2026-10-15 (docs/prototype/ecran-geant.html).
+ * Une retransmission : un seul sujet en plein écran à la fois (~21 s), lu à 8 m (aucun texte sous 24 px), sans
+ * interaction. Planche claire pendant le jeu ; nuit et couleur pour les grands moments. 1920 × 1080, mis à l'échelle.
+ */
+@property --k { syntax: '<number>'; inherits: true; initial-value: 0; }
+:root {
+  /* Couleurs propres à l'écran géant ; les autres viennent de @gq/ui. */
+  --or-clair: #f6dc85;
+  --nuit-2: #1b1b20;
+  --parchemin: #f1e6c8;
+  --parchemin-bord: #b99a5b;
+  --encre-carte: #1b150c;
+  --gel: #8fd6ff;
+  --trame-fond: radial-gradient(var(--trame) 1px, transparent 1.3px) 0 0 / 8px 8px;
+}
+html, body, #root { height: 100%; }
+body { margin: 0; min-height: 0; overflow: hidden; background: #050506; color: var(--encre); font: 400 28px/1.3 var(--f-texte); }
+::selection { background: var(--jaune); color: var(--encre); }
+:focus-visible { outline: 3px solid var(--jaune); outline-offset: 3px; }
+.r-SS, .m1 { --matiere: linear-gradient(125deg, #9c7a1c 0%, #f6dc85 28%, #c39a2c 50%, #fbe7a6 72%, #a8841f 100%); }
+.r-S, .m2 { --matiere: linear-gradient(125deg, #8d949b 0%, #f1f3f5 35%, #aab1b8 60%, #e9ecef 100%); }
+.r-A, .m3 { --matiere: linear-gradient(125deg, #c97a4a 0%, #f2b48a 45%, #d88a58 100%); }
+.r-B { --matiere: linear-gradient(125deg, #6fb596 0%, #b6e0cc 50%, #82c2a6 100%); }
+.r-C { --matiere: linear-gradient(125deg, #7d93b8 0%, #c5d3ea 50%, #8ea3c6 100%); }
+
+/* ---------- L'écran (1920 × 1080, mis à l'échelle de la fenêtre) ---------- */
+.ecran {
+  --trait: 6px;
+  position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden;
+  background: var(--papier) var(--trame-fond);
+  display: grid; grid-template-rows: 104px 1fr 84px; gap: 18px; padding: 22px 30px 26px;
+}
+
+/* Habillage du haut : posé sur le papier, sans case, pour laisser toute la place au plan. */
+.haut { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 36px; }
+.marque { display: flex; align-items: center; gap: 22px; }
+.marque b { font: 400 50px/1 var(--f-titre); letter-spacing: 0.01em; }
+.pastille { display: inline-flex; align-items: center; gap: 12px; height: 54px; padding: 0 22px; background: var(--encre); color: var(--case); font: 400 28px/1 var(--f-titre); }
+.pastille i { width: 16px; height: 16px; border-radius: 50%; background: #3fd36b; animation: pouls 2s ease-in-out infinite; }
+@keyframes pouls { 50% { opacity: 0.35; } }
+.pastille.finale { background: var(--alerte); }
+.pastille.finale i, .pastille.pause i { background: var(--case); }
+.pastille.pause { background: var(--case); color: var(--encre); box-shadow: inset 0 0 0 4px var(--encre); }
+.pastille.pause i { background: var(--encre); animation: none; }
+.reco { display: none; align-items: center; gap: 10px; font: 600 26px var(--f-texte); color: var(--encre-2); }
+.reco.on { display: inline-flex; }
+.reco svg { width: 30px; height: 30px; animation: tourne 1.2s linear infinite; }
+.evs { justify-self: center; display: flex; gap: 16px; min-width: 0; }
+.ev { display: inline-flex; align-items: center; gap: 18px; height: 60px; padding: 0 24px; background: var(--alerte); color: #fff; transform: rotate(-1.5deg); box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18); }
+.ev b { font: 400 28px/1 var(--f-titre); white-space: nowrap; }
+.ev span { font: 600 28px/1 var(--f-texte); white-space: nowrap; }
+.ev time { font: 800 32px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.ev.maudite { background: var(--nuit); }
+.ev.entre { animation: colle 0.6s cubic-bezier(.2, 1.5, .4, 1) both; }
+@keyframes colle { from { transform: rotate(-8deg) scale(1.6); opacity: 0; } }
+.chrono { font: 800 104px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
+.chrono.rouge { color: var(--alerte); animation: bat 1s steps(2) infinite; }
+@keyframes bat { 50% { color: var(--encre); } }
+
+/* La case unique : un plan à la fois, qui la remplit. */
+.plateau { position: relative; overflow: hidden; background: var(--case); box-shadow: 0 0 0 var(--trait) var(--encre), 0 18px 40px rgba(0, 0, 0, 0.14); }
+.plan { position: absolute; inset: 0; display: none; }
+.plan.vu { display: grid; }
+.plan.entre { animation: volet 0.7s var(--sortie) both; }
+@keyframes volet { from { clip-path: polygon(100% 0, 100% 0, 100% 100%, 100% 100%); } to { clip-path: polygon(-12% 0, 100% 0, 100% 100%, 0 100%); } }
+.avance { position: absolute; left: 0; bottom: 0; height: 8px; width: 0; background: var(--jaune); z-index: 2; }
+.heros.en-raid .plan, .heros.en-raid .avance { visibility: hidden; }
+.titre-plan { margin: 0; font: 400 76px/1 var(--f-titre); letter-spacing: 0.005em; text-wrap: balance; }
+
+/* Ligne du bas : les trois premiers (noms seuls) et la dernière annonce du jeu. */
+.bas { display: grid; grid-template-columns: auto 1fr; gap: 26px; align-items: stretch; }
+.tete3 { display: flex; align-items: center; gap: 28px; padding-right: 6px; }
+.tete3 span { display: inline-flex; align-items: center; gap: 12px; font: 800 34px/1 var(--f-texte); white-space: nowrap; }
+.tete3 i { width: 46px; height: 46px; display: grid; place-items: center; font: 400 26px/1 var(--f-titre); font-style: normal; background: var(--matiere); box-shadow: 0 0 0 3px var(--encre); border-radius: 5px; }
+.tete3 span.monte { animation: eclat 1.2s var(--sortie); }
+@keyframes eclat { 0% { background: var(--jaune); } 100% { background: transparent; } }
+/* Boîte de dialogue du jeu (Joy Station) : aplat noir, double filet blanc, police pixel. */
+.annonce { position: relative; display: flex; align-items: center; gap: 22px; min-width: 0; padding: 0 30px; background: var(--nuit); color: #f4f4ef; box-shadow: inset 0 0 0 5px var(--nuit), inset 0 0 0 8px #f4f4ef; }
+.annonce .txt { font: 400 34px/1.2 var(--f-jeu); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.annonce .txt::after { content: '▼'; display: inline-block; margin-left: 14px; font-size: 22px; vertical-align: middle; animation: clign 1s steps(2) infinite; }
+.annonce .txt.neuf { animation: tape 0.6s steps(18) both; }
+@keyframes tape { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes clign { 50% { opacity: 0; } }
+
+/* ---------- Plan : la course au Book ---------- */
+.p-course { grid-template-rows: auto auto 1fr; gap: 10px; padding: 34px 52px 40px; }
+.course-tete { display: flex; align-items: baseline; justify-content: space-between; gap: 30px; }
+.course-tete p { margin: 0; font: 600 32px/1.2 var(--f-texte); color: var(--encre-2); }
+.course-tete p b { color: var(--encre); }
+.reperes, .couloir { display: grid; grid-template-columns: 74px 300px 1fr; align-items: center; gap: 22px; }
+.reperes { font: 600 26px/1 var(--f-texte); color: var(--encre-2); padding-top: 8px; }
+.reperes .voie-rep { display: flex; justify-content: space-between; }
+.reperes .voie-rep b { font: 400 30px/1 var(--f-titre); color: var(--encre); }
+.piste { position: relative; display: grid; grid-template-rows: repeat(8, minmax(0, 1fr)); min-height: 0; }
+.couloir { border-bottom: 3px solid var(--case-2); }
+.couloir:last-child { border-bottom: 0; }
+.couloir .cr { width: 64px; height: 56px; display: grid; place-items: center; font: 800 36px/1 var(--f-chiffre); }
+.couloir.c1 .cr, .couloir.c2 .cr, .couloir.c3 .cr { font: 400 32px/1 var(--f-titre); background: var(--matiere); box-shadow: 0 0 0 4px var(--encre); border-radius: 6px; }
+.couloir .cn { font: 800 44px/1 var(--f-texte); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.couloir.c1 .cn { font-size: 50px; }
+.voie { position: relative; height: 100%; }
+/* Ligne de couloir en pointillés, et la ligne d'arrivée en damier. */
+.voie::before { content: ''; position: absolute; left: 0; right: 30px; top: 50%; border-top: 3px dashed rgba(17, 17, 17, 0.25); }
+.voie::after { content: ''; position: absolute; right: 0; top: 6px; bottom: 6px; width: 24px; background: conic-gradient(var(--encre) 25%, var(--case) 0 50%, var(--encre) 0 75%, var(--case) 0) 0 0 / 12px 12px; box-shadow: 0 0 0 3px var(--encre); }
+.trace { position: absolute; left: 0; top: 50%; height: 10px; translate: 0 -50%; width: calc(var(--k) * (100% - 112px) + 20px); background: var(--encre); }
+.couloir.c1 .trace { height: 22px; background: repeating-linear-gradient(90deg, var(--encre) 0 26px, transparent 26px 34px), var(--encre); mask: linear-gradient(90deg, transparent, #000 40%); }
+.pion { position: absolute; top: 50%; left: calc(var(--k) * (100% - 112px)); translate: 0 -50%; width: 62px; height: 84%; max-height: 82px; display: grid; place-items: center; border-radius: 7px; background: var(--rouge); box-shadow: 0 0 0 4px var(--encre), 0 8px 14px rgba(0, 0, 0, 0.2); }
+.pion b { width: 80%; padding: 4px 0; display: block; text-align: center; background: var(--case); border-radius: 4px; font: 800 30px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.couloir.c1 .pion { width: 74px; box-shadow: 0 0 0 4px var(--encre), 0 0 0 10px var(--jaune), 0 10px 18px rgba(0, 0, 0, 0.25); }
+.boum { position: absolute; z-index: 3; font: 400 64px/1 var(--f-titre); color: var(--jaune); -webkit-text-stroke: 3px var(--encre); paint-order: stroke fill; transform: rotate(-8deg); pointer-events: none; white-space: nowrap; }
+
+/* ---------- Plan : le duel de tête ---------- */
+.p-duel { grid-template-rows: auto 1fr; padding: 40px 60px 50px; background: var(--case); overflow: hidden; }
+.p-duel::before { content: ''; position: absolute; inset: -30%; background: repeating-conic-gradient(from 0deg at 28% 58%, rgba(17, 17, 17, 0.07) 0deg 1.2deg, transparent 1.2deg 5deg); pointer-events: none; }
+.p-duel .titre-plan { position: relative; font-size: 104px; text-align: center; }
+.duel { position: relative; display: grid; grid-template-columns: 1fr 300px 1fr; align-items: center; }
+.duelliste { display: grid; justify-items: center; gap: 8px; text-align: center; min-width: 0; }
+.duelliste .med { width: 96px; height: 96px; display: grid; place-items: center; font: 400 52px/1 var(--f-titre); background: var(--matiere); box-shadow: 0 0 0 5px var(--encre); border-radius: 8px; }
+.duelliste .nom { max-width: 100%; font: 400 132px/1.05 var(--f-titre); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.duelliste .n { font: 800 210px/0.9 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: -0.04em; }
+.duelliste .n small { font-size: 64px; letter-spacing: 0; color: var(--encre-2); }
+.duelliste.second .nom { font-size: 96px; color: var(--encre-2); }
+.duelliste.second .n { font-size: 150px; color: var(--encre-2); }
+.ecart { justify-self: center; display: grid; place-items: center; gap: 10px; width: 270px; padding: 30px 10px; background: var(--encre); color: var(--case); text-align: center; transform: rotate(-4deg); box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25); }
+.ecart b { font: 800 120px/0.9 var(--f-chiffre); }
+.ecart span { font: 600 32px/1.15 var(--f-texte); }
+.ecart.egal b { font: 400 64px/1 var(--f-titre); }
+
+/* ---------- Plan : l'île ---------- */
+.p-ile { grid-template-columns: 560px 1fr; gap: 40px; padding: 36px 40px 40px 56px; }
+.ile-cote { display: grid; align-content: space-between; gap: 30px; }
+.ile-cote .gros-n { font: 800 260px/0.85 var(--f-chiffre); letter-spacing: -0.04em; }
+.ile-cote h3 { margin: 10px 0 0; font: 400 60px/1.05 var(--f-titre); text-wrap: balance; }
+.ile-cote p { margin: 0; font: 400 32px/1.35 var(--f-texte); color: var(--encre-2); text-wrap: pretty; }
+.ile-cadre { position: relative; background: var(--parchemin); box-shadow: 0 0 0 5px var(--encre), inset 0 0 60px rgba(120, 85, 30, 0.3); overflow: hidden; }
+.ile-cadre svg { display: block; width: 100%; height: 100%; }
+.legende { display: grid; gap: 14px; font: 600 28px/1.2 var(--f-texte); }
+.legende span { display: inline-flex; align-items: center; gap: 16px; }
+.legende svg { width: 56px; height: 40px; flex: none; }
+.zone-forme { stroke: var(--encre-carte); stroke-width: 2.4; stroke-linejoin: round; fill: none; }
+.zone-ville .zone-forme { stroke-width: 3.2; }
+.zone-maudite .zone-forme { stroke: #a8231f; stroke-width: 4; stroke-dasharray: 9 6; }
+.zone-nom { font: 400 15px/1 var(--f-titre); fill: var(--encre-carte); paint-order: stroke; stroke: var(--parchemin); stroke-width: 4px; stroke-linejoin: round; }
+.zone-flash { fill: var(--jaune); opacity: 0; }
+.zone-flash.on { animation: allume 3.2s ease-out; }
+@keyframes allume { 0% { opacity: 0; } 8% { opacity: 0.75; } 30% { opacity: 0.45; } 100% { opacity: 0; } }
+.halo { transition: opacity 1.4s ease, transform 1.4s var(--sortie); transform-box: fill-box; transform-origin: center; }
+.halos.cache .halo { opacity: 0; transform: scale(0.4); }
+.scan-bulle { position: absolute; left: 50%; bottom: 26px; translate: -50% 0; padding: 16px 30px; background: var(--nuit); color: #f4f4ef; font: 400 36px/1.2 var(--f-jeu); white-space: nowrap; box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f4f4ef; opacity: 0; transition: opacity 0.3s; }
+.scan-bulle.on { opacity: 1; }
+.ev-etiquette rect { fill: #a8231f; }
+.ev-etiquette text { font: 800 11px/1 var(--f-texte); fill: #fff; }
+
+/* ---------- Plan : le fait marquant (un seul, en très grand) ---------- */
+.p-fait { grid-template-columns: minmax(0, 1fr); align-items: center; padding: 40px 70px 50px; overflow: hidden; }
+.fait { position: relative; width: 100%; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 70px; }
+.fait.sans-carte { grid-template-columns: 1fr; justify-items: center; margin-top: 210px; }
+.fait.sans-carte .bulle p { font-size: 92px; }
+.fait.gm .mot { color: var(--or-clair); }
+.fait .porte { width: 500px; }
+.fait .mot { position: absolute; left: 50%; top: 0; translate: -50% -86%; rotate: -4deg; font: 400 230px/1 var(--f-titre); color: var(--jaune); -webkit-text-stroke: 7px var(--encre); paint-order: stroke fill; white-space: nowrap; pointer-events: none; }
+.fait .bulle { position: relative; display: grid; gap: 22px; padding: 44px 56px; background: var(--nuit); color: #f4f4ef; box-shadow: inset 0 0 0 7px var(--nuit), inset 0 0 0 11px #f4f4ef, 0 20px 40px rgba(0, 0, 0, 0.22); max-width: 1500px; }
+.fait .bulle time { font: 400 34px/1 var(--f-jeu); word-spacing: 0.3em; color: #b9b9b2; }
+.fait .bulle p { margin: 0; font: 400 84px/1.18 var(--f-jeu); text-wrap: balance; }
+.fait .bulle .rg { justify-self: start; font: 400 48px/1 var(--f-titre); color: var(--encre); padding: 12px 22px; background: var(--matiere); box-shadow: 0 0 0 4px #f4f4ef; border-radius: 8px; }
+.fait.gm .bulle { box-shadow: inset 0 0 0 7px var(--nuit), inset 0 0 0 11px var(--or), 0 20px 40px rgba(0, 0, 0, 0.22); }
+.fait.gm .bulle p { color: var(--or-clair); }
+.points-fait { position: absolute; right: 44px; bottom: 30px; display: flex; gap: 14px; }
+.points-fait i, .points-jouer i { width: 18px; height: 18px; border-radius: 50%; box-shadow: inset 0 0 0 3px var(--encre); }
+.points-fait i.on, .points-jouer i.on { background: var(--encre); }
+
+/* ---------- Plan : comment jouer (une étape à la fois) ---------- */
+.p-jouer { grid-template-columns: 820px 1fr; align-items: center; gap: 70px; padding: 40px 90px 50px 70px; }
+.p-jouer .dessin { height: 100%; max-height: 640px; display: grid; place-items: center; }
+.p-jouer .dessin svg { width: 100%; height: 100%; }
+.p-jouer h3 { margin: 0; font: 400 104px/1.02 var(--f-titre); text-wrap: balance; }
+.p-jouer p { margin: 30px 0 0; font: 400 44px/1.3 var(--f-texte); color: var(--encre-2); text-wrap: pretty; max-width: 22ch; }
+.points-jouer { display: flex; gap: 16px; margin-top: 50px; }
+.etape-entre { animation: glisse 0.7s var(--sortie) both; }
+@keyframes glisse { from { transform: translateX(80px); opacity: 0; } }
+
+/* ---------- Évènement qui commence : une case qui claque sur la planche ---------- */
+.claque { position: absolute; inset: 0; z-index: 15; display: none; place-items: center; background: rgba(238, 239, 233, 0.6); }
+.claque.on { display: grid; }
+.claque .boite { display: grid; justify-items: center; gap: 18px; padding: 50px 100px 56px; background: var(--alerte); color: #fff; text-align: center; transform: rotate(-3deg); box-shadow: 0 0 0 var(--trait) var(--encre), 0 30px 60px rgba(0, 0, 0, 0.3); }
+.claque .boite.nuit { background: var(--nuit); }
+.claque .boite b { font: 400 150px/1 var(--f-titre); }
+.claque .boite span { font: 600 48px/1.2 var(--f-texte); }
+
+/* Raid (remplace le plan tant qu'il dure) */
+.raid { position: absolute; inset: 0; display: none; grid-template-columns: 640px 1fr; gap: 40px; padding: 34px 44px; background: radial-gradient(ellipse at 25% 70%, #3a0d0f 0%, var(--nuit) 70%); color: #f4f4ef; }
+.raid.on { display: grid; }
+.raid .scene { position: relative; display: grid; place-items: end center; }
+.raid .boss { width: 560px; transform-origin: 50% 100%; animation: respire 3.2s ease-in-out infinite; filter: drop-shadow(0 0 30px rgba(224, 50, 43, 0.55)); }
+.raid .boss.touche { animation: touche 0.25s ease-in-out; }
+.raid .boss svg { width: 100%; display: block; overflow: visible; }
+.raid .boss .grin, .raid .boss .croix { opacity: 0; }
+.raid.vaincu .boss .croix { opacity: 1; }
+@keyframes respire { 50% { transform: scale(1.02, 0.985); } }
+@keyframes touche { 30% { transform: translateX(-14px) rotate(-2deg); filter: brightness(2) drop-shadow(0 0 30px #fff); } 70% { transform: translateX(10px); } }
+.raid .info { display: grid; align-content: center; gap: 26px; }
+.raid h2 { margin: 0; font: 400 72px/1 var(--f-titre); color: #ff5048; letter-spacing: 0.01em; }
+.raid .sous { font: 400 34px/1.2 var(--f-jeu); color: #d8d8d0; }
+.pv { display: grid; gap: 10px; }
+.pv-barre { position: relative; height: 84px; background: #2a0a0b; box-shadow: 0 0 0 5px #f4f4ef; overflow: hidden; }
+.pv-barre i { position: absolute; inset: 0; transform-origin: left; background: linear-gradient(180deg, #ff5a4f, #c0201a 60%, #8d1410); transition: transform 0.6s var(--sortie); }
+.pv-barre u { position: absolute; inset: 0; transform-origin: left; background: #fff; transition: transform 1.4s 0.3s ease; }
+.pv-chiffres { display: flex; justify-content: space-between; font: 800 44px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.pv-chiffres span:last-child { color: #ffb3ad; }
+.coups { display: flex; flex-wrap: wrap; gap: 14px; min-height: 64px; }
+.coup { padding: 10px 18px; font: 800 32px/1 var(--f-texte); background: #f4f4ef; color: var(--nuit); animation: arrive 0.4s var(--sortie); }
+.coup b { color: var(--alerte); }
+.raid .pied { display: flex; gap: 40px; font: 600 30px var(--f-texte); color: #d8d8d0; }
+.raid .pied b { font: 800 44px/1 var(--f-chiffre); color: #f4f4ef; font-variant-numeric: tabular-nums; }
+.heros .raid { z-index: 1; }
+
+/* ---------- Avant le démarrage : les cartes à gagner, et les Hunters qui entrent ---------- */
+.accueil { position: absolute; inset: 0; z-index: 5; display: none; grid-template-columns: 1fr 560px; gap: 90px; padding: 80px 110px 80px 110px; background: var(--papier) var(--trame-fond); overflow: hidden; }
+.accueil.on { display: grid; }
+.acc-gauche { display: grid; grid-template-rows: auto 1fr auto; gap: 40px; min-width: 0; }
+.acc-gauche h1 { margin: 0; font: 400 200px/0.88 var(--f-titre); letter-spacing: -0.01em; }
+.acc-gauche h1 small { display: block; margin-top: 30px; font: 600 46px/1.2 var(--f-texte); letter-spacing: 0; color: var(--encre-2); }
+.compte { align-self: end; display: flex; align-items: baseline; gap: 26px; }
+.compte b { font: 800 190px/0.85 var(--f-chiffre); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.compte span { font: 400 54px/1.05 var(--f-titre); }
+.arrivants { display: flex; flex-wrap: wrap; gap: 14px 34px; font: 800 38px/1.2 var(--f-texte); color: var(--encre-2); min-height: 46px; }
+.arrivants span:first-child { color: var(--encre); background: var(--jaune); padding: 0 12px; }
+.vitrine { display: grid; align-content: center; gap: 34px; perspective: 1800px; }
+.vitrine .gi-carte { filter: drop-shadow(0 26px 34px rgba(0, 0, 0, 0.28)); }
+.vitrine p { margin: 0; font: 600 34px/1.25 var(--f-texte); color: var(--encre-2); text-align: center; text-wrap: balance; }
+.entree { position: absolute; left: -60px; right: -60px; top: 50%; z-index: 2; display: none; justify-items: center; gap: 12px; padding: 44px 0 52px; background: var(--nuit); color: #f4f4ef; transform: translateY(-50%) rotate(-3deg); box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3); }
+.entree.on { display: grid; }
+.entree b { font: 400 190px/1 var(--f-titre); color: var(--or-clair); }
+.entree span { font: 400 54px/1.2 var(--f-jeu); }
+
+/* ---------- Pause ---------- */
+.pause-voile { position: absolute; inset: 0; z-index: 6; display: none; place-items: center; background: rgba(238, 239, 233, 0.55); backdrop-filter: grayscale(1) contrast(0.85); }
+.pause-voile.on { display: grid; }
+.tampon { display: grid; justify-items: center; gap: 10px; padding: 30px 80px; border: 12px solid var(--alerte); color: var(--alerte); background: rgba(251, 251, 247, 0.92); transform: rotate(-6deg); animation: tamponne 0.4s cubic-bezier(.2, 1.6, .4, 1) both; }
+.tampon b { font: 400 210px/1 var(--f-titre); letter-spacing: 0.04em; }
+.tampon span { font: 800 40px var(--f-texte); color: var(--encre); }
+@keyframes tamponne { from { transform: rotate(-6deg) scale(1.8); opacity: 0; } }
+
+/* ---------- Fin de partie (figée) : le classement, puis la révélation des QR, en alternance ---------- */
+.fin { position: absolute; inset: 0; z-index: 5; display: none; padding: 60px 90px 70px; background: var(--papier) var(--trame-fond); }
+.fin.on { display: grid; }
+.fv { display: none; }
+.fv.vu { display: grid; }
+.fv.entre { animation: volet 0.7s var(--sortie) both; }
+.fv-classement { grid-template-rows: auto 1fr; gap: 40px; }
+.fv-classement h1, .fv-ile h1 { margin: 0; font: 400 110px/1 var(--f-titre); }
+.final { display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: column; grid-template-rows: repeat(5, 1fr); gap: 0 90px; }
+.fl { display: grid; grid-template-columns: 90px minmax(0, 1fr) auto; align-items: center; gap: 28px; border-bottom: 3px solid var(--encre); }
+.fl .r { width: 76px; height: 66px; display: grid; place-items: center; font: 800 44px/1 var(--f-chiffre); }
+.fl.m1 .r, .fl.m2 .r, .fl.m3 .r { font: 400 40px/1 var(--f-titre); background: var(--matiere); box-shadow: 0 0 0 4px var(--encre); border-radius: 7px; }
+.fl .p { font: 800 60px/1 var(--f-texte); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fl .n { font: 800 44px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; text-align: right; }
+.fl .n small { font-size: 28px; color: var(--encre-2); }
+.fv-ile { grid-template-columns: 1fr 1000px; gap: 70px; align-items: center; }
+.fv-ile p { margin: 34px 0 0; font: 400 40px/1.3 var(--f-texte); color: var(--encre-2); }
+.fv-ile .ile-cadre { aspect-ratio: 420 / 320; }
+
+/* ---------- Cinématiques (nuit de Greed Island) ---------- */
+.cine { position: absolute; inset: 0; z-index: 20; display: none; place-items: center; overflow: hidden; background: var(--nuit); color: #f4f4ef; }
+.cine.on { display: grid; }
+.cine > * { grid-area: 1 / 1; }
+.vitesse { position: absolute; inset: -40%; background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.09) 0deg 1.4deg, transparent 1.4deg 6deg); mask: radial-gradient(circle, transparent 16%, #000 48%); animation: tourne 30s linear infinite; }
+@keyframes tourne { to { transform: rotate(360deg); } }
+.secoue { animation: secoue 0.5s linear; }
+@keyframes secoue { 10%, 50%, 90% { transform: translate(-10px, 6px); } 30%, 70% { transform: translate(10px, -6px); } }
+.cine .gros { font: 400 150px/1 var(--f-titre); text-align: center; letter-spacing: 0.02em; }
+.cine .ligne-jeu { font: 400 44px/1.25 var(--f-jeu); text-align: center; }
+.cine .nom-j { font: 400 96px/1 var(--f-titre); text-align: center; }
+
+/* Tirage S / SS */
+.c-tirage { display: grid; grid-template-columns: 560px 760px; align-items: center; gap: 80px; }
+.c-tirage .porte { position: relative; perspective: 1600px; }
+.c-tirage .porte .gi-carte { filter: drop-shadow(0 0 60px var(--lueur)); }
+.c-tirage .txt { display: grid; gap: 24px; }
+.c-tirage .rang-gros { justify-self: start; font: 400 120px/1 var(--f-titre); padding: 16px 36px; color: var(--encre); background: var(--matiere); border-radius: 14px; box-shadow: 0 0 0 6px #f4f4ef; }
+
+/* Jarvis / Sceau */
+.c-gm { display: grid; grid-template-columns: 500px 1fr; align-items: center; gap: 70px; padding: 0 120px; width: 100%; }
+.c-gm .gros { text-align: left; color: var(--or-clair); -webkit-text-stroke: 3px var(--or-fonce); text-shadow: 0 0 40px rgba(215, 178, 90, 0.6); }
+.c-gm .lignes { display: grid; gap: 22px; margin-top: 30px; }
+.c-gm .lignes p { margin: 0; font: 400 42px/1.25 var(--f-jeu); }
+.c-gm .lignes p b { color: var(--or-clair); font-weight: 400; }
+.eclair { position: absolute; inset: 0; background: #fff6d8; opacity: 0; pointer-events: none; }
+.onde { position: absolute; left: 50%; top: 50%; width: 200px; height: 200px; margin: -100px; border-radius: 50%; box-shadow: 0 0 0 10px var(--or), 0 0 80px 20px rgba(215, 178, 90, 0.6); opacity: 0; }
+.onde.gel { box-shadow: 0 0 0 10px var(--gel), 0 0 80px 20px rgba(143, 214, 255, 0.6); }
+.sceau-cercle { position: absolute; width: 900px; height: 900px; }
+
+/* Raid : alarme */
+.c-alarme { position: absolute; inset: 0; display: grid; place-items: center; background: repeating-linear-gradient(-45deg, #8d1410 0 60px, #0c0c0e 60px 120px); background-size: 170px 170px; animation: defile 0.8s linear infinite; }
+@keyframes defile { to { background-position: 170px 0; } }
+.c-alarme .boite { display: grid; justify-items: center; gap: 18px; padding: 40px 90px; background: var(--nuit); box-shadow: 0 0 0 8px #ff3b30; }
+.c-alarme .gros { color: #ff5048; }
+
+/* Clear */
+.c-clear { display: grid; justify-items: center; gap: 30px; }
+.sceau-clear { width: 420px; height: 420px; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle, #fbe7a6, #c39a2c 70%, #8a6a12); box-shadow: 0 0 0 12px #f4f4ef, 0 0 0 20px var(--or-fonce), 0 0 120px 40px rgba(246, 220, 133, 0.5); color: var(--nuit); font: 400 88px/1 var(--f-titre); }
+
+/* Fin : gong et podium */
+.c-podium { display: grid; grid-template-columns: repeat(3, 420px); align-items: end; gap: 40px; height: 820px; }
+.marche { display: grid; grid-template-rows: auto auto 1fr; justify-items: center; gap: 14px; }
+.marche .nom-j { font-size: 64px; }
+.marche span { font: 400 34px/1.2 var(--f-jeu); color: #d8d8d0; }
+.marche .bloc { width: 100%; display: grid; place-items: start center; padding-top: 30px; background: var(--matiere); color: var(--encre); font: 400 140px/1 var(--f-titre); box-shadow: 0 0 0 6px #f4f4ef; }
+.marche.p1 .bloc { height: 460px; } .marche.p2 .bloc { height: 330px; } .marche.p3 .bloc { height: 230px; }
+
+/* Écran de lancement (un seul clic à l'installation, pour autoriser le son) */
+.lancer { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 16px; background: rgba(5, 5, 6, 0.86); color: #f4f4ef; }
+.lancer > div { display: grid; justify-items: center; gap: 22px; max-width: 560px; padding: 40px 36px; text-align: center; background: var(--nuit); box-shadow: inset 0 0 0 5px var(--nuit), inset 0 0 0 8px #f4f4ef; }
+.lancer b { font: 400 44px/1 var(--f-titre); }
+.lancer p { margin: 0; font: 400 18px/1.4 var(--f-texte); color: #d8d8d0; }
+.lancer button { min-height: 56px; padding: 0 30px; border: 0; background: var(--jaune); color: var(--encre); font: 400 22px/1 var(--f-titre); cursor: pointer; }
+.lancer button:hover { background: var(--or-clair); }
+.lancer button.discret { min-height: 44px; background: transparent; color: #f4f4ef; font: 600 17px var(--f-texte); text-decoration: underline; text-underline-offset: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+.p-ile .ile-cadre { height: 100%; aspect-ratio: 420 / 320; justify-self: end; }
+
+/* ---------- Portage : compléments ---------- */
+/* Fin de partie : le gong, puis le podium, empilés dans la même nuit. */
+.cine > .temps-gong > *, .cine > .temps-podium > * { grid-area: 1 / 1; }
+/* Cartes de Maître du jeu (@gq/ui) dans les cinématiques de Jarvis et du Sceau. */
+.c-gm .gi-carte { filter: drop-shadow(0 0 50px rgba(215, 178, 90, 0.45)); }
+/* Sans partie ou sans API : un mot lisible, sur la nuit. */
+.message { position: fixed; inset: 0; display: grid; place-content: center; gap: 16px; padding: 16px; text-align: center; background: #050506; color: #f4f4ef; font: 400 22px/1.4 var(--f-texte); }
+.message b { font: 400 44px/1 var(--f-titre); }
+.message p { margin: 0; max-width: 40ch; }
+/* Les cartes gardent leur encre dans la nuit des cinématiques. */
+.cine .gi-carte { color: var(--encre); }

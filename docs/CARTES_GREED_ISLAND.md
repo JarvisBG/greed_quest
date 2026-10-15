@@ -152,7 +152,7 @@ Sorts ajoutés par les amendements du 2026-10-10 (REGLES.md) :
 | Coffre scellé (objet) | **Solidité** (sort 1035) | Fortress |
 | Ticket de la Fortune (objet) | **Loterie** (sort 1032) | Lottery |
 | Pépite d'or (objet) | **Pépite d'or** (création ; image de la carte 607 « 10000J ») | J10,000 |
-| Boussole du chercheur (objet) | **Boussole** (création ; image de Magnetic Force 1005) | — |
+| Boussole du chercheur (objet) | **Boussole** (création ; illustration dessinée par nous, boussole de laiton) | — |
 | Second souffle (objet) | **Second souffle** (création ; image de Recycle 1037) | — |
 | Pouvoir Bandit (Spécialisation) | **L'épée du vol** (carte 094) | Bandit's Blade |
 | Texture Surprise (Transformation) | **Texture Surprise** (pouvoir de Hisoka) | Texture Surprise |

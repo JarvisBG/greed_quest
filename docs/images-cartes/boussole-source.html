@@ -1,0 +1,88 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}svg{display:block}</style></head><body>
+<!-- Boussole du chercheur : dessin maison (2026-10-15), même style que Gel. Rendu : Edge sans fenêtre, 1280 × 720. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="fond" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e7c27a"/><stop offset="1" stop-color="#b9813a"/>
+    </linearGradient>
+    <filter id="brosse" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.006 0.07" numOctaves="3" seed="11" result="b"/>
+      <feColorMatrix in="b" type="matrix" values="0 0 0 0 0.35  0 0 0 0 0.2  0 0 0 0 0.05  0 0 0 1.7 -0.8"/>
+    </filter>
+    <radialGradient id="laiton" cx="0.4" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#fff1b0"/><stop offset="0.45" stop-color="#e3b437"/><stop offset="1" stop-color="#9a6a12"/>
+    </radialGradient>
+    <radialGradient id="cadran" cx="0.45" cy="0.4" r="0.65">
+      <stop offset="0" stop-color="#fffdf2"/><stop offset="1" stop-color="#efe3c2"/>
+    </radialGradient>
+    <radialGradient id="eclat" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="1"/><stop offset="0.4" stop-color="#fff3a0" stop-opacity="0.7"/><stop offset="1" stop-color="#fff3a0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- carte au trésor en fond -->
+  <rect width="1280" height="720" fill="url(#fond)"/>
+  <rect width="1280" height="720" filter="url(#brosse)" opacity="0.55"/>
+  <g fill="none" stroke="#5a3510" stroke-width="7" stroke-linecap="round" opacity="0.55">
+    <path d="M40 600 C 140 520, 120 420, 230 380 S 330 250, 260 150 S 320 40, 420 60"/>
+    <path d="M1240 120 C 1150 180, 1180 290, 1080 330 S 980 470, 1060 560 S 1010 680, 900 700"/>
+  </g>
+  <g fill="none" stroke="#5a3510" stroke-width="6" stroke-dasharray="4 22" stroke-linecap="round" opacity="0.8">
+    <path d="M640 360 C 760 300, 860 230, 1010 175"/>
+  </g>
+  <!-- la balise visée, qui brille -->
+  <circle cx="1060" cy="160" r="120" fill="url(#eclat)"/>
+  <g stroke="#111" stroke-width="7" stroke-linejoin="round">
+    <path d="M1060 112 l14 34 l36 4 l-27 24 l8 36 l-31 -19 l-31 19 l8 -36 l-27 -24 l36 -4 z" fill="#ffd84a"/>
+  </g>
+
+  <!-- la boussole -->
+  <g transform="translate(600 380)">
+    <ellipse cx="18" cy="250" rx="250" ry="34" fill="#000" opacity="0.22"/>
+    <!-- anneau de suspension -->
+    <circle cx="0" cy="-300" r="40" fill="none" stroke="#111" stroke-width="30"/>
+    <circle cx="0" cy="-300" r="40" fill="none" stroke="url(#laiton)" stroke-width="16"/>
+    <rect x="-34" y="-282" width="68" height="44" rx="10" fill="url(#laiton)" stroke="#111" stroke-width="9"/>
+    <!-- boîtier -->
+    <circle r="262" fill="url(#laiton)" stroke="#111" stroke-width="11"/>
+    <circle r="220" fill="#7a4d0c" stroke="#111" stroke-width="8"/>
+    <circle r="206" fill="url(#cadran)" stroke="#111" stroke-width="6"/>
+    <!-- graduations -->
+    <g stroke="#111" stroke-width="5" stroke-linecap="round">
+      <g id="g4"><line x1="0" y1="-206" x2="0" y2="-176"/><line x1="0" y1="206" x2="0" y2="176"/><line x1="-206" y1="0" x2="-176" y2="0"/><line x1="206" y1="0" x2="176" y2="0"/></g>
+    </g>
+    <g stroke="#111" stroke-width="3" stroke-linecap="round" opacity="0.8">
+      <use href="#g4" transform="rotate(22.5)"/><use href="#g4" transform="rotate(45)"/><use href="#g4" transform="rotate(67.5)"/>
+    </g>
+    <!-- rose des vents -->
+    <g stroke="#111" stroke-width="5" stroke-linejoin="round">
+      <path d="M0 -150 L22 -22 L0 0 Z" fill="#2a2a2a"/><path d="M0 -150 L-22 -22 L0 0 Z" fill="#fffdf2"/>
+      <path d="M0 150 L22 22 L0 0 Z" fill="#fffdf2"/><path d="M0 150 L-22 22 L0 0 Z" fill="#2a2a2a"/>
+      <path d="M150 0 L22 22 L0 0 Z" fill="#2a2a2a"/><path d="M150 0 L22 -22 L0 0 Z" fill="#fffdf2"/>
+      <path d="M-150 0 L-22 -22 L0 0 Z" fill="#2a2a2a"/><path d="M-150 0 L-22 22 L0 0 Z" fill="#fffdf2"/>
+    </g>
+    <g font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="40" fill="#111" text-anchor="middle">
+      <text x="0" y="-158">N</text><text x="0" y="188">S</text><text x="176" y="14">E</text><text x="-176" y="14">O</text>
+    </g>
+    <!-- aiguille tournée vers la balise -->
+    <g transform="rotate(62)" stroke="#111" stroke-width="7" stroke-linejoin="round">
+      <path d="M0 -190 L30 0 L-30 0 Z" fill="#d0202a"/>
+      <path d="M0 -190 L30 0 L0 0 Z" fill="#9b1219"/>
+      <path d="M0 150 L30 0 L-30 0 Z" fill="#eef2f5"/>
+      <path d="M0 150 L30 0 L0 0 Z" fill="#b9c3cc"/>
+      <circle r="22" fill="url(#laiton)"/>
+    </g>
+    <!-- reflet du verre -->
+    <path d="M-150 -110 A 190 190 0 0 1 -40 -185" fill="none" stroke="#ffffff" stroke-width="16" stroke-linecap="round" opacity="0.75"/>
+    <path d="M-168 -50 A 190 190 0 0 1 -160 -80" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" opacity="0.6"/>
+  </g>
+
+  <!-- éclats -->
+  <g fill="#ffffff" stroke="#111" stroke-width="4">
+    <path d="M940 260 l7 -19 l7 19 l19 7 l-19 7 l-7 19 l-7 -19 l-19 -7 z"/>
+    <path d="M1180 300 l6 -16 l6 16 l16 6 l-16 6 l-6 16 l-6 -16 l-16 -6 z"/>
+    <path d="M200 200 l6 -16 l6 16 l16 6 l-16 6 l-6 16 l-6 -16 l-16 -6 z"/>
+  </g>
+</svg>
+</body></html>

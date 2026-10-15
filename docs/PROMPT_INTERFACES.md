@@ -78,6 +78,8 @@ Légende des rôles : **J** joueur · **P** PNJ · **G** GM (G peut tout ce que 
 
 ### 4.1 `apps/staff` — Console PNJ / GM
 
+> **Décision du 2026-10-15 (Sivraj)** : pas de direction artistique pour la console ; on garde le style néon générique existant, sans skill impeccable ni prototype. Seuls comptent le périmètre ci-dessous, la clarté et l'ergonomie (PNJ au téléphone, GM sur portable).
+
 **Deux profils d'appareil** : le PNJ est debout sur le terrain avec un téléphone (scanne des licences, une main) ; le GM est assis devant un ordinateur portable ou une tablette (vue dense, carte, plusieurs panneaux). Même application, mise en page adaptée à la largeur et au rôle reçu à la connexion.
 
 Socket : P rejoint la room `staff`, G rejoint `staff` + `gm`. Évènements reçus : `journal`, `alerte`, `balises`, `partie`, `j`, `parametre`, `joueur_inscrit`, `evenement`, `evenement_fin`, `raid`, `enchere`, `enchere_close`, `demande_clear`, `recompenses`, `classement_final` ; G seul : `position`, `proposition_evenement`.

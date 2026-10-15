@@ -1,0 +1,386 @@
+<meta charset="utf-8">
+<title>Cartes illustrées</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Prototype : les vraies illustrations des cartes de Greed Island (fenêtre 16:9 comme les cartes officielles), en grand, dans les pochettes du Book et au tirage.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@800&family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,800;1,400&family=Dela+Gothic+One&family=DotGothic16&display=swap">
+<style>
+/* Cartes illustrées : la carte de packages/ui reçoit sa vraie image. Fenêtre d'illustration en 16:9, comme sur
+   les cartes officielles (le texte prend la place qui reste) ; en pochette, l'image remplit la carte sous le
+   numéro. Thème clair unique. */
+:root {
+  color-scheme: light;
+  --papier: #eeefe9;
+  --case: #fbfbf7;
+  --case-2: #ecece6;
+  --encre: #111111;
+  --encre-2: #3b3d40;
+  --trame: rgba(17, 17, 17, 0.16);
+  --rouge: #c0272d;
+  --bleu: #1f4a9c;
+  --jaune: #d9a11a;
+  --or: #d7b25a;
+  --nuit: #0c0c0e;
+  --f-titre: 'Dela Gothic One', 'Arial Black', sans-serif;
+  --f-texte: 'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif;
+  --f-chiffre: 'Atkinson Hyperlegible Mono', ui-monospace, monospace;
+  --f-jeu: 'DotGothic16', ui-monospace, monospace;
+  --sortie: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; min-height: 100dvh;
+  background: var(--papier) radial-gradient(var(--trame) 0.8px, transparent 1px) 0 0 / 6px 6px;
+  color: var(--encre); font: 400 17px/1.45 var(--f-texte);
+}
+::selection { background: var(--encre); color: var(--case); }
+:focus-visible { outline: 3px solid var(--bleu); outline-offset: 3px; }
+main { max-width: 480px; margin: 0 auto; padding: 16px 16px 48px; display: grid; gap: 22px; }
+
+/* Cases de planche */
+.case { background: var(--case); box-shadow: 0 0 0 var(--trait, 3px) var(--encre); border-radius: 4px; padding: 16px; display: grid; gap: 14px; }
+.case > h2 { margin: 0; font: 400 22px/1.1 var(--f-titre); letter-spacing: 0.01em; }
+.case > p.aide { margin: -6px 0 0; color: var(--encre-2); font-size: 15px; }
+h1 { margin: 6px 0 0; font: 400 30px/1.05 var(--f-titre); }
+h1 + p { margin: 6px 0 0; color: var(--encre-2); font-size: 15px; }
+
+/* ---------- Carte de Greed Island (reprise de packages/ui, fenêtre 16:9) ---------- */
+.gi-carte { container-type: inline-size; aspect-ratio: 63 / 88; width: 100%; position: relative; }
+.gi-carte .c-cadre {
+  position: absolute; inset: 0; border-radius: 4.5cqi; padding: 5cqi;
+  background: var(--cadre, var(--rouge));
+  box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35);
+  display: grid; grid-template-rows: auto auto 1fr; gap: 3cqi;
+}
+.gi-carte.f-sort { --cadre: var(--bleu); }
+.gi-carte.f-objet { --cadre: var(--jaune); }
+.gi-carte .c-tete {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 3cqi;
+  background: var(--case); border-radius: 2cqi; padding: 2.5cqi 3cqi; box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55);
+}
+.gi-carte .c-num { font: 800 9cqi/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.gi-carte .c-num.long { font-size: 7.4cqi; }
+.gi-carte .c-nom { font: 800 6.4cqi/1.1 var(--f-texte); text-align: center; text-wrap: balance; hyphens: auto; overflow-wrap: break-word; }
+.gi-carte .c-nom.long { font-size: 5.6cqi; }
+.gi-rang {
+  font: 400 7cqi/1 var(--f-titre); padding: 1.6cqi 2.4cqi; border-radius: 1.6cqi; white-space: nowrap;
+  color: var(--encre); background: var(--matiere, var(--case)); box-shadow: 0 0 0 0.6cqi var(--encre);
+}
+.gi-rang .lim { font-size: 0.8em; }
+/* La fenêtre d'illustration : 16:9 comme sur la carte officielle, filet d'encre, image bord à bord. */
+.gi-carte .c-art {
+  aspect-ratio: 16 / 9; border-radius: 2cqi; overflow: hidden; position: relative;
+  background: #f4f2ea radial-gradient(var(--trame) 0.9px, transparent 1.1px) 0 0 / 5px 5px;
+  box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55);
+  display: grid; place-items: center;
+}
+.gi-carte .c-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.gi-carte .c-art .c-filigrane {
+  font: 400 24cqi/1 var(--f-titre); color: transparent; -webkit-text-stroke: 0.9cqi rgba(17, 17, 17, 0.55);
+}
+.gi-carte:is(.f-sort, .f-objet) .c-filigrane { font-size: 30cqi; }
+.gi-carte .c-bas {
+  background: var(--case); border-radius: 2cqi; padding: 3cqi 3.5cqi; min-height: 0;
+  box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); overflow: hidden;
+}
+.gi-carte .c-txt { margin: 0; font: 400 6.2cqi/1.32 var(--f-texte); }
+.gi-carte.f-designee .c-txt { font-style: italic; }
+.gi-carte .c-nom-petit { display: none; }
+.gi-carte.grisee { filter: grayscale(1) contrast(0.9); }
+.gi-carte.grisee .c-cadre::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit;
+  background: repeating-linear-gradient(-45deg, rgba(17, 17, 17, 0.25) 0 1.5px, transparent 1.5px 7px);
+}
+.r-SS { --matiere: linear-gradient(125deg, #9c7a1c 0%, #f6dc85 28%, #c39a2c 50%, #fbe7a6 72%, #a8841f 100%); }
+.r-S  { --matiere: linear-gradient(125deg, #8d949b 0%, #f1f3f5 35%, #aab1b8 60%, #e9ecef 100%); }
+.r-A  { --matiere: linear-gradient(125deg, #c97a4a 0%, #f2b48a 45%, #d88a58 100%); }
+.r-B  { --matiere: linear-gradient(125deg, #6fb596 0%, #b6e0cc 50%, #82c2a6 100%); }
+.r-C  { --matiere: linear-gradient(125deg, #9eb0c4 0%, #d6dfea 50%, #aebfd1 100%); }
+
+/* Carte vue petite (pochette) : le texte, illisible à cette taille, disparaît et l'image prend toute la place
+   sous le numéro (recadrée au centre) ; un sort ou un objet garde son nom en bandeau au pied de l'image. */
+@container (max-width: 130px) {
+  .gi-carte .c-nom, .gi-carte .c-bas { display: none; }
+  .gi-carte .c-tete { grid-template-columns: 1fr auto; padding: 4cqi; }
+  .gi-carte .c-num { font-size: 17cqi; }
+  .gi-carte .c-num.long { font-size: 14cqi; }
+  .gi-carte .gi-rang { font-size: 13cqi; padding: 2.5cqi 4cqi; }
+  .gi-carte .gi-rang .lim { display: none; }
+  .gi-carte .r-sort, .gi-carte .r-objet { display: none; }
+  .gi-carte.f-sort .c-tete, .gi-carte.f-objet .c-tete { grid-template-columns: 1fr; }
+  .gi-carte .c-cadre { padding: 6cqi; gap: 5cqi; grid-template-rows: auto 1fr; }
+  .gi-carte .c-art { aspect-ratio: auto; min-height: 0; }
+  .gi-carte .c-art .c-nom-petit {
+    display: block; position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: 3cqi 4cqi;
+    font: 800 13cqi/1.08 var(--f-texte); text-align: center; hyphens: auto; overflow-wrap: break-word;
+    background: rgba(251, 251, 247, 0.92); box-shadow: 0 -0.7cqi 0 rgba(0, 0, 0, 0.55);
+  }
+  .gi-carte .c-filigrane { font-size: 40cqi !important; }
+}
+
+/* ---------- ① La carte en grand ---------- */
+.scene-grande { display: grid; justify-items: center; gap: 14px; }
+.scene-grande > div { width: min(100%, 330px); }
+.scene-grande .gi-carte { filter: drop-shadow(0 14px 16px rgba(0, 0, 0, 0.28)); }
+.choix { display: flex; gap: 10px; overflow-x: auto; padding: 4px 4px 10px; margin: 0 -4px; scroll-snap-type: x proximity; }
+.choix button {
+  flex: 0 0 auto; width: 64px; padding: 0; border: 0; background: none; cursor: pointer; scroll-snap-align: start;
+  border-radius: 6px; outline-offset: 3px;
+}
+.choix button[aria-pressed="true"] { outline: 3px solid var(--encre); }
+.interrupteur { display: flex; align-items: center; gap: 10px; min-height: 48px; font-weight: 600; }
+.interrupteur input { width: 24px; height: 24px; accent-color: var(--encre); }
+
+/* ---------- ② Une page du Book ---------- */
+.livre-page {
+  background: #fff; padding: 14px 12px 16px;
+  box-shadow: 0 0 0 3px var(--encre), 0 12px 22px -10px rgba(0, 0, 0, 0.45);
+  border-top: 6px solid var(--rouge);
+}
+.livre-page header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; font: 400 14px/1 var(--f-jeu); }
+.poches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.poche {
+  aspect-ratio: 63 / 88; border-radius: 5px; position: relative; padding: 0; border: 0; cursor: pointer; background: none;
+  box-shadow: inset 0 0 0 2px rgba(17, 17, 17, 0.25);
+}
+.poche::after { /* le plastique de la pochette */
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0) 38%);
+}
+.poche.vide { background: #f1f1ec; display: grid; place-items: center; }
+.poche.vide span { font: 800 22px/1 var(--f-chiffre); color: rgba(17, 17, 17, 0.18); }
+.livre-page.libres { border-top-color: var(--encre); background: #f4f4f0 radial-gradient(var(--trame) 0.7px, transparent 0.9px) 0 0 / 5px 5px; }
+
+/* ---------- ③ Le tirage ---------- */
+.tirage {
+  position: relative; border-radius: 4px; overflow: hidden; min-height: 470px;
+  background: var(--nuit); display: grid; place-items: center; padding: 24px 16px 100px;
+}
+.tirage .rayons {
+  position: absolute; inset: -40%; opacity: 0; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, var(--eclat, #fff) 0 6deg, transparent 6deg 18deg);
+  -webkit-mask: radial-gradient(closest-side, #000 20%, transparent 75%); mask: radial-gradient(closest-side, #000 20%, transparent 75%);
+}
+.tirage .volet { width: min(72%, 260px); perspective: 900px; }
+.tirage .tourne { position: relative; transform-style: preserve-3d; }
+.tirage .tourne > * { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.tirage .tourne .face { position: absolute; inset: 0; transform: rotateY(180deg); }
+.gi-carte.dos .c-cadre {
+  background: #15233f; place-items: center; grid-template-rows: 1fr;
+  box-shadow: inset 0 0 0 1.2cqi #15233f, inset 0 0 0 2.2cqi var(--or), inset 0 0 0 3.4cqi #15233f, inset 0 0 0 4cqi var(--or);
+}
+.gi-carte.dos svg { width: 58%; height: auto; }
+.tirage .boite {
+  position: absolute; left: 12px; right: 12px; bottom: 12px; color: #f6f6f2; background: var(--nuit);
+  box-shadow: inset 0 0 0 2px #f6f6f2; border-radius: 4px; padding: 12px 14px; font: 400 16px/1.35 var(--f-jeu);
+  opacity: 0; transform: translateY(8px); transition: opacity 0.3s, transform 0.4s var(--sortie);
+}
+.tirage .boite.vue { opacity: 1; transform: none; }
+.bouton {
+  min-height: 52px; border: 0; border-radius: 4px; background: var(--encre); color: var(--case); cursor: pointer;
+  font: 800 18px/1 var(--f-texte); padding: 0 20px;
+}
+.bouton:active { transform: translateY(1px); }
+.rangee { display: flex; gap: 10px; flex-wrap: wrap; }
+.rangee .bouton { flex: 1 1 auto; }
+.bouton.clair { background: var(--case); color: var(--encre); box-shadow: inset 0 0 0 3px var(--encre); }
+
+/* Fiche (feuille du bas) */
+.voile { position: fixed; inset: 0; background: rgba(12, 12, 14, 0.55); opacity: 0; pointer-events: none; transition: opacity 0.25s; z-index: 10; }
+.voile.ouvert { opacity: 1; pointer-events: auto; }
+.fiche {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 11; max-width: 480px; margin: 0 auto;
+  background: var(--case); border-radius: 10px 10px 0 0; box-shadow: 0 0 0 3px var(--encre);
+  padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px)); display: grid; justify-items: center; gap: 14px;
+  transform: translateY(105%); transition: transform 0.4s var(--sortie); max-height: 92dvh; overflow: auto;
+}
+.fiche.ouverte { transform: none; }
+#fiche-carte { width: min(78%, 300px); }
+.fiche .bouton { width: 100%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fiche, .voile, .tirage .boite { transition: none; }
+}
+</style>
+
+<main>
+  <header>
+    <h1>Cartes illustrées</h1>
+    <p>Les vraies illustrations des cartes officielles, dans notre carte. Fenêtre d’image en 16:9, comme sur les cartes de l’anime.</p>
+  </header>
+
+  <section class="case" aria-labelledby="t1">
+    <h2 id="t1">La carte en grand</h2>
+    <p class="aide">Touche une vignette pour changer de carte.</p>
+    <div class="scene-grande">
+      <div id="grande"></div>
+    </div>
+    <div class="choix" id="choix" role="group" aria-label="Choisir une carte"></div>
+    <label class="interrupteur"><input type="checkbox" id="contrefacon"> Contrefaçon démasquée</label>
+  </section>
+
+  <section class="case" aria-labelledby="t2">
+    <h2 id="t2">Dans le Book</h2>
+    <p class="aide">Touche une pochette pour ouvrir la fiche de la carte.</p>
+    <div class="livre-page">
+      <header><span>Emplacements désignés</span><span>p. 1</span></header>
+      <div class="poches" id="poches-fixes"></div>
+    </div>
+    <div class="livre-page libres">
+      <header><span>Emplacements libres</span><span>6 / 15</span></header>
+      <div class="poches" id="poches-libres"></div>
+    </div>
+  </section>
+
+  <section class="case" aria-labelledby="t3">
+    <h2 id="t3">Le tirage</h2>
+    <p class="aide">La carte jaillit de dos et se retourne sur son image.</p>
+    <div class="tirage" id="tirage">
+      <div class="rayons" id="rayons"></div>
+      <div class="volet"><div class="tourne" id="tourne"></div></div>
+      <p class="boite" id="boite-tirage"></p>
+    </div>
+    <div class="rangee">
+      <button class="bouton" id="tirer">Tirer une carte</button>
+    </div>
+  </section>
+</main>
+
+<div class="voile" id="voile"></div>
+<div class="fiche" id="fiche" role="dialog" aria-modal="true" aria-labelledby="fiche-titre">
+  <h2 id="fiche-titre" class="sr" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Fiche de la carte</h2>
+  <div id="fiche-carte"></div>
+  <button class="bouton clair" id="fermer">Fermer</button>
+</div>
+
+<script>
+const CARTES = {
+  '000': { genre: 'designee', nom: 'Le bonheur du détenteur', rang: 'SS', lim: 1, texte: 'Un château et sa ville de 10 000 habitants, qui vivent selon les lois de son détenteur.' },
+  '009': { genre: 'designee', nom: "L'arbre de la bonne récolte", rang: 'A', lim: 4, texte: 'Un arbre chargé de tous les fruits du monde, plein à nouveau chaque matin.' },
+  '011': { genre: 'designee', nom: "La balance d'or", rang: 'D', lim: 12, texte: "Une balance d'or qui, face à deux choix, penche toujours vers le meilleur." },
+  '017': { genre: 'designee', nom: 'Le souffle du grand ange', rang: 'S', lim: 2, texte: "Le souffle d'un ange, qui guérit toutes les blessures et toutes les maladies. Une seule fois." },
+  '018': { genre: 'designee', nom: "Le petit clin d'œil du démon", rang: 'B', lim: 6, texte: "Un petit démon dont chaque clin d'œil procure une extase incomparable. On s'y accoutume vite." },
+  '021': { genre: 'designee', nom: 'Les lunettes squelettes', rang: 'C', lim: 8, texte: 'Des lunettes qui voient à travers tout, sauf un paquet de sorts de Masadora.' },
+  '047': { genre: 'designee', nom: 'La jeune fille endormie', rang: 'A', lim: 4, texte: 'Une jeune fille qui dort à la place de son maître, éveillé jour et nuit.' },
+  '050': { genre: 'designee', nom: "Le zaurus qui s'emballe", rang: 'A', lim: 4, texte: 'Un petit saurien dont chaque génération donne une nouvelle espèce.' },
+  '056': { genre: 'designee', nom: 'La galerie de photos souvenirs', rang: 'C', lim: 8, texte: "Une galerie qui tire le portrait de son visiteur à n'importe quel moment de son passé." },
+  '081': { genre: 'designee', nom: 'Blue planet', rang: 'S', lim: 2, texte: "Un joyau bleu inconnu de la science, tombé de l'espace." },
+  '094': { genre: 'designee', nom: "L'épée du vol", rang: 'A', lim: 4, texte: 'Une épée légendaire dont chaque coup vole une carte.' },
+  '095': { genre: 'designee', nom: 'Le manteau du secret', rang: 'C', lim: 8, texte: 'Un manteau qui protège le Book de son porteur de tout regard indiscret.' },
+  vol: { genre: 'sort', num: '1007', nom: 'Vol', texte: "Vole une carte au hasard dans les emplacements désignés d'un joueur proche." },
+  barriere: { genre: 'sort', num: '1003', nom: 'Mur défensif', texte: 'Pare une fois le prochain sort offensif lancé sur toi.' },
+  radar: { genre: 'sort', num: '1027', nom: 'Trace', texte: "Montre la zone où se trouve un joueur." },
+  gel: { genre: 'sort', num: '—', nom: 'Gel', texte: "Fige un joueur proche : il ne peut plus scanner pendant 3 minutes.", sansImage: true },
+  ticket: { genre: 'objet', num: '1032', nom: 'Loterie', texte: 'Un ticket à gratter : la chance décide du gain.' },
+};
+const IMAGE = (id, c) => (c.sansImage ? null : `img-cartes/${c.genre}/${id}.webp`);
+
+function carte(id, { grisee = false } = {}) {
+  const c = CARTES[id];
+  const num = c.genre === 'designee' ? id : c.num;
+  const coin = c.genre === 'designee'
+    ? `<span class="gi-rang r-${c.rang}" aria-label="rang ${c.rang}, ${c.lim} exemplaires au plus">${c.rang}<span class="lim">-${c.lim}</span></span>`
+    : `<span class="gi-rang r-${c.genre}">${c.genre === 'sort' ? 'Sort' : 'Objet'}</span>`;
+  const img = IMAGE(id, c);
+  const art = img
+    ? `<img src="${img}" alt="" decoding="async">`
+    : `<span class="c-filigrane">${c.genre === 'designee' ? num : c.genre === 'sort' ? 'S' : 'O'}</span>`;
+  return `<div class="gi-carte f-${c.genre}${grisee ? ' grisee' : ''}">
+    <div class="c-cadre">
+      <div class="c-tete"><span class="c-num${num.length > 3 ? ' long' : ''}">${num}</span><span class="c-nom${c.nom.length > 10 ? ' long' : ''}">${c.nom}</span>${coin}</div>
+      <div class="c-art" aria-hidden="true">${art}${c.genre !== 'designee' ? `<span class="c-nom-petit">${c.nom}</span>` : ''}</div>
+      <div class="c-bas"><p class="c-txt">${c.texte}</p></div>
+    </div>
+  </div>`;
+}
+const DOS = `<div class="gi-carte dos" aria-hidden="true"><div class="c-cadre">
+  <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="#d7b25a" stroke-width="3"/><circle cx="50" cy="50" r="31" fill="none" stroke="#d7b25a" stroke-width="1.5"/>
+  <path d="M50 22 L57 43 L79 43 L61 56 L68 78 L50 64 L32 78 L39 56 L21 43 L43 43 Z" fill="#d7b25a"/></svg></div></div>`;
+
+/* ① La carte en grand */
+const ordre = ['017', '000', '081', '094', '050', '009', '021', '011', '047', '018', '056', '095', 'vol', 'barriere', 'radar', 'gel', 'ticket'];
+let actuelle = '017';
+const grande = document.getElementById('grande');
+const contrefacon = document.getElementById('contrefacon');
+function montrer() { grande.innerHTML = carte(actuelle, { grisee: contrefacon.checked }); }
+const choix = document.getElementById('choix');
+choix.innerHTML = ordre.map((id) => `<button type="button" data-id="${id}" aria-pressed="${id === actuelle}" aria-label="${CARTES[id].nom}">${carte(id)}</button>`).join('');
+choix.addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  actuelle = b.dataset.id;
+  for (const x of choix.children) x.setAttribute('aria-pressed', String(x === b));
+  montrer();
+});
+contrefacon.addEventListener('change', montrer);
+montrer();
+
+/* ② Le Book */
+const fixes = ['000', null, '009', '011', null, '017', '018', '021', null];
+const libres = ['vol', 'barriere', 'gel', 'ticket', '094', '081', null, null, null];
+const pochettes = (ids, vides) => ids.map((id, i) => id
+  ? `<button type="button" class="poche" data-id="${id}" aria-label="${CARTES[id].nom}">${carte(id)}</button>`
+  : `<div class="poche vide">${vides ? `<span>${vides[i]}</span>` : ''}</div>`).join('');
+document.getElementById('poches-fixes').innerHTML = pochettes(fixes, ['000', '001', '002', '003', '004', '005', '006', '007', '008']);
+document.getElementById('poches-libres').innerHTML = pochettes(libres);
+
+const voile = document.getElementById('voile');
+const fiche = document.getElementById('fiche');
+let appuiFond = false;
+function ouvrir(id) {
+  document.getElementById('fiche-carte').innerHTML = carte(id);
+  voile.classList.add('ouvert'); fiche.classList.add('ouverte');
+  document.getElementById('fermer').focus({ preventScroll: true });
+}
+function fermer() { voile.classList.remove('ouvert'); fiche.classList.remove('ouverte'); }
+document.addEventListener('click', (e) => { const p = e.target.closest('.poche[data-id]'); if (p) ouvrir(p.dataset.id); });
+voile.addEventListener('pointerdown', () => { appuiFond = true; });
+voile.addEventListener('click', () => { if (appuiFond) fermer(); appuiFond = false; });
+document.getElementById('fermer').addEventListener('click', fermer);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fermer(); });
+
+/* ③ Le tirage */
+const ECLAT = { SS: '#ffd877', S: '#e9eef3', A: '#f2b48a', B: '#b6e0cc', C: '#d6dfea', D: '#fbfbf7' };
+const tirables = ['017', '000', '081', '094', '050', '021', '011', '047'];
+let n = 0, anims = [];
+const tourne = document.getElementById('tourne');
+const rayons = document.getElementById('rayons');
+const boite = document.getElementById('boite-tirage');
+const calme = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function tirer() {
+  anims.forEach((a) => a.cancel()); anims = [];
+  const id = tirables[n++ % tirables.length]; const c = CARTES[id];
+  // L'élément est recréé à chaque tirage (leçon de l'arène : Chromium peut garder l'image du dos).
+  tourne.innerHTML = DOS + `<div class="face">${carte(id)}</div>`;
+  boite.classList.remove('vue');
+  const img = tourne.querySelector('img');
+  const pret = img && !img.complete ? new Promise((r) => { img.onload = img.onerror = r; }) : Promise.resolve();
+  rayons.style.setProperty('--eclat', ECLAT[c.rang] || '#fff');
+  if (calme) {
+    tourne.style.transform = 'rotateY(180deg)';
+    boite.textContent = `Tu obtiens la carte ${id}, ${c.nom}, rang ${c.rang}.`; boite.classList.add('vue');
+    return;
+  }
+  tourne.style.transform = '';
+  const A = (el, k, o) => { const a = el.animate(k, o); anims.push(a); return a; };
+  A(tourne, [{ transform: 'translateY(60%) scale(0.4) rotateZ(-20deg)', opacity: 0 }, { transform: 'translateY(-4%) scale(1.04) rotateZ(4deg)', opacity: 1, offset: 0.7 }, { transform: 'none', opacity: 1 }], { duration: 650, easing: 'cubic-bezier(0.16,1,0.3,1)' });
+  const suspense = { SS: 1400, S: 950, A: 650, B: 420, C: 240, D: 0 }[c.rang] || 0;
+  pret.then(() => {
+    const t0 = 700;
+    if (suspense) A(tourne, [{ transform: 'rotateZ(0)' }, { transform: 'rotateZ(-2deg) translateX(-2px)' }, { transform: 'rotateZ(2deg) translateX(2px)' }, { transform: 'rotateZ(0)' }], { duration: 120, iterations: Math.round(suspense / 120), delay: t0 });
+    const flip = A(tourne, [{ transform: 'rotateY(0) scale(1)' }, { transform: 'rotateY(90deg) scale(1.08)' }, { transform: 'rotateY(180deg) scale(1)' }], { duration: 520, delay: t0 + suspense, easing: 'cubic-bezier(0.3,0,0.2,1)', fill: 'forwards' });
+    if (['SS', 'S', 'A'].includes(c.rang)) {
+      A(rayons, [{ opacity: 0, transform: 'rotate(0)' }, { opacity: 0.55, transform: 'rotate(20deg)', offset: 0.3 }, { opacity: 0.35, transform: 'rotate(60deg)' }], { duration: 2600, delay: t0 + suspense + 260, fill: 'forwards' });
+    }
+    flip.onfinish = () => {
+      tourne.style.transform = 'rotateY(180deg)'; flip.cancel();
+      A(document.getElementById('tirage'), [{ transform: 'translate(0,0)' }, { transform: 'translate(-4px,3px)' }, { transform: 'translate(3px,-3px)' }, { transform: 'translate(0,0)' }], { duration: 220 });
+      boite.textContent = `Tu obtiens la carte ${id}, ${c.nom}, rang ${c.rang}.`;
+      boite.classList.add('vue');
+    };
+  });
+}
+document.getElementById('tirer').addEventListener('click', tirer);
+tirer();
+</script>

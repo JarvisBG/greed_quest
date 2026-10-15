@@ -226,7 +226,12 @@ export function CineFin({ cine, classement, pseudo, onFini }: { cine: Cine; clas
             tp.style.left = `${b.left + b.width / 2}px`;
             tp.style.top = `${b.top + b.height * 0.6}px`;
           }
-        } else A(r.podium.current, [{ opacity: 1 }, { opacity: 0.35 }], { duration: 400 });
+        } else {
+          A(r.podium.current, [{ opacity: 1 }, { opacity: 0.35 }], { duration: 400 });
+          // Écran bas : le tampon descend sous le ruban du Clear plutôt que de le couvrir.
+          const ruban = r.ruban.current?.getBoundingClientRect();
+          if (ruban) tp.style.top = `${Math.max(innerHeight * 0.44, ruban.bottom + tp.offsetHeight / 2 + 12)}px`;
+        }
         await pause(surPodium ? 100 : 350);
         if (!vivant) return;
         A(tp, [{ opacity: 0, scale: 2.4, rotate: '-4deg' }, { opacity: 1, scale: 0.92, rotate: '-13deg', offset: 0.75 }, { opacity: 1, scale: 1, rotate: '-12deg' }], {

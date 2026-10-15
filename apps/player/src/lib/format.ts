@@ -1,5 +1,5 @@
 // Libellés et formats affichés au joueur (français).
-import type { GameState, NenType, ObjetType, PouvoirSpe, SpellType } from '@gq/shared';
+import { NOMS_CARTES_GM, type GameState, type NenType, type ObjetType, type PouvoirSpe, type SpellType } from '@gq/shared';
 import type { EvenementJoueur } from './realtime';
 import type { Gain, IssueScan } from './scan';
 
@@ -56,6 +56,10 @@ const EVENEMENTS: Record<EvenementJoueur, string> = {
   raid: 'Raid : le boss perd des PV',
   arene: 'Arène de Soufrabi',
   accompagnement: 'Accompagnement : position de ta cible',
+  carte_gm_jouee: 'Jarvis a parlé',
+  carte_gm_recue: 'Carte de Maître du jeu',
+  carte_gm_obtenue: 'Carte de Maître du jeu obtenue',
+  carte_gm_rendue: 'Carte rendue au Maître du jeu',
 };
 
 export function libelleEvenement(nom: EvenementJoueur): string {
@@ -114,6 +118,7 @@ export function libelleGain(g: Gain): string {
   if (g.kind === 'carte') return `${g.nom} (rang ${g.rang})`;
   if (g.kind === 'sort') return `Sort ${SORTS[g.sort].nom}`;
   if (g.kind === 'objet') return `Objet ${OBJETS[g.objet].nom}`;
+  if (g.kind === 'gm') return `${NOMS_CARTES_GM[g.gm].nom} (carte de Maître du jeu)`;
   return `${g.montant} J`;
 }
 

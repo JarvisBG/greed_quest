@@ -37,6 +37,10 @@ import { BandeauZetsu } from './ecrans/sorts/BandeauZetsu';
 import { PieceFortune } from './ecrans/sorts/CaseNen';
 import { minSec } from './ecrans/sorts/FicheSort';
 import { SortRecu } from './ecrans/sorts/SortRecu';
+import { BandeauxGm } from './ecrans/gm/BandeauxGm';
+import { CinematiqueGm } from './ecrans/gm/CinematiqueGm';
+import { JouerGm } from './ecrans/gm/JouerGm';
+import type { CarteGmRecue } from './lib/livre';
 import { Sorts } from './ecrans/sorts/Sorts';
 import { api, session } from './lib/client';
 import { creerEveil, eveilDisponible, preferenceEveil } from './lib/eveil';
@@ -121,6 +125,8 @@ export function App() {
   const clear = jeu.clear.etat;
   /** Page ⑪ : gel subi (Gel, Accompagnement), pour le bandeau, l'onglet Scanner givré et la cinématique. */
   const gel = useGel(moi);
+  /** RG-8.19, RG-8.20 : carte de Maître du jeu en train d’être jouée. */
+  const [jeuGm, setJeuGm] = useState<CarteGmRecue | null>(null);
   const moiRef = useRef(moi);
   moiRef.current = moi;
   // Parcours d'arrivée : kit → Examen (RG-5.3, peut attendre) → test de Nen (RG-5.4) → accueil.
@@ -176,6 +182,7 @@ export function App() {
       {enJeu && ecran === 'accueil' && spectateur && !termine && <BandeauSpectateur />}
       {enJeu && ecran === 'accueil' && <BandeauZetsu moi={moi} />}
       {enJeu && ecran === 'accueil' && <BandeauGel moi={moi} par={jeu.gelePar} />}
+      {enJeu && ecran === 'accueil' && <BandeauxGm moi={moi} />}
       {/* Page ⑰ : Clear déclaré, en attente du Game Master, sur toutes les pages sauf la licence. */}
       {enJeu && ecran === 'accueil' && clear.etat === 'declare' && !(onglet === 'accueil' && sous === 'licence') && (
         <BandeauClear
@@ -308,6 +315,7 @@ export function App() {
                 positionAction={jeu.positionAction}
                 onSorts={() => setOnglet('sorts')}
                 onClearDeclare={jeu.clear.declare}
+                onJouerGm={setJeuGm}
               />
             )}
             {ecran === 'accueil' && onglet === 'sorts' && (
@@ -576,6 +584,23 @@ export function App() {
         />
       )}
       {tirages.courant && <Tirage key={tirages.courant.id} demande={tirages.courant} onFini={tirages.terminer} />}
+      {/* RG-8.19, RG-8.20 : jouer une carte de Maître du jeu (choix, puis cinématique). */}
+      {jeuGm && jeu.partieId && (
+        <JouerGm
+          key={jeuGm.itemId}
+          partieId={jeu.partieId}
+          carte={jeuGm}
+          positionAction={jeu.positionAction}
+          onFini={() => {
+            setJeuGm(null);
+            jeu.apresAction();
+          }}
+        />
+      )}
+      {/* RG-8.20 : Sceau d'Ange reçu (côté cible), après un tirage en cours. */}
+      {!tirages.courant && !jeu.sortRecu && jeu.sceauRecu && (
+        <CinematiqueGm key={`sceau-${jeu.sceauRecu.lanceur}`} cine={{ kind: 'sceau-recu', lanceur: jeu.sceauRecu.lanceur, texte: jeu.sceauRecu.texte }} onFini={jeu.finSceauRecu} />
+      )}
       {/* Page ⑪ : sorts reçus qui frappent, un par un, après un tirage en cours. */}
       {!tirages.courant && jeu.sortRecu && jeu.partieId && (
         <SortRecu

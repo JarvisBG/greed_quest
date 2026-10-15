@@ -1,5 +1,5 @@
 // Livre du joueur tel que l'API le donne (GET /livre, RG-8.5). Chargement : useLivre.ts.
-import type { ObjetType, Rank, SpellType } from '@gq/shared';
+import type { CarteGm, ObjetType, Rank, SpellType } from '@gq/shared';
 
 export interface Carte {
   numero: number | null;
@@ -41,6 +41,15 @@ export interface LivreRecu {
   /** Amendement 2026-10-10 : section des objets, à part. */
   objets: { itemId: string; objet: ObjetType; obtenu: string; engage: boolean }[];
   placesObjets: number;
+  /** RG-8.15 : cartes de Maître du jeu détenues (page « Maître du jeu » à la fin du Book). */
+  cartesGm?: CarteGmRecue[];
+}
+
+export interface CarteGmRecue {
+  itemId: string;
+  gm: CarteGm;
+  obtenu: string;
+  engage: boolean;
 }
 
 export type EmplacementCarte = Extract<Emplacement, { kind: 'carte' }>;
@@ -72,18 +81,20 @@ export function cartesACacher(l: LivreRecu): EmplacementCarte[] {
   return contenu(l).filter((e): e is EmplacementCarte => e.kind === 'carte' && e.designe && !e.engagee && !l.gele);
 }
 
-export type GenrePage = 'designee' | 'libre' | 'objets';
+export type GenrePage = 'designee' | 'libre' | 'objets' | 'gm';
 
 /**
  * Pages du Book : celles de l'API (RG-8.5), puis la page des objets (amendement 2026-10-10 : 8 places à part,
- * hors des 15 libres ; rangée dans le Book comme dans l'anime, demande de Sivraj du 2026-10-11).
+ * hors des 15 libres ; rangée dans le Book comme dans l'anime, demande de Sivraj du 2026-10-11), puis, si le joueur
+ * en détient, la page des cartes de Maître du jeu (RG-8.15 : hors des 8 places).
  */
 export function nombreDePages(l: LivreRecu): number {
-  return l.pages.length + 1;
+  return l.pages.length + 1 + (l.cartesGm?.length ? 1 : 0);
 }
 
-/** RG-8.5 : page d'emplacements désignés (numéros de l'anime), d'emplacements libres, ou page des objets. */
+/** RG-8.5 : page d'emplacements désignés (numéros de l'anime), d'emplacements libres, des objets ou du Maître du jeu. */
 export function genreDePage(l: LivreRecu, i: number): GenrePage {
+  if (i > l.pages.length) return 'gm';
   if (i >= l.pages.length) return 'objets';
   return (l.pages[i] ?? []).some((e) => e.designe) ? 'designee' : 'libre';
 }

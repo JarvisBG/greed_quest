@@ -2,7 +2,7 @@
 // RG-7.5 : sans réseau, le scan part en file ; la file est rejouée au retour de la connexion.
 import { ApiError, type Api } from './api';
 import type { FileScans, ScanEnAttente } from './file';
-import type { ObjetType, PositionInput, Rank, SpellType } from '@gq/shared';
+import type { CarteGm, ObjetType, PositionInput, Rank, SpellType } from '@gq/shared';
 
 export type Gain =
   /** Carte tirée, complète pour la retourner à l'écran : numéro de l'anime, texte d'ambiance, limite de la partie (RG-8.2). */
@@ -10,7 +10,9 @@ export type Gain =
   | { kind: 'sort'; sort: SpellType }
   | { kind: 'jenny'; montant: number }
   /** Amendement 2026-10-10 : objet reçu en plus des jenny d'un repli. */
-  | { kind: 'objet'; objet: ObjetType };
+  | { kind: 'objet'; objet: ObjetType }
+  /** RG-8.16 : carte de Maître du jeu tombée au scan, par pur hasard. */
+  | { kind: 'gm'; gm: CarteGm };
 
 export type IssueScan =
   | { type: 'ok'; gains: Gain[]; jenny: number; secondSouffle?: boolean }

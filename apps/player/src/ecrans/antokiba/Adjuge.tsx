@@ -3,7 +3,7 @@
 // puis s'abat (onde, étincelles, secousse, éclair, vibration), « ADJUGÉ ! » frappé ; la carte s'élève, s'embrase et
 // fait un tour sur elle-même, le prix payé dessous. Le jeu le dit ; la jenny n'est débitée qu'ici (seul le gagnant
 // paie, RG-11.4). Toucher range la carte dans l'onglet Book (« +1 »). Toucher pendant l'intro passe à la révélation.
-import { Carte, Concentration } from '@gq/ui';
+import { Carte, CarteNoire, Concentration } from '@gq/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { texteAdjuge, type Adjuge as AdjugeData } from '../../lib/encheres';
 import { creerEffets } from '../scan/effets';
@@ -265,7 +265,7 @@ export function Adjuge({ adjuge, onDebit, onFini }: Props) {
       <div ref={r.socle} className="adj-socle" />
       <div ref={r.lot} className="adj-lot" aria-hidden="true">
         <div ref={r.tourne} className="adj-tourne">
-          <Carte genre="designee" numero={carte.numero} nom={carte.nom} rang={carte.rang} limite={carte.limite} texte={carte.texte} />
+          {carte.gm ? <CarteNoire gm={carte.gm} /> : <Carte genre="designee" numero={carte.numero} nom={carte.nom} rang={carte.rang} limite={carte.limite} texte={carte.texte} />}
         </div>
       </div>
       <div ref={r.marteau} className="adj-marteau">

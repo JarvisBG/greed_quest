@@ -4,7 +4,7 @@
 // qu'on a obtenu ; au toucher, elle vole en arc se ranger dans l'onglet Book (Sorts pour un sort).
 // Les jenny frappent puis filent dans le compteur. Toucher pendant l'apparition saute à la révélation.
 // Jouée au niveau de l'app : pour un scan, et pour chaque tirage rejoué au retour du réseau (RG-7.5).
-import { Carte, Concentration, DosCarte } from '@gq/ui';
+import { Carte, CarteNoire, Concentration, DosCarte } from '@gq/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { eclatDe, indiceRangement, ongletDe, phraseGain, tamponDe, type CarteTiree, type Eclat, type Etape } from '../../lib/tirage';
 import { creerEffets } from './effets';
@@ -459,7 +459,12 @@ export function Tirage({ demande, onFini }: { demande: DemandeTirage; onFini: ()
         <div ref={r.rayons} className="tirage-rayons" aria-hidden="true" />
         <div ref={r.vol} className="tirage-vol">
           <div ref={r.ret} className="tirage-retourne">
-            {carte && <Carte genre={carte.genre} numero={carte.numero} nom={carte.nom} rang={carte.rang} limite={carte.limite} texte={carte.texte} />}
+            {carte &&
+              (carte.genre === 'gm' && carte.gm ? (
+                <CarteNoire gm={carte.gm} />
+              ) : (
+                <Carte genre={carte.genre === 'gm' ? 'objet' : carte.genre} numero={carte.numero} nom={carte.nom} rang={carte.rang} limite={carte.limite} texte={carte.texte} />
+              ))}
             <DosCarte />
           </div>
         </div>

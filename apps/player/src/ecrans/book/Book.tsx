@@ -8,7 +8,7 @@ import type { ObjetType, PositionInput } from '@gq/shared';
 import { Dialogue } from '@gq/ui';
 import { useRef, useState } from 'react';
 import { api } from '../../lib/client';
-import { clearPossible, type LivreRecu } from '../../lib/livre';
+import { clearPossible, type CarteGmRecue, type LivreRecu } from '../../lib/livre';
 import { useLivre } from '../../lib/useLivre';
 import { Feuillets } from './Feuillets';
 import { Fiche, type ActionsFiche, type ResultatObjet, type Sujet } from './Fiche';
@@ -22,6 +22,7 @@ export function Book({
   positionAction,
   onSorts,
   onClearDeclare,
+  onJouerGm,
 }: {
   partieId: string;
   version: number;
@@ -30,6 +31,8 @@ export function Book({
   onSorts: () => void;
   /** Page ⑰ : Clear provisoire accepté (Book gelé) ; l'App joue le sceau. */
   onClearDeclare: () => void;
+  /** RG-8.19, RG-8.20 : jouer une carte de Maître du jeu (l'App ouvre le choix puis la cinématique). */
+  onJouerGm: (g: CarteGmRecue) => void;
 }) {
   const { livre, erreur } = useLivre(partieId, version);
   const calme = useRef(matchMedia('(prefers-reduced-motion: reduce)').matches).current;
@@ -58,6 +61,7 @@ export function Book({
     },
     rafraichir: apresAction,
     ouvrirSorts: onSorts,
+    jouerGm: onJouerGm,
   };
 
   return (

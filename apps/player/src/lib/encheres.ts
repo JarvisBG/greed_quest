@@ -1,13 +1,14 @@
 // Page ⑭ (prototype docs/prototype/antokiba.html) : enchères d'Antokiba côté app, RG-11.4 / 11.5.
 // Le serveur fait foi (P1) : ces fonctions ne font qu'afficher ce que GET /encheres et les évènements disent.
-import type { Rank } from '@gq/shared';
+import type { CarteGm, Rank } from '@gq/shared';
 import { minSec } from './boutique';
 import { enPhrase } from './sorts';
 
 /** Un lot de GET /parties/:id/encheres (et des évènements `enchere`). */
 export interface Lot {
   id: string;
-  carte: { id: string; numero: number | null; nom: string; rang: Rank; texte: string | null; limite: number | null };
+  /** `gm` : lot « carte de Maître du jeu » mis en vente par le GM (RG-8.16), sans rang ni numéro. */
+  carte: { id: string; numero: number | null; nom: string; rang: Rank; texte: string | null; limite: number | null; gm?: CarteGm };
   resteMs: number;
   prixDepart: number;
   meilleureOffre: { montant: number; pseudo: string; joueurId: string } | null;

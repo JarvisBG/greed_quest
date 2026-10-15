@@ -1,6 +1,6 @@
 // État de l'app joueur : partie visée, session, profil, connexion temps réel, fil des évènements,
 // suivi de position (RG-10.9) et scans, y compris la file hors ligne (RG-7.5).
-import type { NenType, PositionInput, PouvoirSpe } from '@gq/shared';
+import type { CarteGm, NenType, PositionInput, PouvoirSpe } from '@gq/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError } from './api';
 import { api, API_URL, file, session } from './client';
@@ -13,6 +13,7 @@ import { fusionnerLot, jeMene, texteAdjuge, texteClotureAutre, texteSurencheri, 
 import { ilYaRecu, issueRecu, texteSortRecu, type SortRecu } from './sorts';
 import { texteAnnulee, texteEntree, type EtatArene, type EvArene, type IssueArene } from './arene';
 import { texteFinRaid } from './raid';
+import { texteGmObtenue, texteGmRecue, texteGmRendue, texteJarvisAutres, type EvGmJouee, type EvGmRecue } from './cartesGm';
 import { useRaid } from './useRaid';
 import { useClear } from './useClear';
 import { useFin } from './useFin';
@@ -52,6 +53,8 @@ export interface Moi {
   villesVisitees: string[];
   retour: { ville: 'masadora' | 'antokiba'; resteMs: number } | null;
   accompagne: number;
+  /** RG-8.19, RG-8.20 : figé par le Jugement, Book scellé par Ange, intouchable (ms restantes à `recuA`). */
+  etatsGm: { fige: number; scelle: number; intouchable: number };
   recuA: number;
 }
 
@@ -147,6 +150,8 @@ export function useJeu() {
   const ajouterJenny = useCallback((montant: number) => setMoi((m) => (m ? { ...m, jenny: m.jenny + montant } : m)), []);
   /** Page ⑪ : sorts reçus qui frappent, en attente de leur cinématique (joués un par un, au niveau de l'App). */
   const [sortsRecus, setSortsRecus] = useState<SortRecu[]>([]);
+  /** RG-8.20 : Sceaux d'Ange reçus, joués l'un après l'autre (cinématique côté cible). */
+  const [sceauxRecus, setSceauxRecus] = useState<{ lanceur: string; texte: string }[]>([]);
   /** Qui t'a gelé (Gel, Accompagnement), pour le bandeau ; inconnu après un rechargement. */
   const [gelePar, setGelePar] = useState<{ pseudo: string; accompagnement: boolean } | null>(null);
   /** RG-7.5 : tirages reçus au rejeu de la file, en attente de leur cinématique (l'app les joue un par un). */
@@ -198,7 +203,7 @@ export function useJeu() {
           throw e;
         }
       }
-      type Recu = Pick<Moi, 'delais' | 'specialisation' | 'recharges' | 'villesVisitees' | 'retour' | 'accompagne'>;
+      type Recu = Pick<Moi, 'delais' | 'specialisation' | 'recharges' | 'villesVisitees' | 'retour' | 'accompagne' | 'etatsGm'>;
       const m = await api.get<{ joueur: Omit<Moi, keyof Recu | 'recuA'>; licenceSecret: string } & Recu>(`/parties/${partieId}/moi`);
       setMoi({
         ...m.joueur,
@@ -208,6 +213,7 @@ export function useJeu() {
         villesVisitees: m.villesVisitees ?? [],
         retour: m.retour ?? null,
         accompagne: m.accompagne ?? 0,
+        etatsGm: m.etatsGm ?? { fige: 0, scelle: 0, intouchable: 0 },
         recuA: Date.now(),
       });
       setLicenceSecret(m.licenceSecret);
@@ -319,6 +325,37 @@ export function useJeu() {
             setAlerte({ n: Date.now(), genre: 'sort', qui: 'Sort reçu', texte });
             navigator.vibrate?.([200, 100, 200]);
           } else setSortsRecus((l) => [...l, d]);
+          void rafraichir();
+          return;
+        }
+        // RG-8.15 à 8.21 : cartes de Maître du jeu.
+        if (nom === 'carte_gm_jouee') {
+          const e = data as EvGmJouee;
+          if (e.lanceur !== pseudoRef.current) {
+            const texte = texteJarvisAutres(e, pseudoRef.current ?? '');
+            notifier(texte);
+            setAlerte({ n: Date.now(), genre: 'evenement', qui: 'Jarvis a parlé', texte });
+            navigator.vibrate?.([60, 40, 120]);
+          }
+          void rafraichir();
+          return;
+        }
+        if (nom === 'carte_gm_recue') {
+          const e = data as EvGmRecue;
+          // Jarvis : l'annonce « Jarvis a parlé » (ci-dessus) dit déjà ce qui t'arrive ; ici, le bandeau se met à jour.
+          if (e.gm === 'ange') {
+            const texte = texteGmRecue(e);
+            notifier(texte);
+            setSceauxRecus((l) => [...l, { lanceur: e.lanceur, texte }]);
+          }
+          void rafraichir();
+          return;
+        }
+        if (nom === 'carte_gm_obtenue' || nom === 'carte_gm_rendue') {
+          const e = data as { gm: CarteGm | CarteGm[]; par?: 'scan' | 'raid' | 'gm' | 'enchere' };
+          const texte = nom === 'carte_gm_obtenue' ? texteGmObtenue(e.gm as CarteGm, e.par ?? 'gm') : texteGmRendue(e.gm as CarteGm[]);
+          notifier(texte);
+          setAlerte({ n: Date.now(), genre: 'info', qui: 'Maître du jeu', texte });
           void rafraichir();
           return;
         }
@@ -582,6 +619,9 @@ export function useJeu() {
     /** Refus en clair, sans requête (onglet Scanner pendant un gel) ; `qui` : la voix (« Masadora », page ⑬). */
     annoncer: (texte: string, qui = 'Greed Island') => setAlerte({ n: Date.now(), genre: 'sort', qui, texte }),
     finSortRecu: () => setSortsRecus((l) => l.slice(1)),
+    /** RG-8.20 : Sceau d'Ange reçu (cinématique côté cible), un à la fois. */
+    sceauRecu: sceauxRecus[0] ?? null,
+    finSceauRecu: () => setSceauxRecus((l) => l.slice(1)),
     echange,
     /** Page ⑫ : session à jour (réponse d'une action, ou évènement). */
     recevoirEchange,

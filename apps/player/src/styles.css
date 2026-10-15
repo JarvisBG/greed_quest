@@ -654,6 +654,10 @@ p { margin: 0; }
 .page.p-objets { --feuille: #f1e8cc; --filet: var(--jaune); }
 .p-objets .poche { background: #e3d6ad; }
 .p-objets .page-folio { color: #cdbf93; }
+/* Page des cartes de Maître du jeu (RG-8.15) : papier d'encre, filet d'or */
+.page.p-gm { --feuille: #17171a; --filet: var(--or); color: #f3e3b0; }
+.p-gm .page-tete { color: #f3e3b0; }
+.p-gm .poche { background: #222226; }
 .page::before {
   content: '';
   position: absolute; left: -11px; top: 8%; bottom: 8%; width: 8px;
@@ -770,6 +774,8 @@ dialog.fiche[open] { animation: monte 0.35s var(--sortie); }
 .fiche-role { justify-self: start; font: 800 13px/1 var(--f-texte); letter-spacing: 0.06em; text-transform: uppercase; padding: 6px 8px; color: var(--case); background: var(--rouge); }
 .fiche-role.sort { background: var(--bleu); }
 .fiche-role.objet { background: var(--jaune); color: var(--encre); }
+.fiche-role.gm { background: #121214; color: #ffd877; box-shadow: inset 0 0 0 2px var(--or); }
+.fiche-gm { width: min(60vw, 230px); justify-self: center; }
 .fiche-texte { font-size: 18px; }
 .fiche-vide {
   justify-self: center;
@@ -2217,3 +2223,78 @@ dialog.fiche[open] { animation: monte 0.35s var(--sortie); }
 .fp-qr svg { width: 100%; height: 100%; display: block; }
 .fp-licence-pied { width: 100%; }
 .fp-licence-pied b { font: 400 22px/1 var(--f-titre); }
+
+/* ---------- Cartes de Maître du jeu (RG-8.15 à 8.21), cinématiques du prototype validé (cartes-gm.html) ---------- */
+.cine-gm {
+  position: fixed; inset: 0; z-index: 80; background: #08080a; color: #f6f6f2; overflow: hidden;
+  display: grid; place-items: center; cursor: pointer;
+}
+.cine-gm.or { --teinte: rgba(255, 216, 119, 0.85); }
+.cine-gm.rouge { --teinte: rgba(209, 18, 27, 0.75); }
+.cg-halo { position: absolute; width: 140vmax; height: 140vmax; border-radius: 50%; opacity: 0; pointer-events: none; background: radial-gradient(closest-side, var(--teinte), transparent 70%); }
+.cg-rayons {
+  position: absolute; inset: -60%; opacity: 0; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, var(--teinte) 0 5deg, transparent 5deg 15deg);
+  -webkit-mask: radial-gradient(closest-side, #000 15%, transparent 72%); mask: radial-gradient(closest-side, #000 15%, transparent 72%);
+}
+.cg-bords { position: absolute; inset: 0; pointer-events: none; opacity: 0; box-shadow: inset 0 0 60px 18px #d1121b; }
+.cg-scene { position: relative; width: min(92vw, 420px); height: min(100dvh, 860px); }
+.cg-cri {
+  position: absolute; top: 9%; left: 0; right: 0; margin: 0; text-align: center; opacity: 0; pointer-events: none;
+  font: 400 clamp(38px, 12vw, 58px)/0.95 var(--f-titre); color: #fff1c9; -webkit-text-stroke: 2px #000; paint-order: stroke fill;
+}
+.cine-gm.rouge .cg-cri { color: #fff; }
+.cg-carte { position: absolute; width: min(52vw, 220px); top: 26%; left: 50%; translate: -50% 0; opacity: 0; }
+.cg-onde { position: absolute; top: 40%; left: 50%; width: 40px; height: 40px; margin: -20px; border-radius: 50%; border: 4px solid #ffd877; opacity: 0; pointer-events: none; }
+.cine-gm .gi-carte { color: var(--encre); }
+.cg-pions { position: absolute; top: 61%; left: 0; right: 0; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; padding: 0 12px; }
+.cg-pion { display: grid; justify-items: center; gap: 4px; opacity: 0; font: 600 14px/1.1 var(--f-texte); }
+.cg-pion .tete { width: 52px; height: 52px; border-radius: 50%; background: #2a2a2e; box-shadow: inset 0 0 0 3px #f6f6f2; display: grid; place-items: center; font: 400 22px/1 var(--f-titre); transition: background 0.2s, color 0.2s; }
+.cg-pion.fige .tete { background: #bfe6ff; color: #0e3550; box-shadow: inset 0 0 0 3px #fff, 0 0 18px rgba(191, 230, 255, 0.9); }
+.cg-pion .etiq { font: 400 13px/1 var(--f-jeu); color: #bfe6ff; opacity: 0; }
+.cg-pion.fige .etiq { opacity: 1; }
+.cg-creee { position: absolute; width: min(40vw, 175px); top: 27%; left: 50%; translate: -50% 0; opacity: 0; }
+.cg-creee .ligne { position: absolute; left: -6%; right: -6%; height: 3px; top: 0; background: #ffd877; box-shadow: 0 0 14px #ffd877; opacity: 0; }
+.cg-reprise { position: absolute; top: 22%; left: 0; right: 0; margin: 0; text-align: center; font: 400 15px/1.2 var(--f-jeu); color: #ffd877; opacity: 0; }
+.cg-livre {
+  position: absolute; top: 34%; left: 50%; translate: -50% 0; width: min(46vw, 190px); aspect-ratio: 3 / 4; border-radius: 6px; opacity: 0;
+  background: var(--cuir); box-shadow: inset 0 0 0 4px #3e1013, inset 0 0 0 7px var(--or), 0 18px 30px -12px rgba(0, 0, 0, 0.8);
+  display: grid; place-items: center; font: 400 26px/1 var(--f-titre); color: var(--or);
+}
+.cg-livre .qui { position: absolute; bottom: -30px; left: 0; right: 0; text-align: center; font: 400 15px/1 var(--f-jeu); color: #f6f6f2; }
+.cg-livre .chaine {
+  position: absolute; left: -18%; right: -18%; top: 50%; height: 16px; margin-top: -8px; opacity: 0; border-radius: 8px;
+  background: repeating-linear-gradient(90deg, #c9c9cf 0 14px, transparent 14px 18px, #8b8b93 18px 32px, transparent 32px 36px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+.cg-livre .sceau {
+  position: absolute; top: 50%; left: 50%; width: 128px; height: 128px; margin: -64px; border-radius: 50%; opacity: 0;
+  background: #d1121b; color: #fff; display: grid; place-items: center; font: 700 70px/1 'Yu Gothic', 'Noto Sans CJK JP', 'Hiragino Sans', sans-serif;
+  box-shadow: inset 0 0 0 6px #fff, inset 0 0 0 10px #d1121b, 0 0 24px rgba(209, 18, 27, 0.8);
+}
+.cg-boite { position: absolute; left: 12px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); margin: 0 auto; max-width: 440px; opacity: 0; }
+.cg-boite p { margin: 0; font: 400 17px/1.4 var(--f-jeu); }
+.cg-boite .suite { font: 400 13px/1 var(--f-jeu); opacity: 0.75; }
+.cg-passer { position: absolute; top: calc(10px + env(safe-area-inset-top, 0px)); right: 12px; font: 400 13px/1 var(--f-jeu); color: rgba(246, 246, 242, 0.7); }
+
+/* Choix avant de jouer (Décret : carte ; Sceau : cible) */
+.choix-gm .grille { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.choix-gm .grille button { padding: 0; border: 0; background: none; cursor: pointer; display: grid; gap: 4px; text-align: center; font: 600 12px/1.2 var(--f-texte); color: var(--encre-2); border-radius: 6px; outline-offset: 3px; }
+.choix-gm .grille button[aria-pressed='true'] { outline: 3px solid var(--encre); }
+.choix-gm .reprise { font: 600 12px/1.15 var(--f-texte); color: var(--alerte); }
+.choix-gm .cibles { display: grid; gap: 8px; }
+.choix-gm .cibles button {
+  display: flex; justify-content: space-between; align-items: center; min-height: 56px; padding: 8px 14px; border: 0; border-radius: 4px; cursor: pointer;
+  background: var(--case); box-shadow: inset 0 0 0 3px var(--encre); font: 800 18px/1.1 var(--f-texte); color: var(--encre);
+}
+.choix-gm .cibles button[aria-pressed='true'] { background: var(--encre); color: var(--case); }
+
+/* Bandeaux d'état (sous la barre, sur toutes les pages) */
+.bandeau-gm {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 48px; padding: 8px 14px;
+  font: 800 16px/1.15 var(--f-texte); border-bottom: var(--trait) solid var(--encre);
+}
+.bandeau-gm b { font: 800 20px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.bandeau-gm.intouchable { background: #121214; color: #ffd877; box-shadow: inset 0 0 0 2px var(--or); }
+.bandeau-gm.fige { background: #e3f4ff; color: #0e3550; }
+.bandeau-gm.scelle { background: #c0121a; color: #fff; }

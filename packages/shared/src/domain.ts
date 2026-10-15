@@ -81,3 +81,9 @@ export const OFFENSIVE_SPELLS: readonly SpellType[] = ['vol', 'echange_force', '
 
 /** RG-8.3 : nature d'un gain. */
 export type DrawKind = 'carte' | 'sort' | 'jenny';
+
+/** RG-8.15 : noms affichés des cartes de Maître du jeu, et prénom seul (pochettes, annonces). */
+export const NOMS_CARTES_GM: Record<CarteGm, { nom: string; court: string; numero: string }> = {
+  jarvis: { nom: 'Jarvis tout-puissant', court: 'Jarvis', numero: 'GM·01' },
+  ange: { nom: "Le Sceau d'Ange", court: 'Ange', numero: 'GM·02' },
+};

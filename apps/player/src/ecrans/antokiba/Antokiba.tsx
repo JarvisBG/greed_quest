@@ -5,7 +5,7 @@
 // sombre : le lot sur un pupitre sous un projecteur, la meilleure offre, le décompte ; plusieurs lots = vignettes.
 // Montants et refus : serveur (P1) ; la requête part au toucher, un refus ne dépense rien.
 import type { PositionInput } from '@gq/shared';
-import { Carte } from '@gq/ui';
+import { Carte, CarteNoire } from '@gq/ui';
 import { useEffect, useRef, useState } from 'react';
 import { minSec } from '../../lib/boutique';
 import { api } from '../../lib/client';
@@ -44,7 +44,8 @@ function Palette({ num, moi, leve }: { num?: number | string; moi?: boolean; lev
   );
 }
 
-const carteDe = (l: Lot) => <Carte genre="designee" numero={l.carte.numero} nom={l.carte.nom} rang={l.carte.rang} limite={l.carte.limite} texte={l.carte.texte} />;
+const carteDe = (l: Lot) =>
+  l.carte.gm ? <CarteNoire gm={l.carte.gm} /> : <Carte genre="designee" numero={l.carte.numero} nom={l.carte.nom} rang={l.carte.rang} limite={l.carte.limite} texte={l.carte.texte} />;
 
 export function Antokiba({
   partieId,

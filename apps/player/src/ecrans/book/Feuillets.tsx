@@ -2,9 +2,11 @@
 // ou le revers de la page précédente, à droite la page courante ; on tourne les pages au doigt (aller-retour libre,
 // élan) ou avec les flèches. RG-8.5 : pages d'emplacements désignés (papier blanc, filet rouge, numéro de l'anime
 // en creux dans chaque pochette vide) puis pages d'emplacements libres (papier tramé gris, filet d'encre, sans numéro),
-// et la page des objets (papier crème, filet jaune ; 8 places à part des libres, rangées dans le Book comme dans l'anime).
+// et la page des objets (papier crème, filet jaune ; 8 places à part des libres, rangées dans le Book comme dans l'anime),
+// enfin, si le joueur en a, la page des cartes de Maître du jeu (papier noir, filet d'or, RG-8.15).
 import { FREE_SLOTS } from '@gq/engine';
-import { Carte, DosCarte, numeroCarte } from '@gq/ui';
+import { Carte, CarteNoire, DosCarte, numeroCarte } from '@gq/ui';
+import { nomGm } from '../../lib/cartesGm';
 import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { numeroSort, OBJETS, SORTS } from '../../lib/format';
 import { etiquetteDe, genreDePage, nombreDePages, rangDePage, titreDePage, type Emplacement, type LivreRecu } from '../../lib/livre';
@@ -146,6 +148,11 @@ export function Feuillets({ livre, onPoche }: { livre: LivreRecu; onPoche: (s: S
       if (o) onPoche({ type: 'objet', o });
       return;
     }
+    if (genreDePage(livre, p) === 'gm') {
+      const g = livre.cartesGm?.[k];
+      if (g) onPoche({ type: 'gm', g });
+      return;
+    }
     const e = livre.pages[p]?.[k];
     if (e && !(e.etat === 'vide' && !e.designe)) onPoche({ type: 'poche', e });
   };
@@ -244,8 +251,8 @@ export function Feuillets({ livre, onPoche }: { livre: LivreRecu; onPoche: (s: S
   );
 }
 
-const NOMS = { designee: 'Désignées', libre: 'Libres', objets: 'Objets' } as const;
-const TRANCHE = { designee: '#fbfbf7', libre: '#a9a69c', objets: '#e2cf8f' } as const;
+const NOMS = { designee: 'Désignées', libre: 'Libres', objets: 'Objets', gm: 'Maître du jeu' } as const;
+const TRANCHE = { designee: '#fbfbf7', libre: '#a9a69c', objets: '#e2cf8f', gm: '#121214' } as const;
 
 /** Tranche des feuillets qui restent à droite : une bande par page, à la couleur de son papier. */
 function Tranche({ livre, depuis }: { livre: LivreRecu; depuis: number }) {
@@ -259,6 +266,7 @@ function Tranche({ livre, depuis }: { livre: LivreRecu; depuis: number }) {
 
 function Contenu({ livre, i, verso, onPoche }: { livre: LivreRecu; i: number; verso?: boolean; onPoche?: (s: Sujet) => void }) {
   const genre = genreDePage(livre, i);
+  if (genre === 'gm') return <ContenuGm livre={livre} verso={verso} onPoche={onPoche} />;
   const objets = genre === 'objets';
   const poches = objets ? livre.placesObjets : (livre.pages[i] ?? []).length;
   const restes = POCHES_PAR_PAGE - poches;
@@ -292,6 +300,44 @@ function Contenu({ livre, i, verso, onPoche }: { livre: LivreRecu; i: number; ve
           </span>
         )}
         {Array.from({ length: Math.max(0, restes - span) }, (_, k) => (
+          <span key={`c${k}`} className="case-vide" aria-hidden="true" />
+        ))}
+      </div>
+    </>
+  );
+}
+
+/** RG-8.15 : page des cartes de Maître du jeu (papier noir, filet d'or), hors des 8 places des objets. */
+function ContenuGm({ livre, verso, onPoche }: { livre: LivreRecu; verso?: boolean | undefined; onPoche?: ((s: Sujet) => void) | undefined }) {
+  const cartes = livre.cartesGm ?? [];
+  return (
+    <>
+      <div className="page-tete">
+        <span>Maître du jeu</span>
+        <span>{cartes.length}</span>
+      </div>
+      <div className="poches">
+        {cartes.map((g, k) =>
+          verso ? (
+            <span key={g.itemId} className="poche">
+              <DosCarte />
+            </span>
+          ) : (
+            <button
+              key={g.itemId}
+              className="poche"
+              data-poche={onPoche ? k : undefined}
+              onClick={onPoche ? () => onPoche({ type: 'gm', g }) : undefined}
+              tabIndex={onPoche ? 0 : -1}
+              aria-label={`${nomGm(g.gm)}, carte de Maître du jeu${g.engage ? ', dans un échange' : ''}`}
+            >
+              <CarteNoire gm={g.gm} />
+              {g.engage && <span className="badge-poche">Échange</span>}
+            </button>
+          ),
+        )}
+        {/* La grille garde sa hauteur de page (3 × 4), comme les autres feuillets. */}
+        {Array.from({ length: Math.max(0, POCHES_PAR_PAGE - cartes.length) }, (_, k) => (
           <span key={`c${k}`} className="case-vide" aria-hidden="true" />
         ))}
       </div>

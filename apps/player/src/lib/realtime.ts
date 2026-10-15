@@ -8,6 +8,8 @@ export const EVENEMENTS_JOUEUR = [
   'enchere', 'enchere_close', 'enchere_gagnee', 'evenement', 'evenement_fin', 'mission',
   'mission_reussie', 'recompense_raid', 'checkpoint', 'reserve', 'expertise', 'correction', 'sanction',
   'degel', 'partie', 'clear', 'clear_confirme', 'clear_refuse', 'classement_final', 'raid', 'arene', 'accompagnement',
+  // RG-8.15 à 8.21 : cartes de Maître du jeu.
+  'carte_gm_jouee', 'carte_gm_recue', 'carte_gm_obtenue', 'carte_gm_rendue',
 ] as const;
 export type EvenementJoueur = (typeof EVENEMENTS_JOUEUR)[number];
 

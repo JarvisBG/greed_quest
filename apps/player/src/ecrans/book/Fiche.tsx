@@ -2,14 +2,15 @@
 // la fiche envoie des intentions (cacher, remettre, utiliser un objet, déclarer le Clear) et montre la réponse.
 import { FREE_SLOTS } from '@gq/engine';
 import type { ObjetType } from '@gq/shared';
-import { Carte, Dialogue, numeroCarte } from '@gq/ui';
+import { Carte, CarteNoire, Dialogue, numeroCarte } from '@gq/ui';
+import { EFFETS_GM, nomGm } from '../../lib/cartesGm';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { numeroSort, OBJETS, SORTS } from '../../lib/format';
-import { cartesASceller, type Emplacement, type EmplacementCarte, type LivreRecu } from '../../lib/livre';
+import { cartesASceller, type CarteGmRecue, type Emplacement, type EmplacementCarte, type LivreRecu } from '../../lib/livre';
 import { Grattage } from './Grattage';
 
 export type ObjetRecu = LivreRecu['objets'][number];
-export type Sujet = { type: 'poche'; e: Emplacement } | { type: 'objet'; o: ObjetRecu } | { type: 'clear' };
+export type Sujet = { type: 'poche'; e: Emplacement } | { type: 'objet'; o: ObjetRecu } | { type: 'gm'; g: CarteGmRecue } | { type: 'clear' };
 
 /** Réponses du serveur à l'usage d'un objet (POST /objet). */
 export type ResultatObjet = { objet: 'ticket'; gain: number; jenny: number } | { objet: 'boussole'; direction: Direction; message: string } | { objet: 'coffre' };
@@ -25,6 +26,8 @@ export interface ActionsFiche {
   /** Fin d'une action dont le résultat a été montré : le Book et le profil se rechargent. */
   rafraichir: () => void;
   ouvrirSorts: () => void;
+  /** RG-8.19, RG-8.20 : jouer une carte de Maître du jeu (choix, puis cinématique, au niveau de l'App). */
+  jouerGm: (g: CarteGmRecue) => void;
 }
 
 export function Fiche({ sujet, livre, actions, onFermer }: { sujet: Sujet; livre: LivreRecu; actions: ActionsFiche; onFermer: () => void }) {
@@ -74,6 +77,7 @@ export function Fiche({ sujet, livre, actions, onFermer }: { sujet: Sujet; livre
       <div className="fiche-corps">
         {sujet.type === 'poche' && <FichePoche e={sujet.e} ctx={ctx} />}
         {sujet.type === 'objet' && <FicheObjet o={sujet.o} ctx={ctx} />}
+        {sujet.type === 'gm' && <FicheGm g={sujet.g} ctx={ctx} />}
         {sujet.type === 'clear' && <FicheClear ctx={ctx} />}
         {refus && (
           <p className="erreur" role="alert">
@@ -266,6 +270,39 @@ function FicheObjet({ o, ctx }: { o: ObjetRecu; ctx: Ctx }) {
         <p className="doux">Obtenu à {o.obtenu}</p>
       </div>
       <Boutons ctx={ctx}>{!resultat && action}</Boutons>
+    </>
+  );
+}
+
+/** RG-8.15 : fiche d'une carte de Maître du jeu ; l'effet est dit ici (il n'est pas écrit sur la carte). */
+function FicheGm({ g, ctx }: { g: CarteGmRecue; ctx: Ctx }) {
+  const bloquee = ctx.livre.gele ? 'Ton Book est gelé : ses cartes sont inutilisables.' : g.engage ? 'Cette carte est dans un échange en cours.' : null;
+  return (
+    <>
+      <div className="fiche-gm">
+        <CarteNoire gm={g.gm} />
+      </div>
+      <div className="fiche-info">
+        <p className="gros" id="fiche-titre">
+          {nomGm(g.gm)}
+        </p>
+        <span className="fiche-role gm">Carte de Maître du jeu · unique</span>
+        <p className="fiche-texte">{EFFETS_GM[g.gm]}</p>
+        <p className="doux">{bloquee ?? `Obtenue à ${g.obtenu}. Une seule utilisation, puis elle revient au Maître du jeu.`}</p>
+      </div>
+      <Boutons ctx={ctx}>
+        {!bloquee && (
+          <button
+            className="gi-btn-encre"
+            onClick={() => {
+              ctx.fermer();
+              ctx.actions.jouerGm(g);
+            }}
+          >
+            Jouer la carte
+          </button>
+        )}
+      </Boutons>
     </>
   );
 }

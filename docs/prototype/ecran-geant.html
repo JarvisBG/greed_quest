@@ -1,0 +1,918 @@
+<meta charset="utf-8">
+<title>Écran géant de Greed Island</title>
+<meta name="description" content="Prototype de l'écran géant (apps/tracker) : accueil avec QR, partie en cours en plans qui tournent, balises en halos flous, cinématiques des grands moments et fin de partie.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@500;800&family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,800;1,400&family=Dela+Gothic+One&family=DotGothic16&display=swap">
+<style>
+/* Écran géant : une planche de manga de 1920 × 1080 lue à 8 m (aucun texte sous 24 px), sans interaction.
+   Pendant le jeu : planche claire (papier, encre, cases cernées), couleur réservée aux objets du jeu.
+   Grands moments : la planche s'éteint, nuit de Greed Island et cinématique en couleur, puis retour.
+   Un seul monde assumé (pas de thème sombre de l'hôte) : toutes les couleurs sont posées ici. */
+:root {
+  color-scheme: light;
+  --papier: #eeefe9;
+  --case: #fbfbf7;
+  --case-2: #ecece6;
+  --encre: #111111;
+  --encre-2: #3b3d40;
+  --trame: rgba(17, 17, 17, 0.16);
+  --rouge: #c0272d;
+  --bleu: #1f4a9c;
+  --jaune: #d9a11a;
+  --or: #d7b25a;
+  --or-clair: #f6dc85;
+  --or-fonce: #8a6a12;
+  --alerte: #b3161c;
+  --nuit: #0c0c0e;
+  --nuit-2: #1b1b20;
+  --parchemin: #f1e6c8;
+  --parchemin-bord: #b99a5b;
+  --encre-carte: #1b150c;
+  --gel: #8fd6ff;
+  --f-titre: 'Dela Gothic One', 'Arial Black', sans-serif;
+  --f-texte: 'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif;
+  --f-chiffre: 'Atkinson Hyperlegible Mono', ui-monospace, monospace;
+  --f-jeu: 'DotGothic16', ui-monospace, monospace;
+  --trait: 5px;
+  --sortie: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; overflow: hidden; background: #050506; color: var(--encre); font: 400 28px/1.3 var(--f-texte); -webkit-font-smoothing: antialiased; }
+::selection { background: var(--jaune); color: var(--encre); }
+:focus-visible { outline: 3px solid var(--jaune); outline-offset: 3px; }
+
+/* ---------- L'écran (1920 × 1080, mis à l'échelle de la fenêtre) ---------- */
+.ecran {
+  position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden;
+  background: var(--papier) radial-gradient(var(--trame) 1px, transparent 1.3px) 0 0 / 8px 8px;
+  display: grid; grid-template-rows: 124px 1fr auto 150px; gap: 16px; padding: 20px 24px 24px;
+}
+.case { position: relative; background: var(--case); box-shadow: 0 0 0 var(--trait) var(--encre); }
+/* Rangées fixes : la case principale prend la place des bannières quand il n'y en a pas. */
+.haut { grid-row: 1; } .heros { grid-row: 2; } .bannieres { grid-row: 3; } .bas { grid-row: 4; }
+
+/* Bandeau du haut */
+.haut { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 32px; padding: 0 28px; }
+.marque { display: grid; gap: 2px; }
+.marque b { font: 400 54px/1 var(--f-titre); letter-spacing: 0.01em; }
+.marque span { font: 600 26px/1.1 var(--f-texte); color: var(--encre-2); }
+.etat { justify-self: center; display: flex; align-items: center; gap: 18px; }
+.pastille { display: inline-flex; align-items: center; gap: 12px; height: 60px; padding: 0 24px; background: var(--encre); color: var(--case); font: 400 30px/1 var(--f-titre); }
+.pastille i { width: 16px; height: 16px; border-radius: 50%; background: #3fd36b; }
+.pastille.finale { background: var(--alerte); }
+.pastille.finale i, .pastille.pause i { background: var(--case); }
+.pastille.pause { background: var(--case); color: var(--encre); box-shadow: inset 0 0 0 4px var(--encre); }
+.reco { display: none; align-items: center; gap: 10px; font: 600 26px var(--f-texte); color: var(--encre-2); }
+.reco.on { display: inline-flex; }
+.reco svg { width: 30px; height: 30px; animation: tourne 1.2s linear infinite; }
+.chrono { font: 800 100px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
+.chrono.rouge { color: var(--alerte); }
+
+/* Case principale (plans qui tournent) */
+.heros { display: grid; grid-template-rows: 70px 1fr; overflow: hidden; }
+.plans-tete { display: flex; align-items: stretch; border-bottom: var(--trait) solid var(--encre); }
+.plans-tete .onglet { position: relative; flex: 0 0 auto; display: flex; align-items: center; gap: 14px; padding: 0 30px; font: 400 30px/1 var(--f-titre); color: var(--encre-2); border-right: 3px solid var(--encre); }
+.plans-tete .onglet small { font: 800 24px var(--f-chiffre); }
+.plans-tete .onglet.actif { background: var(--encre); color: var(--case); }
+.plans-tete .onglet .barre { position: absolute; left: 0; bottom: 0; height: 7px; width: 0; background: var(--jaune); }
+.plans-tete .reste { margin-left: auto; display: flex; align-items: center; padding: 0 26px; font: 600 26px var(--f-texte); color: var(--encre-2); }
+.plans { position: relative; overflow: hidden; }
+.plan { position: absolute; inset: 0; padding: 26px 32px; display: none; }
+.plan.vu { display: grid; }
+.plan.entre { animation: volet 0.62s var(--sortie) both; }
+@keyframes volet { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0 0 0 0); } }
+
+/* Bannières d'évènements (entre la case et le bas, seulement s'il y en a) */
+.bannieres { display: none; gap: 16px; }
+.bannieres.on { display: flex; }
+.banniere { flex: 1; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 22px; height: 76px; padding: 0 26px; background: var(--alerte); color: #fff; box-shadow: 0 0 0 var(--trait) var(--encre); }
+.banniere b { font: 400 32px/1 var(--f-titre); }
+.banniere span { font: 600 28px/1.1 var(--f-texte); }
+.banniere time { font: 800 40px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.banniere.maudite { background: var(--nuit); }
+.banniere.entre { animation: tombe 0.5s var(--sortie) both; }
+@keyframes tombe { from { transform: translateY(-30px); opacity: 0; } }
+
+/* Bande du bas : top 3 permanent + dernière annonce du jeu */
+.bas { display: grid; grid-template-columns: 1020px 1fr; gap: 16px; }
+.podium-mini { display: grid; grid-template-columns: repeat(3, 1fr); }
+.pm { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 18px; padding: 0 22px; border-right: 3px solid var(--encre); min-width: 0; }
+.pm:last-child { border-right: 0; }
+.pm .med { width: 70px; height: 70px; display: grid; place-items: center; font: 400 38px/1 var(--f-titre); background: var(--matiere); box-shadow: 0 0 0 4px var(--encre); border-radius: 6px; }
+.pm b { display: block; font: 800 34px/1.1 var(--f-texte); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pm span { font: 600 26px/1.2 var(--f-texte); color: var(--encre-2); white-space: nowrap; }
+.pm.monte { animation: eclat 0.9s var(--sortie); }
+@keyframes eclat { 0% { background: var(--jaune); } 100% { background: transparent; } }
+/* Boîte de dialogue du jeu (Joy Station) : aplat noir, double filet blanc, police pixel. */
+.annonce { position: relative; display: grid; align-content: center; gap: 6px; padding: 0 34px; background: var(--nuit); color: #f4f4ef; box-shadow: 0 0 0 var(--trait) var(--encre), inset 0 0 0 5px var(--nuit), inset 0 0 0 8px #f4f4ef, inset 0 0 0 11px var(--nuit), inset 0 0 0 13px #f4f4ef; }
+.annonce .qui { font: 400 24px/1 var(--f-jeu); color: #b9b9b2; }
+.annonce .txt { font: 400 34px/1.2 var(--f-jeu); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.annonce .txt::after { content: '▼'; display: inline-block; margin-left: 14px; font-size: 22px; vertical-align: middle; animation: clign 1s steps(2) infinite; }
+@keyframes clign { 50% { opacity: 0; } }
+
+/* ---------- Plan Classement ---------- */
+.p-classement { grid-template-rows: auto minmax(0, 1fr); gap: 6px; padding-block: 18px 14px; }
+.cl-tete, .cl-ligne { display: grid; grid-template-columns: 96px minmax(0, 1fr) 610px 130px 170px 200px; align-items: center; gap: 22px; }
+.cl-tete { font: 600 24px var(--f-texte); color: var(--encre-2); padding: 0 18px 8px; border-bottom: 3px solid var(--encre); }
+.cl-tete :nth-child(n+4) { text-align: right; }
+.cl-liste { position: relative; display: grid; grid-template-rows: repeat(10, minmax(0, 1fr)); min-height: 0; }
+.cl-ligne { height: 100%; max-height: 64px; padding: 0 18px; border-bottom: 2px solid var(--case-2); }
+.cl-ligne .r { font: 800 40px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.cl-ligne:nth-child(-n+3) .r { width: 60px; height: 44px; display: grid; place-items: center; font: 400 32px/1 var(--f-titre); background: var(--matiere); box-shadow: 0 0 0 4px var(--encre); border-radius: 6px; }
+.cl-ligne .p { font: 800 38px/1 var(--f-texte); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cl-ligne .n, .cl-ligne .pts, .cl-ligne .j { text-align: right; font: 800 34px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.cl-ligne .j { color: var(--encre-2); }
+.cl-ligne .n small { font-size: 24px; color: var(--encre-2); }
+/* Les pochettes du Book : une case par carte désignée, remplie en rouge (cadre des cartes désignées). */
+.poch { display: grid; grid-template-columns: repeat(30, 1fr); gap: 4px; height: 30px; }
+.poch i { background: var(--case); box-shadow: inset 0 0 0 2px var(--encre-2); }
+.poch i.ok { background: var(--rouge); box-shadow: inset 0 0 0 2px var(--encre); }
+.cl-ligne.monte { animation: eclat 1.2s var(--sortie); }
+.r-SS, .m1 { --matiere: linear-gradient(125deg, #9c7a1c 0%, #f6dc85 28%, #c39a2c 50%, #fbe7a6 72%, #a8841f 100%); }
+.r-S, .m2 { --matiere: linear-gradient(125deg, #8d949b 0%, #f1f3f5 35%, #aab1b8 60%, #e9ecef 100%); }
+.r-A, .m3 { --matiere: linear-gradient(125deg, #c97a4a 0%, #f2b48a 45%, #d88a58 100%); }
+.r-B { --matiere: linear-gradient(125deg, #6fb596 0%, #b6e0cc 50%, #82c2a6 100%); }
+
+/* ---------- Plan L'île ---------- */
+.p-ile { grid-template-columns: 1fr 460px; gap: 28px; padding: 18px 26px; }
+.ile-cadre { position: relative; background: var(--parchemin); box-shadow: 0 0 0 4px var(--encre), inset 0 0 60px rgba(120, 85, 30, 0.3); overflow: hidden; }
+.ile-cadre svg { display: block; width: 100%; height: 100%; }
+.ile-cote { display: grid; grid-template-rows: auto 1fr auto; gap: 18px; min-height: 0; }
+.ile-cote h3 { margin: 0; font: 400 38px/1.1 var(--f-titre); }
+.ile-cote p { margin: 0; font: 400 24px/1.3 var(--f-texte); color: var(--encre-2); }
+.zl { display: grid; align-content: start; }
+.zl div { display: grid; grid-template-columns: 1fr auto; align-items: center; height: 52px; border-bottom: 2px solid var(--case-2); font: 800 32px var(--f-texte); }
+.zl div.flash { animation: eclat 1.6s var(--sortie); }
+.zl div.maudite { color: var(--alerte); text-decoration: line-through 4px; }
+.zl b { min-width: 60px; text-align: center; padding: 4px 10px; font: 800 32px/1 var(--f-chiffre); background: var(--encre); color: var(--case); }
+.zl b.vide { background: transparent; color: var(--encre-2); box-shadow: inset 0 0 0 3px var(--encre-2); }
+.legende { display: flex; flex-wrap: wrap; gap: 10px 26px; font: 600 24px/1.2 var(--f-texte); }
+.legende span { display: inline-flex; align-items: center; gap: 10px; }
+.legende svg { width: 40px; height: 30px; }
+.zone-forme { stroke: var(--encre-carte); stroke-width: 2.4; stroke-linejoin: round; fill: none; }
+.zone-ville .zone-forme { stroke-width: 3.2; }
+.zone-maudite .zone-forme { stroke: #a8231f; stroke-width: 4; stroke-dasharray: 9 6; }
+.zone-nom { font: 400 13px/1 var(--f-titre); fill: var(--encre-carte); paint-order: stroke; stroke: var(--parchemin); stroke-width: 4px; stroke-linejoin: round; }
+.zone-flash { fill: var(--jaune); opacity: 0; }
+.zone-flash.on { animation: allume 3.2s ease-out; }
+@keyframes allume { 0% { opacity: 0; } 8% { opacity: 0.75; } 30% { opacity: 0.45; } 100% { opacity: 0; } }
+.halo { transition: opacity 1.4s ease, transform 1.4s var(--sortie); transform-box: fill-box; transform-origin: center; }
+.halos.cache .halo { opacity: 0; transform: scale(0.4); }
+.scan-bulle { position: absolute; left: 50%; bottom: 24px; translate: -50% 0; padding: 14px 26px; background: var(--nuit); color: #f4f4ef; font: 400 32px/1.2 var(--f-jeu); white-space: nowrap; box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f4f4ef; opacity: 0; transition: opacity 0.3s; }
+.scan-bulle.on { opacity: 1; }
+.ev-etiquette rect { fill: #a8231f; }
+.ev-etiquette text { font: 800 11px/1 var(--f-texte); fill: #fff; }
+
+/* ---------- Plan Le fil ---------- */
+.p-fil { align-content: start; gap: 14px; }
+.fil-ligne { display: grid; grid-template-columns: 170px 1fr auto; align-items: center; gap: 26px; min-height: 92px; padding: 0 34px; background: var(--nuit); color: #f4f4ef; box-shadow: inset 0 0 0 5px var(--nuit), inset 0 0 0 8px #f4f4ef; }
+.fil-ligne time { font: 400 26px/1.1 var(--f-jeu); color: #b9b9b2; }
+.fil-ligne p { margin: 0; font: 400 38px/1.2 var(--f-jeu); }
+.fil-ligne .rg { font: 400 32px/1 var(--f-titre); color: var(--encre); padding: 8px 14px; background: var(--matiere, var(--case)); box-shadow: 0 0 0 3px #f4f4ef; border-radius: 6px; }
+.fil-ligne.gm { box-shadow: inset 0 0 0 5px var(--nuit), inset 0 0 0 8px var(--or); }
+.fil-ligne.gm p { color: var(--or-clair); }
+.fil-ligne.neuf { animation: arrive 0.6s var(--sortie); }
+@keyframes arrive { from { transform: translateX(-60px); opacity: 0; } }
+
+/* ---------- Plan Comment jouer ---------- */
+.p-jouer { grid-template-columns: repeat(3, 1fr) 470px; gap: 26px; }
+.etape { display: grid; grid-template-rows: 1fr auto; gap: 18px; padding: 26px; background: var(--case); box-shadow: 0 0 0 4px var(--encre); }
+.etape:nth-child(2) { transform: rotate(-1deg); }
+.etape svg { width: 100%; height: 100%; min-height: 0; }
+.etape h3 { margin: 0; font: 400 38px/1.1 var(--f-titre); text-wrap: balance; }
+.etape p { margin: 6px 0 0; font: 400 28px/1.3 var(--f-texte); color: var(--encre-2); }
+.inscr { display: grid; align-content: center; justify-items: center; gap: 18px; padding: 26px; background: var(--encre); color: var(--case); text-align: center; }
+.inscr b { font: 400 40px/1.1 var(--f-titre); }
+.inscr span { font: 600 28px/1.3 var(--f-texte); }
+.qr { background: #fff; padding: 18px; }
+.qr svg { display: block; }
+
+/* ---------- Raid (remplace la case principale tant qu'il dure) ---------- */
+.raid { position: absolute; inset: 0; display: none; grid-template-columns: 640px 1fr; gap: 40px; padding: 34px 44px; background: radial-gradient(ellipse at 25% 70%, #3a0d0f 0%, var(--nuit) 70%); color: #f4f4ef; }
+.raid.on { display: grid; }
+.heros.en-raid { grid-template-rows: 0 1fr; }
+.heros.en-raid .plans-tete { visibility: hidden; border: 0; }
+.raid .scene { position: relative; display: grid; place-items: end center; }
+.raid .boss { width: 560px; transform-origin: 50% 100%; animation: respire 3.2s ease-in-out infinite; filter: drop-shadow(0 0 30px rgba(224, 50, 43, 0.55)); }
+.raid .boss.touche { animation: touche 0.25s ease-in-out; }
+.raid .boss svg { width: 100%; display: block; overflow: visible; }
+.raid .boss .grin, .raid .boss .croix { opacity: 0; }
+.raid.vaincu .boss .croix { opacity: 1; }
+@keyframes respire { 50% { transform: scale(1.02, 0.985); } }
+@keyframes touche { 30% { transform: translateX(-14px) rotate(-2deg); filter: brightness(2) drop-shadow(0 0 30px #fff); } 70% { transform: translateX(10px); } }
+.raid .info { display: grid; align-content: center; gap: 26px; }
+.raid h2 { margin: 0; font: 400 72px/1 var(--f-titre); color: #ff5048; letter-spacing: 0.01em; }
+.raid .sous { font: 400 34px/1.2 var(--f-jeu); color: #d8d8d0; }
+.pv { display: grid; gap: 10px; }
+.pv-barre { position: relative; height: 84px; background: #2a0a0b; box-shadow: 0 0 0 5px #f4f4ef; overflow: hidden; }
+.pv-barre i { position: absolute; inset: 0; transform-origin: left; background: linear-gradient(180deg, #ff5a4f, #c0201a 60%, #8d1410); transition: transform 0.6s var(--sortie); }
+.pv-barre u { position: absolute; inset: 0; transform-origin: left; background: #fff; transition: transform 1.4s 0.3s ease; }
+.pv-chiffres { display: flex; justify-content: space-between; font: 800 44px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.pv-chiffres span:last-child { color: #ffb3ad; }
+.coups { display: flex; flex-wrap: wrap; gap: 14px; min-height: 64px; }
+.coup { padding: 10px 18px; font: 800 32px/1 var(--f-texte); background: #f4f4ef; color: var(--nuit); animation: arrive 0.4s var(--sortie); }
+.coup b { color: var(--alerte); }
+.raid .pied { display: flex; gap: 40px; font: 600 30px var(--f-texte); color: #d8d8d0; }
+.raid .pied b { font: 800 44px/1 var(--f-chiffre); color: #f4f4ef; font-variant-numeric: tabular-nums; }
+
+/* ---------- Avant le démarrage ---------- */
+.accueil { position: absolute; inset: 0; display: none; grid-template-columns: 560px 540px 1fr; gap: 40px; padding: 60px 60px 56px; background: var(--papier) radial-gradient(var(--trame) 1px, transparent 1.3px) 0 0 / 8px 8px; z-index: 5; }
+.accueil.on { display: grid; }
+.acc-texte { display: grid; align-content: space-between; }
+.acc-texte h1 { margin: 0; font: 400 112px/0.95 var(--f-titre); }
+.acc-texte h1 small { display: block; margin-top: 18px; font: 600 34px/1.2 var(--f-texte); color: var(--encre-2); }
+.consignes { margin: 0; padding: 0; list-style: none; display: grid; gap: 22px; counter-reset: c; }
+.consignes li { display: grid; grid-template-columns: 70px 1fr; align-items: center; gap: 20px; font: 800 36px/1.2 var(--f-texte); counter-increment: c; }
+.consignes li::before { content: counter(c); width: 70px; height: 70px; display: grid; place-items: center; background: var(--encre); color: var(--case); font: 400 40px/1 var(--f-titre); }
+.inscrits { font: 600 32px var(--f-texte); color: var(--encre-2); }
+.inscrits b { font: 800 56px/1 var(--f-chiffre); color: var(--encre); }
+.acc-qr { display: grid; align-content: center; justify-items: center; gap: 26px; padding: 40px; background: var(--case); box-shadow: 0 0 0 var(--trait) var(--encre); transform: rotate(-1.2deg); }
+.acc-qr b { font: 400 44px/1.1 var(--f-titre); text-align: center; }
+.acc-qr span { font: 600 28px/1.3 var(--f-texte); color: var(--encre-2); text-align: center; }
+.acc-ile { display: grid; align-content: center; gap: 22px; }
+.acc-ile h2 { margin: 0; font: 400 44px/1.1 var(--f-titre); }
+.acc-ile p { margin: 0; font: 400 28px/1.35 var(--f-texte); color: var(--encre-2); }
+.acc-ile .ile-cadre { aspect-ratio: 420 / 320; }
+
+/* ---------- Pause ---------- */
+.pause-voile { position: absolute; inset: 0; z-index: 6; display: none; place-items: center; background: rgba(238, 239, 233, 0.55); backdrop-filter: grayscale(1) contrast(0.85); }
+.pause-voile.on { display: grid; }
+.tampon { display: grid; justify-items: center; gap: 10px; padding: 30px 80px; border: 12px solid var(--alerte); color: var(--alerte); background: rgba(251, 251, 247, 0.92); transform: rotate(-6deg); animation: tamponne 0.4s cubic-bezier(.2, 1.6, .4, 1) both; }
+.tampon b { font: 400 210px/1 var(--f-titre); letter-spacing: 0.04em; }
+.tampon span { font: 800 40px var(--f-texte); color: var(--encre); }
+@keyframes tamponne { from { transform: rotate(-6deg) scale(1.8); opacity: 0; } }
+
+/* ---------- Fin de partie (écran figé) ---------- */
+.fin { position: absolute; inset: 0; z-index: 5; display: none; grid-template-columns: 1fr 820px; grid-template-rows: auto 1fr; gap: 26px 36px; padding: 44px 48px; background: var(--papier) radial-gradient(var(--trame) 1px, transparent 1.3px) 0 0 / 8px 8px; }
+.fin.on { display: grid; }
+.fin h1 { grid-column: 1 / -1; margin: 0; display: flex; align-items: baseline; gap: 30px; font: 400 76px/1 var(--f-titre); }
+.fin h1 span { font: 600 32px var(--f-texte); color: var(--encre-2); }
+.fin .case { padding: 22px 28px; display: grid; grid-template-rows: auto 1fr; gap: 12px; min-height: 0; }
+.fin .case h2 { margin: 0; font: 400 38px/1.1 var(--f-titre); }
+.fin .cl-tete, .fin .cl-ligne { grid-template-columns: 96px minmax(0, 1fr) 150px 180px; }
+.fin .cl-ligne { max-height: 66px; }
+.fin .revele { display: grid; grid-template-rows: auto 1fr; }
+.fin .case > div:not(.ile-cadre) { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
+.fin .cl-ligne .p { font-size: 40px; }
+
+/* ---------- Cinématiques (nuit de Greed Island) ---------- */
+.cine { position: absolute; inset: 0; z-index: 20; display: none; place-items: center; overflow: hidden; background: var(--nuit); color: #f4f4ef; }
+.cine.on { display: grid; }
+.cine > * { grid-area: 1 / 1; }
+.vitesse { position: absolute; inset: -40%; background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.09) 0deg 1.4deg, transparent 1.4deg 6deg); mask: radial-gradient(circle, transparent 16%, #000 48%); animation: tourne 30s linear infinite; }
+@keyframes tourne { to { transform: rotate(360deg); } }
+.secoue { animation: secoue 0.5s linear; }
+@keyframes secoue { 10%, 50%, 90% { transform: translate(-10px, 6px); } 30%, 70% { transform: translate(10px, -6px); } }
+.cine .gros { font: 400 150px/1 var(--f-titre); text-align: center; letter-spacing: 0.02em; }
+.cine .ligne-jeu { font: 400 44px/1.25 var(--f-jeu); text-align: center; }
+.cine .nom-j { font: 400 96px/1 var(--f-titre); text-align: center; }
+
+/* Carte de Greed Island (reprise de packages/ui, fenêtre 16:9) */
+.gi-carte { container-type: inline-size; aspect-ratio: 63 / 88; width: 100%; position: relative; }
+.gi-carte .c-cadre { position: absolute; inset: 0; border-radius: 4.5cqi; padding: 5cqi; background: var(--cadre, var(--rouge)); box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35); display: grid; grid-template-rows: auto auto 1fr; gap: 3cqi; }
+.gi-carte .c-tete { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 3cqi; background: var(--case); color: var(--encre); border-radius: 2cqi; padding: 2.5cqi 3cqi; box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); }
+.gi-carte .c-num { font: 800 9cqi/1 var(--f-chiffre); }
+.gi-carte .c-nom { font: 800 6.4cqi/1.1 var(--f-texte); text-align: center; text-wrap: balance; }
+.gi-rang { font: 400 7cqi/1 var(--f-titre); padding: 1.6cqi 2.4cqi; border-radius: 1.6cqi; white-space: nowrap; color: var(--encre); background: var(--matiere, var(--case)); box-shadow: 0 0 0 0.6cqi var(--encre); }
+.gi-rang .lim { font-size: 0.8em; }
+.gi-carte .c-art { aspect-ratio: 16 / 9; border-radius: 2cqi; overflow: hidden; position: relative; background: #f4f2ea; box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); }
+.gi-carte .c-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.gi-carte .c-bas { background: var(--case); color: var(--encre); border-radius: 2cqi; padding: 3cqi 3.5cqi; box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); overflow: hidden; }
+.gi-carte .c-txt { margin: 0; font: italic 400 6.2cqi/1.32 var(--f-texte); }
+/* Carte de Maître du jeu : cadre noir filé d'or, photo entière. */
+.gm-carte { width: 100%; aspect-ratio: 63 / 88; position: relative; border-radius: 22px; padding: 18px; background: #0b0b0c; box-shadow: inset 0 0 0 3px var(--or), inset 0 0 0 9px #0b0b0c, inset 0 0 0 11px var(--or-fonce); display: grid; grid-template-rows: auto 1fr; gap: 14px; }
+.gm-carte .gm-tete { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px 0; font: 800 26px var(--f-chiffre); color: var(--or); }
+.gm-carte .gm-img { position: relative; border-radius: 10px; overflow: hidden; box-shadow: 0 0 0 2px var(--or); }
+.gm-carte .gm-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.gm-carte .gm-nom { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 14px; text-align: center; font: 400 34px/1.1 var(--f-titre); color: var(--or-clair); background: linear-gradient(transparent, rgba(0, 0, 0, 0.88) 40%); }
+
+/* Tirage S / SS */
+.c-tirage { display: grid; grid-template-columns: 560px 760px; align-items: center; gap: 80px; }
+.c-tirage .porte { position: relative; perspective: 1600px; }
+.c-tirage .porte .gi-carte { filter: drop-shadow(0 0 60px var(--lueur)); }
+.c-tirage .txt { display: grid; gap: 24px; }
+.c-tirage .rang-gros { justify-self: start; font: 400 120px/1 var(--f-titre); padding: 16px 36px; color: var(--encre); background: var(--matiere); border-radius: 14px; box-shadow: 0 0 0 6px #f4f4ef; }
+
+/* Jarvis / Sceau */
+.c-gm { display: grid; grid-template-columns: 500px 1fr; align-items: center; gap: 70px; padding: 0 120px; width: 100%; }
+.c-gm .gros { text-align: left; color: var(--or-clair); -webkit-text-stroke: 3px var(--or-fonce); text-shadow: 0 0 40px rgba(215, 178, 90, 0.6); }
+.c-gm .lignes { display: grid; gap: 22px; margin-top: 30px; }
+.c-gm .lignes p { margin: 0; font: 400 42px/1.25 var(--f-jeu); }
+.c-gm .lignes p b { color: var(--or-clair); font-weight: 400; }
+.eclair { position: absolute; inset: 0; background: #fff6d8; opacity: 0; pointer-events: none; }
+.onde { position: absolute; left: 50%; top: 50%; width: 200px; height: 200px; margin: -100px; border-radius: 50%; box-shadow: 0 0 0 10px var(--or), 0 0 80px 20px rgba(215, 178, 90, 0.6); opacity: 0; }
+.onde.gel { box-shadow: 0 0 0 10px var(--gel), 0 0 80px 20px rgba(143, 214, 255, 0.6); }
+.sceau-cercle { position: absolute; width: 900px; height: 900px; }
+
+/* Raid : alarme */
+.c-alarme { position: absolute; inset: 0; display: grid; place-items: center; background: repeating-linear-gradient(-45deg, #8d1410 0 60px, #0c0c0e 60px 120px); background-size: 170px 170px; animation: defile 0.8s linear infinite; }
+@keyframes defile { to { background-position: 170px 0; } }
+.c-alarme .boite { display: grid; justify-items: center; gap: 18px; padding: 40px 90px; background: var(--nuit); box-shadow: 0 0 0 8px #ff3b30; }
+.c-alarme .gros { color: #ff5048; }
+
+/* Clear */
+.c-clear { display: grid; justify-items: center; gap: 30px; }
+.sceau-clear { width: 420px; height: 420px; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle, #fbe7a6, #c39a2c 70%, #8a6a12); box-shadow: 0 0 0 12px #f4f4ef, 0 0 0 20px var(--or-fonce), 0 0 120px 40px rgba(246, 220, 133, 0.5); color: var(--nuit); font: 400 88px/1 var(--f-titre); }
+
+/* Fin : gong et podium */
+.c-podium { display: grid; grid-template-columns: repeat(3, 420px); align-items: end; gap: 40px; height: 820px; }
+.marche { display: grid; grid-template-rows: auto auto 1fr; justify-items: center; gap: 14px; }
+.marche .nom-j { font-size: 64px; }
+.marche span { font: 400 34px/1.2 var(--f-jeu); color: #d8d8d0; }
+.marche .bloc { width: 100%; display: grid; place-items: start center; padding-top: 30px; background: var(--matiere); color: var(--encre); font: 400 140px/1 var(--f-titre); box-shadow: 0 0 0 6px #f4f4ef; }
+.marche.p1 .bloc { height: 460px; } .marche.p2 .bloc { height: 330px; } .marche.p3 .bloc { height: 230px; }
+
+/* ---------- Commandes du prototype (hors de l'écran) ---------- */
+.proto { position: fixed; left: 12px; bottom: 12px; z-index: 100; max-width: min(760px, calc(100vw - 24px)); display: grid; gap: 8px; padding: 10px 12px; background: rgba(12, 12, 14, 0.94); color: #f4f4ef; font: 600 13px/1.3 var(--f-texte); box-shadow: 0 0 0 2px #f4f4ef; }
+.proto.ferme > :not(.proto-tete) { display: none; }
+.proto-tete { display: flex; align-items: center; gap: 10px; }
+.proto-tete b { flex: 1; font-size: 14px; }
+.proto .rang { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.proto .rang > span { width: 92px; color: #b9b9b2; }
+.proto button { min-height: 32px; padding: 0 10px; border: 2px solid #f4f4ef; background: transparent; color: #f4f4ef; font: 700 13px var(--f-texte); cursor: pointer; }
+.proto button[aria-pressed='true'] { background: #f4f4ef; color: var(--nuit); }
+.proto button:hover { background: rgba(244, 244, 239, 0.15); }
+.proto button[aria-pressed='true']:hover { background: #f4f4ef; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+</style>
+
+<div class="ecran" id="ecran">
+  <header class="case haut" aria-label="État de la partie">
+    <div class="marque"><b>Greed Island</b><span id="nom-partie">Partie du parc de la Tête d'Or</span></div>
+    <div class="etat">
+      <span class="pastille" id="pastille"><i></i><span id="pastille-txt">En cours</span></span>
+      <span class="reco" id="reco"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="square"><path d="M20 12a8 8 0 1 1-3-6.2M20 4v5h-5"/></svg>Reconnexion…</span>
+    </div>
+    <div class="chrono" id="chrono" aria-label="Temps restant">1:24:10</div>
+  </header>
+
+  <section class="case heros" aria-label="Plans">
+    <nav class="plans-tete" id="onglets" aria-hidden="true"></nav>
+    <div class="plans" id="plans">
+      <div class="plan p-classement" data-plan="classement">
+        <div class="cl-tete"><span>Rang</span><span>Hunter</span><span>Book · cartes désignées</span><span></span><span>Points</span><span>Jenny</span></div>
+        <div class="cl-liste" id="cl-liste"></div>
+      </div>
+      <div class="plan p-ile" data-plan="ile">
+        <div class="ile-cadre"><svg id="ile-svg" viewBox="0 0 420 320" role="img" aria-label="Carte de l'île"></svg><div class="scan-bulle" id="scan-bulle"></div></div>
+        <div class="ile-cote">
+          <div><h3>Balises actives</h3><p>Les QR sont cachés dans toute l'île. Le halo dit « par ici », jamais « ici ».</p></div>
+          <div class="zl" id="zl"></div>
+          <div class="legende" id="legende-ile"></div>
+        </div>
+      </div>
+      <div class="plan p-fil" data-plan="fil" id="fil-plan"></div>
+      <div class="plan p-jouer" data-plan="jouer">
+        <div class="etape">
+          <svg viewBox="0 0 300 220" aria-hidden="true"><rect x="40" y="40" width="96" height="96" fill="#fff" stroke="#111" stroke-width="5"/><g fill="#111"><rect x="52" y="52" width="26" height="26"/><rect x="98" y="52" width="26" height="26"/><rect x="52" y="98" width="26" height="26"/><rect x="92" y="92" width="10" height="10"/><rect x="108" y="108" width="14" height="14"/></g><rect x="170" y="30" width="86" height="160" rx="12" fill="#fbfbf7" stroke="#111" stroke-width="5"/><rect x="182" y="52" width="62" height="96" fill="#ecece6" stroke="#111" stroke-width="3"/><path d="M190 60h14M190 60v14M236 60h-14M236 60v14M190 140h14M190 140v-14M236 140h-14M236 140v-14" stroke="#c0272d" stroke-width="4"/><path d="M150 88h14M138 70l14 18-14 18" stroke="#111" stroke-width="5" fill="none"/><path d="M20 200 Q90 180 150 200" stroke="#111" stroke-width="3" fill="none" stroke-dasharray="4 7"/></svg>
+          <div><h3>Trouve un QR et scanne-le</h3><p>Ils sont cachés partout dans l'île. Chaque scan tire une carte.</p></div>
+        </div>
+        <div class="etape">
+          <svg viewBox="0 0 300 220" aria-hidden="true"><path d="M150 50 Q100 30 40 40 V190 Q100 180 150 200 Q200 180 260 190 V40 Q200 30 150 50 Z" fill="#5a1a1e" stroke="#111" stroke-width="5" stroke-linejoin="round"/><path d="M150 56 Q104 40 54 48 V180 Q104 172 150 188 Z" fill="#fbfbf7" stroke="#111" stroke-width="3"/><path d="M150 56 Q196 40 246 48 V180 Q196 172 150 188 Z" fill="#fbfbf7" stroke="#111" stroke-width="3"/><g stroke="#111" stroke-width="3"><rect x="66" y="66" width="30" height="40" fill="#c0272d"/><rect x="104" y="66" width="30" height="40" fill="#c0272d"/><rect x="66" y="116" width="30" height="40" fill="none" stroke-dasharray="4 4"/><rect x="104" y="116" width="30" height="40" fill="#c0272d"/><rect x="166" y="66" width="30" height="40" fill="#c0272d"/><rect x="204" y="66" width="30" height="40" fill="none" stroke-dasharray="4 4"/><rect x="166" y="116" width="30" height="40" fill="none" stroke-dasharray="4 4"/><rect x="204" y="116" width="30" height="40" fill="#c0272d"/></g></svg>
+          <div><h3>Remplis ton Book</h3><p>Le premier Hunter qui réunit toutes les cartes désignées gagne la partie.</p></div>
+        </div>
+        <div class="etape">
+          <svg viewBox="0 0 300 220" aria-hidden="true"><g stroke="#111" stroke-width="5" fill="#fbfbf7" stroke-linejoin="round"><circle cx="70" cy="70" r="26"/><path d="M30 190 Q36 110 70 106 Q104 110 110 190 Z"/><circle cx="230" cy="70" r="26"/><path d="M190 190 Q196 110 230 106 Q264 110 270 190 Z"/></g><rect x="118" y="80" width="44" height="60" rx="5" fill="#1f4a9c" stroke="#111" stroke-width="4" transform="rotate(-12 140 110)"/><path d="M114 60 L186 60 M176 50 L190 60 L176 70" stroke="#111" stroke-width="5" fill="none" stroke-linecap="square"/><g stroke="#111" stroke-width="3"><path d="M150 150 l-10 24 M164 150 l4 26 M136 146 l-22 16"/></g></svg>
+          <div><h3>Défie les autres Hunters</h3><p>Sorts sur les joueurs proches, échanges, enchères, arène.</p></div>
+        </div>
+        <div class="inscr" id="inscr"></div>
+      </div>
+      <div class="raid" id="raid">
+        <div class="scene"><div class="boss" id="boss"></div></div>
+        <div class="info">
+          <div><h2>Raid de la Brigade</h2><div class="sous">Répondez aux questions des PNJ pour lui retirer des PV.</div></div>
+          <div class="pv">
+            <div class="pv-barre"><u id="pv-u"></u><i id="pv-i"></i></div>
+            <div class="pv-chiffres"><span id="pv-txt">2 000 / 2 000 PV</span><span id="pv-pct">100 %</span></div>
+          </div>
+          <div class="coups" id="coups"></div>
+          <div class="pied"><span>Temps <b id="raid-temps">10:00</b></span><span>Au combat <b id="raid-n">0</b></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="bannieres" id="bannieres"></div>
+
+  <footer class="bas">
+    <div class="case podium-mini" id="podium-mini" aria-label="Les trois premiers"></div>
+    <div class="annonce" aria-live="polite"><span class="qui">Annonce du jeu</span><span class="txt" id="annonce-txt"></span></div>
+  </footer>
+
+  <!-- Avant le démarrage -->
+  <div class="accueil" id="accueil">
+    <div class="acc-texte">
+      <h1>Greed Island<small>Une chasse aux cartes grandeur nature</small></h1>
+      <ol class="consignes">
+        <li>Scanne ce QR avec ton téléphone</li>
+        <li>Passe l'examen de Hunter</li>
+        <li>Trouve les QR cachés dans l'île</li>
+      </ol>
+      <div class="inscrits"><b id="inscrits">23</b> Hunters inscrits</div>
+    </div>
+    <div class="acc-qr">
+      <div class="qr" id="qr-accueil"></div>
+      <b>Entre dans le jeu</b>
+      <span>QR de démonstration · dans l'app : lien d'accueil de la partie</span>
+    </div>
+    <div class="acc-ile">
+      <h2>Les QR sont cachés partout</h2>
+      <div class="ile-cadre"><svg id="acc-svg" viewBox="0 0 420 320" aria-hidden="true"></svg></div>
+      <p>Chaque halo cache un QR. À toi de le trouver.</p>
+    </div>
+  </div>
+
+  <!-- Fin de partie (figée) -->
+  <div class="fin" id="fin">
+    <h1>Classement final <span>La partie est terminée</span></h1>
+    <div class="case">
+      <h2>Les Hunters</h2>
+      <div><div class="cl-tete"><span>Rang</span><span>Hunter</span><span style="text-align:right">Cartes</span><span style="text-align:right">Points</span></div><div class="cl-liste" id="fin-liste"></div></div>
+    </div>
+    <div class="case revele">
+      <h2>Voilà où se cachaient les QR</h2>
+      <div class="ile-cadre"><svg id="fin-svg" viewBox="0 0 420 320" aria-hidden="true"></svg></div>
+    </div>
+  </div>
+
+  <div class="pause-voile" id="pause"><div class="tampon"><b>PAUSE</b><span>Le chrono est arrêté</span></div></div>
+  <div class="cine" id="cine" aria-live="assertive"></div>
+</div>
+
+<div class="proto" id="proto" role="group" aria-label="Commandes du prototype">
+  <div class="proto-tete"><b>Prototype · l'écran réel n'a aucune commande</b><button id="p-plier" aria-expanded="true">Replier</button></div>
+  <div class="rang"><span>État</span>
+    <button data-etat="inscriptions">Inscriptions</button>
+    <button data-etat="en_cours" aria-pressed="true">En cours</button>
+    <button data-etat="finale">Phase finale</button>
+    <button data-etat="pause">Pause</button>
+    <button id="p-reco" aria-pressed="false">Connexion perdue</button>
+  </div>
+  <div class="rang"><span>Partie</span>
+    <button id="p-plan">Plan suivant</button>
+    <button id="p-vite" aria-pressed="false">Rotation rapide (6 s)</button>
+    <button id="p-fil">Annonce</button>
+    <button id="p-scan">Scan dans une zone</button>
+    <button id="p-depasse">Dépassement</button>
+    <button id="p-rotation">Rotation des QR</button>
+    <button id="p-ev" aria-pressed="true">Évènements</button>
+  </div>
+  <div class="rang"><span>Cinématiques</span>
+    <button id="p-ss">Tirage SS</button>
+    <button id="p-s">Tirage S</button>
+    <button id="p-jarvis">Jarvis</button>
+    <button id="p-ange">Sceau d'Ange</button>
+    <button id="p-raid">Raid</button>
+    <button id="p-raid-v">Raid gagné</button>
+    <button id="p-raid-f">Raid fui</button>
+    <button id="p-clear">Clear</button>
+    <button id="p-fin">Fin de partie</button>
+  </div>
+</div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const calme = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const attendre = (ms) => new Promise((r) => setTimeout(r, calme ? Math.min(ms, 400) : ms));
+const ecran = $('#ecran');
+// La secousse porte sur la cinématique : l'écran, lui, garde sa mise à l'échelle.
+function secouer() { if (calme) return; const c = $('#cine'); c.classList.remove('secoue'); void c.offsetWidth; c.classList.add('secoue'); setTimeout(() => c.classList.remove('secoue'), 520); }
+
+// ---------- Mise à l'échelle : l'écran garde ses 1920 × 1080, centré dans la fenêtre ----------
+function echelle() {
+  const k = Math.min(innerWidth / 1920, innerHeight / 1080);
+  ecran.style.transform = `translate(${(innerWidth - 1920 * k) / 2}px, ${(innerHeight - 1080 * k) / 2}px) scale(${k})`;
+}
+addEventListener('resize', echelle); echelle();
+
+// ---------- Données de démonstration (dans l'app : GET /parties/:id/ecran puis la room tracker) ----------
+const N = 30;
+let joueurs = [
+  { p: 'Kirua', n: 22, pts: 168, j: 1840 }, { p: 'Gon', n: 21, pts: 160, j: 920 }, { p: 'Biscuit', n: 19, pts: 151, j: 2310 },
+  { p: 'Kurapika', n: 18, pts: 139, j: 1205 }, { p: 'Leolio', n: 16, pts: 118, j: 3020 }, { p: 'Hisoka', n: 15, pts: 117, j: 640 },
+  { p: 'Knuckle', n: 13, pts: 96, j: 1110 }, { p: 'Shoot', n: 12, pts: 90, j: 455 }, { p: 'Palm', n: 11, pts: 84, j: 1780 },
+  { p: 'Morel', n: 9, pts: 70, j: 990 }, { p: 'Ikalgo', n: 8, pts: 61, j: 300 }, { p: 'Melody', n: 7, pts: 52, j: 1420 },
+];
+const CARTES = {
+  '000': { nom: 'Le bonheur du détenteur', rang: 'SS', lim: 1, texte: 'Un château et sa ville de 10 000 habitants, qui vivent selon les lois de son détenteur.', img: 'img-cartes/designee/000.webp' },
+  '017': { nom: 'Le souffle du grand ange', rang: 'S', lim: 2, texte: "Le souffle d'un ange, qui guérit toutes les blessures et toutes les maladies. Une seule fois.", img: 'img-cartes/designee/017.webp' },
+  '081': { nom: 'Blue planet', rang: 'S', lim: 2, texte: "Un joyau bleu inconnu de la science, tombé de l'espace.", img: 'img-cartes/designee/081.webp' },
+};
+const ZONES = [
+  { id: 'masadora', nom: 'Masadora', type: 'ville', pts: [[22, 24], [138, 16], [150, 92], [96, 118], [30, 104]] },
+  { id: 'prairie', nom: 'Prairie', type: 'sauvage', pts: [[164, 18], [292, 26], [300, 120], [262, 178], [176, 170], [160, 100]] },
+  { id: 'antokiba', nom: 'Antokiba', type: 'ville', pts: [[316, 22], [400, 30], [404, 128], [322, 132]] },
+  { id: 'foret', nom: 'Forêt', type: 'sauvage', pts: [[18, 126], [100, 136], [156, 190], [148, 300], [24, 298]] },
+  { id: 'rives', nom: 'Rives', type: 'sauvage', pts: [[170, 192], [262, 196], [292, 236], [278, 302], [166, 302]] },
+  { id: 'soufrabi', nom: 'Soufrabi', type: 'ville', pts: [[312, 152], [404, 148], [402, 300], [306, 298], [300, 220]] },
+];
+// Balises posées (vraies positions, en mètres du plan) : jamais envoyées telles quelles avant la fin.
+const BALISES = [[60, 50], [112, 82], [190, 50], [252, 70], [282, 112], [200, 140], [240, 160], [342, 60], [382, 108],
+  [50, 160], [92, 204], [60, 262], [122, 280], [204, 222], [252, 252], [192, 282], [332, 180], [372, 222], [340, 272], [388, 282]];
+let actives = { masadora: 1, prairie: 5, antokiba: 0, foret: 3, rives: 2, soufrabi: 2 };
+let heat = [];
+let halos = [];
+let evenements = [
+  { type: 'Double gain', zone: 'Prairie', fin: 8 * 60 + 12 },
+  { type: 'Une carte maudite circule', zone: '', fin: 12 * 60 + 40, maudite: true },
+];
+
+// Graine fixe pour un rendu stable.
+let graine = 7;
+const alea = () => (graine = (graine * 16807) % 2147483647) / 2147483647;
+// Décalage tiré par le serveur à chaque rotation (20 min) : halo d'environ 40 m autour d'un point décalé.
+function tirerHalos() {
+  halos = BALISES.map(([x, y]) => { const a = alea() * Math.PI * 2, d = 6 + alea() * 14; return [x + Math.cos(a) * d, y + Math.sin(a) * d]; });
+}
+function tirerHeat() {
+  const foyers = [[220, 110, 9], [80, 220, 6], [360, 230, 5], [90, 60, 3], [230, 250, 4]];
+  heat = [];
+  for (const [cx, cy, n] of foyers) for (let i = 0; i < n; i++) heat.push([cx + (alea() - 0.5) * 50, cy + (alea() - 0.5) * 40]);
+}
+tirerHalos(); tirerHeat();
+
+// ---------- Dessin de l'île ----------
+const centre = (pts) => { let x = 0, y = 0; pts.forEach((p) => { x += p[0]; y += p[1]; }); return [x / pts.length, y / pts.length]; };
+const DEFS = (P) => `
+  <pattern id="${P}hachure" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0v7" stroke="#1b150c" stroke-width="1" opacity=".22"/></pattern>
+  <filter id="${P}plume" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="3.2"/></filter>
+  <radialGradient id="${P}halo"><stop offset="0" stop-color="#d9a11a" stop-opacity=".85"/><stop offset=".6" stop-color="#d9a11a" stop-opacity=".45"/><stop offset="1" stop-color="#d9a11a" stop-opacity="0"/></radialGradient>
+  <filter id="${P}flou" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>`;
+const CHEMINS = ['M150 92 C 170 120, 150 150, 160 186', 'M300 120 C 312 132, 304 142, 306 152', 'M262 178 C 270 186, 268 190, 266 196', 'M100 136 C 130 124, 150 112, 160 100'];
+const QR_GLYPHE = '<g><rect x="-5" y="-5" width="10" height="10" fill="#fff" stroke="#1b150c" stroke-width="1.4"/><rect x="-3.6" y="-3.6" width="3" height="3" fill="#1b150c"/><rect x=".6" y="-3.6" width="3" height="3" fill="#1b150c"/><rect x="-3.6" y=".6" width="3" height="3" fill="#1b150c"/><rect x="1.2" y="1.2" width="1.8" height="1.8" fill="#1b150c"/></g>';
+
+function dessinerIle(svg, P, { halos: avecHalos = true, chaleur = false, comptes = true, exact = false, maudite = null, double = null } = {}) {
+  const d = [`<defs>${DEFS(P)}</defs>`, `<rect width="420" height="320" fill="url(#${P}hachure)" opacity=".5"/>`];
+  d.push(`<g>${CHEMINS.map((c) => `<path d="${c}" fill="none" stroke="#b99a5b" stroke-width="2" stroke-dasharray="2 5" stroke-linecap="round"/>`).join('')}</g>`);
+  for (const z of ZONES) {
+    const pts = z.pts.map((p) => p.join(',')).join(' ');
+    d.push(`<polygon class="zone-flash" data-flash="${z.id}" points="${pts}"/>`);
+    d.push(`<g class="zone zone-${z.type}${maudite === z.id ? ' zone-maudite' : ''}"><polygon class="zone-forme" points="${pts}" filter="url(#${P}plume)"/></g>`);
+  }
+  if (chaleur) d.push(`<g filter="url(#${P}flou)" opacity=".9">${heat.map(([x, y]) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="9" fill="#c0272d"/>`).join('')}</g>`);
+  if (avecHalos) d.push(`<g class="halos">${halos.map(([x, y]) => `<g class="halo"><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="24" fill="url(#${P}halo)"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="19" fill="none" stroke="#8a6a12" stroke-width="1.2" stroke-dasharray="3 4" opacity=".8"/></g>`).join('')}</g>`);
+  if (exact) d.push(`<g>${BALISES.map(([x, y], i) => `<g class="vraie" transform="translate(${x} ${y}) scale(1.7)">${QR_GLYPHE}</g>`).join('')}</g>`);
+  for (const z of ZONES) {
+    const [cx, cy] = centre(z.pts), n = actives[z.id] ?? 0;
+    let g = `<g transform="translate(${cx} ${cy - 6})"><text class="zone-nom" text-anchor="middle">${z.nom}</text>`;
+    if (comptes) {
+      const w = n >= 10 ? 26 : 20;
+      g += `<g transform="translate(0 6)"><rect x="${-w / 2}" width="${w}" height="18" ${n ? 'fill="#1b150c"' : 'fill="#f1e6c8" stroke="#1b150c" stroke-width="1.6"'}/><text text-anchor="middle" y="13.5" style="font:800 13px var(--f-chiffre);fill:${n ? '#f1e6c8' : '#1b150c'}">${n}</text></g>`;
+    }
+    g += '</g>';
+    if (double === z.id) { const tw = 92; g += `<g class="ev-etiquette" transform="translate(${cx - tw / 2} ${Math.min(...z.pts.map((p) => p[1])) + 6})"><rect width="${tw}" height="17"/><text x="6" y="12.5">Double gain</text></g>`; }
+    d.push(g);
+  }
+  d.push('<g transform="translate(398 302)"><path d="M0 -12 4 0 0 12 -4 0z" fill="#1b150c"/><path d="M0 -12 4 0 -4 0z" fill="#f1e6c8" stroke="#1b150c" stroke-width="1"/></g>');
+  svg.innerHTML = d.join('');
+}
+const evActif = (t) => evenements.find((e) => e.type === t);
+function dessinerIles() {
+  const dbl = evActif('Double gain') ? 'prairie' : null;
+  dessinerIle($('#ile-svg'), 'i', { chaleur: true, double: dbl });
+  dessinerIle($('#acc-svg'), 'a', { comptes: false });
+  $('#zl').innerHTML = ZONES.map((z) => { const n = actives[z.id] ?? 0; return `<div data-z="${z.id}"><span>${z.nom}</span><b class="${n ? '' : 'vide'}">${n}</b></div>`; }).join('');
+}
+$('#legende-ile').innerHTML = `
+  <span><svg viewBox="0 0 40 30"><defs><radialGradient id="lg-h"><stop offset="0" stop-color="#d9a11a" stop-opacity=".7"/><stop offset="1" stop-color="#d9a11a" stop-opacity="0"/></radialGradient></defs><circle cx="20" cy="15" r="14" fill="url(#lg-h)"/></svg>Un QR par ici</span>
+  <span><svg viewBox="0 0 40 30"><g opacity=".75"><circle cx="14" cy="15" r="6" fill="#c0272d"/><circle cx="25" cy="13" r="5" fill="#c0272d"/><circle cx="22" cy="21" r="4" fill="#c0272d"/></g></svg>Hunters, il y a 2 min</span>`;
+
+// ---------- Classement ----------
+const ligneCl = (j, i, fin = false) => {
+  const poch = fin ? '' : `<div class="poch">${Array.from({ length: N }, (_, k) => `<i class="${k < j.n ? 'ok' : ''}"></i>`).join('')}</div>`;
+  return `<div class="cl-ligne" data-p="${j.p}"><span class="r ${['m1', 'm2', 'm3'][i] ?? ''}">${i + 1}</span><span class="p">${j.p}</span>${poch}<span class="n">${j.n}<small> / ${N}</small></span><span class="pts">${j.pts}</span>${fin ? '' : `<span class="j">${j.j.toLocaleString('fr-FR')} J</span>`}</div>`;
+};
+function trier() { joueurs.sort((a, b) => b.n - a.n || b.pts - a.pts); }
+function dessinerClassement(monte) {
+  const liste = $('#cl-liste');
+  // FLIP : chaque ligne glisse de son ancienne place vers la nouvelle.
+  const avant = new Map($$('.cl-ligne', liste).map((el) => [el.dataset.p, el.getBoundingClientRect().top]));
+  trier();
+  liste.innerHTML = joueurs.slice(0, 10).map((j, i) => ligneCl(j, i)).join('');
+  const k = ecran.getBoundingClientRect().height / 1080;
+  for (const el of $$('.cl-ligne', liste)) {
+    const t = avant.get(el.dataset.p);
+    if (t !== undefined && !calme) { const dy = (t - el.getBoundingClientRect().top) / k; if (Math.abs(dy) > 1) el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 900, easing: 'cubic-bezier(.16,1,.3,1)' }); }
+    if (el.dataset.p === monte) el.classList.add('monte');
+  }
+  $('#podium-mini').innerHTML = joueurs.slice(0, 3).map((j, i) => `<div class="pm${j.p === monte && i < 3 ? ' monte' : ''}"><span class="med m${i + 1}">${i + 1}</span><div><b>${j.p}</b><span>${j.n} / ${N} cartes</span></div></div>`).join('');
+}
+
+// ---------- Le fil (voix du jeu) ----------
+let fil = [
+  { t: 1, type: 'tirage', txt: 'Kirua a tiré « Blue planet »', rang: 'S' },
+  { t: 3, type: 'sort', txt: 'Hisoka a lancé Vol sur Gon : réussi' },
+  { t: 4, type: 'echange', txt: 'Échange de cartes rares entre Biscuit et Leolio' },
+  { t: 6, type: 'regard', txt: "Quelqu'un a utilisé Regard" },
+  { t: 7, type: 'arene', txt: "Kurapika gagne à l'arène : « Le zaurus qui s'emballe »", rang: 'A' },
+  { t: 9, type: 'gm', txt: 'Leolio a trouvé une carte de Maître du jeu' },
+];
+const NOUVELLES = [
+  { type: 'tirage', txt: "Gon a tiré « L'arbre de la bonne récolte »", rang: 'A' },
+  { type: 'sort', txt: 'Palm a lancé Pickpocket sur Shoot : raté' },
+  { type: 'echange', txt: 'Échange de cartes rares entre Morel et Knuckle' },
+  { type: 'regard', txt: "Quelqu'un a utilisé Regard" },
+  { type: 'sort', txt: 'Biscuit a lancé Mur défensif' },
+];
+let iNouv = 0;
+const ilYa = (t) => (t < 1 ? "à l'instant" : `il y a ${t} min`);
+function dessinerFil(neuf) {
+  $('#fil-plan').innerHTML = fil.slice(0, 5).map((f, i) => `<div class="fil-ligne${f.type === 'gm' ? ' gm' : ''}${neuf && i === 0 ? ' neuf' : ''}"><time>${ilYa(f.t)}</time><p>${f.txt}</p>${f.rang ? `<span class="rg r-${f.rang}">${f.rang}</span>` : '<span></span>'}</div>`).join('');
+  const d = fil[0];
+  $('#annonce-txt').textContent = d.txt + (d.rang ? ` · rang ${d.rang}` : '');
+}
+function annoncer(e) { fil.forEach((f) => f.t++); fil.unshift({ t: 0, ...e }); fil = fil.slice(0, 30); dessinerFil(true); }
+
+// ---------- Plans qui tournent ----------
+const PLANS = [['classement', 'Classement'], ['ile', "L'île"], ['fil', 'Le fil'], ['jouer', 'Comment jouer']];
+let iPlan = 0, debutPlan = performance.now(), dureePlan = 25000, raidEnCours = false;
+$('#onglets').innerHTML = PLANS.map(([id, nom], i) => `<div class="onglet" data-o="${id}"><small>${i + 1}</small>${nom}<span class="barre"></span></div>`).join('') + '<div class="reste" id="reste"></div>';
+function montrerPlan(i, anime = true) {
+  iPlan = i; debutPlan = performance.now();
+  const id = PLANS[i][0];
+  for (const p of $$('.plan')) { const vu = p.dataset.plan === id; p.classList.toggle('vu', vu); p.classList.remove('entre'); if (vu && anime && !calme) { void p.offsetWidth; p.classList.add('entre'); } }
+  $$('.onglet').forEach((o) => o.classList.toggle('actif', o.dataset.o === id));
+}
+function tic() {
+  if (!raidEnCours && etat !== 'pause' && etat !== 'inscriptions' && etat !== 'terminee' && !cineEnCours) {
+    const k = (performance.now() - debutPlan) / dureePlan;
+    if (k >= 1) montrerPlan((iPlan + 1) % PLANS.length);
+    const barre = $(`.onglet[data-o="${PLANS[iPlan][0]}"] .barre`);
+    if (barre) barre.style.width = `${Math.min(1, k) * 100}%`;
+    const suivant = PLANS[(iPlan + 1) % PLANS.length][1];
+    $('#reste').textContent = `Ensuite : ${suivant}`;
+  }
+  requestAnimationFrame(tic);
+}
+
+// ---------- Chrono et évènements ----------
+let restant = 84 * 60 + 10;
+const fmt = (s) => { s = Math.max(0, Math.round(s)); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return h ? `${h}:${String(m).padStart(2, '0')}:${String(x).padStart(2, '0')}` : `${String(m).padStart(2, '0')}:${String(x).padStart(2, '0')}`; };
+const mmss = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.max(0, s) % 60).padStart(2, '0')}`;
+function dessinerBannieres(neuf) {
+  const b = $('#bannieres');
+  b.classList.toggle('on', evenements.length > 0 && !raidEnCours);
+  b.innerHTML = evenements.map((e) => `<div class="banniere${e.maudite ? ' maudite' : ''}${neuf ? ' entre' : ''}"><b>${e.type}</b><span>${e.zone}</span><time>${mmss(e.fin)}</time></div>`).join('');
+}
+setInterval(() => {
+  if (etat === 'pause' || etat === 'inscriptions' || etat === 'terminee') return;
+  restant--; $('#chrono').textContent = fmt(restant);
+  evenements.forEach((e) => e.fin--);
+  $$('.banniere time').forEach((t, i) => { if (evenements[i]) t.textContent = mmss(evenements[i].fin); });
+}, 1000);
+
+// ---------- États de la partie ----------
+let etat = 'en_cours';
+function poserEtat(e) {
+  etat = e;
+  $$('[data-etat]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.etat === e)));
+  $('#accueil').classList.toggle('on', e === 'inscriptions');
+  $('#pause').classList.toggle('on', e === 'pause');
+  $('#fin').classList.toggle('on', e === 'terminee');
+  const p = $('#pastille');
+  p.className = 'pastille' + (e === 'finale' ? ' finale' : e === 'pause' ? ' pause' : '');
+  $('#pastille-txt').textContent = { en_cours: 'En cours', finale: 'Phase finale', pause: 'Pause', inscriptions: 'Inscriptions', terminee: 'Terminée' }[e];
+  if (e === 'finale' && restant > 9 * 60) restant = 9 * 60 + 32;
+  if (e === 'en_cours' && restant < 20 * 60) restant = 84 * 60 + 10;
+  $('#chrono').classList.toggle('rouge', e === 'finale');
+  $('#chrono').textContent = fmt(restant);
+  dessinerInscr();
+}
+function dessinerInscr() {
+  // Partie lancée : les inscriptions sont closes, le QR mène à la page de l'organisateur (prochaines parties).
+  $('#inscr').innerHTML = `<b>Envie de jouer ?</b><div class="qr">${qrSvg(260)}</div><span>Cette partie a commencé. Prochaine partie : demande à l'équipe.</span>`;
+}
+
+// ---------- QR de démonstration (motif, pas un vrai lien) ----------
+function qrSvg(taille) {
+  const n = 29; let g = 99; const r = () => (g = (g * 48271) % 2147483647) / 2147483647;
+  const m = Array.from({ length: n }, () => Array.from({ length: n }, () => r() > 0.52));
+  const finder = (ox, oy) => { for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) m[oy + y][ox + x] = x === 0 || y === 0 || x === 6 || y === 6 || (x >= 2 && x <= 4 && y >= 2 && y <= 4); for (let k = -1; k <= 7; k++) for (const [a, b] of [[ox + k, oy - 1], [ox + k, oy + 7], [ox - 1, oy + k], [ox + 7, oy + k]]) if (m[b] && m[b][a] !== undefined) m[b][a] = false; };
+  finder(0, 0); finder(n - 7, 0); finder(0, n - 7);
+  let d = ''; m.forEach((row, y) => row.forEach((v, x) => { if (v) d += `M${x} ${y}h1v1h-1z`; }));
+  return `<svg width="${taille}" height="${taille}" viewBox="0 0 ${n} ${n}" shape-rendering="crispEdges"><path d="${d}" fill="#111"/></svg>`;
+}
+$('#qr-accueil').innerHTML = qrSvg(440);
+
+// ---------- Scan dans une zone (la zone s'allume, jamais la balise) ----------
+let bulleT;
+function scanZone(id) {
+  const avec = ZONES.filter((x) => (actives[x.id] ?? 0) > 0);
+  const z = ZONES.find((x) => x.id === id) ?? avec[Math.floor(Math.random() * avec.length)];
+  for (const el of $$(`[data-flash="${z.id}"]`)) { el.classList.remove('on'); void el.getBoundingClientRect(); el.classList.add('on'); }
+  const ligne = $(`#zl [data-z="${z.id}"]`); if (ligne) { ligne.classList.remove('flash'); void ligne.offsetWidth; ligne.classList.add('flash'); }
+  const b = $('#scan-bulle'); b.textContent = `Un QR vient d'être scanné : ${z.nom}`; b.classList.add('on');
+  clearTimeout(bulleT); bulleT = setTimeout(() => b.classList.remove('on'), 3200);
+}
+setInterval(() => { if (etat === 'en_cours' || etat === 'finale') scanZone(); }, 7000);
+
+// ---------- Cinématiques (une à la fois, en file) ----------
+const cine = $('#cine');
+let file = [], cineEnCours = false;
+function jouer(f) { file.push(f); if (!cineEnCours) suite(); }
+async function suite() {
+  const f = file.shift();
+  if (!f) { cineEnCours = false; return; }
+  cineEnCours = true;
+  cine.innerHTML = ''; cine.className = 'cine on';
+  cine.animate([{ opacity: 0 }, { opacity: 1 }], { duration: calme ? 1 : 260, fill: 'forwards' });
+  await f();
+  await cine.animate([{ opacity: 1 }, { opacity: 0 }], { duration: calme ? 1 : 420, fill: 'forwards' }).finished;
+  cine.getAnimations().forEach((a) => a.cancel());
+  cine.className = 'cine'; cine.innerHTML = '';
+  suite();
+}
+const A = (el, k, o) => (calme ? el.animate(k.slice(-1), { duration: 1, fill: 'both' }) : el.animate(k, { fill: 'both', easing: 'cubic-bezier(.16,1,.3,1)', ...o }));
+const carteHTML = (num) => { const c = CARTES[num]; return `<div class="gi-carte r-${c.rang}"><div class="c-cadre"><div class="c-tete"><span class="c-num">${num}</span><span class="c-nom">${c.nom}</span><span class="gi-rang r-${c.rang}">${c.rang}<span class="lim">-${c.lim}</span></span></div><div class="c-art"><img src="${c.img}" alt=""></div><div class="c-bas"><p class="c-txt">${c.texte}</p></div></div></div>`; };
+
+function cineTirage(num, pseudo) {
+  return async () => {
+    const c = CARTES[num];
+    const lueur = c.rang === 'SS' ? 'rgba(246,220,133,.75)' : 'rgba(225,232,240,.65)';
+    cine.innerHTML = `<div class="vitesse"></div><div class="c-tirage"><div class="porte" style="--lueur:${lueur}">${carteHTML(num)}</div><div class="txt"><span class="ligne-jeu" style="text-align:left">Le jeu annonce une carte rare</span><span class="nom-j" style="text-align:left">${pseudo}</span><span class="ligne-jeu" style="text-align:left">a tiré « ${c.nom} »</span><span class="rang-gros r-${c.rang}">Rang ${c.rang}</span></div></div>`;
+    const carte = $('.porte .gi-carte', cine), txt = $$('.txt > *', cine);
+    A(carte, [{ transform: 'translateY(420px) rotateY(180deg) scale(.6)', opacity: 0 }, { transform: 'translateY(-20px) rotateY(10deg) scale(1.04)', opacity: 1, offset: 0.7 }, { transform: 'none', opacity: 1 }], { duration: 1300 });
+    txt.forEach((el, i) => A(el, [{ transform: 'translateX(60px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 600, delay: 900 + i * 180 }));
+    await attendre(6800);
+  };
+}
+function cineJarvis() {
+  return async () => {
+    cine.style.background = 'radial-gradient(circle at 30% 50%, #3a2a08 0%, #0c0c0e 65%)';
+    cine.innerHTML = `<div class="vitesse"></div><div class="onde"></div><div class="onde gel"></div><div class="c-gm"><div class="gm-carte"><div class="gm-tete"><span>GM·01</span><span>GM</span></div><div class="gm-img"><img src="img-cartes/gm/jarvis.webp" alt=""><span class="gm-nom">Jarvis tout-puissant</span></div></div><div><div class="gros">JARVIS<br>A PARLÉ</div><div class="lignes"><p>Gon reçoit par Décret <b>« Blue planet »</b>, reprise à Kirua.</p><p>Jugement : <b>4 Hunters gelés 3 min</b>.</p><p>Gon est intouchable 10 min.</p></div></div></div><div class="eclair"></div>`;
+    const carte = $('.gm-carte', cine), gros = $('.gros', cine), lignes = $$('.lignes p', cine);
+    A(carte, [{ transform: 'translateY(500px) scale(.7)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 1200 });
+    A(gros, [{ transform: 'scale(2.4)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }], { duration: 420, delay: 1300, easing: 'cubic-bezier(.2,1.4,.4,1)' });
+    A($('.eclair', cine), [{ opacity: 0 }, { opacity: 0.9 }, { opacity: 0 }], { duration: 500, delay: 1300, easing: 'ease-out' });
+    setTimeout(() => { if (!calme) secouer(); }, calme ? 0 : 1350);
+    A($('.onde', cine), [{ transform: 'scale(.2)', opacity: 1 }, { transform: 'scale(12)', opacity: 0 }], { duration: 1400, delay: 1400, easing: 'ease-out' });
+    A($('.onde.gel', cine), [{ transform: 'scale(.2)', opacity: 1 }, { transform: 'scale(12)', opacity: 0 }], { duration: 1600, delay: 3400, easing: 'ease-out' });
+    lignes.forEach((el, i) => A(el, [{ transform: 'translateY(20px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 500, delay: 2300 + i * 1000 }));
+    await attendre(8600);
+    cine.style.background = '';
+  };
+}
+function cineAnge() {
+  return async () => {
+    cine.style.background = 'radial-gradient(circle at 30% 50%, #1d2a3d 0%, #0c0c0e 65%)';
+    const r = 420, L = Math.ceil(2 * Math.PI * r);
+    cine.innerHTML = `<svg class="sceau-cercle" viewBox="-450 -450 900 900" aria-hidden="true" style="left:calc(50% - 900px);top:calc(50% - 450px)"><circle r="${r}" fill="none" stroke="#f4f4ef" stroke-width="6" stroke-dasharray="${L}" stroke-dashoffset="${L}" id="sc1"/><circle r="${r - 30}" fill="none" stroke="#d7b25a" stroke-width="3" stroke-dasharray="12 10" opacity="0" id="sc2"/></svg><div class="c-gm"><div class="gm-carte"><div class="gm-tete"><span>GM·02</span><span>GM</span></div><div class="gm-img"><img src="img-cartes/gm/ange.webp" alt=""><span class="gm-nom">Le Sceau d'Ange</span></div></div><div><div class="gros" style="font-size:128px">LE SCEAU<br>D'ANGE</div><div class="lignes"><p><b>Leolio</b> a scellé le Book de <b>Kurapika</b>.</p><p>Ni scan, ni sort, ni échange pendant <b>5 min</b>.</p></div></div></div>`;
+    A($('#sc1', cine), [{ strokeDashoffset: L }, { strokeDashoffset: 0 }], { duration: 1600, delay: 600, easing: 'cubic-bezier(.5,0,.3,1)' });
+    A($('#sc2', cine), [{ opacity: 0, transform: 'rotate(0deg)' }, { opacity: 1, transform: 'rotate(40deg)' }], { duration: 2200, delay: 1400 });
+    A($('.gm-carte', cine), [{ transform: 'translateY(-300px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 1100 });
+    A($('.gros', cine), [{ opacity: 0, filter: 'blur(20px)' }, { opacity: 1, filter: 'blur(0)' }], { duration: 900, delay: 1200 });
+    $$('.lignes p', cine).forEach((el, i) => A(el, [{ transform: 'translateY(20px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 500, delay: 2400 + i * 900 }));
+    await attendre(7600);
+    cine.style.background = '';
+  };
+}
+
+// ---------- Raid ----------
+const BOSS = `<svg viewBox="0 0 200 220" aria-hidden="true"><path d="M8 220 L22 132 Q30 116 60 112 L140 112 Q170 116 178 132 L192 220 Z" fill="#2b2f37" stroke="#111" stroke-width="4" stroke-linejoin="round"/><path d="M60 112 L84 170 M140 112 L116 170" stroke="#111" stroke-width="3" fill="none"/><path d="M40 150 Q46 132 62 128 M160 150 Q154 132 138 128" stroke="#4a505c" stroke-width="2.5" fill="none" stroke-linecap="round"/><circle cx="100" cy="138" r="13" fill="#1b1d22" stroke="#111" stroke-width="3"/><path d="M94 131 V145 M94 131 H101 Q106 131 106 135 Q106 138 101 138 H94 M101 138 Q107 138 107 141.5 Q107 145 101 145 H94" stroke="#e0322b" stroke-width="2.5" fill="none" stroke-linejoin="round"/><rect x="28" y="160" width="112" height="28" rx="13" fill="#3a3f49" stroke="#111" stroke-width="4" transform="rotate(-8 84 174)"/><rect x="60" y="164" width="112" height="28" rx="13" fill="#343943" stroke="#111" stroke-width="4" transform="rotate(8 116 178)"/><circle cx="40" cy="176" r="15" fill="#c98b5e" stroke="#111" stroke-width="4"/><circle cx="162" cy="181" r="15" fill="#b8784c" stroke="#111" stroke-width="4"/><path d="M34 170 Q40 166 46 170 M156 175 Q162 171 168 175" stroke="#111" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M84 98 L86 116 L114 116 L116 98 Z" fill="#b8784c" stroke="#111" stroke-width="4" stroke-linejoin="round"/><path d="M58 30 Q40 10 30 2 Q34 26 54 50 Z" fill="#e9e1cf" stroke="#111" stroke-width="4" stroke-linejoin="round"/><path d="M142 30 Q160 10 170 2 Q166 26 146 50 Z" fill="#e9e1cf" stroke="#111" stroke-width="4" stroke-linejoin="round"/><path d="M56 70 Q56 26 100 24 Q144 26 144 70 L140 96 Q122 108 100 108 Q78 108 60 96 Z" fill="#c98b5e" stroke="#111" stroke-width="4" stroke-linejoin="round"/><path d="M54 66 Q54 22 100 20 Q146 22 146 66 L146 62 Q100 50 54 62 Z" fill="#2b2f37" stroke="#111" stroke-width="4" stroke-linejoin="round"/><path d="M72 34 L80 44 M118 30 L124 40" stroke="#4a505c" stroke-width="2.5" stroke-linecap="round"/><path d="M56 66 L144 66 L144 86 Q100 80 56 86 Z" fill="#141519" stroke="#111" stroke-width="4" stroke-linejoin="round"/><g class="yeux"><path d="M68 72 L92 76 L88 81 L70 78 Z" fill="#ff3b30"/><path d="M132 72 L108 76 L112 81 L130 78 Z" fill="#ff3b30"/></g><g class="croix" stroke="#f1ece2" stroke-width="3.5" stroke-linecap="round"><path d="M72 70 L86 82 M86 70 L72 82"/><path d="M114 70 L128 82 M128 70 L114 82"/></g><path d="M118 88 L126 104" stroke="#8a5a36" stroke-width="2.5" stroke-linecap="round"/><path class="moue" d="M84 96 Q100 92 116 96" stroke="#111" stroke-width="4" fill="none" stroke-linecap="round"/></svg>`;
+$('#boss').innerHTML = BOSS;
+const PV_MAX = 2000;
+let pv = PV_MAX, raidT = 600, raidN = 0, raidMinuteur = null;
+function majPv() {
+  const k = pv / PV_MAX;
+  $('#pv-i').style.transform = `scaleX(${k})`; $('#pv-u').style.transform = `scaleX(${k})`;
+  $('#pv-txt').textContent = `${pv.toLocaleString('fr-FR')} / ${PV_MAX.toLocaleString('fr-FR')} PV`;
+  $('#pv-pct').textContent = `${Math.round(k * 100)} %`;
+  $('#raid-n').textContent = raidN; $('#raid-temps').textContent = mmss(raidT);
+}
+function cineAlarme() {
+  return async () => {
+    cine.innerHTML = '<div class="c-alarme"><div class="boite"><div class="ligne-jeu">ALERTE</div><div class="gros">LA BRIGADE<br>ATTAQUE</div><div class="ligne-jeu">Tous les Hunters sont appelés au combat</div></div></div>';
+    const boite = $('.boite', cine);
+    A(boite, [{ transform: 'scale(1.6)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }], { duration: 420, easing: 'cubic-bezier(.2,1.4,.4,1)' });
+    if (!calme) { secouer(); }
+    await attendre(3600);
+  };
+}
+function lancerRaid() {
+  if (raidEnCours) return;
+  pv = PV_MAX; raidT = 600; raidN = 0; $('#coups').innerHTML = ''; $('#raid').classList.remove('vaincu');
+  jouer(cineAlarme());
+  jouer(async () => { raidEnCours = true; $('#raid').classList.add('on'); $('.heros').classList.add('en-raid'); dessinerBannieres(); majPv(); cine.classList.remove('on'); });
+  const pseudos = joueurs.map((j) => j.p);
+  clearInterval(raidMinuteur);
+  raidMinuteur = setInterval(() => {
+    if (!raidEnCours || etat === 'pause') return;
+    raidT--;
+    if (Math.random() < 0.55) {
+      const p = pseudos[Math.floor(Math.random() * pseudos.length)], dmg = 20 + Math.floor(Math.random() * 4) * 10;
+      pv = Math.max(80, pv - dmg); raidN = Math.min(14, raidN + (Math.random() < 0.4 ? 1 : 0)) || 1;
+      const c = document.createElement('span'); c.className = 'coup'; c.innerHTML = `${p} <b>−${dmg}</b>`;
+      const coups = $('#coups'); coups.prepend(c); while (coups.children.length > 6) coups.lastChild.remove();
+      const b = $('#boss'); b.classList.remove('touche'); void b.offsetWidth; b.classList.add('touche');
+    }
+    majPv();
+  }, 1000);
+}
+function finirRaid(victoire) {
+  if (!raidEnCours) return;
+  clearInterval(raidMinuteur);
+  if (victoire) { pv = 0; majPv(); $('#raid').classList.add('vaincu'); }
+  jouer(async () => {
+    cine.style.background = victoire ? 'radial-gradient(circle, #3a2a08 0%, #0c0c0e 70%)' : '';
+    cine.innerHTML = victoire
+      ? '<div class="vitesse"></div><div style="display:grid;justify-items:center;gap:30px"><div class="gros" style="color:var(--or-clair)">LA BRIGADE<br>EST VAINCUE</div><div class="ligne-jeu">14 Hunters reçoivent un paquet de 3 sorts</div></div>'
+      : '<div style="display:grid;justify-items:center;gap:30px"><div class="gros" style="color:#ff5048">LA BRIGADE<br>S\'EST ENFUIE</div><div class="ligne-jeu">Il lui restait 640 PV. La prochaine fois peut-être.</div></div>';
+    A($('.gros', cine), [{ transform: 'scale(2)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 500, easing: 'cubic-bezier(.2,1.4,.4,1)' });
+    await attendre(5200);
+    cine.style.background = '';
+    raidEnCours = false; $('#raid').classList.remove('on'); $('.heros').classList.remove('en-raid'); dessinerBannieres(); montrerPlan(iPlan);
+  });
+  annoncer(victoire ? { type: 'raid', txt: 'La Brigade est vaincue : 14 Hunters récompensés' } : { type: 'raid', txt: "La Brigade s'est enfuie" });
+}
+
+// ---------- Clear et fin ----------
+function cineClear(pseudo) {
+  return async () => {
+    cine.style.background = 'radial-gradient(circle, #4a360a 0%, #0c0c0e 70%)';
+    cine.innerHTML = `<div class="vitesse"></div><div class="c-clear"><div class="sceau-clear">CLEAR</div><div class="nom-j" style="font-size:150px;color:var(--or-clair)">${pseudo}</div><div class="ligne-jeu">a réuni les ${N} cartes désignées</div></div>`;
+    A($('.sceau-clear', cine), [{ transform: 'scale(3) rotate(-30deg)', opacity: 0 }, { transform: 'scale(1) rotate(-8deg)', opacity: 1 }], { duration: 520, easing: 'cubic-bezier(.2,1.5,.4,1)' });
+    setTimeout(() => { if (!calme) { secouer(); } }, 480);
+    $$('.c-clear > :not(.sceau-clear)', cine).forEach((el, i) => A(el, [{ transform: 'translateY(40px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 700, delay: 900 + i * 400 }));
+    await attendre(7000);
+    cine.style.background = '';
+  };
+}
+function cineFin() {
+  return async () => {
+    cine.innerHTML = '<div class="onde" style="box-shadow:0 0 0 8px #f4f4ef"></div><div class="onde" style="box-shadow:0 0 0 4px #f4f4ef"></div><div class="gros">FIN DE<br>LA PARTIE</div>';
+    $$('.onde', cine).forEach((o, i) => A(o, [{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(14)', opacity: 0 }], { duration: 2200, delay: i * 500, easing: 'ease-out' }));
+    A($('.gros', cine), [{ transform: 'scale(1.3)', opacity: 0, letterSpacing: '0.3em' }, { transform: 'none', opacity: 1, letterSpacing: '0.02em' }], { duration: 1400 });
+    await attendre(3400);
+    trier();
+    const [a, b, c] = joueurs;
+    const marche = (j, k) => `<div class="marche p${k}"><div class="nom-j">${j.p}</div><span>${j.n} / ${N} cartes · ${j.pts} pts</span><div class="bloc m${k}">${k}</div></div>`;
+    cine.innerHTML = `<div class="vitesse"></div><div class="c-podium">${marche(b, 2)}${marche(a, 1)}${marche(c, 3)}</div>`;
+    // Le podium se révèle du troisième au premier.
+    [['.p3', 0], ['.p2', 1300], ['.p1', 2800]].forEach(([s, t]) => {
+      const m = $(s, cine);
+      A($('.bloc', m), [{ transform: 'scaleY(0)', transformOrigin: 'bottom' }, { transform: 'scaleY(1)', transformOrigin: 'bottom' }], { duration: 800, delay: t });
+      A($('.nom-j', m), [{ opacity: 0, transform: 'translateY(30px)' }, { opacity: 1, transform: 'none' }], { duration: 600, delay: t + 600 });
+      A($('span', m), [{ opacity: 0 }, { opacity: 1 }], { duration: 500, delay: t + 800 });
+    });
+    await attendre(7600);
+    poserEtat('terminee'); dessinerFin();
+  };
+}
+function dessinerFin() {
+  trier();
+  $('#fin-liste').innerHTML = joueurs.slice(0, 10).map((j, i) => ligneCl(j, i, true)).join('');
+  dessinerIle($('#fin-svg'), 'f', { halos: false, comptes: false, exact: true });
+  if (!calme) $$('#fin-svg .vraie').forEach((g, i) => g.animate([{ opacity: 0, transform: `${g.getAttribute('transform')} scale(3)` }, { opacity: 1, transform: g.getAttribute('transform') }], { duration: 500, delay: 400 + i * 120, fill: 'both', easing: 'cubic-bezier(.2,1.4,.4,1)' }));
+}
+
+// ---------- Commandes du prototype ----------
+$$('[data-etat]').forEach((b) => b.addEventListener('click', () => poserEtat(b.dataset.etat)));
+$('#p-reco').addEventListener('click', (e) => { const on = !$('#reco').classList.contains('on'); $('#reco').classList.toggle('on', on); e.currentTarget.setAttribute('aria-pressed', String(on)); });
+$('#p-plan').addEventListener('click', () => montrerPlan((iPlan + 1) % PLANS.length));
+$('#p-vite').addEventListener('click', (e) => { dureePlan = dureePlan === 25000 ? 6000 : 25000; e.currentTarget.setAttribute('aria-pressed', String(dureePlan === 6000)); debutPlan = performance.now(); });
+$('#p-fil').addEventListener('click', () => { annoncer(NOUVELLES[iNouv++ % NOUVELLES.length]); });
+$('#p-scan').addEventListener('click', () => { if (PLANS[iPlan][0] !== 'ile') montrerPlan(1); setTimeout(() => scanZone(), 700); });
+$('#p-depasse').addEventListener('click', () => {
+  trier();
+  const i = 1 + Math.floor(Math.random() * 6), j = joueurs[i];
+  j.n = joueurs[i - 1].n + (Math.random() < 0.5 ? 0 : 1); j.pts = joueurs[i - 1].pts + 4;
+  if (PLANS[iPlan][0] !== 'classement') montrerPlan(0);
+  setTimeout(() => dessinerClassement(j.p), 700);
+});
+$('#p-rotation').addEventListener('click', () => {
+  if (PLANS[iPlan][0] !== 'ile') montrerPlan(1);
+  setTimeout(() => {
+    const g = $('#ile-svg .halos'); g.classList.add('cache');
+    setTimeout(() => { tirerHalos(); tirerHeat(); dessinerIles(); const n = $('#ile-svg .halos'); n.classList.add('cache'); void n.getBoundingClientRect(); n.classList.remove('cache'); }, 1400);
+  }, 700);
+});
+$('#p-ev').addEventListener('click', (e) => {
+  const on = evenements.length === 0;
+  evenements = on ? [{ type: 'Double gain', zone: 'Prairie', fin: 8 * 60 + 12 }, { type: 'Une carte maudite circule', zone: '', fin: 12 * 60 + 40, maudite: true }] : [];
+  e.currentTarget.setAttribute('aria-pressed', String(on)); dessinerBannieres(on); dessinerIles();
+});
+$('#p-ss').addEventListener('click', () => { jouer(cineTirage('000', 'Biscuit')); annoncer({ type: 'tirage', txt: 'Biscuit a tiré « Le bonheur du détenteur »', rang: 'SS' }); });
+$('#p-s').addEventListener('click', () => { jouer(cineTirage('017', 'Kurapika')); annoncer({ type: 'tirage', txt: 'Kurapika a tiré « Le souffle du grand ange »', rang: 'S' }); });
+$('#p-jarvis').addEventListener('click', () => { jouer(cineJarvis()); annoncer({ type: 'gm', txt: 'Jarvis a parlé : Gon reçoit « Blue planet »' }); });
+$('#p-ange').addEventListener('click', () => { jouer(cineAnge()); annoncer({ type: 'gm', txt: 'Leolio a scellé le Book de Kurapika' }); });
+$('#p-raid').addEventListener('click', lancerRaid);
+$('#p-raid-v').addEventListener('click', () => finirRaid(true));
+$('#p-raid-f').addEventListener('click', () => finirRaid(false));
+$('#p-clear').addEventListener('click', () => {
+  const k = joueurs.find((j) => j.p === 'Kirua'); k.n = N; k.pts += 60; dessinerClassement('Kirua');
+  annoncer({ type: 'clear', txt: 'Kirua a fait Clear !' });
+  jouer(cineClear('Kirua')); jouer(cineFin());
+});
+$('#p-fin').addEventListener('click', () => jouer(cineFin()));
+$('#p-plier').addEventListener('click', (e) => { const f = $('#proto').classList.toggle('ferme'); e.currentTarget.textContent = f ? 'Déplier' : 'Replier'; e.currentTarget.setAttribute('aria-expanded', String(!f)); });
+
+// ---------- Démarrage ----------
+dessinerIles(); dessinerClassement(); dessinerFil(); dessinerBannieres(); poserEtat('en_cours'); montrerPlan(0, false);
+requestAnimationFrame(tic);
+</script>

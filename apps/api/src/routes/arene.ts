@@ -98,7 +98,7 @@ export async function areneRoutes(app: FastifyInstance) {
         gain = { kind: 'carte', carteId: g.cardId, rang: g.rank };
         vue = { kind: 'carte', nom: cat.nomDe(g.cardId), rang: g.rank };
         carte = vueCarte(cat, g.cardId, limitesOf(p));
-        if (RANK_POINTS[g.rank] >= RANK_POINTS.S) c.emit({ type: 'tracker' }, 'fil', { type: 'arene', pseudo: j.pseudo, carte: vue.nom, rang: g.rank, heureJeu: c.now });
+        if (RANK_POINTS[g.rank] >= RANK_POINTS.S) c.emit({ type: 'tracker' }, 'fil', { type: 'arene', pseudo: j.pseudo, carte: vue.nom, rang: g.rank, numero: carte.numero, limite: carte.limite, texte: carte.texte, heureJeu: c.now });
         const distinctes = layoutBook(after, cat.designees).designes.filter((d) => d.slot.etat === 'plein').length;
         c.emit({ type: 'tracker' }, 'progression', { joueurId: j.id, pseudo: j.pseudo, cartes: distinctes });
       } else {

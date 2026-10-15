@@ -112,7 +112,8 @@ describe('2.11 partie simulée de bout en bout', () => {
       const json = JSON.stringify(e.data);
       if (e.a === 'joueur' || e.a === 'joueurs') expect(json).not.toMatch(/"lat"/);
       if (e.a === 'tracker' && /"lat"/.test(json)) {
-        expect(e.evenement).toBe('heatmap');
+        // Heatmap anonyme ; halos des balises, décalés (amendement RG-6.5).
+        expect(['heatmap', 'halos']).toContain(e.evenement);
         expect(json).not.toMatch(/"(joueurId|id|pseudo)"/);
       }
     }

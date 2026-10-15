@@ -261,7 +261,8 @@ export async function scanRoutes(app: FastifyInstance) {
       c.emit({ type: 'joueur', id: j.id }, 'tirage', { gains: [...vue, ...vueObjets], jenny });
       for (const g of vue) {
         if (g.kind === 'carte' && RANK_POINTS[g.rang] >= RANK_POINTS.A) {
-          c.emit({ type: 'tracker' }, 'fil', { type: 'tirage', pseudo: j.pseudo, carte: g.nom, rang: g.rang, heureJeu: c.now });
+          // Écran géant : numéro, limite et texte pour montrer la carte illustrée.
+          c.emit({ type: 'tracker' }, 'fil', { type: 'tirage', pseudo: j.pseudo, carte: g.nom, rang: g.rang, numero: g.numero, limite: g.limite, texte: g.texte, heureJeu: c.now });
         }
       }
       if (gmItem) {

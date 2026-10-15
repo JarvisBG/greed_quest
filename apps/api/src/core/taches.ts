@@ -29,7 +29,7 @@ import { journal, parties, zones, type Taches } from '../db/schema.js';
 import { closeDueAuctions } from '../routes/encheres.js';
 import { emitBeaconChanges, visitesParZone } from '../routes/scan.js';
 import { computeRanking, publicRanking } from './classement.js';
-import { heatmapPoints } from './ecran.js';
+import { HEATMAP_DELAY_MS, halosBalises, heatmapPoints, scansParZone } from './ecran.js';
 import { alerte } from './alertes.js';
 import { applyLifecycle } from './cycle.js';
 import { expireSessions } from './echanges.js';
@@ -66,7 +66,7 @@ export async function tickPartie(c: ActionCtx): Promise<void> {
   await expireTrades(c);
   await shopWave(c);
   if (taches.ecranA === undefined || c.now - taches.ecranA >= SCREEN_REFRESH_MS) {
-    await screen(c);
+    await screen(c, taches.ecranA ?? c.now);
     taches.ecranA = c.now;
   }
   await agenda(c, taches);
@@ -159,14 +159,24 @@ async function beacons(c: ActionCtx, taches: Taches) {
   const recharge = rechargeBeacons(before, c.now);
   let up = fillToTarget(recharge.beacons, p.balisesActives, opts, c.rng);
   const changes = [...recharge.changes, ...up.changes];
-  if (taches.rotationA === undefined) taches.rotationA = c.now;
-  else if (c.now - taches.rotationA >= ROTATION_INTERVAL_MS) {
+  let tourne = false;
+  if (taches.rotationA === undefined) {
+    taches.rotationA = c.now;
+    tourne = true;
+  } else if (c.now - taches.rotationA >= ROTATION_INTERVAL_MS) {
     up = rotate(up.beacons, p.balisesActives, opts, c.rng);
     changes.push(...up.changes);
     taches.rotationA = c.now;
+    tourne = true;
   }
   await saveBeacons(c.tx, before, up.beacons);
   await emitBeaconChanges(c, changes);
+  if (tourne) {
+    // Amendement RG-6.5 : nouveaux halos de l'écran géant à chaque rotation.
+    taches.halosGraine = Math.floor(c.rng.next() * 2 ** 31);
+    c.partie.taches = { ...(c.partie.taches as Taches), halosGraine: taches.halosGraine };
+    c.emit({ type: 'tracker' }, 'halos', await halosBalises(c));
+  }
 }
 
 /** RG-12 : fin des événements échus (fantôme, carte maudite, raid…). */
@@ -222,9 +232,12 @@ async function shopWave(c: ActionCtx) {
 }
 
 /** Écran géant : classement live (RG-13.7) et heatmap anonyme décalée de 2 min (RG-10.12). */
-async function screen(c: ActionCtx) {
+async function screen(c: ActionCtx, depuis: number) {
   c.emit({ type: 'tracker' }, 'classement', publicRanking(await computeRanking(c.tx, c.partie, 'live')));
   c.emit({ type: 'tracker' }, 'heatmap', await heatmapPoints(c));
+  // Amendement RG-6.5 : zones scannées depuis le dernier passage, avec 2 min de retard (RG-10.12).
+  const zones = await scansParZone(c, depuis - HEATMAP_DELAY_MS, c.now - HEATMAP_DELAY_MS);
+  if (zones.length > 0) c.emit({ type: 'tracker' }, 'scans_zones', zones);
 }
 
 /** RG-12.3 : agenda automatique (désactivé par défaut) : propose un événement, le GM confirme. */

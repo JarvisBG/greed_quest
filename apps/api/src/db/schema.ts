@@ -9,6 +9,8 @@ const heureJeu = (nom: string) => integer(nom);
 export interface Taches {
   jA?: number;
   rotationA?: number;
+  /** Amendement RG-6.5 : graine du décalage des halos de l'écran géant, tirée à chaque rotation, jamais envoyée. */
+  halosGraine?: number;
   ecranA?: number;
   agendaA?: number;
   /** Amendement RG-10.10 : heure de la dernière position déjà signalée, par joueur (une alerte par disparition). */

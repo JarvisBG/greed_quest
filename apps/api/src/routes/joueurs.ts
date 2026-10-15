@@ -94,6 +94,7 @@ export async function joueursRoutes(app: FastifyInstance) {
         details: { joueurId: id, pseudo: body.pseudo, kitJenny: p.kitJenny, rattrapage, sort },
       });
       c.emit({ type: 'staff' }, 'joueur_inscrit', { joueurId: id, pseudo: body.pseudo });
+      c.emit({ type: 'tracker' }, 'joueur_inscrit', { pseudo: body.pseudo }); // écran géant : « X entre dans Greed Island »
       return {
         ok: true as const,
         joueurId: id,

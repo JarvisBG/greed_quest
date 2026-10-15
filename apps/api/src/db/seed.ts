@@ -89,14 +89,15 @@ export async function seedDemoContent(
   const centre = o.centre ?? { lat: 48.8566, lng: 2.3522 };
   await db.update(parties).set({ perimetre: square(centre, 400) }).where(eq(parties.id, partieId));
 
-  const zoneRows = DEMO_ZONES.map((z, i) => ({
+  const zonesDemo = DEMO_ZONES.map((z, i) => ({
     id: newId(),
     partieId,
     nom: z.nom,
     type: z.type,
-    polygone: square(offset(centre, (Math.floor(i / 3) - 0.5) * 120, ((i % 3) - 1) * 120), 100),
+    centre: offset(centre, (Math.floor(i / 3) - 0.5) * 120, ((i % 3) - 1) * 120),
     qr: z.type === 'sauvage' ? null : newSecret(12),
   }));
+  const zoneRows = zonesDemo.map(({ centre: c, ...z }) => ({ ...z, polygone: square(c, 100) }));
   await db.insert(zones).values(zoneRows);
 
   const carteRows = DEMO_CATALOGUE.map((c) => ({ id: newId(), partieId, numero: c.numero, nom: c.nom, rang: c.rang, texte: c.texte }));
@@ -108,6 +109,8 @@ export async function seedDemoContent(
     partieId,
     zoneId: zoneRows[i % zoneRows.length]!.id,
     libelle: `B${String(i + 1).padStart(2, '0')}`,
+    // Posée dans sa zone (écran géant : halos, révélation à la fin), à une place fixe d'un tour à l'autre.
+    position: offset(zonesDemo[i % zonesDemo.length]!.centre, ((Math.floor(i / 6) % 3) - 1) * 30, ((i % 2) * 2 - 1) * 25),
   }));
   if (baliseRows.length > 0) await db.insert(balises).values(baliseRows);
 

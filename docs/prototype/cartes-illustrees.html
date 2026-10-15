@@ -229,7 +229,7 @@ h1 + p { margin: 6px 0 0; color: var(--encre-2); font-size: 15px; }
       <div class="poches" id="poches-fixes"></div>
     </div>
     <div class="livre-page libres">
-      <header><span>Emplacements libres</span><span>6 / 15</span></header>
+      <header><span>Emplacements libres</span><span>9 / 15</span></header>
       <div class="poches" id="poches-libres"></div>
     </div>
   </section>
@@ -263,6 +263,7 @@ const CARTES = {
   '017': { genre: 'designee', nom: 'Le souffle du grand ange', rang: 'S', lim: 2, texte: "Le souffle d'un ange, qui guérit toutes les blessures et toutes les maladies. Une seule fois." },
   '018': { genre: 'designee', nom: "Le petit clin d'œil du démon", rang: 'B', lim: 6, texte: "Un petit démon dont chaque clin d'œil procure une extase incomparable. On s'y accoutume vite." },
   '021': { genre: 'designee', nom: 'Les lunettes squelettes', rang: 'C', lim: 8, texte: 'Des lunettes qui voient à travers tout, sauf un paquet de sorts de Masadora.' },
+  '037': { genre: 'designee', nom: "L'œuf du sportif de niveau extra-super", rang: 'D', lim: 30, texte: 'Un œuf qui, couvé des années, fait de son gardien un grand athlète.' },
   '047': { genre: 'designee', nom: 'La jeune fille endormie', rang: 'A', lim: 4, texte: 'Une jeune fille qui dort à la place de son maître, éveillé jour et nuit.' },
   '050': { genre: 'designee', nom: "Le zaurus qui s'emballe", rang: 'A', lim: 4, texte: 'Un petit saurien dont chaque génération donne une nouvelle espèce.' },
   '056': { genre: 'designee', nom: 'La galerie de photos souvenirs', rang: 'C', lim: 8, texte: "Une galerie qui tire le portrait de son visiteur à n'importe quel moment de son passé." },
@@ -272,7 +273,10 @@ const CARTES = {
   vol: { genre: 'sort', num: '1007', nom: 'Vol', texte: "Vole une carte au hasard dans les emplacements désignés d'un joueur proche." },
   barriere: { genre: 'sort', num: '1003', nom: 'Mur défensif', texte: 'Pare une fois le prochain sort offensif lancé sur toi.' },
   radar: { genre: 'sort', num: '1027', nom: 'Trace', texte: "Montre la zone où se trouve un joueur." },
-  gel: { genre: 'sort', num: '—', nom: 'Gel', texte: "Fige un joueur proche : il ne peut plus scanner pendant 3 minutes.", sansImage: true },
+  gel: { genre: 'sort', num: '—', nom: 'Gel', texte: "Fige un joueur proche : il ne peut plus scanner pendant 3 minutes." },
+  pepite: { genre: 'objet', num: '—', nom: 'Pépite d’or', texte: 'Se revend 30 J à Masadora.' },
+  boussole: { genre: 'objet', num: '—', nom: 'Boussole du chercheur', texte: 'Indique la direction d’une balise active que tu n’as jamais scannée.' },
+  souffle: { genre: 'objet', num: '—', nom: 'Second souffle', texte: 'Rescanne une balise sans faire la boucle des autres balises.' },
   ticket: { genre: 'objet', num: '1032', nom: 'Loterie', texte: 'Un ticket à gratter : la chance décide du gain.' },
 };
 const IMAGE = (id, c) => (c.sansImage ? null : `img-cartes/${c.genre}/${id}.webp`);
@@ -300,8 +304,8 @@ const DOS = `<div class="gi-carte dos" aria-hidden="true"><div class="c-cadre">
   <path d="M50 22 L57 43 L79 43 L61 56 L68 78 L50 64 L32 78 L39 56 L21 43 L43 43 Z" fill="#d7b25a"/></svg></div></div>`;
 
 /* ① La carte en grand */
-const ordre = ['017', '000', '081', '094', '050', '009', '021', '011', '047', '018', '056', '095', 'vol', 'barriere', 'radar', 'gel', 'ticket'];
-let actuelle = '017';
+const ordre = ['037', 'gel', 'pepite', 'boussole', 'souffle', '017', '000', '081', '094', '050', '009', '021', '011', '047', '018', '056', '095', 'vol', 'barriere', 'radar', 'gel', 'ticket'];
+let actuelle = '037';
 const grande = document.getElementById('grande');
 const contrefacon = document.getElementById('contrefacon');
 function montrer() { grande.innerHTML = carte(actuelle, { grisee: contrefacon.checked }); }
@@ -318,7 +322,7 @@ montrer();
 
 /* ② Le Book */
 const fixes = ['000', null, '009', '011', null, '017', '018', '021', null];
-const libres = ['vol', 'barriere', 'gel', 'ticket', '094', '081', null, null, null];
+const libres = ['gel', 'pepite', 'boussole', 'souffle', 'vol', 'barriere', 'ticket', '094', '081'];
 const pochettes = (ids, vides) => ids.map((id, i) => id
   ? `<button type="button" class="poche" data-id="${id}" aria-label="${CARTES[id].nom}">${carte(id)}</button>`
   : `<div class="poche vide">${vides ? `<span>${vides[i]}</span>` : ''}</div>`).join('');
@@ -342,7 +346,7 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fermer(); 
 
 /* ③ Le tirage */
 const ECLAT = { SS: '#ffd877', S: '#e9eef3', A: '#f2b48a', B: '#b6e0cc', C: '#d6dfea', D: '#fbfbf7' };
-const tirables = ['017', '000', '081', '094', '050', '021', '011', '047'];
+const tirables = ['037', '017', '000', '081', '094', '050', '021', '011', '047'];
 let n = 0, anims = [];
 const tourne = document.getElementById('tourne');
 const rayons = document.getElementById('rayons');

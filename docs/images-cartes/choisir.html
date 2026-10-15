@@ -1,0 +1,1036 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Images des cartes</title>
+<style>
+  :root { --encre: #111; --papier: #f6f4ee; --case: #fff; --gris: #6a6d72; --rouge: #c8102e; --bleu: #1f4fa8; --jaune: #e2b007; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--papier); color: var(--encre); font: 15px/1.45 system-ui, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 26px; margin: 8px 0 4px; }
+  .etapes { background: var(--case); border: 2px solid var(--encre); border-radius: 6px; padding: 12px 16px; }
+  .etapes ol { margin: 6px 0; padding-left: 22px; }
+  .stats { display: flex; flex-wrap: wrap; gap: 8px 18px; list-style: none; padding: 0; margin: 12px 0; }
+  .barre { position: sticky; top: 0; z-index: 2; background: var(--papier); padding: 10px 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; border-bottom: 2px solid var(--encre); }
+  .barre button { font: inherit; border: 2px solid var(--encre); background: var(--case); border-radius: 4px; padding: 6px 12px; cursor: pointer; }
+  .barre button.actif, .barre .principal { background: var(--encre); color: #fff; }
+  #etat { color: var(--gris); }
+  .carte { background: var(--case); border: 2px solid var(--encre); border-left-width: 8px; border-radius: 6px; margin: 14px 0; padding: 10px 12px; }
+  .carte[data-cle^="designee"] { border-left-color: var(--rouge); }
+  .carte[data-cle^="sort"] { border-left-color: var(--bleu); }
+  .carte[data-cle^="objet"] { border-left-color: var(--jaune); }
+  .carte header { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+  .carte h2 { font-size: 17px; margin: 0; }
+  .carte header span { color: var(--gris); font-size: 13px; }
+  .cands { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+  .cand { font: inherit; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 150px; padding: 6px; background: #fafafa; border: 2px dashed #bbb; border-radius: 6px; cursor: pointer; }
+  .cand img { width: 100%; height: 190px; object-fit: contain; background: #eee; }
+  .cand span { font-size: 12px; color: var(--gris); }
+  .cand-bloc { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .lien { font-size: 12px; color: var(--bleu); }
+  .cand img.rate { visibility: hidden; }
+  .cand.aucune { justify-content: center; min-height: 80px; width: 90px; }
+  .cand.choisi { border: 3px solid var(--encre); background: #fff7d6; }
+  .cand.choisi span { color: var(--encre); font-weight: 700; }
+  .vide { color: var(--gris); font-style: italic; margin: 0; align-self: center; }
+  .cache { display: none; }
+  @media (max-width: 480px) { .cand { width: calc(50% - 5px); } .cand img { height: 160px; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Images des cartes de Greed Quest</h1>
+  <div class="etapes">
+    <p><b>119 cartes</b> de notre banque (100 désignées, 13 sorts, 6 objets), avec toutes les images trouvées sur le wiki des fans pour chacune. L’image encadrée est choisie d’office, dans cet ordre : anime 2011, anime 1999, manga.</p>
+    <ol>
+      <li>Fais défiler jusqu’en bas pour que toutes les images se chargent.</li>
+      <li>Si tu préfères une autre image pour une carte, clique dessus. « Aucune » laisse le filigrane.</li>
+      <li>Dans Chrome : <b>Ctrl + S</b>, type <b>« Page Web, complète »</b>, et enregistre dans <code>docs/images-cartes/brutes/</code>. Toutes les images et tes choix sont enregistrés d’un coup.</li>
+      <li>Préviens Claude : il découpe, convertit et range tout lui-même.</li>
+    </ol>
+    <p>Tes choix sont aussi gardés dans ce navigateur. « Copier mes choix » sert de secours si l’enregistrement se passe mal.</p>
+  </div>
+  <ul class="stats"><li><b>64</b> Anime 2011</li><li><b>1</b> Anime 1999</li><li><b>50</b> Manga</li><li><b>4</b> Aucune</li></ul>
+  <div class="barre">
+    <button type="button" data-filtre="tout" class="actif">Tout</button>
+    <button type="button" data-filtre="designee">Désignées</button>
+    <button type="button" data-filtre="sort">Sorts</button>
+    <button type="button" data-filtre="objet">Objets</button>
+    <button type="button" data-filtre="manga">Manga ou aucune</button>
+    <button type="button" class="principal" id="copier">Copier mes choix</button>
+    <span id="etat" aria-live="polite"></span>
+  </div>
+<section class="carte" data-cle="designee/000">
+  <header><h2>000 · Le bonheur du détenteur</h2><span>rang SS</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Ruler's Blessing (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Ruler's_Blessing_(G.I_card).png" alt="Ruler's Blessing (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Ruler's_Blessing_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Ruler's Blessing (G.I card 1999).png" data-genre="Anime 1999" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Ruler's_Blessing_(G.I_card_1999).png" alt="Ruler's Blessing (G.I card 1999).png"><span>Anime 1999</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Ruler's_Blessing_(G.I_card_1999).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Ruler's Blessing (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Ruler's_Blessing_(G.I_card)_%3Dscan%3D.png" alt="Ruler's Blessing (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Ruler's_Blessing_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/001">
+  <header><h2>001 · Le bois secret d'un Tsubo</h2><span>rang S</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Patch of Forest (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Patch_of_Forest_(G.I_card).png" alt="Patch of Forest (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Patch_of_Forest_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Patch of Forest (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Patch_of_Forest_(G.I_card)_%3Dscan%3D.png" alt="Patch of Forest (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Patch_of_Forest_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/002">
+  <header><h2>002 · La côte d'un Tsubo</h2><span>rang S</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Patch of Shore (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Patch_of_Shore_(G.I_card).png" alt="Patch of Shore (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Patch_of_Shore_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Patch of Shore (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Patch_of_Shore_(G.I_card)_%3Dscan%3D.png" alt="Patch of Shore (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Patch_of_Shore_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/003">
+  <header><h2>003 · Le vase de la fontaine</h2><span>rang B</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Pitcher of Eternal Water (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Pitcher_of_Eternal_Water_(G.I_card)_%3Dscan%3D.png" alt="Pitcher of Eternal Water (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Pitcher_of_Eternal_Water_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/004">
+  <header><h2>004 · La source naturelle des belles peaux</h2><span>rang B</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Skin Care Hot Springs (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Skin_Care_Hot_Springs_(G.I_card)_%3Dscan%3D.png" alt="Skin Care Hot Springs (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Skin_Care_Hot_Springs_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/005">
+  <header><h2>005 · La grotte des esprits</h2><span>rang S</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Hidden Hollow (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Hidden_Hollow_(G.I_card).png" alt="Hidden Hollow (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Hidden_Hollow_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Spirited Away Hollow (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Spirited_Away_Hollow_(G.I_card)_%3Dscan%3D.png" alt="Spirited Away Hollow (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Spirited_Away_Hollow_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/006">
+  <header><h2>006 · La fontaine de jouvence à alcool</h2><span>rang B</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Liquor Spring (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Liquor_Spring_(G.I_card)_%3Dscan%3D.png" alt="Liquor Spring (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Liquor_Spring_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/007">
+  <header><h2>007 · La pierre de grossesse</h2><span>rang A</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Pregnancy Stones (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Pregnancy_Stones_(G.I_card)_%3Dscan%3D.png" alt="Pregnancy Stones (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Pregnancy_Stones_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/008">
+  <header><h2>008 · Le lac du mystère</h2><span>rang A</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Mystery Pond (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Mystery_Pond_(G.I_card)_%3Dscan%3D.png" alt="Mystery Pond (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Mystery_Pond_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/009">
+  <header><h2>009 · L'arbre de la bonne récolte</h2><span>rang A</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Tree of Plenty GI Card 9.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Tree_of_Plenty_GI_Card_9.png" alt="Tree of Plenty GI Card 9.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Tree_of_Plenty_GI_Card_9.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Tree of Plenty (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Tree_of_Plenty_(G.I_card)_%3Dscan%3D.png" alt="Tree of Plenty (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Tree_of_Plenty_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/010">
+  <header><h2>010 · Le rurubu d'or</h2><span>rang B</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Golden Guidebook GI Card 10.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Golden_Guidebook_GI_Card_10.png" alt="Golden Guidebook GI Card 10.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Golden_Guidebook_GI_Card_10.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Golden Guidebook (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Golden_Guidebook_(G.I_card)_%3Dscan%3D.png" alt="Golden Guidebook (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Golden_Guidebook_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/011">
+  <header><h2>011 · La balance d'or</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Golden Scales (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Golden_Scales_(G.I_card)_%3Dscan%3D.png" alt="Golden Scales (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Golden_Scales_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/012">
+  <header><h2>012 · Le dictionnaire d'or</h2><span>rang A</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Golden Dictionary (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Golden_Dictionary_(G.I_card)_%3Dscan%3D.png" alt="Golden Dictionary (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Golden_Dictionary_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/013">
+  <header><h2>013 · Le carnet du bonheur</h2><span>rang B</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Luck Bankbook GI Card 13.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Luck_Bankbook_GI_Card_13.png" alt="Luck Bankbook GI Card 13.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Luck_Bankbook_GI_Card_13.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Luck Bankbook (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Luck_Bankbook_(G.I_card)_%3Dscan%3D.png" alt="Luck Bankbook (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Luck_Bankbook_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/014">
+  <header><h2>014 · Les ciseaux coupe-liens</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Connection Severing Scissors (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Connection_Severing_Scissors_(G.I_card)_%3Dscan%3D.png" alt="Connection Severing Scissors (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Connection_Severing_Scissors_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/015">
+  <header><h2>015 · Le génie capricieux</h2><span>rang A</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Fickle Genie (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Fickle_Genie_(G.I_card)_%3Dscan%3D.png" alt="Fickle Genie (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Fickle_Genie_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/016">
+  <header><h2>016 · L'avertissement du maître des fées</h2><span>rang S</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Fairy King's Advice (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Fairy_King's_Advice_(G.I_card)_%3Dscan%3D.png" alt="Fairy King's Advice (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Fairy_King's_Advice_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/017">
+  <header><h2>017 · Le souffle du grand ange</h2><span>rang S</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Angel's Breath - GI Card 17.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Angel's_Breath_-_GI_Card_17.png" alt="Angel's Breath - GI Card 17.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Angel's_Breath_-_GI_Card_17.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Breath of Archangel (G.I card).png" data-genre="Anime 2011" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Breath_of_Archangel_(G.I_card).png" alt="Breath of Archangel (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Breath_of_Archangel_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Angel breath card 1999.png" data-genre="Anime 1999" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Angel_breath_card_1999.png" alt="Angel breath card 1999.png"><span>Anime 1999</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Angel_breath_card_1999.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Breath of Archangel (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Breath_of_Archangel_(G.I_card)_%3Dscan%3D.png" alt="Breath of Archangel (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Breath_of_Archangel_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/018">
+  <header><h2>018 · Le petit clin d'œil du démon</h2><span>rang B</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Imp's Wink (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Imp's_Wink_(G.I_card)_%3Dscan%3D.png" alt="Imp's Wink (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Imp's_Wink_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/019">
+  <header><h2>019 · L'oreiller de l'esprit joueur</h2><span>rang B</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Poltergeist Pillow GI Card 19.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Poltergeist_Pillow_GI_Card_19.png" alt="Poltergeist Pillow GI Card 19.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Poltergeist_Pillow_GI_Card_19.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Poltergeist Pillow (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Poltergeist_Pillow_(G.I_card)_%3Dscan%3D.png" alt="Poltergeist Pillow (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Poltergeist_Pillow_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/020">
+  <header><h2>020 · Le mètre de pulsions spirituelles</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Mood Clock (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Mood_Clock_(G.I_card)_%3Dscan%3D.png" alt="Mood Clock (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Mood_Clock_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/021">
+  <header><h2>021 · Les lunettes squelettes</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="X-Ray Goggles (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/X-Ray_Goggles_(G.I_card)_%3Dscan%3D.png" alt="X-Ray Goggles (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:X-Ray_Goggles_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/022">
+  <header><h2>022 · Toraemon</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Toraemon (G.I card 1999).png" data-genre="Anime 1999" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Toraemon_(G.I_card_1999).png" alt="Toraemon (G.I card 1999).png"><span>Anime 1999</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Toraemon_(G.I_card_1999).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Toraemon (G.I card Manga) =en=.png" data-genre="Manga (VO anglaise)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Toraemon_(G.I_card_Manga)_%3Den%3D.png" alt="Toraemon (G.I card Manga) =en=.png"><span>Manga (VO anglaise)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Toraemon_(G.I_card_Manga)_%3Den%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Toraemon (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Toraemon_(G.I_card)_%3Dscan%3D.png" alt="Toraemon (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Toraemon_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/023">
+  <header><h2>023 · Le livre infini</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Tome of a Thousand Tales (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Tome_of_a_Thousand_Tales_(G.I_card)_%3Dscan%3D.png" alt="Tome of a Thousand Tales (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Tome_of_a_Thousand_Tales_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/024">
+  <header><h2>024 · La télé probable</h2><span>rang B</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Hypothetical T.V. (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Hypothetical_T.V._(G.I_card)_%3Dscan%3D.png" alt="Hypothetical T.V. (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Hypothetical_T.V._(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/025">
+  <header><h2>025 · Le dé du risque</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Risky Dice (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Risky_Dice_(G.I_card).png" alt="Risky Dice (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Risky_Dice_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Risky Dice GI Card 25.png" data-genre="Anime 2011" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Risky_Dice_GI_Card_25.png" alt="Risky Dice GI Card 25.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Risky_Dice_GI_Card_25.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Risky Dice (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Risky_Dice_(G.I_card)_%3Dscan%3D.png" alt="Risky Dice (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Risky_Dice_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/026">
+  <header><h2>026 · Les sept nains au travail</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Night Shift Dwarves GI Card 26.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Night_Shift_Dwarves_GI_Card_26.png" alt="Night Shift Dwarves GI Card 26.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Night_Shift_Dwarves_GI_Card_26.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Night Shift Dwarves (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Night_Shift_Dwarves_(G.I_card)_%3Dscan%3D.png" alt="Night Shift Dwarves (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Night_Shift_Dwarves_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/027">
+  <header><h2>027 · Le carnet de ticket de bus-visage</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Book of V.I.P Passes (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Book_of_V.I.P_Passes_(G.I_card).png" alt="Book of V.I.P Passes (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Book_of_V.I.P_Passes_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Book of V.I.P Passes (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Book_of_V.I.P_Passes_(G.I_card)_%3Dscan%3D.png" alt="Book of V.I.P Passes (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Book_of_V.I.P_Passes_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/028">
+  <header><h2>028 · La télécommande à sentiments</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Capricious Remote (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Capricious_Remote_(G.I_card)_%3Dscan%3D.png" alt="Capricious Remote (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Capricious_Remote_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/029">
+  <header><h2>029 · Coupon de réservation forcée</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Pre-Order Vouchers (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Pre-Order_Vouchers_(G.I_card)_%3Dscan%3D.png" alt="Pre-Order Vouchers (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Pre-Order_Vouchers_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/030">
+  <header><h2>030 · Coussin connexion</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Favor Cushion (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Favor_Cushion_(G.I_card)_%3Dscan%3D.png" alt="Favor Cushion (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Favor_Cushion_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/031">
+  <header><h2>031 · Carte postale aller-retour pour les morts</h2><span>rang B</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Double Postcard to the Dead (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Double_Postcard_to_the_Dead_(G.I_card)_%3Dscan%3D.png" alt="Double Postcard to the Dead (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Double_Postcard_to_the_Dead_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/032">
+  <header><h2>032 · Le bonbon mainate</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Parrot Candy (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Parrot_Candy_(G.I_card)_%3Dscan%3D.png" alt="Parrot Candy (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Parrot_Candy_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/033">
+  <header><h2>033 · Cookie aux hormones</h2><span>rang B</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Hormone Cookies (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Hormone_Cookies_(G.I_card)_%3Dscan%3D.png" alt="Hormone Cookies (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Hormone_Cookies_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/034">
+  <header><h2>034 · Enquête sur tout</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Universal Survey (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Universal_Survey_(G.I_card)_%3Dscan%3D.png" alt="Universal Survey (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Universal_Survey_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/035">
+  <header><h2>035 · Kit caméléon</h2><span>rang S</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Chameleon Cat (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Chameleon_Cat_(G.I_card)_%3Dscan%3D.png" alt="Chameleon Cat (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Chameleon_Cat_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/036">
+  <header><h2>036 · La salle de recyclage</h2><span>rang A</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Recycling Room (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Recycling_Room_(G.I_card)_%3Dscan%3D.png" alt="Recycling Room (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Recycling_Room_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/037">
+  <header><h2>037 · L'œuf du sportif de niveau extra-super</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Fledgling Athlete (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Fledgling_Athlete_(G.I_card).png" alt="Fledgling Athlete (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Fledgling_Athlete_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/038">
+  <header><h2>038 · L'œuf de l'artiste de niveau extra-super</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Fledgling Artist GI Card 38.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Fledgling_Artist_GI_Card_38.png" alt="Fledgling Artist GI Card 38.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Fledgling_Artist_GI_Card_38.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Fledgling Artist (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Fledgling_Artist_(G.I_card)_%3Dscan%3D.png" alt="Fledgling Artist (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Fledgling_Artist_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/039">
+  <header><h2>039 · L'œuf du politicien de niveau extra-super</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Fledgling Politician (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Fledgling_Politician_(G.I_card)_%3Dscan%3D.png" alt="Fledgling Politician (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Fledgling_Politician_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/040">
+  <header><h2>040 · L'œuf du musicien de niveau extra-super</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Fledgling Musician GI Card 40.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Fledgling_Musician_GI_Card_40.png" alt="Fledgling Musician GI Card 40.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Fledgling_Musician_GI_Card_40.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Fledgling Musician (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Fledgling_Musician_(G.I_card)_%3Dscan%3D.png" alt="Fledgling Musician (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Fledgling_Musician_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/041">
+  <header><h2>041 · L'œuf du pilote de niveau extra-super</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Fledgling Pilot (G.I card) 41.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Fledgling_Pilot_(G.I_card)_41.png" alt="Fledgling Pilot (G.I card) 41.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Fledgling_Pilot_(G.I_card)_41.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Fledgling Pilot (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Fledgling_Pilot_(G.I_card)_%3Dscan%3D.png" alt="Fledgling Pilot (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Fledgling_Pilot_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/042">
+  <header><h2>042 · L'œuf du romancier de niveau extra-super</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Fledgling Novelist (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Fledgling_Novelist_(G.I_card)_%3Dscan%3D.png" alt="Fledgling Novelist (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Fledgling_Novelist_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/043">
+  <header><h2>043 · L'œuf du grand gambler</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Fledgling Gambler (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Fledgling_Gambler_(G.I_card)_%3Dscan%3D.png" alt="Fledgling Gambler (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Fledgling_Gambler_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/044">
+  <header><h2>044 · L'œuf du grand acteur</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Fledgling Actor (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Fledgling_Actor_(G.I_card)_%3Dscan%3D.png" alt="Fledgling Actor (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Fledgling_Actor_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/045">
+  <header><h2>045 · L'œuf du grand patron</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Fledgling CEO (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Fledgling_CEO_(G.I_card).png" alt="Fledgling CEO (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Fledgling_CEO_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Fledgling CEO (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Fledgling_CEO_(G.I_card)_%3Dscan%3D.png" alt="Fledgling CEO (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Fledgling_CEO_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/046">
+  <header><h2>046 · La jeune fille à la poudre d'or</h2><span>rang B</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Gold Dust Girl (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Gold_Dust_Girl_(G.I_card).png" alt="Gold Dust Girl (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Gold_Dust_Girl_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Gold Dust Girl (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Gold_Dust_Girl_(G.I_card)_%3Dscan%3D.png" alt="Gold Dust Girl (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Gold_Dust_Girl_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/047">
+  <header><h2>047 · La jeune fille endormie</h2><span>rang A</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Sleeping Girl (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Sleeping_Girl_(G.I_card)_%3Dscan%3D.png" alt="Sleeping Girl (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Sleeping_Girl_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/048">
+  <header><h2>048 · La jeune fille parfumée</h2><span>rang B</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Aromatherapy Girl (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Aromatherapy_Girl_(G.I_card)_%3Dscan%3D.png" alt="Aromatherapy Girl (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Aromatherapy_Girl_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/049">
+  <header><h2>049 · La sirène qui s'emballe</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Miniature Mermaid (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Miniature_Mermaid_(G.I_card)_%3Dscan%3D.png" alt="Miniature Mermaid (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Miniature_Mermaid_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/050">
+  <header><h2>050 · Le zaurus qui s'emballe</h2><span>rang A</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Miniature Dino (G.I card) 50.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Miniature_Dino_(G.I_card)_50.png" alt="Miniature Dino (G.I card) 50.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Miniature_Dino_(G.I_card)_50.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Miniature Dino (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Miniature_Dino_(G.I_card)_%3Dscan%3D.png" alt="Miniature Dino (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Miniature_Dino_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/051">
+  <header><h2>051 · Le dragon qui s'emballe</h2><span>rang A</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Palmtop Dragon (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Palmtop_Dragon_(G.I_card).png" alt="Palmtop Dragon (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Palmtop_Dragon_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Miniature Dragon (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Miniature_Dragon_(G.I_card)_%3Dscan%3D.png" alt="Miniature Dragon (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Miniature_Dragon_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/052">
+  <header><h2>052 · La perle de sauterelle</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Pearl Locusts GI Card 52.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Pearl_Locusts_GI_Card_52.png" alt="Pearl Locusts GI Card 52.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Pearl_Locusts_GI_Card_52.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Pearl Locusts (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Pearl_Locusts_(G.I_card)_%3Dscan%3D.png" alt="Pearl Locusts (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Pearl_Locusts_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/053">
+  <header><h2>053 · King white ookuwagata</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="King Great White Beetle (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/King_Great_White_Beetle_(G.I_card).png" alt="King Great White Beetle (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:King_Great_White_Beetle_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="King Great White Beetle (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/King_Great_White_Beetle_(G.I_card)_%3Dscan%3D.png" alt="King Great White Beetle (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:King_Great_White_Beetle_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/054">
+  <header><h2>054 · Le papillon millénaire</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Millennium Butterfly (G.I card) 54.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Millennium_Butterfly_(G.I_card)_54.png" alt="Millennium Butterfly (G.I card) 54.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Millennium_Butterfly_(G.I_card)_54.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Millennium Butterfly (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Millennium_Butterfly_(G.I_card)_%3Dscan%3D.png" alt="Millennium Butterfly (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Millennium_Butterfly_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/055">
+  <header><h2>055 · La boutique des contreparties</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Revenge Shop Rule GI Card 55.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Revenge_Shop_Rule_GI_Card_55.png" alt="Revenge Shop Rule GI Card 55.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Revenge_Shop_Rule_GI_Card_55.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Revenge Shop (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Revenge_Shop_(G.I_card)_%3Dscan%3D.png" alt="Revenge Shop (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Revenge_Shop_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/056">
+  <header><h2>056 · La galerie de photos souvenirs</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Perfect Memory Studio GI Card 56.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Perfect_Memory_Studio_GI_Card_56.png" alt="Perfect Memory Studio GI Card 56.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Perfect_Memory_Studio_GI_Card_56.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Perfect Memory Studio (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Perfect_Memory_Studio_(G.I_card)_%3Dscan%3D.png" alt="Perfect Memory Studio (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Perfect_Memory_Studio_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/057">
+  <header><h2>057 · L'agent immobilier de maisons cachées</h2><span>rang A</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Hideout Realtor (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Hideout_Realtor_(G.I_card)_%3Dscan%3D.png" alt="Hideout Realtor (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Hideout_Realtor_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/058">
+  <header><h2>058 · Le vidéo club secret</h2><span>rang B</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Secrets Video Rental GI Card 58.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Secrets_Video_Rental_GI_Card_58.png" alt="Secrets Video Rental GI Card 58.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Secrets_Video_Rental_GI_Card_58.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Secrets Video Rental (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Secrets_Video_Rental_(G.I_card)_%3Dscan%3D.png" alt="Secrets Video Rental (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Secrets_Video_Rental_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/059">
+  <header><h2>059 · L'école des langues étrangères instantanées</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Instant Foreign Language School (G.I card) 59.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Instant_Foreign_Language_School_(G.I_card)_59.png" alt="Instant Foreign Language School (G.I card) 59.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Instant_Foreign_Language_School_(G.I_card)_59.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Instant Foreign Language School (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Instant_Foreign_Language_School_(G.I_card)_%3Dscan%3D.png" alt="Instant Foreign Language School (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Instant_Foreign_Language_School_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/060">
+  <header><h2>060 · Le livreur d'objets perdus</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Long Lost Delivery (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Long_Lost_Delivery_(G.I_card)_%3Dscan%3D.png" alt="Long Lost Delivery (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Long_Lost_Delivery_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/061">
+  <header><h2>061 · Le chien en pièces</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Vending Check Up Rule GI Card 61.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Vending_Check_Up_Rule_GI_Card_61.png" alt="Vending Check Up Rule GI Card 61.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Vending_Check_Up_Rule_GI_Card_61.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Vending Check-Up (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Vending_Check-Up_(G.I_card)_%3Dscan%3D.png" alt="Vending Check-Up (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Vending_Check-Up_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/062">
+  <header><h2>062 · Le roi des clubs</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Club You Rule GI Card 62.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Club_You_Rule_GI_Card_62.png" alt="Club You Rule GI Card 62.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Club_You_Rule_GI_Card_62.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Club &quot;You Rule&quot; (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Club_%22You_Rule%22_(G.I_card)_%3Dscan%3D.png" alt="Club &quot;You Rule&quot; (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Club_%22You_Rule%22_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/063">
+  <header><h2>063 · Le restaurant virtuel</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Virtual Restaurant (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Virtual_Restaurant_(G.I_card)_%3Dscan%3D.png" alt="Virtual Restaurant (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Virtual_Restaurant_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/064">
+  <header><h2>064 · L'élixir de la sorcière</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Witch's Love Potion (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Witch's_Love_Potion_(G.I_card).png" alt="Witch's Love Potion (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Witch's_Love_Potion_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Witch's Love Potion (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Witch's_Love_Potion_(G.I_card)_%3Dscan%3D.png" alt="Witch's Love Potion (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Witch's_Love_Potion_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/065">
+  <header><h2>065 · L'élixir de jeunesse de la sorcière</h2><span>rang A</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Witch's Rejuvenation Potion (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Witch's_Rejuvenation_Potion_(G.I_card)_%3Dscan%3D.png" alt="Witch's Rejuvenation Potion (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Witch's_Rejuvenation_Potion_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/066">
+  <header><h2>066 · L'amaigrissant de la sorcière</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Witch's Diet Pills (G.I card) 66.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Witch's_Diet_Pills_(G.I_card)_66.png" alt="Witch's Diet Pills (G.I card) 66.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Witch's_Diet_Pills_(G.I_card)_66.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Witch's Diet Pills (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Witch's_Diet_Pills_(G.I_card)_%3Dscan%3D.png" alt="Witch's Diet Pills (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Witch's_Diet_Pills_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/067">
+  <header><h2>067 · Le médicament de croissance</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Elder's Growth Pills (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Elder's_Growth_Pills_(G.I_card).png" alt="Elder's Growth Pills (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Elder's_Growth_Pills_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Doyen's Growth Pills (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Doyen's_Growth_Pills_(G.I_card)_%3Dscan%3D.png" alt="Doyen's Growth Pills (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Doyen's_Growth_Pills_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/068">
+  <header><h2>068 · Le médicament de renforcement mental</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Doyen's Virility Pills (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Doyen's_Virility_Pills_(G.I_card)_%3Dscan%3D.png" alt="Doyen's Virility Pills (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Doyen's_Virility_Pills_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/069">
+  <header><h2>069 · Le médicament de repousse des cheveux du vieillard</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Doyen's Hair Restorer (G.I card) 69.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Doyen's_Hair_Restorer_(G.I_card)_69.png" alt="Doyen's Hair Restorer (G.I card) 69.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Doyen's_Hair_Restorer_(G.I_card)_69.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Doyen's Hair Restorer (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Doyen's_Hair_Restorer_(G.I_card)_%3Dscan%3D.png" alt="Doyen's Hair Restorer (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Doyen's_Hair_Restorer_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/070">
+  <header><h2>070 · La pastille de renforcement musculaire du professeur fou</h2><span>rang B</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Mad Scientist's Steroids (G.I card) 70.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Mad_Scientist's_Steroids_(G.I_card)_70.png" alt="Mad Scientist's Steroids (G.I card) 70.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Mad_Scientist's_Steroids_(G.I_card)_70.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Mad Scientist's Steroids (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Mad_Scientist's_Steroids_(G.I_card)_%3Dscan%3D.png" alt="Mad Scientist's Steroids (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Mad_Scientist's_Steroids_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/071">
+  <header><h2>071 · La pommade d'hormones du professeur fou</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Mad Scientist's Pheromones (G.I card) 71.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Mad_Scientist's_Pheromones_(G.I_card)_71.png" alt="Mad Scientist's Pheromones (G.I card) 71.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Mad_Scientist's_Pheromones_(G.I_card)_71.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Mad Scientist's Pheromones (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Mad_Scientist's_Pheromones_(G.I_card)_%3Dscan%3D.png" alt="Mad Scientist's Pheromones (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Mad_Scientist's_Pheromones_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/072">
+  <header><h2>072 · La machine de remodelage du professeur fou</h2><span>rang B</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Mad Scientist's Plastic Surgery (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Mad_Scientist's_Plastic_Surgery_(G.I_card)_%3Dscan%3D.png" alt="Mad Scientist's Plastic Surgery (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Mad_Scientist's_Plastic_Surgery_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/073">
+  <header><h2>073 · Le jade des ténèbres</h2><span>rang B</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Night Jade (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Night_Jade_(G.I_card).png" alt="Night Jade (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Night_Jade_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Night Jade GI Card 73.png" data-genre="Anime 2011" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Night_Jade_GI_Card_73.png" alt="Night Jade GI Card 73.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Night_Jade_GI_Card_73.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Night Jade (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Night_Jade_(G.I_card)_%3Dscan%3D.png" alt="Night Jade (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Night_Jade_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/074">
+  <header><h2>074 · L'aigue-marine philosophale</h2><span>rang A</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Sage's Aquamarine (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Sage's_Aquamarine_(G.I_card)_%3Dscan%3D.png" alt="Sage's Aquamarine (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Sage's_Aquamarine_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/075">
+  <header><h2>075 · L'alexandrite de la chance</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Lucky Alexandrite (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Lucky_Alexandrite_(G.I_card).png" alt="Lucky Alexandrite (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Lucky_Alexandrite_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Wild Luck Alexandrite GI Card 75.png" data-genre="Anime 2011" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Wild_Luck_Alexandrite_GI_Card_75.png" alt="Wild Luck Alexandrite GI Card 75.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Wild_Luck_Alexandrite_GI_Card_75.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Wild Luck Alexandrite (G.I card 1999).png" data-genre="Anime 1999" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Wild_Luck_Alexandrite_(G.I_card_1999).png" alt="Wild Luck Alexandrite (G.I card 1999).png"><span>Anime 1999</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Wild_Luck_Alexandrite_(G.I_card_1999).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Wild Luck Alexandrite (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Wild_Luck_Alexandrite_(G.I_card)_%3Dscan%3D.png" alt="Wild Luck Alexandrite (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Wild_Luck_Alexandrite_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/076">
+  <header><h2>076 · Le rubis du destin</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Rainbow Ruby (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Rainbow_Ruby_(G.I_card).png" alt="Rainbow Ruby (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Rainbow_Ruby_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Roaming Ruby (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Roaming_Ruby_(G.I_card)_%3Dscan%3D.png" alt="Roaming Ruby (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Roaming_Ruby_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/077">
+  <header><h2>077 · L'émeraude qui attire la beauté</h2><span>rang A</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Beauty Magnet Emerald GI Card 77.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Beauty_Magnet_Emerald_GI_Card_77.png" alt="Beauty Magnet Emerald GI Card 77.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Beauty_Magnet_Emerald_GI_Card_77.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Beauty Magnet Emerald (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Beauty_Magnet_Emerald_(G.I_card)_%3Dscan%3D.png" alt="Beauty Magnet Emerald (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Beauty_Magnet_Emerald_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/078">
+  <header><h2>078 · Le saphir solitaire</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Lonely Sapphire GI Card 78.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Lonely_Sapphire_GI_Card_78.png" alt="Lonely Sapphire GI Card 78.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Lonely_Sapphire_GI_Card_78.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Lonely Sapphire (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Lonely_Sapphire_(G.I_card)_%3Dscan%3D.png" alt="Lonely Sapphire (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Lonely_Sapphire_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/079">
+  <header><h2>079 · Le diamant arc-en-ciel</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Rainbow Diamond (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Rainbow_Diamond_(G.I_card).png" alt="Rainbow Diamond (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Rainbow_Diamond_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Rainbow Diamond GI Card 79.png" data-genre="Anime 2011" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Rainbow_Diamond_GI_Card_79.png" alt="Rainbow Diamond GI Card 79.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Rainbow_Diamond_GI_Card_79.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Rainbow Diamond (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Rainbow_Diamond_(G.I_card)_%3Dscan%3D.png" alt="Rainbow Diamond (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Rainbow_Diamond_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/080">
+  <header><h2>080 · La pierre flottante</h2><span>rang S</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Levitation Stone (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Levitation_Stone_(G.I_card)_%3Dscan%3D.png" alt="Levitation Stone (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Levitation_Stone_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/081">
+  <header><h2>081 · Blue planet</h2><span>rang S</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Blue Planet (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Blue_Planet_(G.I_card).png" alt="Blue Planet (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Blue_Planet_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Blue Planet (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Blue_Planet_(G.I_card)_%3Dscan%3D.png" alt="Blue Planet (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Blue_Planet_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/082">
+  <header><h2>082 · La canne du châtiment céleste</h2><span>rang B</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Staff of Judgement (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Staff_of_Judgement_(G.I_card).png" alt="Staff of Judgement (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Staff_of_Judgement_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Staff of Judgment (G.I card) 82.png" data-genre="Anime 2011" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Staff_of_Judgment_(G.I_card)_82.png" alt="Staff of Judgment (G.I card) 82.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Staff_of_Judgment_(G.I_card)_82.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Staff of Judgement (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Staff_of_Judgement_(G.I_card)_%3Dscan%3D.png" alt="Staff of Judgement (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Staff_of_Judgement_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/083">
+  <header><h2>083 · L'épée de la vérité</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Sword of Truth (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Sword_of_Truth_(G.I_card).png" alt="Sword of Truth (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Sword_of_Truth_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Sword of Truth (G.I card 1999).png" data-genre="Anime 1999" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Sword_of_Truth_(G.I_card_1999).png" alt="Sword of Truth (G.I card 1999).png"><span>Anime 1999</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Sword_of_Truth_(G.I_card_1999).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Sword of Truth (G.I card Manga) =en=.png" data-genre="Manga (VO anglaise)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Sword_of_Truth_(G.I_card_Manga)_%3Den%3D.png" alt="Sword of Truth (G.I card Manga) =en=.png"><span>Manga (VO anglaise)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Sword_of_Truth_(G.I_card_Manga)_%3Den%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Sword of Truth (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Sword_of_Truth_(G.I_card)_%3Dscan%3D.png" alt="Sword of Truth (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Sword_of_Truth_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/084">
+  <header><h2>084 · Le collier du chevalier</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Paladin's Necklace (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Paladin's_Necklace_(G.I_card).png" alt="Paladin's Necklace (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Paladin's_Necklace_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Paladin's Necklace (G.I card 1999).png" data-genre="Anime 1999" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Paladin's_Necklace_(G.I_card_1999).png" alt="Paladin's Necklace (G.I card 1999).png"><span>Anime 1999</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Paladin's_Necklace_(G.I_card_1999).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Paladin's Necklace (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Paladin's_Necklace_(G.I_card)_%3Dscan%3D.png" alt="Paladin's Necklace (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Paladin's_Necklace_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/085">
+  <header><h2>085 · L'armure de remplacement de corps</h2><span>rang A</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Sacrifice Armor (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Sacrifice_Armor_(G.I_card)_%3Dscan%3D.png" alt="Sacrifice Armor (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Sacrifice_Armor_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/086">
+  <header><h2>086 · L'arc de l'échec</h2><span>rang A</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Quiver of Frustration (G.I card) 86.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Quiver_of_Frustration_(G.I_card)_86.png" alt="Quiver of Frustration (G.I card) 86.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Quiver_of_Frustration_(G.I_card)_86.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Quiver of Frustration (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Quiver_of_Frustration_(G.I_card)_%3Dscan%3D.png" alt="Quiver of Frustration (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Quiver_of_Frustration_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/087">
+  <header><h2>087 · Le bouclier des prières</h2><span>rang B</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Shield of Faith (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Shield_of_Faith_(G.I_card)_%3Dscan%3D.png" alt="Shield of Faith (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Shield_of_Faith_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/088">
+  <header><h2>088 · Le grand marteau de l'immortalité</h2><span>rang B</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Eternal Hammer (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Eternal_Hammer_(G.I_card)_%3Dscan%3D.png" alt="Eternal Hammer (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Eternal_Hammer_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/089">
+  <header><h2>089 · La manchette de l'inspecteur du fisc</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Tax Collector's Gauntlet (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Tax_Collector's_Gauntlet_(G.I_card).png" alt="Tax Collector's Gauntlet (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Tax_Collector's_Gauntlet_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Tax Collector's Gauntlet (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Tax_Collector's_Gauntlet_(G.I_card)_%3Dscan%3D.png" alt="Tax Collector's Gauntlet (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Tax_Collector's_Gauntlet_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/090">
+  <header><h2>090 · Le casque de mémoire</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Memory Helmet (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Memory_Helmet_(G.I_card).png" alt="Memory Helmet (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Memory_Helmet_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Memory Helmet (G.I card) 90.png" data-genre="Anime 2011" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Memory_Helmet_(G.I_card)_90.png" alt="Memory Helmet (G.I card) 90.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Memory_Helmet_(G.I_card)_90.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Memory Helmet (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Memory_Helmet_(G.I_card)_%3Dscan%3D.png" alt="Memory Helmet (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Memory_Helmet_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/091">
+  <header><h2>091 · Plaking</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Plastic King (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Plastic_King_(G.I_card)_%3Dscan%3D.png" alt="Plastic King (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Plastic_King_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/092">
+  <header><h2>092 · Le ticket de kagemusha</h2><span>rang S</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Swap Ticket (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Swap_Ticket_(G.I_card)_%3Dscan%3D.png" alt="Swap Ticket (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Swap_Ticket_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/093">
+  <header><h2>093 · L'encyclopédie de la vie</h2><span>rang D</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Book of Life (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Book_of_Life_(G.I_card)_%3Dscan%3D.png" alt="Book of Life (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Book_of_Life_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/094">
+  <header><h2>094 · L'épée du vol</h2><span>rang A</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Bandit's Blade (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Bandit's_Blade_(G.I_card)_%3Dscan%3D.png" alt="Bandit's Blade (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Bandit's_Blade_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/095">
+  <header><h2>095 · Le manteau du secret</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Secret Cape (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Secret_Cape_(G.I_card)_%3Dscan%3D.png" alt="Secret Cape (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Secret_Cape_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/096">
+  <header><h2>096 · Le serpent aux yeux de mille miles</h2><span>rang B</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Clairvoyant Snake (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Clairvoyant_Snake_(G.I_card)_%3Dscan%3D.png" alt="Clairvoyant Snake (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Clairvoyant_Snake_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/097">
+  <header><h2>097 · Caméra 3D</h2><span>rang C</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="3-D Camera (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/3-D_Camera_(G.I_card)_%3Dscan%3D.png" alt="3-D Camera (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:3-D_Camera_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/098">
+  <header><h2>098 · Silver dog</h2><span>rang A</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Silver Dog (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Silver_Dog_(G.I_card)_%3Dscan%3D.png" alt="Silver Dog (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Silver_Dog_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="designee/099">
+  <header><h2>099 · Maid panda</h2><span>rang S</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Panda Maid (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Panda_Maid_(G.I_card).png" alt="Panda Maid (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Panda_Maid_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Panda Maid (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Panda_Maid_(G.I_card)_%3Dscan%3D.png" alt="Panda Maid (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Panda_Maid_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="sort/vol">
+  <header><h2>Sort · Vol</h2><span>carte 1007 de l'anime</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Thief GI Card 1007.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Thief_GI_Card_1007.png" alt="Thief GI Card 1007.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Thief_GI_Card_1007.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Thief (G.I card 1999).png" data-genre="Anime 1999" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Thief_(G.I_card_1999).png" alt="Thief (G.I card 1999).png"><span>Anime 1999</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Thief_(G.I_card_1999).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Thief (G.I card Manga) =en=.png" data-genre="Manga (VO anglaise)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Thief_(G.I_card_Manga)_%3Den%3D.png" alt="Thief (G.I card Manga) =en=.png"><span>Manga (VO anglaise)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Thief_(G.I_card_Manga)_%3Den%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Thief (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Thief_(G.I_card)_%3Dscan%3D.png" alt="Thief (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Thief_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="sort/echange_force">
+  <header><h2>Sort · Échange</h2><span>carte 1008 de l'anime</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Trade GI Card 1008.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Trade_GI_Card_1008.png" alt="Trade GI Card 1008.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Trade_GI_Card_1008.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Trade (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Trade_(G.I_card)_%3Dscan%3D.png" alt="Trade (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Trade_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="sort/gel">
+  <header><h2>Sort · Gel</h2><span>création, pas d’image dans l’anime</span></header>
+  <div class="cands"><p class="vide">Aucune image : filigrane pour l’instant.</p>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="sort/barriere">
+  <header><h2>Sort · Mur défensif</h2><span>carte 1003 de l'anime</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Defensive Wall GI Card 1003.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Defensive_Wall_GI_Card_1003.png" alt="Defensive Wall GI Card 1003.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Defensive_Wall_GI_Card_1003.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Defensive Wall (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Defensive_Wall_(G.I_card)_%3Dscan%3D.png" alt="Defensive Wall (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Defensive_Wall_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="sort/radar">
+  <header><h2>Sort · Trace</h2><span>carte 1027 de l'anime</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Trace (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Trace_(G.I_card).png" alt="Trace (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Trace_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Trace Rule GI Card 1027.png" data-genre="Anime 2011" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Trace_Rule_GI_Card_1027.png" alt="Trace Rule GI Card 1027.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Trace_Rule_GI_Card_1027.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Trace (G.I Card 1999).png" data-genre="Anime 1999" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Trace_(G.I_Card_1999).png" alt="Trace (G.I Card 1999).png"><span>Anime 1999</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Trace_(G.I_Card_1999).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Trace (G.I Card Manga) =en=.png" data-genre="Manga (VO anglaise)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Trace_(G.I_Card_Manga)_%3Den%3D.png" alt="Trace (G.I Card Manga) =en=.png"><span>Manga (VO anglaise)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Trace_(G.I_Card_Manga)_%3Den%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Trace (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Trace_(G.I_card)_%3Dscan%3D.png" alt="Trace (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Trace_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="sort/revelation">
+  <header><h2>Sort · Guide</h2><span>carte 1030 de l'anime</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Guidepost GI Card 1030.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Guidepost_GI_Card_1030.png" alt="Guidepost GI Card 1030.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Guidepost_GI_Card_1030.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Guidepost (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Guidepost_(G.I_card)_%3Dscan%3D.png" alt="Guidepost (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Guidepost_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="sort/duplication">
+  <header><h2>Sort · Mimétisme</h2><span>carte 1010 de l'anime</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Transform (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Transform_(G.I_card).png" alt="Transform (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Transform_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Transform (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Transform_(G.I_card)_%3Dscan%3D.png" alt="Transform (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Transform_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="sort/analyse">
+  <header><h2>Sort · Pénétration</h2><span>carte 1024 de l'anime</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Penetrate GI Card 1024.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Penetrate_GI_Card_1024.png" alt="Penetrate GI Card 1024.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Penetrate_GI_Card_1024.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Penetrate (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Penetrate_(G.I_card)_%3Dscan%3D.png" alt="Penetrate (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Penetrate_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="sort/regard">
+  <header><h2>Sort · Voyance</h2><span>carte 1001 de l'anime</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Steal GI Card 1001.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Steal_GI_Card_1001.png" alt="Steal GI Card 1001.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Steal_GI_Card_1001.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Steal (G.I Card 1999).png" data-genre="Anime 1999" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Steal_(G.I_Card_1999).png" alt="Steal (G.I Card 1999).png"><span>Anime 1999</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Steal_(G.I_Card_1999).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Steal (G.I Card Manga) =en=.png" data-genre="Manga (VO anglaise)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Steal_(G.I_Card_Manga)_%3Den%3D.png" alt="Steal (G.I Card Manga) =en=.png"><span>Manga (VO anglaise)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Steal_(G.I_Card_Manga)_%3Den%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Steal (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Steal_(G.I_card)_%3Dscan%3D.png" alt="Steal (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Steal_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="sort/pickpocket">
+  <header><h2>Sort · Pickpocket</h2><span>carte 1006 de l'anime</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Pick Pocket GI Card 1006.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Pick_Pocket_GI_Card_1006.png" alt="Pick Pocket GI Card 1006.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Pick_Pocket_GI_Card_1006.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Pick Pocket (G.I card 1999).png" data-genre="Anime 1999" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Pick_Pocket_(G.I_card_1999).png" alt="Pick Pocket (G.I card 1999).png"><span>Anime 1999</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Pick_Pocket_(G.I_card_1999).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Pick Pocket (G.I card Manga) =en=.png" data-genre="Manga (VO anglaise)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Pick_Pocket_(G.I_card_Manga)_%3Den%3D.png" alt="Pick Pocket (G.I card Manga) =en=.png"><span>Manga (VO anglaise)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Pick_Pocket_(G.I_card_Manga)_%3Den%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Pick Pocket (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Pick_Pocket_(G.I_card)_%3Dscan%3D.png" alt="Pick Pocket (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Pick_Pocket_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="sort/clairvoyance">
+  <header><h2>Sort · Clairvoyance</h2><span>carte 1002 de l'anime</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Fluroscopy GI Card 1002.png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Fluroscopy_GI_Card_1002.png" alt="Fluroscopy GI Card 1002.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Fluroscopy_GI_Card_1002.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Fluroscopy (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Fluroscopy_(G.I_card)_%3Dscan%3D.png" alt="Fluroscopy (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Fluroscopy_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="sort/accompagnement">
+  <header><h2>Sort · Accompagnement</h2><span>carte 1039 de l'anime</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Accompany (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Accompany_(G.I_card).png" alt="Accompany (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Accompany_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Accompany GI Card 1039.png" data-genre="Anime 2011" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Accompany_GI_Card_1039.png" alt="Accompany GI Card 1039.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Accompany_GI_Card_1039.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Accompany (G.I card 1999).png" data-genre="Anime 1999" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Accompany_(G.I_card_1999).png" alt="Accompany (G.I card 1999).png"><span>Anime 1999</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Accompany_(G.I_card_1999).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Accompany (G.I card Manga) =en=.png" data-genre="Manga (VO anglaise)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Accompany_(G.I_card_Manga)_%3Den%3D.png" alt="Accompany (G.I card Manga) =en=.png"><span>Manga (VO anglaise)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Accompany_(G.I_card_Manga)_%3Den%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Accompany (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Accompany_(G.I_card)_%3Dscan%3D.png" alt="Accompany (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Accompany_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="sort/retour">
+  <header><h2>Sort · Retour</h2><span>carte 1009 de l'anime</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Return (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Return_(G.I_card).png" alt="Return (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Return_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Return GI Card 1009.png" data-genre="Anime 2011" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Return_GI_Card_1009.png" alt="Return GI Card 1009.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Return_GI_Card_1009.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Return (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Return_(G.I_card)_%3Dscan%3D.png" alt="Return (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Return_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="objet/voile">
+  <header><h2>Objet · Rideau noir</h2><span>carte 1025 de l'anime</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Blackout Curtain (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Blackout_Curtain_(G.I_card).png" alt="Blackout Curtain (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Blackout_Curtain_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Blackout Curtain GI Card 1025.png" data-genre="Anime 2011" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Blackout_Curtain_GI_Card_1025.png" alt="Blackout Curtain GI Card 1025.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Blackout_Curtain_GI_Card_1025.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Blackout Curtain (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Blackout_Curtain_(G.I_card)_%3Dscan%3D.png" alt="Blackout Curtain (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Blackout_Curtain_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="objet/coffre">
+  <header><h2>Objet · Solidité</h2><span>carte 1035 de l'anime</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Prison (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Prison_(G.I_card).png" alt="Prison (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Prison_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Prison (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Prison_(G.I_card)_%3Dscan%3D.png" alt="Prison (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Prison_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="objet/ticket">
+  <header><h2>Objet · Loterie</h2><span>carte 1032 de l'anime</span></header>
+  <div class="cands"><div class="cand-bloc"><button type="button" class="cand choisi" data-fichier="Lottery (G.I card).png" data-genre="Anime 2011" aria-pressed="true">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Lottery_(G.I_card).png" alt="Lottery (G.I card).png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Lottery_(G.I_card).png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Lottery GI Card 1032.png" data-genre="Anime 2011" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Lottery_GI_Card_1032.png" alt="Lottery GI Card 1032.png"><span>Anime 2011</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Lottery_GI_Card_1032.png" target="_blank" rel="noopener">voir sur le wiki</a></div><div class="cand-bloc"><button type="button" class="cand" data-fichier="Lottery (G.I card) =scan=.png" data-genre="Manga (scan)" aria-pressed="false">
+      <img src="https://hunterxhunter.fandom.com/wiki/Special:FilePath/Lottery_(G.I_card)_%3Dscan%3D.png" alt="Lottery (G.I card) =scan=.png"><span>Manga (scan)</span></button><a class="lien" href="https://hunterxhunter.fandom.com/wiki/File:Lottery_(G.I_card)_%3Dscan%3D.png" target="_blank" rel="noopener">voir sur le wiki</a></div>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="objet/pepite">
+  <header><h2>Objet · Pépite d'or</h2><span>carte 607 de l'anime</span></header>
+  <div class="cands"><p class="vide">Aucune image : filigrane pour l’instant.</p>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="objet/boussole">
+  <header><h2>Objet · Boussole</h2><span>création, pas d’image dans l’anime</span></header>
+  <div class="cands"><p class="vide">Aucune image : filigrane pour l’instant.</p>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+<section class="carte" data-cle="objet/souffle">
+  <header><h2>Objet · Second souffle</h2><span>création, pas d’image dans l’anime</span></header>
+  <div class="cands"><p class="vide">Aucune image : filigrane pour l’instant.</p>
+    <button type="button" class="cand aucune" data-fichier="" aria-pressed="false"><span>Aucune</span></button>
+  </div>
+</section>
+</main>
+<script>
+  const CLE = 'gq.choix-images';
+  for (const i of document.images) i.addEventListener('error', () => i.classList.add('rate'));
+  let choix = {};
+  try { choix = JSON.parse(localStorage.getItem(CLE) || '{}'); } catch {}
+  const sauver = () => { try { localStorage.setItem(CLE, JSON.stringify(choix)); } catch {} };
+  const choisir = (section, bouton) => {
+    for (const b of section.querySelectorAll('.cand')) {
+      const oui = b === bouton;
+      b.classList.toggle('choisi', oui);
+      b.setAttribute('aria-pressed', String(oui));
+    }
+    section.dataset.choix = bouton ? bouton.dataset.fichier : '';
+    section.dataset.genre = bouton ? bouton.dataset.genre || '' : '';
+  };
+  for (const s of document.querySelectorAll('.carte')) {
+    const voulu = choix[s.dataset.cle];
+    const b = voulu !== undefined ? [...s.querySelectorAll('.cand')].find((x) => x.dataset.fichier === voulu) : s.querySelector('.cand.choisi');
+    choisir(s, b || s.querySelector('.cand.aucune'));
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('.cand');
+    if (b) {
+      const s = b.closest('.carte');
+      choisir(s, b);
+      choix[s.dataset.cle] = b.dataset.fichier;
+      sauver();
+      return;
+    }
+    const f = e.target.closest('[data-filtre]');
+    if (f) {
+      for (const x of document.querySelectorAll('[data-filtre]')) x.classList.toggle('actif', x === f);
+      const v = f.dataset.filtre;
+      for (const s of document.querySelectorAll('.carte')) {
+        const ok = v === 'tout' || s.dataset.cle.startsWith(v) || (v === 'manga' && !/^Anime/.test(s.dataset.genre || ''));
+        s.classList.toggle('cache', !ok);
+      }
+    }
+  });
+  document.getElementById('copier').addEventListener('click', async () => {
+    const tout = {};
+    for (const s of document.querySelectorAll('.carte')) tout[s.dataset.cle] = s.dataset.choix || null;
+    const etat = document.getElementById('etat');
+    try { await navigator.clipboard.writeText(JSON.stringify(tout, null, 1)); etat.textContent = 'Choix copiés : colle-les à Claude.'; }
+    catch { etat.textContent = 'Copie impossible ici : enregistre la page à la place.'; }
+  });
+</script>
+</body>
+</html>

@@ -19,7 +19,10 @@ import { Arene, BandeauCombat } from './ecrans/arene/Arene';
 import { Defaite } from './ecrans/arene/Defaite';
 import { Victoire } from './ecrans/arene/Victoire';
 import { Nen } from './ecrans/Nen';
-import { Raid } from './ecrans/Raid';
+import { Alarme } from './ecrans/raid/Alarme';
+import { Fuite } from './ecrans/raid/Fuite';
+import { BandeauRaid, Raid } from './ecrans/raid/Raid';
+import { Victoire as VictoireRaid } from './ecrans/raid/Victoire';
 import { Scan } from './ecrans/scan/Scan';
 import { Tirage, useTirages } from './ecrans/scan/Tirage';
 import { BandeauGel, styleGivre, useGel } from './ecrans/sorts/BandeauGel';
@@ -31,6 +34,7 @@ import { Sorts } from './ecrans/sorts/Sorts';
 import { api, session } from './lib/client';
 import { creerEveil, eveilDisponible, preferenceEveil } from './lib/eveil';
 import { baliseDepuisUrl } from './lib/qr';
+import { bossDe } from './lib/raid';
 import type { Question } from './lib/quiz';
 import { etapesDuTirage } from './lib/tirage';
 import { useJeu, type Moi } from './lib/useJeu';
@@ -65,7 +69,10 @@ export function App() {
   const [sous, setSous] = useState<SousEcran | null>(null);
   /** Page ⑮ : la licence ouverte depuis l'arène y ramène. */
   const retourLicence = useRef<SousEcran | null>(null);
-  const evenements = useEvenements(jeu.partieId ?? '', jeu.version);
+  const lus = useEvenements(jeu.partieId ?? '', jeu.version);
+  // Page ⑯ : la case du raid à l'accueil suit la barre de vie en direct.
+  const raidVue = jeu.raid.vue;
+  const evenements = raidVue ? { ...lus, liste: lus.liste.map((e) => (e.id === raidVue.id ? { ...e, pv: raidVue.pv, pvMax: raidVue.pvMax } : e)) } : lus;
   /** Cinématiques du tirage (page ⑥), jouées une à une par-dessus l'app. */
   const tirages = useTirages();
   /** Page ⑫ : la table scellée laisse place à la cinématique « TRADE ! », puis disparaît sous sa nuit. */
@@ -157,6 +164,17 @@ export function App() {
           onOuvrir={() => {
             setOnglet('accueil');
             setSous('arene');
+          }}
+        />
+      )}
+
+      {/* Page ⑯ : raid en cours, sur toutes les pages sauf le combat lui-même. */}
+      {enJeu && ecran === 'accueil' && !(onglet === 'accueil' && sous === 'raid') && (
+        <BandeauRaid
+          vue={jeu.raid.vue}
+          onOuvrir={() => {
+            setOnglet('accueil');
+            setSous('raid');
           }}
         />
       )}
@@ -326,14 +344,14 @@ export function App() {
               />
             )}
             {ecran === 'accueil' && onglet === 'accueil' && sous === 'raid' && (
-              <div className="ancien">
-                <Raid
-                  partieId={partie.id}
-                  pv={evenements.liste.find((e) => e.type === 'raid')?.pv ?? 0}
-                  pvMax={evenements.liste.find((e) => e.type === 'raid')?.pvMax ?? 0}
-                  onRetour={() => setSous(null)}
-                />
-              </div>
+              <Raid
+                vue={jeu.raid.vue}
+                questions={jeu.raid.questions}
+                coupAutre={jeu.raid.coupAutre}
+                repondre={jeu.raid.repondre}
+                charger={() => void jeu.raid.charger()}
+                onRetour={() => setSous(null)}
+              />
             )}
             {ecran === 'accueil' && onglet === 'accueil' && sous === null && (
               <Accueil
@@ -438,6 +456,31 @@ export function App() {
         />
       )}
       {!tirages.courant && jeu.arene.issue?.etat === 'perdue' && <Defaite key={jeu.arene.issue.id} issue={jeu.arene.issue} onFini={jeu.arene.finIssue} />}
+      {/* Page ⑯ : alarme du raid, puis victoire (paquet de 3 sorts) ou fuite, où que soit le joueur. */}
+      {enJeu && ecran === 'accueil' && !tirages.courant && jeu.raid.alarme && (
+        <Alarme
+          key={jeu.raid.alarme.id}
+          boss={bossDe(jeu.raid.vue?.bossId)}
+          vue={jeu.raid.vue}
+          onCombat={() => {
+            jeu.raid.finAlarme();
+            setOnglet('accueil');
+            setSous('raid');
+          }}
+          onPlusTard={jeu.raid.finAlarme}
+        />
+      )}
+      {!tirages.courant && jeu.raid.issue?.type === 'victoire' && (
+        <VictoireRaid
+          key={jeu.raid.issue.id}
+          issue={jeu.raid.issue}
+          onFini={() => {
+            jeu.raid.finIssue();
+            jeu.apresAction();
+          }}
+        />
+      )}
+      {!tirages.courant && jeu.raid.issue?.type === 'fuite' && <Fuite key={jeu.raid.issue.id} issue={jeu.raid.issue} onFini={jeu.raid.finIssue} />}
       {tirages.courant && <Tirage key={tirages.courant.id} demande={tirages.courant} onFini={tirages.terminer} />}
       {/* Page ⑪ : sorts reçus qui frappent, un par un, après un tirage en cours. */}
       {!tirages.courant && jeu.sortRecu && jeu.partieId && (

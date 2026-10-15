@@ -12,6 +12,8 @@ import { messageFin, termine, type EvenementEchange, type VueEchange } from './e
 import { fusionnerLot, jeMene, texteAdjuge, texteClotureAutre, texteSurencheri, type Adjuge, type Cloture, type Lot } from './encheres';
 import { ilYaRecu, issueRecu, texteSortRecu, type SortRecu } from './sorts';
 import { texteAnnulee, texteEntree, type EtatArene, type EvArene, type IssueArene } from './arene';
+import { texteFinRaid } from './raid';
+import { useRaid } from './useRaid';
 import type { SuiviCible } from './accompagnement';
 import { partieFromUrl, type Session } from './session';
 import { creerSuivi, type Suivi } from './suivi';
@@ -163,6 +165,10 @@ export function useJeu() {
   const [arene, setArene] = useState<{ etat: EtatArene; recuA: number } | null>(null);
   const [issuesArene, setIssuesArene] = useState<IssueArene[]>([]);
   const [pastilleAntokiba, setPastilleAntokiba] = useState(0);
+  /** Page ⑯ : le raid (alarme, barre de vie en direct, issue). */
+  const raid = useRaid(sess?.partieId ?? null, sess?.joueurId ?? null);
+  const raidRecevoir = useRef(raid.recevoir);
+  raidRecevoir.current = raid.recevoir;
 
   const rafraichir = useCallback(async () => {
     if (!partieId) return;
@@ -271,9 +277,15 @@ export function useJeu() {
           void rejouer();
           void rattraper();
           void lireEncheres();
+          void raid.charger();
         }
       },
       evenement: (nom, data) => {
+        // Page ⑯ : un coup sur le boss (fréquent) ne recharge rien ; la barre suit en direct.
+        if (nom === 'raid') {
+          raidRecevoir.current(nom, data);
+          return;
+        }
         setVersion((v) => v + 1);
         if (nom === 'echange') {
           recevoirEchange(data as EvenementEchange);
@@ -354,11 +366,11 @@ export function useJeu() {
           void rafraichir();
           return;
         }
-        // Mises à jour fréquentes (PV du raid) : l'écran se met à jour, sans notification.
-        if (nom === 'raid') return;
         const texte = (data as { texte?: unknown } | null)?.texte;
-        const message = typeof texte === 'string' ? texte : libelleEvenement(nom);
+        const message = typeof texte === 'string' ? texte : (nom === 'evenement_fin' && texteFinRaid(data)) || libelleEvenement(nom);
         notifier(message);
+        // Page ⑯ : l'alarme, la victoire ou la fuite prennent l'écran à la place de la boîte.
+        if (raidRecevoir.current(nom, data)) return;
         const annonce = ANNONCES[nom];
         if (annonce) {
           setAlerte({ n: Date.now(), ...annonce, texte: message });
@@ -571,6 +583,8 @@ export function useJeu() {
       adjuge: adjuges[0] ?? null,
       finAdjuge: () => setAdjuges((x) => x.slice(1)),
     },
+    /** Page ⑯ : raid. */
+    raid,
     /** Page ⑮ : arène de Soufrabi. */
     arene: {
       etat: arene,

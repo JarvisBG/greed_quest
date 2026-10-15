@@ -25,9 +25,13 @@ interface Props {
   /** Le paquet de la vitrine : point de départ du vol. */
   depuis: DOMRect | null;
   onFini: () => void;
+  /** Page ⑯ : le paquet de la récompense du raid (marque, voix et phrase de la boîte). */
+  marque?: string;
+  qui?: string;
+  texte?: (noms: string[]) => string;
 }
 
-export function Ouverture({ sorts, depuis, onFini }: Props) {
+export function Ouverture({ sorts, depuis, onFini, marque, qui = 'Paquet ouvert', texte = texteObtenu }: Props) {
   const calme = useRef(matchMedia('(prefers-reduced-motion: reduce)').matches).current;
   const [phase, setPhase] = useState<Phase>('intro');
   const [boite, setBoite] = useState({ texte: '', indice: '' });
@@ -219,7 +223,7 @@ export function Ouverture({ sorts, depuis, onFini }: Props) {
       c.revelA = performance.now();
       mettrePhase('revele');
       A(el.dialogue, [{ opacity: 0, translate: '-50% 20px' }, { opacity: 1, translate: '-50% 0' }], { duration: 300 });
-      await taper(texteObtenu(sorts.map((s) => SORTS[s].nom)));
+      await taper(texte(sorts.map((s) => SORTS[s].nom)));
       if (!vivant) return;
       setBoite((b) => ({ ...b, indice: 'Touche pour ranger dans tes sorts' }));
       c.revelA = performance.now();
@@ -273,7 +277,7 @@ export function Ouverture({ sorts, depuis, onFini }: Props) {
       <canvas ref={r.toile} className="lancer-toile" aria-hidden="true" />
       <div ref={r.scene} className="mo-scene" aria-hidden="true">
         <div ref={r.cp} className="mo-paquet">
-          <Paquet ref={r.paquet} />
+          <Paquet ref={r.paquet} {...(marque ? { marque } : {})} />
           <span ref={r.dechirure} className="mo-dechirure" />
         </div>
         {sorts.map((s, i) => (
@@ -287,7 +291,7 @@ export function Ouverture({ sorts, depuis, onFini }: Props) {
       </div>
       <div ref={r.flash} className="lancer-flash" />
       <div ref={r.dialogue} className="lancer-dialogue gi-dialogue mo-dialogue" role="status">
-        <span className="a-qui">Paquet ouvert</span>
+        <span className="a-qui">{qui}</span>
         <p className="a-texte">{boite.texte}</p>
         <p className={`a-indice${boite.indice ? ' visible' : ''}`}>{boite.indice || ' '}</p>
       </div>

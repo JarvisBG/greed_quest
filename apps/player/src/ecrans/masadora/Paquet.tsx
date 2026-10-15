@@ -3,12 +3,13 @@
 import { EmblemeDos } from '@gq/ui';
 import { forwardRef } from 'react';
 
-export const Paquet = forwardRef<HTMLDivElement>(function Paquet(_, ref) {
+/** `marque` : le nom imprimé sur le sachet (« BRIGADE » pour la récompense du raid, page ⑯). */
+export const Paquet = forwardRef<HTMLDivElement, { marque?: string }>(function Paquet({ marque = 'MASADORA' }, ref) {
   return (
     <div ref={ref} className="mas-paquet" aria-hidden="true">
       <div className="serti haut" />
       <div className="corps">
-        <span className="marque">MASADORA</span>
+        <span className="marque">{marque}</span>
         <span className="embleme">
           <EmblemeDos />
         </span>

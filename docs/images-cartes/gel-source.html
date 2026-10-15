@@ -1,0 +1,85 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}svg{display:block}</style></head><body>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="ciel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0d2a6b"/><stop offset="0.55" stop-color="#1f5bb5"/><stop offset="1" stop-color="#8fd3f4"/>
+    </linearGradient>
+    <!-- coups de pinceau du fond, comme les sorts de l'anime -->
+    <filter id="brosse" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.004 0.09" numOctaves="3" seed="7" result="b"/>
+      <feColorMatrix in="b" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.6 -0.75" result="m"/>
+      <feComposite in="m" in2="SourceGraphic" operator="in"/>
+    </filter>
+    <filter id="givre"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3"/><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 2.2 -1.25"/></filter>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/><stop offset="0.35" stop-color="#bdf0ff" stop-opacity="0.55"/><stop offset="1" stop-color="#bdf0ff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="glaceA" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e9fbff"/><stop offset="1" stop-color="#9fe2f7"/></linearGradient>
+    <linearGradient id="glaceB" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5cbde6"/><stop offset="1" stop-color="#2a86c9"/></linearGradient>
+  </defs>
+
+  <rect width="1280" height="720" fill="url(#ciel)"/>
+  <rect width="1280" height="720" fill="#ffffff" filter="url(#brosse)" opacity="0.38"/>
+
+  <!-- halo et grand flocon derrière -->
+  <circle cx="640" cy="300" r="330" fill="url(#halo)"/>
+  <g transform="translate(640 300)" stroke="#ffffff" stroke-width="10" stroke-linecap="round" fill="none" opacity="0.9">
+    <g id="branche">
+      <line x1="0" y1="0" x2="0" y2="-250"/>
+      <polyline points="-50,-150 0,-110 50,-150"/>
+      <polyline points="-40,-215 0,-185 40,-215"/>
+      <polyline points="-28,-80 0,-58 28,-80"/>
+    </g>
+    <use href="#branche" transform="rotate(60)"/><use href="#branche" transform="rotate(120)"/>
+    <use href="#branche" transform="rotate(180)"/><use href="#branche" transform="rotate(240)"/><use href="#branche" transform="rotate(300)"/>
+  </g>
+
+  <!-- souffle de froid : volutes effilées qui balaient la scène et s'enroulent -->
+  <g fill="none" stroke-linecap="round" stroke="#ffffff">
+    <path d="M-20 230 C 160 180, 300 270, 470 225 C 560 200, 600 150, 560 120 C 530 100, 490 125, 505 155" stroke-width="13" opacity="0.95"/>
+    <path d="M-20 270 C 180 235, 300 300, 420 275" stroke-width="6" opacity="0.7"/>
+    <path d="M1300 330 C 1120 290, 1000 380, 860 330 C 790 305, 770 255, 805 235 C 835 220, 860 250, 840 270" stroke-width="13" opacity="0.95"/>
+    <path d="M1300 370 C 1150 345, 1050 410, 930 380" stroke-width="6" opacity="0.7"/>
+    <path d="M-20 470 C 120 430, 230 500, 330 465" stroke-width="9" opacity="0.85"/>
+    <path d="M1300 560 C 1180 520, 1090 590, 1000 560" stroke-width="9" opacity="0.85"/>
+    <path d="M90 130 C 220 100, 330 150, 420 120" stroke-width="5" opacity="0.6"/>
+    <path d="M880 100 C 980 75, 1080 120, 1180 95" stroke-width="5" opacity="0.6"/>
+  </g>
+  <!-- bloc de glace : prismes taillés qui montent du sol -->
+  <g stroke="#111" stroke-width="9" stroke-linejoin="round">
+    <!-- arrière -->
+    <polygon points="430,720 455,380 505,330 545,390 560,720" fill="url(#glaceB)"/>
+    <polygon points="455,380 505,330 505,720 430,720" fill="#7fd0ef"/>
+    <polygon points="760,720 780,420 830,360 875,430 885,720" fill="url(#glaceB)"/>
+    <polygon points="780,420 830,360 830,720 760,720" fill="#7fd0ef"/>
+    <!-- grand prisme central -->
+    <polygon points="550,720 575,250 645,165 715,250 735,720" fill="url(#glaceB)"/>
+    <polygon points="575,250 645,165 645,720 550,720" fill="url(#glaceA)"/>
+    <!-- prismes penchés -->
+    <polygon points="330,720 400,500 455,470 480,530 440,720" fill="url(#glaceB)"/>
+    <polygon points="400,500 455,470 440,720 330,720" fill="url(#glaceA)"/>
+    <polygon points="880,720 905,520 960,480 1000,540 980,720" fill="url(#glaceB)"/>
+    <polygon points="905,520 960,480 960,720 880,720" fill="url(#glaceA)"/>
+    <polygon points="660,720 700,470 745,440 770,500 760,720" fill="url(#glaceB)" transform="rotate(8 715 600)"/>
+    <polygon points="700,470 745,440 735,720 660,720" fill="url(#glaceA)" transform="rotate(8 715 600)"/>
+  </g>
+  <!-- reflets -->
+  <g stroke="#ffffff" stroke-width="10" stroke-linecap="round" opacity="0.95">
+    <line x1="600" y1="290" x2="590" y2="520"/><line x1="622" y1="260" x2="618" y2="330"/>
+    <line x1="420" y1="540" x2="400" y2="640"/><line x1="925" y1="560" x2="915" y2="650"/>
+    <line x1="478" y1="420" x2="472" y2="520"/>
+  </g>
+  <!-- givre sur la glace et éclats -->
+  <rect x="300" y="160" width="720" height="560" filter="url(#givre)" opacity="0.35"/>
+  <g fill="#ffffff" stroke="#111" stroke-width="4">
+    <path d="M250 300 l10 -28 l10 28 l28 10 l-28 10 l-10 28 l-10 -28 l-28 -10 z"/>
+    <path d="M1040 200 l8 -22 l8 22 l22 8 l-22 8 l-8 22 l-8 -22 l-22 -8 z"/>
+    <path d="M1110 420 l6 -16 l6 16 l16 6 l-16 6 l-6 16 l-6 -16 l-16 -6 z"/>
+    <path d="M180 520 l6 -16 l6 16 l16 6 l-16 6 l-6 16 l-6 -16 l-16 -6 z"/>
+    <path d="M760 120 l6 -16 l6 16 l16 6 l-16 6 l-6 16 l-6 -16 l-16 -6 z"/>
+  </g>
+  <!-- sol gelé -->
+  <path d="M0 690 C 200 660, 420 700, 640 680 S 1040 660, 1280 690 L1280 720 L0 720 Z" fill="#dff6ff" stroke="#111" stroke-width="8"/>
+</svg>
+</body></html>

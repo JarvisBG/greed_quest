@@ -88,10 +88,20 @@ h1 + p { margin: 6px 0 0; color: var(--encre-2); font-size: 15px; }
 .gi-carte .c-txt { margin: 0; font: 400 6.2cqi/1.32 var(--f-texte); }
 .gi-carte.f-designee .c-txt { font-style: italic; }
 .gi-carte .c-nom-petit { display: none; }
-.gi-carte.grisee { filter: grayscale(1) contrast(0.9); }
+/* RG-8.9 : contrefaçon démasquée, visible au premier coup d'œil (même en pochette) : carte éteinte et hachurée,
+   barrée d'un tampon rouge « CONTREFAÇON » qui garde sa couleur (le filtre gris ne touche que le cadre). */
+.gi-carte.grisee .c-cadre { filter: grayscale(1) contrast(0.85) brightness(1.04); }
 .gi-carte.grisee .c-cadre::after {
   content: ''; position: absolute; inset: 0; border-radius: inherit;
   background: repeating-linear-gradient(-45deg, rgba(17, 17, 17, 0.25) 0 1.5px, transparent 1.5px 7px);
+}
+.gi-carte.grisee::after {
+  content: 'CONTREFAÇON'; position: absolute; left: 50%; top: 46%; z-index: 2; pointer-events: none;
+  transform: translate(-50%, -50%) rotate(-28deg);
+  font: 400 9.5cqi/1 var(--f-titre); letter-spacing: 0.03em; white-space: nowrap;
+  color: #d0202a; background: rgba(255, 255, 255, 0.86);
+  padding: 2.6cqi 3.4cqi 2.2cqi; border: 1.3cqi solid currentColor; border-radius: 2.2cqi;
+  box-shadow: 0 0 0 0.8cqi rgba(255, 255, 255, 0.86), 0 1.5cqi 3cqi rgba(0, 0, 0, 0.35);
 }
 .r-SS { --matiere: linear-gradient(125deg, #9c7a1c 0%, #f6dc85 28%, #c39a2c 50%, #fbe7a6 72%, #a8841f 100%); }
 .r-S  { --matiere: linear-gradient(125deg, #8d949b 0%, #f1f3f5 35%, #aab1b8 60%, #e9ecef 100%); }
@@ -321,10 +331,10 @@ contrefacon.addEventListener('change', montrer);
 montrer();
 
 /* ② Le Book */
-const fixes = ['000', null, '009', '011', null, '017', '018', '021', null];
+const fixes = ['000', null, '009', '011', null, '017', '018*', '021', null]; // * : contrefaçon démasquée
 const libres = ['gel', 'pepite', 'boussole', 'souffle', 'vol', 'barriere', 'ticket', '094', '081'];
 const pochettes = (ids, vides) => ids.map((id, i) => id
-  ? `<button type="button" class="poche" data-id="${id}" aria-label="${CARTES[id].nom}">${carte(id)}</button>`
+  ? `<button type="button" class="poche" data-id="${id}" aria-label="${CARTES[id.replace('*', '')].nom}">${carte(id.replace('*', ''), { grisee: id.endsWith('*') })}</button>`
   : `<div class="poche vide">${vides ? `<span>${vides[i]}</span>` : ''}</div>`).join('');
 document.getElementById('poches-fixes').innerHTML = pochettes(fixes, ['000', '001', '002', '003', '004', '005', '006', '007', '008']);
 document.getElementById('poches-libres').innerHTML = pochettes(libres);
@@ -333,7 +343,7 @@ const voile = document.getElementById('voile');
 const fiche = document.getElementById('fiche');
 let appuiFond = false;
 function ouvrir(id) {
-  document.getElementById('fiche-carte').innerHTML = carte(id);
+  document.getElementById('fiche-carte').innerHTML = carte(id.replace('*', ''), { grisee: id.endsWith('*') });
   voile.classList.add('ouvert'); fiche.classList.add('ouverte');
   document.getElementById('fermer').focus({ preventScroll: true });
 }

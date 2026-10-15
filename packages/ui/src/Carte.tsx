@@ -15,8 +15,8 @@ const IMAGES = import.meta.glob<string>('./cartes/*.webp', { eager: true, query:
 const imageNumero = (n: number): string | null => IMAGES[`./cartes/${n >= 1000 ? n : String(n).padStart(3, '0')}.webp`] ?? null;
 
 /**
- * Créations sans numéro de l'anime : illustration empruntée à une carte de l'anime, retrouvée par le nom.
- * Gel ← Stone Throw (1028), Boussole ← Magnetic Force (1005), Second souffle ← Recycle (1037), Pépite ← 10000J (607).
+ * Créations sans numéro de l'anime : illustration empruntée à une carte de l'anime (ou dessinée), retrouvée par le nom.
+ * Gel : dessin maison (glace), Boussole ← Magnetic Force (1005), Second souffle ← Recycle (1037), Pépite ← 10000J (607).
  */
 const CREATIONS: Record<string, string> = { gel: 'gel', 'boussole du chercheur': 'boussole', 'second souffle': 'souffle', "pépite d'or": 'pepite' };
 const imageCreation = (nom: string): string | null => {

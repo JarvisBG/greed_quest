@@ -126,7 +126,7 @@ Nos effets ne changent pas (règles RG-10) ; seuls les noms affichés changent. 
 |---|---|---|---|---|
 | Vol | **Vol** | Thief | 1007 | Vole une carte au hasard dans les emplacements fixes de la cible |
 | Échange forcé | **Échange** | Trade | 1008 | Échange une de tes cartes contre une des siennes au hasard |
-| Gel | **Gel** (création ; image de Stone Throw 1028) | — | — | Aucun équivalent : l'anime n'a aucun sort qui entrave un joueur |
+| Gel | **Gel** (création ; illustration dessinée par nous, glace et froid) | — | — | Aucun équivalent : l'anime n'a aucun sort qui entrave un joueur |
 | Barrière | **Mur défensif** | Defensive Wall | 1003 | Pare une fois un sort offensif |
 | Radar | **Trace** | Trace | 1027 | Position d'un joueur (chez nous : sa zone) |
 | Révélation | **Guide** | Guidepost | 1030 | Lieu d'un objet (chez nous : la zone d'une balise rare) |

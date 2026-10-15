@@ -42,6 +42,7 @@ afterAll(() => t.close());
 
 const post = (url: string, token: string, payload: Record<string, unknown> = {}) =>
   t.app.inject({ method: 'POST', url: `/parties/${t.partieId}${url}`, headers: t.bearer(token), payload });
+const get = async (token: string) => (await t.app.inject({ method: 'GET', url: `/parties/${t.partieId}/clear`, headers: t.bearer(token) })).json();
 const licence = async (j: J) => licenceCode(j.id, (await t.db.select().from(joueurs).where(eq(joueurs.id, j.id)))[0]!.licenceSecret, t.clock.t).qr;
 
 describe('RG-13 Clear', () => {
@@ -64,6 +65,11 @@ describe('RG-13 Clear', () => {
     expect(res.json()).toMatchObject({ ok: false, code: 'cible_livre_gele' });
   });
 
+  it('Page ⑰ : Clear déclaré lisible par le joueur (reprise), rien pour les autres', async () => {
+    expect(await get(gon.token)).toEqual({ ok: true, etat: 'declare', gagnant: null });
+    expect(await get(kirua.token)).toEqual({ ok: true, etat: 'aucun', gagnant: null });
+  });
+
   it('RG-13.3 : avant confirmation, pas de choix de récompenses', async () => {
     expect((await post('/clear/recompenses', gon.token, { itemIds: items.slice(0, 3) })).json().code).toBe('pas_gagnant');
   });
@@ -83,5 +89,17 @@ describe('RG-13 Clear', () => {
     const res = await post('/clear/recompenses', gon.token, { itemIds: items.slice(0, 3) });
     expect(res.json().lots[0]).toEqual({ carte: 'Le bonheur du détenteur', lotReel: 'Lot n°1' });
     expect((await post('/clear/recompenses', gon.token, { itemIds: items.slice(3, 6) })).json().code).toBe('deja_choisi');
+  });
+
+  it('RG-13.3 / page ⑰ : le gagnant lit les lots réels de ses cartes désignées et ses lots choisis ; les autres, le gagnant', async () => {
+    const v = await get(gon.token);
+    expect(v).toMatchObject({ etat: 'gagne', gagnant: 'Gon' });
+    expect(v.lots).toHaveLength(30);
+    type L = { itemId: string; carteId: string; lotReel: string | null };
+    expect(v.lots.find((l: L) => l.itemId === items[0])).toMatchObject({ nom: 'Le bonheur du détenteur', lotReel: 'Lot n°1' });
+    expect(v.lots.find((l: L) => l.itemId === items[1]).lotReel).toBeNull();
+    expect(v.recompenses.map((r: L) => r.carteId)).toEqual(t.carteIds.slice(0, 3));
+    expect(v.recompenses[0]).toMatchObject({ nom: 'Le bonheur du détenteur', lotReel: 'Lot n°1' });
+    expect(await get(kirua.token)).toEqual({ ok: true, etat: 'autre', gagnant: 'Gon' });
   });
 });

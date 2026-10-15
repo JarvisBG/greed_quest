@@ -1,6 +1,6 @@
 // Clear (RG-13.1 à 13.3) : le joueur déclare son Livre complet (Clear provisoire, Livre gelé),
 // le GM confirme en scannant sa licence (partie terminée), le gagnant choisit 3 cartes = lots réels.
-import { checkClear, endByClear, validateRewards } from '@gq/engine';
+import { checkClear, endByClear, layoutBook, validateRewards } from '@gq/engine';
 import { ClearAnnulation, ClearConfirmation, RecompensesIntent } from '@gq/shared';
 import { eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
@@ -8,7 +8,7 @@ import { requireRole } from '../auth/guard.js';
 import { applyLifecycle } from '../core/cycle.js';
 import { verifyLicence } from '../core/licence.js';
 import { lifecycleOf } from '../core/partie.js';
-import { isLivreGele, loadBook, loadCatalogue, loadJoueur, updateJoueur, actionPatch } from '../core/state.js';
+import { isLivreGele, loadBook, loadCatalogue, loadJoueur, loadJoueurs, updateJoueur, actionPatch } from '../core/state.js';
 import { cartes, livres, parties } from '../db/schema.js';
 import { introuvable } from '../errors.js';
 import { refus, send } from '../http.js';
@@ -20,6 +20,31 @@ const gameOpen = (etat: string) => etat === 'en_cours' || etat === 'phase_finale
 
 export async function clearRoutes(app: FastifyInstance) {
   const { runner } = app.gq;
+
+  // Page ⑰ : où en est le Clear pour ce joueur (reprise après un rechargement). Le gagnant lit en plus les lots
+  // réels de ses cartes désignées (RG-13.3) et ceux qu'il a déjà choisis.
+  app.get<P>('/parties/:partieId/clear', async (req) => {
+    const { partieId } = req.params;
+    const s = requireRole(req, partieId, 'joueur');
+    return runner.run(partieId, { type: 'joueur', id: s.sub }, async (c) => {
+      const p = c.partie;
+      const gagnant = p.gagnantId ? ((await loadJoueurs(c.tx, partieId)).find((j) => j.id === p.gagnantId)?.pseudo ?? null) : null;
+      if (p.gagnantId !== s.sub) {
+        const etat = gagnant ? ('autre' as const) : (await isLivreGele(c.tx, s.sub)) ? ('declare' as const) : ('aucun' as const);
+        return { ok: true as const, etat, gagnant };
+      }
+      const cat = await loadCatalogue(c.tx, partieId);
+      const byId = new Map(cat.cartes.map((x) => [x.id, x]));
+      const vue = (cardId: string) => {
+        const x = byId.get(cardId);
+        return { carteId: cardId, numero: x?.numero ?? 0, nom: x?.nom ?? '?', rang: x?.rang ?? 'D', texte: x?.texte ?? null, lotReel: x?.lotReel ?? null };
+      };
+      const lots = layoutBook(await loadBook(c.tx, s.sub), cat.designees).designes.flatMap((d) =>
+        d.slot.etat === 'plein' && d.slot.item.kind === 'carte' && !d.slot.item.faux ? [{ itemId: d.slot.item.id, ...vue(d.cardId) }] : [],
+      );
+      return { ok: true as const, etat: 'gagne' as const, gagnant, lots, recompenses: p.recompenses ? p.recompenses.map(vue) : null };
+    });
+  });
 
   // RG-13.1 : Clear provisoire.
   app.post<P>('/parties/:partieId/clear', async (req, reply) => {

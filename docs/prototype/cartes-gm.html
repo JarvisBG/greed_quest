@@ -1,0 +1,552 @@
+<meta charset="utf-8">
+<title>Cartes de Maître du jeu</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Prototype : les cartes noires de Maître du jeu (Jarvis tout-puissant, Le Sceau d'Ange), leur place dans le Book et leurs cinématiques.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@800&family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,800;1,400&family=Dela+Gothic+One&family=DotGothic16&display=swap">
+<style>
+/* Cartes de Maître du jeu (RG-8.15 à 8.21, amendement du 2026-10-15) : cadre noir filé d'or, photo des créateurs.
+   Deux grands moments : « Jarvis tout-puissant » (nuit dorée, « JARVIS A PARLÉ », Jugement puis Décret) et
+   « Le Sceau d'Ange » (nuit rouge, sceau 封 qui s'abat sur un Book). Thème clair de l'app hors cinématiques. */
+:root {
+  color-scheme: light;
+  --papier: #eeefe9;
+  --case: #fbfbf7;
+  --encre: #111111;
+  --encre-2: #3b3d40;
+  --trame: rgba(17, 17, 17, 0.16);
+  --rouge: #c0272d;
+  --bleu: #1f4a9c;
+  --jaune: #d9a11a;
+  --cuir: #5a1a1e;
+  --or: #d7b25a;
+  --or-vif: #ffd877;
+  --lumiere: #fff1c9;
+  --sceau: #d1121b;
+  --givre: #bfe6ff;
+  --nuit: #0c0c0e;
+  --f-titre: 'Dela Gothic One', 'Arial Black', sans-serif;
+  --f-texte: 'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif;
+  --f-chiffre: 'Atkinson Hyperlegible Mono', ui-monospace, monospace;
+  --f-jeu: 'DotGothic16', ui-monospace, monospace;
+  --sortie: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; min-height: 100dvh;
+  background: var(--papier) radial-gradient(var(--trame) 0.8px, transparent 1px) 0 0 / 6px 6px;
+  color: var(--encre); font: 400 17px/1.45 var(--f-texte);
+}
+::selection { background: var(--encre); color: var(--case); }
+:focus-visible { outline: 3px solid var(--bleu); outline-offset: 3px; }
+main { max-width: 480px; margin: 0 auto; padding: 16px 16px 48px; display: grid; gap: 22px; }
+h1 { margin: 6px 0 0; font: 400 30px/1.05 var(--f-titre); }
+h1 + p { margin: 6px 0 0; color: var(--encre-2); font-size: 15px; }
+.case { background: var(--case); box-shadow: 0 0 0 3px var(--encre); border-radius: 4px; padding: 16px; display: grid; gap: 14px; }
+.case > h2 { margin: 0; font: 400 22px/1.1 var(--f-titre); }
+.case > p.aide { margin: -6px 0 0; color: var(--encre-2); font-size: 15px; }
+.bouton {
+  min-height: 52px; border: 0; border-radius: 4px; background: var(--encre); color: var(--case); cursor: pointer;
+  font: 800 18px/1.1 var(--f-texte); padding: 8px 18px; width: 100%;
+}
+.bouton:active { transform: translateY(1px); }
+.bouton.clair { background: var(--case); color: var(--encre); box-shadow: inset 0 0 0 3px var(--encre); }
+.bouton:disabled { opacity: 0.45; cursor: not-allowed; }
+.rangee { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* ---------- Carte (packages/ui, fenêtre 16:9) + famille noire du Maître du jeu ---------- */
+.gi-carte { container-type: inline-size; aspect-ratio: 63 / 88; width: 100%; position: relative; color: var(--encre); }
+.gi-carte .c-cadre {
+  position: absolute; inset: 0; border-radius: 4.5cqi; padding: 5cqi;
+  background: var(--cadre, var(--rouge)); box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35);
+  display: grid; grid-template-rows: auto auto 1fr; gap: 3cqi;
+}
+.gi-carte .c-tete {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 3cqi;
+  background: var(--case); border-radius: 2cqi; padding: 2.5cqi 3cqi; box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55);
+}
+.gi-carte .c-num { font: 800 9cqi/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.gi-carte .c-nom { font: 800 6.4cqi/1.1 var(--f-texte); text-align: center; text-wrap: balance; hyphens: auto; overflow-wrap: break-word; }
+.gi-carte .c-nom.long { font-size: 5.6cqi; }
+.gi-rang {
+  font: 400 7cqi/1 var(--f-titre); padding: 1.6cqi 2.4cqi; border-radius: 1.6cqi; white-space: nowrap;
+  color: var(--encre); background: var(--matiere, var(--case)); box-shadow: 0 0 0 0.6cqi var(--encre);
+}
+.gi-rang .lim { font-size: 0.8em; }
+.gi-carte .c-art {
+  aspect-ratio: 16 / 9; border-radius: 2cqi; overflow: hidden; position: relative;
+  background: #f4f2ea; box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55);
+}
+.gi-carte .c-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.gi-carte .c-bas { background: var(--case); border-radius: 2cqi; padding: 3cqi 3.5cqi; min-height: 0; box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55); overflow: hidden; }
+.gi-carte .c-txt { margin: 0; font: 400 6.2cqi/1.32 var(--f-texte); }
+.gi-carte.f-designee .c-txt { font-style: italic; }
+.gi-carte.f-objet { --cadre: var(--jaune); }
+.r-S { --matiere: linear-gradient(125deg, #8d949b 0%, #f1f3f5 35%, #aab1b8 60%, #e9ecef 100%); }
+.r-A { --matiere: linear-gradient(125deg, #c97a4a 0%, #f2b48a 45%, #d88a58 100%); }
+.r-C { --matiere: linear-gradient(125deg, #9eb0c4 0%, #d6dfea 50%, #aebfd1 100%); }
+
+/* Famille noire : cadre d'encre filé d'or, tête et texte sur papier crème, coin « GM-1 » or sur noir. */
+.gi-carte.f-gm .c-cadre {
+  background: #121214;
+  box-shadow: inset 0 0 0 0.8cqi #000, inset 0 0 0 1.6cqi var(--or), inset 0 0 0 2.2cqi #121214;
+}
+.gi-carte.f-gm .c-tete, .gi-carte.f-gm .c-bas { background: #fbf6e6; box-shadow: 0 0 0 0.7cqi var(--or); }
+.gi-carte.f-gm .c-art { box-shadow: 0 0 0 0.7cqi var(--or); }
+.gi-carte.f-gm .gi-rang { background: #121214; color: var(--or-vif); box-shadow: 0 0 0 0.6cqi var(--or); }
+.gi-carte.f-gm .c-num { font-size: 7.4cqi; }
+
+@container (max-width: 130px) {
+  .gi-carte .c-nom, .gi-carte .c-bas { display: none; }
+  .gi-carte .c-tete { grid-template-columns: 1fr auto; padding: 4cqi; }
+  .gi-carte .c-num, .gi-carte.f-gm .c-num { font-size: 15cqi; }
+  .gi-carte .gi-rang { font-size: 13cqi; padding: 2.5cqi 4cqi; }
+  .gi-carte .gi-rang .lim { display: none; }
+  .gi-carte.f-gm .gi-rang { display: none; }
+  .gi-carte.f-gm .c-tete { grid-template-columns: 1fr; text-align: center; }
+  .gi-carte .c-cadre { padding: 6cqi; gap: 5cqi; grid-template-rows: auto 1fr; }
+  .gi-carte .c-art { aspect-ratio: auto; min-height: 0; }
+  .gi-carte .c-nom-petit {
+    display: block; position: absolute; left: 0; right: 0; bottom: 0; padding: 3cqi 4cqi;
+    font: 800 12cqi/1.08 var(--f-texte); text-align: center; hyphens: auto; overflow-wrap: break-word;
+    background: rgba(18, 18, 20, 0.88); color: var(--or-vif);
+  }
+}
+.c-nom-petit { display: none; }
+
+/* ---------- Scène : les deux cartes ---------- */
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.duo .gi-carte { filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.3)); }
+.grande { display: grid; justify-items: center; }
+.grande > div { width: min(100%, 330px); filter: drop-shadow(0 14px 16px rgba(0, 0, 0, 0.3)); }
+.duo button { padding: 0; border: 0; background: none; cursor: pointer; border-radius: 6px; outline-offset: 3px; }
+.duo button[aria-pressed="true"] { outline: 3px solid var(--encre); }
+
+/* Page Objets du Book */
+.livre-page { background: #fbf7ea; padding: 14px 12px 16px; box-shadow: 0 0 0 3px var(--encre); border-top: 6px solid var(--jaune); }
+.livre-page header { display: flex; justify-content: space-between; margin-bottom: 10px; font: 400 14px/1 var(--f-jeu); }
+.poches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.poche { aspect-ratio: 63 / 88; border-radius: 5px; position: relative; box-shadow: inset 0 0 0 2px rgba(17, 17, 17, 0.22); }
+.poche.vide { background: #f1ede0; }
+.poche.gm-place { box-shadow: inset 0 0 0 2px var(--or); background: #efe6c9; }
+.livre-page .note { margin: 10px 0 0; font-size: 14px; color: var(--encre-2); }
+
+/* Bandeaux d'état (sous la barre, sur toutes les pages) */
+.bandeaux { display: grid; gap: 8px; }
+.bandeau {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 48px; padding: 8px 14px; border-radius: 4px;
+  font: 800 16px/1.15 var(--f-texte);
+}
+.bandeau b { font: 800 20px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.bandeau.intouchable { background: #121214; color: var(--or-vif); box-shadow: inset 0 0 0 2px var(--or); }
+.bandeau.gele { background: #e3f4ff; color: #0e3550; box-shadow: inset 0 0 0 2px #0e3550; }
+.bandeau.scelle { background: var(--sceau); color: #fff; }
+.bandeau[hidden] { display: none; }
+
+/* ---------- Cinématiques ---------- */
+.nuit {
+  position: fixed; inset: 0; z-index: 30; background: #08080a; color: #f6f6f2; overflow: hidden;
+  display: grid; place-items: center; opacity: 0; pointer-events: none;
+}
+.nuit.ouverte { opacity: 1; pointer-events: auto; }
+.nuit .rayons {
+  position: absolute; inset: -60%; opacity: 0; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, var(--teinte) 0 5deg, transparent 5deg 15deg);
+  -webkit-mask: radial-gradient(closest-side, #000 15%, transparent 72%); mask: radial-gradient(closest-side, #000 15%, transparent 72%);
+}
+.nuit .halo { position: absolute; width: 140vmax; height: 140vmax; border-radius: 50%; opacity: 0; pointer-events: none; background: radial-gradient(closest-side, var(--teinte), transparent 70%); }
+.nuit .scene { position: relative; width: min(92vw, 420px); height: min(100dvh, 860px); display: grid; place-items: center; }
+.nuit .carte-cine { position: absolute; width: min(52vw, 220px); top: 26%; left: 50%; translate: -50% 0; opacity: 0; }
+.nuit .cri {
+  position: absolute; top: 9%; left: 0; right: 0; text-align: center; margin: 0; opacity: 0;
+  font: 400 clamp(38px, 12vw, 58px)/0.95 var(--f-titre); letter-spacing: 0.01em; color: var(--lumiere);
+  text-shadow: 0 0 0 transparent; -webkit-text-stroke: 2px #000; paint-order: stroke fill;
+}
+.nuit .onde { position: absolute; top: 40%; left: 50%; width: 40px; height: 40px; margin: -20px; border-radius: 50%; border: 4px solid var(--or-vif); opacity: 0; pointer-events: none; }
+.nuit .joueurs { position: absolute; top: 62%; left: 0; right: 0; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; padding: 0 12px; }
+.nuit .pion {
+  display: grid; justify-items: center; gap: 4px; opacity: 0; font: 600 14px/1.1 var(--f-texte); color: #f6f6f2;
+}
+.nuit .pion .tete-pion { width: 52px; height: 52px; border-radius: 50%; background: #2a2a2e; box-shadow: inset 0 0 0 3px #f6f6f2; display: grid; place-items: center; font: 400 22px/1 var(--f-titre); }
+.nuit .pion.gele .tete-pion { background: var(--givre); color: #0e3550; box-shadow: inset 0 0 0 3px #fff, 0 0 18px rgba(191, 230, 255, 0.9); }
+.nuit .pion .etiquette { font: 400 13px/1 var(--f-jeu); color: var(--givre); opacity: 0; }
+.nuit .pion.gele .etiquette { opacity: 1; }
+.nuit .boite {
+  position: absolute; left: 12px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); margin: 0 auto; max-width: 440px;
+  background: var(--nuit); color: #f6f6f2; border-radius: 6px; padding: 18px 18px 16px; opacity: 0;
+  box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f6f6f2, inset 0 0 0 8px var(--nuit), inset 0 0 0 9px #f6f6f2;
+  font: 400 17px/1.4 var(--f-jeu);
+}
+.nuit .boite .a-qui { display: inline-block; font: 400 14px/1 var(--f-jeu); background: #f6f6f2; color: var(--nuit); padding: 4px 8px; margin-bottom: 8px; }
+.nuit .boite .suite { display: block; margin-top: 8px; font-size: 13px; opacity: 0.75; }
+.nuit .passer { position: absolute; top: calc(10px + env(safe-area-inset-top, 0px)); right: 12px; font: 400 13px/1 var(--f-jeu); color: rgba(246, 246, 242, 0.7); }
+
+/* Décret : la carte choisie se matérialise d'en haut, ligne d'or qui descend. */
+.nuit .creee { position: absolute; width: min(48vw, 200px); top: 30%; left: 50%; translate: -50% 0; opacity: 0; }
+.nuit .creee .ligne { position: absolute; left: -6%; right: -6%; height: 3px; top: 0; background: var(--or-vif); box-shadow: 0 0 14px var(--or-vif); opacity: 0; }
+.nuit .reprise { position: absolute; top: 24%; left: 0; right: 0; text-align: center; font: 400 15px/1.2 var(--f-jeu); color: var(--or-vif); opacity: 0; }
+
+/* Sceau : Book de la cible, sceau 封 qui s'abat, chaînes en croix. */
+.nuit .livre-cible {
+  position: absolute; top: 34%; left: 50%; translate: -50% 0; width: min(46vw, 190px); aspect-ratio: 3 / 4; border-radius: 6px; opacity: 0;
+  background: var(--cuir); box-shadow: inset 0 0 0 4px #3e1013, inset 0 0 0 7px var(--or), 0 18px 30px -12px rgba(0, 0, 0, 0.8);
+  display: grid; place-items: center; font: 400 26px/1 var(--f-titre); color: var(--or);
+}
+.nuit .livre-cible .qui { position: absolute; bottom: -30px; left: 0; right: 0; text-align: center; font: 400 15px/1 var(--f-jeu); color: #f6f6f2; }
+.nuit .chaine {
+  position: absolute; left: -18%; right: -18%; top: 50%; height: 16px; margin-top: -8px; opacity: 0;
+  background: repeating-linear-gradient(90deg, #c9c9cf 0 14px, transparent 14px 18px, #8b8b93 18px 32px, transparent 32px 36px);
+  border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+.nuit .sceau {
+  position: absolute; top: 50%; left: 50%; width: 128px; height: 128px; margin: -64px; border-radius: 50%; opacity: 0;
+  background: var(--sceau); color: #fff; display: grid; place-items: center; font: 400 70px/1 var(--f-titre);
+  box-shadow: inset 0 0 0 6px #fff, inset 0 0 0 10px var(--sceau), 0 0 24px rgba(209, 18, 27, 0.8);
+}
+.nuit .bords { position: absolute; inset: 0; pointer-events: none; opacity: 0; box-shadow: inset 0 0 60px 18px var(--sceau); }
+
+/* Sélecteurs (feuille du bas) */
+.voile { position: fixed; inset: 0; z-index: 20; background: rgba(12, 12, 14, 0.55); opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+.voile.ouvert { opacity: 1; pointer-events: auto; }
+.feuille {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; max-width: 480px; margin: 0 auto; max-height: 88dvh; overflow: auto;
+  background: var(--case); border-radius: 10px 10px 0 0; box-shadow: 0 0 0 3px var(--encre);
+  padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 14px;
+  transform: translateY(105%); transition: transform 0.4s var(--sortie);
+}
+.feuille.ouverte { transform: none; }
+.feuille h2 { margin: 0; font: 400 22px/1.1 var(--f-titre); }
+.feuille p { margin: 0; color: var(--encre-2); font-size: 15px; }
+.grille-choix { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.grille-choix button { padding: 0; border: 0; background: none; cursor: pointer; display: grid; gap: 4px; text-align: center; font: 600 12px/1.2 var(--f-texte); color: var(--encre-2); border-radius: 6px; outline-offset: 3px; }
+.grille-choix button[aria-pressed="true"] { outline: 3px solid var(--encre); }
+.grille-choix .tag { font: 600 12px/1.15 var(--f-texte); color: var(--sceau); }
+.cibles { display: grid; gap: 8px; }
+.cibles button {
+  display: flex; justify-content: space-between; align-items: center; min-height: 56px; padding: 8px 14px; border: 0; border-radius: 4px; cursor: pointer;
+  background: var(--case); box-shadow: inset 0 0 0 3px var(--encre); font: 800 18px/1.1 var(--f-texte); color: var(--encre);
+}
+.cibles button span { font: 400 14px/1 var(--f-jeu); color: var(--encre-2); }
+.cibles button[aria-pressed="true"] { background: var(--encre); color: var(--case); }
+.cibles button[aria-pressed="true"] span { color: #d9d9d4; }
+.cibles button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Annonce du jeu (vue des autres joueurs) */
+.gi-annonce {
+  position: fixed; z-index: 25; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 18px); width: min(calc(100% - 24px), 440px);
+  transform: translate(-50%, calc(-100% - 40px)); transition: transform 0.45s var(--sortie);
+  background: var(--nuit); color: #f6f6f2; border-radius: 6px; padding: 18px 18px 14px; display: grid; gap: 6px;
+  box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px var(--or-vif), inset 0 0 0 8px var(--nuit), inset 0 0 0 9px var(--or-vif), 0 16px 30px -14px rgba(0, 0, 0, 0.6);
+  font: 400 16px/1.4 var(--f-jeu);
+}
+.gi-annonce.vue { transform: translate(-50%, 0); }
+.gi-annonce .titre { font: 400 22px/1 var(--f-titre); color: var(--or-vif); }
+
+@media (prefers-reduced-motion: reduce) {
+  .feuille, .voile, .gi-annonce { transition: none; }
+}
+</style>
+
+<main>
+  <header>
+    <h1>Cartes de Maître du jeu</h1>
+    <p>Deux cartes noires, uniques dans la partie, à l’effigie des créateurs du jeu. Une seule utilisation, puis elles reviennent au Maître du jeu.</p>
+  </header>
+
+  <div class="bandeaux" aria-live="polite">
+    <div class="bandeau intouchable" id="b-intouchable" hidden><span>Intouchable · Jugement de Jarvis</span><b id="c-intouchable">10:00</b></div>
+    <div class="bandeau gele" id="b-gele" hidden><span>Gelé par le Jugement de Jarvis</span><b id="c-gele">3:00</b></div>
+    <div class="bandeau scelle" id="b-scelle" hidden><span>Book scellé par Ange</span><b id="c-scelle">5:00</b></div>
+  </div>
+
+  <section class="case" aria-labelledby="t1">
+    <h2 id="t1">Les deux cartes</h2>
+    <p class="aide">Touche une carte pour la voir en grand.</p>
+    <div class="duo" id="duo"></div>
+    <div class="grande"><div id="grande"></div></div>
+  </section>
+
+  <section class="case" aria-labelledby="t2">
+    <h2 id="t2">Dans le Book</h2>
+    <p class="aide">Rangées dans la page Objets, à part des 8 places : elles ne sont jamais refusées faute de place.</p>
+    <div class="livre-page">
+      <header><span>Objets</span><span>1 / 8</span></header>
+      <div class="poches" id="poches"></div>
+      <p class="note">Rangée du bas : les cartes de Maître du jeu (filet d’or).</p>
+    </div>
+  </section>
+
+  <section class="case" aria-labelledby="t3">
+    <h2 id="t3">Jouer Jarvis tout-puissant</h2>
+    <p class="aide">Décret : la carte de ton choix apparaît dans ton Book. Jugement : les joueurs proches sont gelés 3 min, tu es intouchable 10 min. Rien ne l’arrête.</p>
+    <button class="bouton" id="jouer-jarvis">Jouer la carte</button>
+    <button class="bouton clair" id="voir-autres">Ce que voient les autres joueurs</button>
+  </section>
+
+  <section class="case" aria-labelledby="t4">
+    <h2 id="t4">Jouer Le Sceau d’Ange</h2>
+    <p class="aide">Le Book d’un joueur proche se scelle 5 min : ni scan, ni sort, ni échange, ni rangement. Le Mur défensif ne la bloque pas.</p>
+    <button class="bouton" id="jouer-ange">Jouer la carte</button>
+    <button class="bouton clair" id="subir-ange">Ce que voit la cible</button>
+  </section>
+</main>
+
+<div class="voile" id="voile"></div>
+<div class="feuille" id="feuille" role="dialog" aria-modal="true" aria-labelledby="feuille-titre">
+  <h2 id="feuille-titre"></h2>
+  <p id="feuille-aide"></p>
+  <div id="feuille-corps"></div>
+  <button class="bouton" id="feuille-ok" disabled></button>
+  <button class="bouton clair" id="feuille-annuler">Annuler</button>
+</div>
+
+<div class="gi-annonce" id="annonce" role="status"></div>
+
+<div class="nuit" id="nuit" aria-live="assertive">
+  <div class="halo" id="halo"></div>
+  <div class="rayons" id="rayons"></div>
+  <div class="bords" id="bords"></div>
+  <div class="scene" id="scene"></div>
+  <span class="passer">Toucher pour passer</span>
+</div>
+
+<script>
+const CARTES = {
+  jarvis: { genre: 'gm', num: 'GM·01', nom: 'Jarvis tout-puissant', img: 'img-cartes/gm/jarvis.webp', texte: 'Le créateur du jeu réécrit les règles : la carte de ton choix apparaît, les joueurs proches se figent.' },
+  ange: { genre: 'gm', num: 'GM·02', nom: "Le Sceau d'Ange", img: 'img-cartes/gm/ange.webp', texte: 'Le Book d’un joueur proche se scelle : 5 minutes sans scanner, lancer, échanger ni ranger.' },
+  '001': { genre: 'designee', rang: 'S', lim: 2, nom: "Le bois secret d'un Tsubo", texte: "L'entrée du Jardin du Dieu de la Montagne, peuplé d'espèces uniques et dociles." },
+  '015': { genre: 'designee', rang: 'A', lim: 4, nom: 'Le génie capricieux', texte: 'Un génie qui exauce trois vœux, choisis parmi mille propositions toutes différentes.' },
+  '049': { genre: 'designee', rang: 'C', lim: 8, nom: "La sirène qui s'emballe", texte: 'Une sirène qui tient dans la main et chante quand elle est heureuse.' },
+  '061': { genre: 'designee', rang: 'C', lim: 8, nom: 'Le chien en pièces', texte: 'Un chien qui fait un bilan de santé complet : « Rien à signaler » ou « Anomalie ».' },
+  '075': { genre: 'designee', rang: 'C', lim: 8, nom: "L'alexandrite de la chance", texte: 'Une alexandrite qui attire des expériences uniques, pour le meilleur ou pour le pire.' },
+  '089': { genre: 'designee', rang: 'C', lim: 8, nom: "La manchette de l'inspecteur du fisc", texte: "La manchette d'un inspecteur du fisc, qui saisit au prix d'une carte de son porteur." },
+  ticket: { genre: 'objet', num: '1032', nom: 'Loterie', img: 'img-cartes/objet/ticket.webp' },
+};
+// Cartes manquantes du Décret ; « reprise » = limite atteinte, prise à un détenteur au hasard (RG-8.19).
+const MANQUANTES = [
+  { id: '001', reprise: 'Kirua' }, { id: '015' }, { id: '049' }, { id: '061', reprise: 'Biscuit' }, { id: '075' }, { id: '089' },
+];
+const PROCHES = [{ nom: 'Kirua', d: '18 m' }, { nom: 'Leolio', d: '31 m' }, { nom: 'Biscuit', d: '42 m' }];
+
+function carte(id) {
+  const c = CARTES[id];
+  const num = c.genre === 'designee' ? id : c.num;
+  const img = c.img || `img-cartes/designee/${id}.webp`;
+  const coin = c.genre === 'gm' ? '<span class="gi-rang">GM<span class="lim">-1</span></span>'
+    : c.genre === 'designee' ? `<span class="gi-rang r-${c.rang}">${c.rang}<span class="lim">-${c.lim}</span></span>` : '<span class="gi-rang">Objet</span>';
+  return `<div class="gi-carte f-${c.genre}"><div class="c-cadre">
+    <div class="c-tete"><span class="c-num">${num}</span><span class="c-nom${c.nom.length > 10 ? ' long' : ''}">${c.nom}</span>${coin}</div>
+    <div class="c-art" aria-hidden="true"><img src="${img}" alt="" decoding="async">${c.genre !== 'designee' ? `<span class="c-nom-petit">${c.nom}</span>` : ''}</div>
+    <div class="c-bas"><p class="c-txt">${c.texte || ''}</p></div>
+  </div></div>`;
+}
+
+/* Les deux cartes */
+let grande = 'jarvis';
+const duo = document.getElementById('duo');
+duo.innerHTML = ['jarvis', 'ange'].map((id) => `<button type="button" data-id="${id}" aria-pressed="${id === grande}" aria-label="${CARTES[id].nom}">${carte(id)}</button>`).join('');
+const montrer = () => { document.getElementById('grande').innerHTML = carte(grande); };
+duo.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; grande = b.dataset.id; for (const x of duo.children) x.setAttribute('aria-pressed', String(x === b)); montrer(); });
+montrer();
+
+/* Le Book (page Objets) */
+document.getElementById('poches').innerHTML =
+  `<div class="poche">${carte('ticket')}</div><div class="poche vide"></div><div class="poche vide"></div><div class="poche vide"></div>` +
+  `<div class="poche gm-place">${carte('jarvis')}</div><div class="poche gm-place">${carte('ange')}</div>`;
+
+/* Feuille de choix */
+const voile = document.getElementById('voile');
+const feuille = document.getElementById('feuille');
+const ok = document.getElementById('feuille-ok');
+let appuiFond = false, quandOk = null;
+function ouvrirFeuille({ titre, aide, corps, bouton, valider }) {
+  document.getElementById('feuille-titre').textContent = titre;
+  document.getElementById('feuille-aide').textContent = aide;
+  document.getElementById('feuille-corps').innerHTML = corps;
+  ok.textContent = bouton; ok.disabled = true; quandOk = valider;
+  voile.classList.add('ouvert'); feuille.classList.add('ouverte');
+}
+function fermerFeuille() { voile.classList.remove('ouvert'); feuille.classList.remove('ouverte'); }
+voile.addEventListener('pointerdown', () => { appuiFond = true; });
+voile.addEventListener('click', () => { if (appuiFond) fermerFeuille(); appuiFond = false; });
+document.getElementById('feuille-annuler').addEventListener('click', fermerFeuille);
+ok.addEventListener('click', () => { const v = quandOk; fermerFeuille(); v && v(); });
+let choix = null;
+feuille.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-choix]'); if (!b || b.disabled) return;
+  choix = b.dataset.choix;
+  for (const x of feuille.querySelectorAll('[data-choix]')) x.setAttribute('aria-pressed', String(x === b));
+  ok.disabled = false;
+});
+
+/* Comptes à rebours des bandeaux */
+const minuteurs = {};
+function decompte(cle, secondes) {
+  const b = document.getElementById('b-' + cle), c = document.getElementById('c-' + cle);
+  clearInterval(minuteurs[cle]); b.hidden = false;
+  let s = secondes;
+  const maj = () => { c.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; if (s-- <= 0) { clearInterval(minuteurs[cle]); b.hidden = true; } };
+  maj(); minuteurs[cle] = setInterval(maj, 1000);
+}
+
+/* ---------- Cinématique : mécanique commune ---------- */
+const nuit = document.getElementById('nuit'), scene = document.getElementById('scene');
+const halo = document.getElementById('halo'), rayons = document.getElementById('rayons'), bords = document.getElementById('bords');
+const calme = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let anims = [], minuteries = [], finir = null;
+const A = (el, k, o) => { if (!el) return null; const a = el.animate(k, { fill: 'forwards', ...o }); anims.push(a); return a; };
+const T = (f, ms) => minuteries.push(setTimeout(f, ms));
+const vibrer = (p) => { try { navigator.vibrate && navigator.vibrate(p); } catch {} };
+function ouvrirNuit(teinte) {
+  anims.forEach((a) => a.cancel()); anims = []; minuteries.forEach(clearTimeout); minuteries = [];
+  nuit.style.setProperty('--teinte', teinte);
+  bords.style.opacity = 0; halo.style.opacity = 0; rayons.style.opacity = 0;
+  nuit.classList.add('ouverte');
+  A(nuit, [{ opacity: 0 }, { opacity: 1 }], { duration: 220 });
+}
+function fermerNuit() {
+  // Toute animation « forwards » est lâchée en fin de séquence (leçon des cinématiques) ; l'état final est posé en style.
+  anims.forEach((a) => a.cancel()); anims = []; minuteries.forEach(clearTimeout); minuteries = [];
+  nuit.classList.remove('ouverte'); scene.innerHTML = '';
+  const f = finir; finir = null; f && f();
+}
+let pret = false;
+nuit.addEventListener('click', () => { if (pret) fermerNuit(); else { anims.forEach((a) => a.finish()); minuteries.forEach(clearTimeout); minuteries = []; montrerFin && montrerFin(); } });
+let montrerFin = null;
+const secousse = () => A(scene, [{ transform: 'translate(0,0)' }, { transform: 'translate(-7px,5px)' }, { transform: 'translate(6px,-5px)' }, { transform: 'translate(-3px,2px)' }, { transform: 'translate(0,0)' }], { duration: 300, fill: 'none' });
+
+/* ---------- Jarvis tout-puissant ---------- */
+document.getElementById('jouer-jarvis').addEventListener('click', () => {
+  choix = null;
+  ouvrirFeuille({
+    titre: 'Décret de Jarvis',
+    aide: 'Choisis la carte qui apparaîtra dans ton Book. Si elle est à sa limite, elle est reprise à un joueur qui l’a.',
+    corps: `<div class="grille-choix">${MANQUANTES.map((m) => `<button type="button" data-choix="${m.id}" aria-pressed="false">${carte(m.id)}<span>${m.id}</span>${m.reprise ? '<span class="tag">Limite atteinte : reprise</span>' : ''}</button>`).join('')}</div>`,
+    bouton: 'Jarvis a parlé',
+    valider: () => cineJarvis(choix),
+  });
+});
+
+function cineJarvis(id) {
+  const m = MANQUANTES.find((x) => x.id === id); const c = CARTES[id];
+  ouvrirNuit('rgba(255, 216, 119, 0.85)'); pret = false;
+  scene.innerHTML = `
+    <p class="cri" id="cri">JARVIS<br>A PARLÉ</p>
+    <div class="carte-cine" id="gm">${carte('jarvis')}</div>
+    <div class="onde" id="onde"></div>
+    <div class="joueurs" id="pions">${PROCHES.map((p) => `<div class="pion"><span class="tete-pion">${p.nom[0]}</span>${p.nom}<span class="etiquette">GELÉ 3:00</span></div>`).join('')}</div>
+    <p class="reprise" id="reprise">${m.reprise ? `Reprise à ${m.reprise}` : ''}</p>
+    <div class="creee" id="creee">${carte(id)}<span class="ligne"></span></div>
+    <p class="boite" id="boite"><span class="a-qui">Jarvis tout-puissant</span><br>Jarvis a parlé. ${c.nom} (${id}) apparaît dans ton Book${m.reprise ? `, reprise à ${m.reprise}` : ''}. Kirua, Leolio et Biscuit sont gelés 3 min. Tu es intouchable 10 min.<span class="suite">Toucher pour continuer</span></p>`;
+  const $ = (s) => scene.querySelector(s);
+  const gm = $('#gm'), cri = $('#cri'), onde = $('#onde'), pions = [...scene.querySelectorAll('.pion')], creee = $('#creee'), ligne = creee.querySelector('.ligne'), boite = $('#boite'), reprise = $('#reprise');
+  montrerFin = () => {
+    // État final posé en style (l'animation lâchée ne doit rien effacer).
+    for (const [el, st] of [[gm, { opacity: 0 }], [cri, { opacity: 0 }], [creee, { opacity: 1, transform: 'none', clipPath: 'none' }], [boite, { opacity: 1 }], [reprise, { opacity: m.reprise ? 1 : 0 }]]) Object.assign(el.style, st);
+    pions.forEach((p) => { p.style.opacity = 1; p.classList.add('gele'); });
+    pret = true;
+  };
+  finir = () => { decompte('intouchable', 600); };
+  if (calme) { montrerFin(); return; }
+  // 1. La carte noire monte dans la nuit, l'or point derrière elle.
+  A(halo, [{ opacity: 0, transform: 'scale(0.3)' }, { opacity: 0.55, transform: 'scale(1)' }], { duration: 900, delay: 150, easing: 'ease-out' });
+  A(gm, [{ opacity: 0, transform: 'translateY(60vh) rotate(-8deg) scale(0.7)' }, { opacity: 1, transform: 'translateY(-2vh) rotate(2deg) scale(1.03)', offset: 0.75 }, { opacity: 1, transform: 'none' }], { duration: 900, delay: 150, easing: 'cubic-bezier(0.16,1,0.3,1)' });
+  A(gm, [{ transform: 'none' }, { transform: 'translateX(-3px) rotate(-1deg)' }, { transform: 'translateX(3px) rotate(1deg)' }, { transform: 'none' }], { duration: 110, iterations: 6, delay: 1100, fill: 'none', composite: 'add' });
+  // 2. Éclair : « JARVIS A PARLÉ » frappe, rayons d'or, secousse, vibration.
+  T(() => {
+    A(rayons, [{ opacity: 0, transform: 'rotate(0)' }, { opacity: 0.7, transform: 'rotate(25deg)', offset: 0.2 }, { opacity: 0.45, transform: 'rotate(90deg)' }], { duration: 4200 });
+    A(cri, [{ opacity: 0, transform: 'scale(2.4)' }, { opacity: 1, transform: 'scale(0.94)', offset: 0.6 }, { opacity: 1, transform: 'scale(1)' }], { duration: 380, easing: 'cubic-bezier(0.2,0.8,0.2,1)' });
+    A(nuit, [{ backgroundColor: '#fff4cf' }, { backgroundColor: '#08080a' }], { duration: 420, fill: 'none' });
+    secousse(); vibrer([60, 40, 120]);
+  }, 1750);
+  // 3. Jugement : l'onde d'or part de la carte, les joueurs proches se figent l'un après l'autre.
+  T(() => {
+    A(gm, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(1.25)' }], { duration: 420, easing: 'ease-in' });
+    A(onde, [{ opacity: 1, transform: 'scale(0.5)', borderWidth: '6px' }, { opacity: 0, transform: 'scale(16)', borderWidth: '1px' }], { duration: 1000, easing: 'cubic-bezier(0.16,1,0.3,1)' });
+    pions.forEach((p, i) => {
+      A(p, [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 260, delay: 120 + i * 70 });
+      T(() => { p.classList.add('gele'); vibrer(25); A(p, [{ transform: 'scale(1.15)' }, { transform: 'scale(1)' }], { duration: 260, fill: 'none' }); }, 520 + i * 180);
+    });
+  }, 2700);
+  // 4. Décret : le cri s'efface, la carte choisie se matérialise sous une ligne d'or qui descend.
+  T(() => {
+    A(cri, [{ opacity: 1 }, { opacity: 0 }], { duration: 300 });
+    A(creee, [{ opacity: 1, clipPath: 'inset(0 0 100% 0)', transform: 'translateY(-12px)' }, { opacity: 1, clipPath: 'inset(0 0 0% 0)', transform: 'none' }], { duration: 1100, easing: 'cubic-bezier(0.3,0,0.2,1)' });
+    A(ligne, [{ opacity: 1, top: '0%' }, { opacity: 1, top: '100%', offset: 0.95 }, { opacity: 0, top: '100%' }], { duration: 1150, easing: 'cubic-bezier(0.3,0,0.2,1)' });
+    if (m.reprise) A(reprise, [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 300, delay: 300 });
+  }, 4300);
+  T(() => { A(creee, [{ filter: 'brightness(2.2)' }, { filter: 'brightness(1)' }], { duration: 500, fill: 'none' }); secousse(); vibrer(50); }, 5420);
+  T(() => { A(boite, [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 320 }); }, 5800);
+  T(() => montrerFin(), 6150);
+}
+
+/* Ce que voient les autres : annonce dorée, et gel si on était à portée. */
+const annonce = document.getElementById('annonce');
+document.getElementById('voir-autres').addEventListener('click', () => {
+  annonce.innerHTML = '<span class="titre">Jarvis a parlé</span>Jarvis tout-puissant a été joué près de toi. Tu es gelé 3 min : ni scan, ni sort, ni échange.';
+  annonce.classList.add('vue'); vibrer([60, 40, 120]);
+  decompte('gele', 180);
+  setTimeout(() => annonce.classList.remove('vue'), 5200);
+});
+
+/* ---------- Le Sceau d'Ange ---------- */
+document.getElementById('jouer-ange').addEventListener('click', () => {
+  choix = null;
+  ouvrirFeuille({
+    titre: "Le Sceau d'Ange",
+    aide: 'Choisis le joueur dont le Book sera scellé pendant 5 minutes.',
+    corps: `<div class="cibles">${PROCHES.map((p, i) => `<button type="button" data-choix="${p.nom}" aria-pressed="false" ${i === 2 ? 'disabled' : ''}>${p.nom}<span>${i === 2 ? 'protégé encore 2:41' : `à portée · ${p.d}`}</span></button>`).join('')}</div>`,
+    bouton: 'Sceller son Book',
+    valider: () => cineSceau(choix, false),
+  });
+});
+document.getElementById('subir-ange').addEventListener('click', () => cineSceau('toi', true));
+
+function cineSceau(cible, subi) {
+  ouvrirNuit('rgba(209, 18, 27, 0.75)'); pret = false;
+  const qui = subi ? 'Ton Book' : `Book de ${cible}`;
+  scene.innerHTML = `
+    <p class="cri" id="cri" style="color:#fff">SCEAU !</p>
+    <div class="carte-cine" id="gm">${carte('ange')}</div>
+    <div class="livre-cible" id="livre">BOOK<span class="qui">${qui}</span>
+      <span class="chaine" id="ch1" style="rotate:28deg"></span><span class="chaine" id="ch2" style="rotate:-28deg"></span>
+      <span class="sceau" id="sceau" lang="ja">封</span></div>
+    <p class="boite" id="boite"><span class="a-qui">${subi ? 'Sort reçu' : "Le Sceau d'Ange"}</span><br>${subi
+      ? 'Ange a scellé ton Book : 5 min sans scanner, lancer, échanger ni ranger tes cartes.'
+      : `Le Book de ${cible} est scellé pendant 5 min.`}<span class="suite">Toucher pour continuer</span></p>`;
+  const $ = (s) => scene.querySelector(s);
+  const gm = $('#gm'), cri = $('#cri'), livre = $('#livre'), ch = [$('#ch1'), $('#ch2')], sceau = $('#sceau'), boite = $('#boite');
+  montrerFin = () => {
+    for (const [el, st] of [[gm, { opacity: 0 }], [cri, { opacity: 0 }], [livre, { opacity: 1 }], [sceau, { opacity: 1, transform: 'rotate(-12deg)' }], [boite, { opacity: 1 }]]) Object.assign(el.style, st);
+    ch.forEach((x) => { x.style.opacity = 1; });
+    pret = true;
+  };
+  finir = subi ? () => decompte('scelle', 300) : null;
+  if (calme) { montrerFin(); return; }
+  if (subi) { A(bords, [{ opacity: 0 }, { opacity: 1 }, { opacity: 0.3 }, { opacity: 1 }, { opacity: 0.6 }], { duration: 1200 }); vibrer([80, 60, 80]); }
+  A(halo, [{ opacity: 0, transform: 'scale(0.3)' }, { opacity: 0.45, transform: 'scale(1)' }], { duration: 800, delay: 100 });
+  // 1. La carte d'Ange monte, puis s'efface dans un éclat rouge.
+  A(gm, [{ opacity: 0, transform: 'translateY(50vh) rotate(8deg) scale(0.7)' }, { opacity: 1, transform: 'none' }], { duration: 800, delay: 150, easing: 'cubic-bezier(0.16,1,0.3,1)' });
+  T(() => {
+    A(cri, [{ opacity: 0, transform: 'scale(2.2)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 320, easing: 'cubic-bezier(0.2,0.8,0.2,1)' });
+    A(gm, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(1.2) translateY(-20px)' }], { duration: 450, delay: 300, easing: 'ease-in' });
+    secousse(); vibrer(60);
+  }, 1100);
+  // 2. Le Book de la cible apparaît ; les chaînes le ceinturent.
+  T(() => {
+    A(livre, [{ opacity: 0, transform: 'scale(0.85)' }, { opacity: 1, transform: 'none' }], { duration: 420, easing: 'cubic-bezier(0.16,1,0.3,1)' });
+    ch.forEach((x, i) => A(x, [{ opacity: 0, transform: `translateX(${i ? 120 : -120}%)` }, { opacity: 1, transform: 'none' }], { duration: 420, delay: 380 + i * 160, easing: 'cubic-bezier(0.3,0,0.2,1)' }));
+  }, 1700);
+  // 3. Le sceau 封 s'abat : impact, onde rouge, secousse.
+  T(() => {
+    A(sceau, [{ opacity: 0, transform: 'scale(3) rotate(-30deg)' }, { opacity: 1, transform: 'scale(0.92) rotate(-12deg)', offset: 0.7 }, { opacity: 1, transform: 'scale(1) rotate(-12deg)' }], { duration: 360, easing: 'cubic-bezier(0.5,0,0.75,0)' });
+    T(() => { A(nuit, [{ backgroundColor: '#5a0a0e' }, { backgroundColor: '#08080a' }], { duration: 500, fill: 'none' }); secousse(); vibrer([120, 50, 40]); }, 330);
+    A(cri, [{ opacity: 1 }, { opacity: 0 }], { duration: 300, delay: 600 });
+  }, 2600);
+  T(() => { A(boite, [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 320 }); }, 3500);
+  T(() => montrerFin(), 3850);
+}
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (nuit.classList.contains('ouverte')) fermerNuit(); else fermerFeuille(); } });
+</script>

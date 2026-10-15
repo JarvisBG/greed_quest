@@ -125,6 +125,18 @@ Types : **Standard** rangs D–A, stock normal, rotation auto · **Rare** C–S 
 **SS** : 8.10 se volent/s'échangent. 8.11 Immunité au vol 10 min après obtention. 8.12 SS d'un joueur inactif 20 min / abandon / disqualifié → retour via Apparition.
 **Historique** : 8.13 Carte perdue ne compte plus ; emplacement désigné vide affiche « Volée par X à 14h05 ». 8.14 Fiche de provenance par carte.
 
+> **Amendement 2026-10-15 (Sivraj) — cartes de Maître du jeu** — *décidé, pas encore codé* :
+> - **RG-8.15 Nature** : quatrième famille, **cadre noir** (comme les cartes des Game Masters de l'anime), illustrée d'une photo d'un créateur du jeu. Deux cartes : **« Jarvis tout-puissant »** et **« Le Sceau d'Ange »**. Chacune est **unique** (un exemplaire au plus dans la partie, coin « GM-1 »). Ne comptent ni pour le Clear ni pour le classement ; rangées dans la page Objets du Book, **hors des 8 places** (jamais refusées faute de place) ; Book gelé = inutilisables.
+> - **RG-8.16 Obtention** (seulement si la carte n'est à personne) : **au scan**, par hasard (`chanceCarteGmPct` par scan, 0,5 par défaut, RG-14, réglable et verrouillable par le GM) ; **récompense de raid** (le GM l'attache au raid avant de le lancer, elle va au meilleur chasseur) ; **lot d'enchère** à Antokiba ; **récompense d'évènement** ou **don direct** du GM (motif journalisé).
+> - **RG-8.17 Circulation** : s'échangent (RG-11) et **se volent** par le seul sort Vol (RG-8.18 ; ni Pickpocket ni L'épée du vol) ; elles se mettent aux enchères. **Utilisation unique** : jouée, la carte quitte le Book et **revient au Maître du jeu**, puis peut réapparaître par les voies de 8.16. Joueur inactif 20 min, abandon ou disqualification = retour au Maître du jeu (comme 8.12).
+> - **RG-8.18 Vol** : un sort **Vol** ciblant un joueur qui détient une carte GM la prend en priorité si le lanceur le choisit (cible « carte de Maître du jeu ») ; sinon tirage habituel. Mur défensif, Renforcement, immunité et délai s'appliquent comme pour tout Vol.
+> - **RG-8.19 Jarvis tout-puissant** (le créateur réécrit les règles ; deux effets à la fois, aucune protection ne les arrête : ni Mur défensif, ni Renforcement, ni Zetsu, ni immunité) :
+>   1. **Décret** : le joueur choisit une carte désignée du catalogue absente de ses emplacements fixes, **sauf la SS** ; elle se matérialise dans son emplacement. Si sa limite (RG-8.2) est atteinte, elle est **reprise à un détenteur au hasard** (exemplaire rangé ou caché, pas une contrefaçon ; jamais à un Book gelé par un Clear provisoire, RG-13.1) ; si aucun exemplaire n'est prenable, le joueur choisit une autre carte. La carte créée compte dans la limite ; celle reprise change de main (provenance « Décret de Jarvis »).
+>   2. **Jugement** : tous les joueurs **à portée** (RG-10.1) sont **gelés 3 min** (ni scan, ni sort, ni échange) ; le lanceur est **intouchable 10 min** (aucun sort ne peut le viser).
+>   Annonce à **tous les joueurs** (« Jarvis a parlé ») et cinématique sur l'écran géant.
+> - **RG-8.20 Le Sceau d'Ange** : vise un joueur **à portée** ; son Book est **scellé 5 min** : ni scan, ni sort, ni échange, ni déplacement de carte (RG-8.5), ni objet. Le **Mur défensif ne la bloque pas** ; Zetsu non plus. Ensuite la cible a l'**immunité de 5 min** des sorts offensifs (même règle que RG-10), et le Sceau ne peut pas la viser pendant ce temps. La cible est prévenue (« Ange a scellé ton Book ») ; l'écran géant l'affiche.
+> - **RG-8.21** Pause (RG-4.4) : scellés, gels et intouchabilité suspendus puis reprennent ; chaque obtention, utilisation, vol, échange et retour est journalisé.
+
 ## RG-9 Jenny & Masadora
 - 9.1 Sources : kit, tirages, checkpoints, revente, événements.
 - 9.2 Paquets de 3 sorts aléatoires ; scan du QR boutique sur place.

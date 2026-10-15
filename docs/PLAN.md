@@ -48,6 +48,8 @@ Chaque tâche = un commit (ou quelques-uns), tests verts avant de cocher.
 Périmètre exact et direction artistique : `docs/PROMPT_INTERFACES.md` (§ 4.1). Maquette validée avec le skill impeccable avant tout code.
 - [ ] 4.0 Système visuel commun `packages/ui` (tokens, Carte, Rang, Chrono, Bandeau, LecteurQr, libellés) + manques API du § 6 (Livre d'un joueur pour le GM, demandes de Clear, polygones de zones à l'écran) après accord
 - [ ] 4.0 bis Images des cartes (option A + B, 2026-10-10) : banque d'illustrations (cartes, 9 sorts, 6 objets), champ image du catalogue, import par le GM en secours, stockage et service des fichiers
+  - 2026-10-15 : 114 illustrations découpées des scans officiels (`docs/images-cartes/decoupees/`), prototype `cartes-illustrees.html` validé (16:9). Reste : intégration (fronts, champ `image`, préchargement, `Carte`), 037, Pépite, import GM.
+- [ ] 4.0 quinquies Cartes de Maître du jeu (RG-8.15 à 8.21, amendement 2026-10-15) : Jarvis tout-puissant (Décret + Jugement), Le Sceau d'Ange ; moteur, API, app (cinématiques), console GM (don, raid, enchère, réglage `chanceCarteGmPct`), écran géant
 - [x] 4.0 quater Amendements « fidélité à l'anime » (REGLES.md, 2026-10-10) dans le moteur, l'API et l'app joueur : Book, rattrapage à 0, déplacer / cacher une carte, Vol (fixes) et Pickpocket, Voyance et Clairvoyance, Pénétration, Accompagnement, Retour ; tests nommés par RG ; simulateur à jour
 - [ ] 4.0 ter Maquettes de référence (Claude, `docs/PROMPT_MAQUETTES.md`) rapportées et validées par Sivraj
 - [ ] 4.1 Console PNJ : scan licence, checkpoint, expertise, arène, enchère, missions, joueurs, avertir / geler / annuler les gains, alertes, journal

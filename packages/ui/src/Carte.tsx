@@ -1,13 +1,31 @@
 // Carte de Greed Island, dessinée une fois et réutilisée partout (joueur, console, écran géant) :
 // numéro à trois chiffres en haut à gauche, nom au centre, rang-limite à droite (« A-3 »), illustration, texte en bas.
 // Cadre rouge = carte désignée (à collectionner, sans effet), bleu = sort, jaune = objet. RG-8.1, RG-8.2.
-import type { Rank } from '@gq/shared';
+// Illustration : celle de la carte officielle (fenêtre 16:9, décidé le 2026-10-15), retrouvée par son numéro de l'anime.
+import { BANQUE_CARTES, type Rank } from '@gq/shared';
 import type { ReactNode } from 'react';
 import { EmblemeDos } from './Emblemes';
 
 export type GenreCarte = 'designee' | 'sort' | 'objet';
 
 export const numeroCarte = (n: number | null | undefined) => (n === null || n === undefined ? '???' : String(n).padStart(3, '0'));
+
+/** Illustrations des cartes officielles, nommées par numéro de l'anime (`017.webp`, `1007.webp`). */
+const IMAGES = import.meta.glob<string>('./cartes/*.webp', { eager: true, query: '?url', import: 'default' });
+const imageNumero = (n: number): string | null => IMAGES[`./cartes/${n >= 1000 ? n : String(n).padStart(3, '0')}.webp`] ?? null;
+
+/**
+ * Illustration d'une carte, ou `null` (filigrane). Une carte désignée n'a son image que si elle est bien celle de la
+ * banque à ce numéro (un catalogue composé à la main peut numéroter ses cartes 001..N, RG-8.1) ; une contrefaçon
+ * démasquée (« Contrefaçon de … ») garde l'image de la carte imitée. Sorts et objets : numéro de l'anime (1001 et plus).
+ */
+export function imageCarte(genre: GenreCarte, numero: number | string | null | undefined, nom: string): string | null {
+  const n = typeof numero === 'string' ? Number(numero) : numero;
+  if (n === null || n === undefined || !Number.isInteger(n)) return null;
+  if (genre !== 'designee') return n >= 1000 ? imageNumero(n) : null;
+  const b = BANQUE_CARTES.find((x) => x.numero === n);
+  return b && nom.toLowerCase().includes(b.nom.toLowerCase()) ? imageNumero(n) : null;
+}
 
 export function Rang({ rang, limite, seul }: { rang: Rank | null; limite?: number | null; seul?: boolean }) {
   if (!rang) return null;
@@ -26,7 +44,7 @@ export interface CarteProps {
   rang?: Rank | null;
   limite?: number | null;
   texte?: string | null;
-  /** Illustration ; à défaut, le numéro en filigrane sur la trame (en attendant la banque d'images). */
+  /** Illustration imposée ; à défaut, celle de la carte officielle, sinon le numéro en filigrane sur la trame. */
   illustration?: ReactNode;
   /** Contrefaçon démasquée (RG-8.9) : grisée et hachurée. */
   grisee?: boolean;
@@ -36,6 +54,7 @@ export interface CarteProps {
 export function Carte({ genre, numero, nom, rang = null, limite = null, texte = null, illustration, grisee, className }: CarteProps) {
   const num = typeof numero === 'string' ? numero : numeroCarte(numero);
   const coin = genre === 'sort' ? <span className="gi-rang r-sort">Sort</span> : genre === 'objet' ? <span className="gi-rang r-objet">Objet</span> : <Rang rang={rang} limite={limite} />;
+  const image = illustration === undefined ? imageCarte(genre, numero, nom) : null;
   return (
     <div className={`gi-carte f-${genre}${grisee ? ' grisee' : ''}${className ? ` ${className}` : ''}`}>
       <div className="c-cadre">
@@ -45,11 +64,12 @@ export function Carte({ genre, numero, nom, rang = null, limite = null, texte = 
           {coin}
         </div>
         <div className="c-art" aria-hidden="true">
-          {illustration ?? <span className="c-filigrane">{genre === 'designee' ? num : genre === 'sort' ? 'S' : 'O'}</span>}
+          {illustration ?? (image ? <img src={image} alt="" decoding="async" draggable={false} /> : <span className="c-filigrane">{genre === 'designee' ? num : genre === 'sort' ? 'S' : 'O'}</span>)}
           {/* Sort ou objet vu petit (pochette) : le nom, que la tête n'a plus la place d'écrire. */}
           {genre !== 'designee' && <span className="c-nom-petit">{nom}</span>}
         </div>
-        {texte && <p className="c-txt">{texte}</p>}
+        {/* Le panneau du bas existe toujours, comme sur une vraie carte ; vide quand il n'y a rien à dire. */}
+        <div className="c-bas">{texte && <p className="c-txt">{texte}</p>}</div>
       </div>
     </div>
   );

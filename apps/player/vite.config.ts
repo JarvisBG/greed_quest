@@ -26,6 +26,8 @@ export default defineConfig(({ mode }) => {
           icons: [{ src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }],
         },
         workbox: {
+          // Illustrations des cartes (≈ 3 Mo) mises en cache à l'installation : le Book reste illustré hors réseau.
+          globPatterns: ['**/*.{js,css,html,svg,woff2,webp}'],
           // L'API et le temps réel ne passent jamais par le cache (P1 : le serveur fait foi).
           navigateFallbackDenylist: [/^\/parties/, /^\/admin/, /^\/socket\.io/],
         },

@@ -142,7 +142,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   background: var(--cadre, var(--rouge));
   box-shadow: inset 0 0 0 0.8cqi rgba(0, 0, 0, 0.35);
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto auto 1fr;
   gap: 3cqi;
 }
 .gi-carte.f-sort { --cadre: var(--bleu); }
@@ -167,27 +167,31 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   background: var(--matiere, var(--case));
   box-shadow: 0 0 0 0.6cqi var(--encre);
 }
+/* Fenêtre d'illustration en 16:9, comme sur les cartes officielles (2026-10-15) ; le texte prend la place qui reste. */
 .gi-carte .c-art {
+  aspect-ratio: 16 / 9;
   border-radius: 2cqi;
   background: #f4f2ea radial-gradient(var(--trame) 0.9px, transparent 1.1px) 0 0 / 5px 5px;
   box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55);
   display: grid; place-items: center;
   overflow: hidden; min-height: 0;
+  position: relative;
 }
+.gi-carte .c-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 .gi-carte .c-art svg { width: 62%; height: auto; }
 .gi-carte .c-art > * { grid-area: 1 / 1; }
 .gi-carte .c-nom-petit { display: none; }
 .gi-carte .c-art .c-filigrane {
-  font: 400 30cqi/1 var(--f-titre);
+  font: 400 24cqi/1 var(--f-titre);
   color: transparent;
   -webkit-text-stroke: 0.9cqi rgba(17, 17, 17, 0.55);
   letter-spacing: -0.02em;
 }
-.gi-carte .c-txt {
-  margin: 0; background: var(--case); border-radius: 2cqi; padding: 3cqi 3.5cqi;
-  font: 400 5.6cqi/1.3 var(--f-texte);
+.gi-carte .c-bas {
+  background: var(--case); border-radius: 2cqi; padding: 3cqi 3.5cqi; min-height: 0; overflow: hidden;
   box-shadow: 0 0 0 0.7cqi rgba(0, 0, 0, 0.55);
 }
+.gi-carte .c-txt { margin: 0; font: 400 6.2cqi/1.32 var(--f-texte); }
 .gi-carte.grisee { filter: grayscale(1) contrast(0.9); }
 .gi-carte.grisee .c-cadre::after {
   content: ''; position: absolute; inset: 0; border-radius: inherit;
@@ -205,9 +209,10 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 /* Rang hors carte (listes, fiches) */
 .gi-rang.seul { font-size: 15px; padding: 4px 8px; border-radius: 4px; box-shadow: 0 0 0 2px var(--encre); display: inline-block; }
 
-/* Carte vue petite (pochette du Book) */
+/* Carte vue petite (pochette du Book) : le texte, illisible, disparaît ; l'image remplit la carte sous le numéro
+   (recadrée au centre) ; un sort ou un objet garde son nom en bandeau au pied de l'image. */
 @container (max-width: 130px) {
-  .gi-carte .c-nom, .gi-carte .c-txt { display: none; }
+  .gi-carte .c-nom, .gi-carte .c-bas { display: none; }
   .gi-carte .c-tete { grid-template-columns: 1fr auto; padding: 4cqi; }
   .gi-carte .c-num { font-size: 17cqi; }
   /* Numéros à 4 chiffres des sorts et objets (« 1007 ») : lisibles en petite carte. */
@@ -217,7 +222,13 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   .gi-carte .r-sort, .gi-carte .r-objet { display: none; }
   .gi-carte.f-sort .c-tete, .gi-carte.f-objet .c-tete { grid-template-columns: 1fr; }
   .gi-carte .c-cadre { padding: 6cqi; gap: 5cqi; grid-template-rows: auto 1fr; }
-  .gi-carte .c-nom-petit { display: block; padding: 0 5cqi; font: 800 14cqi/1.1 var(--f-texte); text-align: center; hyphens: auto; overflow-wrap: break-word; background: rgba(251, 251, 247, 0.85); }
+  .gi-carte .c-art { aspect-ratio: auto; }
+  .gi-carte .c-art .c-filigrane { font-size: 40cqi; }
+  .gi-carte .c-nom-petit {
+    display: block; position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: 3cqi 4cqi;
+    font: 800 13cqi/1.08 var(--f-texte); text-align: center; hyphens: auto; overflow-wrap: break-word;
+    background: rgba(251, 251, 247, 0.92); box-shadow: 0 -0.7cqi 0 rgba(0, 0, 0, 0.55);
+  }
   .gi-carte:is(.f-sort, .f-objet) .c-filigrane { opacity: 0.35; }
 }
 

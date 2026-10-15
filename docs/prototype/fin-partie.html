@@ -1,0 +1,889 @@
+<meta charset="utf-8">
+<title>Fin de Greed Island</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Prototype de la page ⑱ : fin de partie (cinématique « Gong et podium », classement final, ta place), abandon depuis la licence (double confirmation, licence rayée) et mode spectateur.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@800&family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,800;1,400&family=Dela+Gothic+One&family=DotGothic16&display=swap">
+<style>
+/* Page ⑱ : fin de partie et abandon. Planche claire de l'app ; la fin se joue à l'encre (nuit, gong, tampon rouge),
+   les marches du podium prennent les matières des rangs (or SS, argent S, bronze A) ; l'or plein reste au Clear. */
+:root {
+  color-scheme: light;
+  --papier: #eeefe9;
+  --case: #fbfbf7;
+  --case-2: #ecece6;
+  --encre: #111111;
+  --encre-2: #3b3d40;
+  --trame: rgba(17, 17, 17, 0.16);
+  --rouge: #c0272d;
+  --rouge-encre: #b3161c;
+  --bleu: #1f4a9c;
+  --or: #d7b25a;
+  --or-fonce: #8a6a12;
+  --or-vif: #ffd877;
+  --lumiere: #fff1c9;
+  --succes: #17713a;
+  --nuit: #0c0c0e;
+  --gris: #6c6e72;
+  --f-titre: 'Dela Gothic One', 'Arial Black', sans-serif;
+  --f-texte: 'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif;
+  --f-chiffre: 'Atkinson Hyperlegible Mono', ui-monospace, monospace;
+  --f-jeu: 'DotGothic16', ui-monospace, monospace;
+  --trait: 3px;
+  --sortie: cubic-bezier(0.16, 1, 0.3, 1);
+  --m-or: linear-gradient(125deg, #9c7a1c 0%, #f6dc85 28%, #c39a2c 50%, #fbe7a6 72%, #a8841f 100%);
+  --m-argent: linear-gradient(125deg, #8d949b 0%, #f1f3f5 35%, #aab1b8 60%, #e9ecef 100%);
+  --m-bronze: linear-gradient(125deg, #c97a4a 0%, #f2b48a 45%, #d88a58 100%);
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { overflow-x: clip; }
+body { margin: 0; background: var(--papier); color: var(--encre); font: 400 17px/1.45 var(--f-texte); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+::selection { background: var(--encre); color: var(--case); }
+:focus-visible { outline: 3px solid var(--bleu); outline-offset: 3px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { cursor: default; }
+
+.app { max-width: 480px; margin: 0 auto; padding: 0 16px 104px; display: grid; gap: 14px; }
+.app > * { min-width: 0; }
+
+/* Commandes du prototype (pas dans l'app) */
+.proto { display: grid; gap: 7px; padding: 10px 12px; margin-inline: -16px; background: var(--encre); color: var(--case); }
+.proto p { margin: 0; font: 600 13px/1.3 var(--f-texte); }
+.proto .rang { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.proto .rang > span { font: 800 12px var(--f-texte); color: #b9bcc2; min-width: 58px; }
+.proto button { min-height: 36px; padding: 0 10px; border: 2px solid var(--case); background: transparent; color: var(--case); font: 700 13px var(--f-texte); }
+.proto button[aria-pressed='true'] { background: var(--case); color: var(--encre); }
+.proto button:disabled { opacity: 0.35; }
+
+/* Barre d'état et onglets de l'app */
+.barre { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; margin-inline: -16px; padding: 10px 16px; background: var(--case); border-bottom: var(--trait) solid var(--encre); display: flex; align-items: center; gap: 12px; min-height: 58px; }
+.chrono { font: 800 30px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.chrono.fini { font: 400 22px/1 var(--f-titre); letter-spacing: 0; }
+.liaison { display: flex; align-items: center; gap: 6px; font: 600 14px var(--f-texte); }
+.pastille { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--encre); background: var(--succes); display: inline-block; }
+.jenny { margin-left: auto; font: 800 22px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.jenny small { font: 600 15px var(--f-texte); margin-left: 3px; }
+.onglets { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, 1fr); background: var(--case); border-top: var(--trait) solid var(--encre); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.onglets button { position: relative; min-height: 64px; border: 0; border-right: 1.5px solid var(--encre); background: transparent; display: grid; justify-items: center; align-content: center; gap: 3px; font: 800 12.5px/1 var(--f-texte); padding: 6px 2px; }
+.onglets button:last-child { border-right: 0; }
+.onglets svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.onglets button[aria-current='page'] { background: var(--encre); color: var(--case); }
+/* Spectateur ou partie terminée : les onglets d'action sont barrés. */
+.onglets button.ferme { color: #9a9b9e; }
+.onglets button.ferme::after { content: ''; position: absolute; left: 22%; right: 22%; top: 50%; height: 3px; background: currentColor; rotate: -24deg; translate: 0 -8px; border-radius: 2px; }
+
+.aide { font: 400 15px/1.35 var(--f-texte); color: var(--encre-2); margin: 0; }
+.case { background: var(--case); border: var(--trait) solid var(--encre); padding: 14px 16px; display: grid; gap: 12px; }
+.case h2 { margin: 0; font: 400 20px/1.1 var(--f-titre); }
+.case p { margin: 0; }
+.btn-encre { min-height: 52px; border: var(--trait) solid var(--encre); background: var(--encre); color: var(--case); font: 800 17px var(--f-texte); padding: 0 16px; }
+.btn-trait { min-height: 48px; border: var(--trait) solid var(--encre); background: var(--case); color: var(--encre); font: 800 16px var(--f-texte); padding: 0 14px; }
+.btn-encre:active, .btn-trait:active { translate: 0 2px; }
+.titre-page { display: flex; align-items: center; gap: 12px; padding-top: 8px; }
+.titre-page h1 { margin: 0; font: 400 clamp(26px, 8vw, 32px)/1 var(--f-titre); }
+
+/* ---------- Boîte du jeu ---------- */
+.gi-annonce { position: fixed; z-index: 70; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 70px); width: min(calc(100% - 24px), 440px); transform: translate(-50%, calc(-100% - 120px)); visibility: hidden; transition: transform 0.45s var(--sortie), visibility 0s 0.45s; background: var(--nuit); color: #f6f6f2; border-radius: 6px; box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f6f6f2, inset 0 0 0 8px var(--nuit), inset 0 0 0 9px #f6f6f2, 0 16px 30px -14px rgba(0, 0, 0, 0.6); padding: 22px 22px 18px; display: grid; gap: 8px; }
+.gi-annonce.visible { transform: translate(-50%, 0); visibility: visible; transition: transform 0.45s var(--sortie), visibility 0s; }
+.a-qui { justify-self: start; font: 400 15px/1 var(--f-jeu); background: #f6f6f2; color: var(--nuit); padding: 4px 8px; }
+.a-qui.or { background: var(--or-vif); }
+.a-qui.rouge { background: #ff5a4a; color: #fff; }
+.gi-annonce .a-texte { font: 400 20px/1.4 var(--f-jeu); margin: 0; }
+.gi-dialogue { background: var(--nuit); color: #f6f6f2; border-radius: 6px; box-shadow: inset 0 0 0 3px var(--nuit), inset 0 0 0 5px #f6f6f2, inset 0 0 0 8px var(--nuit), inset 0 0 0 9px #f6f6f2, 0 10px 24px -10px rgba(0, 0, 0, 0.6); padding: 18px 20px 16px; display: grid; gap: 10px; }
+.gi-dialogue .a-texte { font: 400 19px/1.45 var(--f-jeu); margin: 0; min-height: 1.45em; }
+.gi-dialogue .a-indice { margin: 0; font: 600 14px/1.3 var(--f-texte); color: #c3c6cc; opacity: 0; transition: opacity 0.3s; }
+.gi-dialogue .a-indice.visible { opacity: 1; }
+
+/* ---------- Licence (version courte de la page ⑤) ---------- */
+.licence-vol { position: relative; width: min(100%, 300px); justify-self: center; aspect-ratio: 54 / 85.6; }
+.licence { position: absolute; inset: 0; border-radius: 16px; overflow: hidden; color: #eef0f2; padding: 22px 20px 20px; display: grid; grid-template-rows: auto 1fr auto; justify-items: center; align-items: center; gap: 12px;
+  background: #121418 repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.035) 0 2px, transparent 2px 9px);
+  box-shadow: inset 0 0 0 2px #2b2f36, inset 0 0 0 8px #121418, inset 0 0 0 9px #8e949c, 0 16px 28px -14px rgba(0, 0, 0, 0.6); transition: filter 0.6s; }
+.licence-tete { justify-self: start; display: flex; align-items: center; gap: 12px; }
+.licence-tete svg { width: 46px; height: 46px; flex: none; }
+.licence-tete strong { display: block; font: 400 22px/1 var(--f-titre); letter-spacing: 0.16em; }
+.licence-tete span { display: block; margin-top: 5px; font: 600 13px/1.2 var(--f-texte); color: #c3c8cf; }
+.qr-plaque { width: 100%; aspect-ratio: 1; background: #fff; border-radius: 8px; padding: 12px; }
+.qr-plaque svg { width: 100%; height: 100%; display: block; }
+.licence-pied { width: 100%; display: flex; justify-content: space-between; align-items: end; gap: 12px; }
+.licence-pied b { font: 400 26px/1 var(--f-titre); }
+.licence-pied span { text-align: right; font: 600 14px/1.25 var(--f-texte); color: #c3c8cf; }
+.licence-pied span i { display: block; font: 400 17px/1.1 var(--f-titre); font-style: normal; color: #7fd1ff; }
+/* Licence rayée après l'abandon : grisée, trait d'encre rouge et tampon. */
+.licence-vol.rayee .licence { filter: grayscale(1) brightness(0.72); }
+.licence-vol .rature, .licence-vol .tampon-abandon { position: absolute; pointer-events: none; }
+.licence-vol .rature { inset: -6% -10%; width: 120%; height: 112%; overflow: visible; }
+.licence-vol .tampon-abandon { left: 50%; top: 54%; width: 92%; translate: -50% -50%; rotate: -14deg; }
+.licence-vol .tampon-abandon svg { width: 100%; height: auto; display: block; overflow: visible; }
+.consigne { gap: 8px; }
+/* Le lien discret pour quitter, tout en bas, loin du QR. */
+.quitter { justify-self: center; margin-top: 18px; min-height: 48px; padding: 0 12px; border: 0; background: none; display: inline-flex; align-items: center; gap: 8px; font: 600 15px var(--f-texte); color: var(--encre-2); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1.5px; }
+.quitter svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- Fiche du bas : quitter la partie ---------- */
+.fond { position: fixed; inset: 0; z-index: 60; background: rgba(12, 12, 14, 0.55); display: grid; align-items: end; justify-items: center; }
+.feuille-bas { width: min(100%, 480px); max-height: 90dvh; overflow: auto; background: var(--case); border-top: var(--trait) solid var(--encre); padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 14px; animation: monte 0.32s var(--sortie); }
+@keyframes monte { from { translate: 0 40%; opacity: 0; } }
+.feuille-bas h2 { margin: 0; font: 400 24px/1.05 var(--f-titre); }
+.feuille-bas .actions { display: grid; gap: 10px; }
+.pertes { margin: 0; padding: 0; list-style: none; display: grid; gap: 0; border: 2px solid var(--encre); }
+.pertes li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; padding: 10px 12px; font: 400 16px/1.35 var(--f-texte); }
+.pertes li + li { border-top: 1.5px solid var(--trame); }
+.pertes li b { font-weight: 800; }
+.pertes svg { width: 22px; height: 22px; margin-top: 1px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.pertes li.garde svg { color: var(--succes); }
+.pertes li.perd svg { color: var(--rouge-encre); }
+/* Bouton à maintenir 2 s : l'encre rouge monte de gauche à droite. */
+.maintien { position: relative; overflow: hidden; min-height: 56px; border: var(--trait) solid var(--rouge-encre); background: var(--case); color: var(--rouge-encre); font: 800 17px var(--f-texte); padding: 0 16px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.maintien .remplir { position: absolute; inset: 0; background: var(--rouge-encre); transform-origin: left; scale: 0 1; }
+.maintien .lib { position: relative; display: inline-flex; align-items: center; gap: 8px; }
+.maintien .lib.sur { position: absolute; inset: 0; justify-content: center; color: #fff; clip-path: inset(0 100% 0 0); }
+.maintien-aide { margin: -4px 0 0; text-align: center; font: 600 14px/1.3 var(--f-texte); color: var(--encre-2); min-height: 1.3em; }
+
+/* ---------- Spectateur ---------- */
+.bandeau-spect { margin-top: -14px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 58px); z-index: 29; margin-inline: -16px; padding: 10px 16px; border-bottom: var(--trait) solid var(--encre); background: #2a2b2e repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0 2px, transparent 2px 8px); color: #f2f2ee; display: flex; align-items: center; gap: 10px; font: 600 15px/1.3 var(--f-texte); }
+.bandeau-spect b { font-weight: 800; }
+.bandeau-spect svg { flex: none; width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.fil { margin: 0; padding: 0; list-style: none; display: grid; }
+.fil li { display: grid; grid-template-columns: 62px 1fr; gap: 10px; padding: 9px 0; font: 400 16px/1.35 var(--f-texte); }
+.fil li + li { border-top: 1.5px solid var(--trame); }
+.fil time { font: 800 14px/1.5 var(--f-chiffre); font-variant-numeric: tabular-nums; color: var(--encre-2); }
+.fige { display: grid; grid-template-columns: repeat(3, 1fr); border: 2px solid var(--encre); }
+.fige div { padding: 10px 8px; display: grid; gap: 2px; text-align: center; }
+.fige div + div { border-left: 1.5px solid var(--trame); }
+.fige b { font: 800 22px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.fige span { font: 600 13px/1.2 var(--f-texte); color: var(--encre-2); }
+
+/* ---------- Classement final ---------- */
+.fin-tete { display: grid; gap: 4px; padding-top: 8px; }
+.fin-tete h1 { margin: 0; font: 400 clamp(28px, 9vw, 36px)/1 var(--f-titre); }
+.fin-tete p { margin: 0; font: 600 15px/1.35 var(--f-texte); color: var(--encre-2); }
+.ruban-clear { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: var(--trait) solid var(--encre); background: linear-gradient(100deg, #2b2006, #4a3809 60%, #2b2006); color: var(--lumiere); font: 600 16px/1.3 var(--f-texte); }
+.ruban-clear b { color: var(--or-vif); font-weight: 800; }
+.ruban-clear .mini-sceau { flex: none; width: 34px; height: 34px; }
+.ruban-clear .mini-sceau svg { width: 100%; height: 100%; display: block; }
+/* Podium : trois marches d'encre, plaque de matière dessus (or, argent, bronze). */
+.podium { --ph: 168px; display: grid; grid-template-columns: 1fr 1.12fr 1fr; align-items: end; gap: 6px; padding: 8px 0 0; border-bottom: var(--trait) solid var(--encre); }
+.marche { display: grid; gap: 6px; justify-items: center; text-align: center; min-width: 0; }
+.marche .qui { display: grid; gap: 1px; min-width: 0; width: 100%; }
+.marche .qui b { font: 400 var(--fs, 17px)/1.1 var(--f-titre); white-space: nowrap; }
+.marche .qui span { font: 600 13px/1.2 var(--f-texte); color: var(--encre-2); font-variant-numeric: tabular-nums; }
+.marche .bloc { width: 100%; position: relative; background: var(--encre); color: var(--case); display: grid; place-items: start center; padding-top: 16px;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1.2px); background-size: 5px 5px; }
+.marche .bloc::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 10px; background: var(--metal); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.35); }
+.marche .bloc strong { font: 400 40px/1 var(--f-titre); }
+.marche.p1 .bloc { height: var(--ph); --metal: var(--m-or); }
+.marche.p2 .bloc { height: calc(var(--ph) * 0.72); --metal: var(--m-argent); }
+.marche.p3 .bloc { height: calc(var(--ph) * 0.52); --metal: var(--m-bronze); }
+.marche.moi .bloc { background-color: var(--rouge-encre); }
+.marche .toi { font: 400 13px/1 var(--f-jeu); background: var(--rouge-encre); color: #fff; padding: 3px 6px; }
+.marche .sceau-clear { width: 30px; height: 30px; }
+/* Ta fiche : un formulaire de Hunter rempli, tamponné de ta place. */
+.ta-fiche { position: relative; background: var(--case); border: var(--trait) solid var(--encre); padding: 14px 16px 16px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 36%); column-gap: 12px; row-gap: 4px; align-items: center; }
+.ta-fiche h2 { grid-column: 1 / -1; margin: 0 0 6px; font: 400 20px/1.1 var(--f-titre); }
+.ta-fiche dl { margin: 0; display: grid; gap: 0; }
+.ta-fiche dl div { display: flex; align-items: baseline; gap: 6px; padding: 5px 0; }
+.ta-fiche dt { font: 600 15px/1.3 var(--f-texte); color: var(--encre-2); white-space: nowrap; }
+.ta-fiche dd { margin: 0 0 0 auto; font: 800 18px/1.3 var(--f-chiffre); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ta-fiche dl div::after { content: none; }
+.ta-fiche dl div > i { flex: 1; min-width: 12px; border-bottom: 2px dotted var(--trame); translate: 0 -4px; }
+.ta-fiche .note { margin: 6px 0 0; font: 400 14px/1.35 var(--f-texte); color: var(--encre-2); grid-column: 1 / -1; }
+.ta-fiche .tampon-place { grid-row: 2; grid-column: 2; width: 100%; max-width: 160px; justify-self: center; rotate: -12deg; }
+.ta-fiche .tampon-place svg { width: 100%; height: auto; display: block; overflow: visible; }
+.liste-tete { display: grid; grid-template-columns: 48px 1fr 62px 50px; gap: 8px; padding: 0 12px; font: 600 13px/1.2 var(--f-texte); color: var(--encre-2); }
+.liste-tete span:nth-child(n + 3) { text-align: right; }
+.classement { margin: -6px 0 0; padding: 0; list-style: none; background: var(--case); border: var(--trait) solid var(--encre); }
+.ligne { display: grid; grid-template-columns: 48px 1fr 62px 50px; gap: 8px; align-items: center; min-height: 52px; padding: 6px 12px; }
+.ligne + .ligne { border-top: 1.5px solid var(--trame); }
+.ligne .pl { font: 400 20px/1 var(--f-titre); }
+.ligne .pl small { display: block; margin-top: 3px; font: 600 11px/1 var(--f-texte); color: var(--encre-2); }
+.ligne .ps { font: 800 17px/1.2 var(--f-texte); min-width: 0; overflow-wrap: anywhere; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ligne .ps em { font: 400 12px/1 var(--f-jeu); font-style: normal; border: 1.5px solid currentColor; padding: 2px 5px; color: var(--gris); }
+.ligne .nb, .ligne .pt { text-align: right; font: 800 17px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.ligne .nb small { font: 600 13px var(--f-texte); color: var(--encre-2); }
+.ligne.moi { background: var(--encre); color: var(--case); }
+.ligne.moi .pl small, .ligne.moi .nb small { color: #c3c6cc; }
+.ligne.moi .ps em { color: #c3c6cc; }
+/* Ta ligne épinglée au-dessus des onglets quand elle est hors de l'écran. */
+.epingle { position: fixed; left: 50%; bottom: calc(64px + 3px + env(safe-area-inset-bottom, 0px) + 8px); width: min(calc(100% - 32px), 448px); translate: -50% 0; z-index: 25; border: var(--trait) solid var(--encre); box-shadow: 0 10px 22px -10px rgba(0, 0, 0, 0.55); transition: translate 0.3s var(--sortie), opacity 0.3s; }
+.epingle.cache { translate: -50% 30px; opacity: 0; pointer-events: none; }
+.epingle .ligne { cursor: pointer; }
+details.depart { background: var(--case); border: 2px solid var(--encre); }
+details.depart summary { min-height: 48px; padding: 0 14px; display: flex; align-items: center; gap: 8px; font: 800 15px var(--f-texte); cursor: pointer; list-style: none; }
+details.depart summary::-webkit-details-marker { display: none; }
+details.depart summary svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.6; transition: rotate 0.2s; }
+details.depart[open] summary svg { rotate: 90deg; }
+details.depart ol { margin: 0; padding: 0 16px 14px 38px; display: grid; gap: 6px; font: 400 15px/1.4 var(--f-texte); }
+
+/* ---------- Effets : un seul canvas au-dessus de tout ---------- */
+#fx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 90; pointer-events: none; }
+
+/* ---------- Cinématiques ---------- */
+.cine { position: fixed; inset: 0; z-index: 65; overflow: hidden; visibility: hidden; cursor: pointer; color: #f6f1e2; }
+.cine.joue { visibility: visible; }
+.cine .scene { position: absolute; inset: 0; }
+.cine .nuit { position: absolute; inset: 0; opacity: 0; background: radial-gradient(ellipse at 50% 40%, #2a2a31 0, #121216 48%, #040405 92%); }
+.cine .lignes { position: absolute; inset: -30%; opacity: 0; pointer-events: none; }
+.cine .lignes svg { width: 100%; height: 100%; }
+.cine .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+.cine .dialogue { position: absolute; left: 50%; bottom: max(18px, env(safe-area-inset-bottom, 0px)); width: min(calc(100% - 24px), 440px); translate: -50% 0; opacity: 0; z-index: 3; }
+.cine .passer { pointer-events: none; position: absolute; bottom: max(16px, env(safe-area-inset-bottom, 0px)); left: 50%; translate: -50% 0; font: 600 13px var(--f-texte); color: rgba(235, 238, 242, 0.75); white-space: nowrap; opacity: 0; transition: opacity 0.25s; }
+.cine.intro .passer { opacity: 1; transition-delay: 0.6s; }
+/* Le gong : portique d'encre, disque de bronze. */
+.gong { position: absolute; left: 50%; top: 40%; width: min(74vw, 300px, 46dvh); aspect-ratio: 1; translate: -50% -50%; opacity: 0; }
+.gong svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.gong .disque { transform-origin: 50% 24%; transform-box: view-box; }
+/* « FIN DE PARTIE » frappé à l'encre. */
+.cri { position: absolute; left: 0; right: 0; top: max(26px, 8dvh); display: grid; justify-items: center; gap: 2px; rotate: -4deg; opacity: 0; pointer-events: none; z-index: 2; }
+.cri span { white-space: nowrap; font: 400 min(17vw, 92px)/0.92 var(--f-titre); letter-spacing: -0.03em; color: #fff; -webkit-text-stroke: 4px var(--nuit); paint-order: stroke fill; filter: drop-shadow(0 5px 0 var(--nuit)); }
+.cri span + span { font-size: min(13vw, 70px); }
+/* Ruban doré du Clear, rappelé en tête. */
+.c-ruban { position: absolute; left: 50%; top: calc(max(26px, 8dvh) + min(31vw, 168px)); translate: -50% 0; display: flex; align-items: center; gap: 10px; padding: 8px 18px 8px 10px; background: linear-gradient(100deg, #2b2006, #4a3809 60%, #2b2006); box-shadow: inset 0 0 0 2px var(--or-vif); color: var(--lumiere); font: 600 16px/1.2 var(--f-texte); white-space: nowrap; opacity: 0; clip-path: inset(0 50% 0 50%); z-index: 2; }
+.c-ruban b { color: var(--or-vif); font-weight: 800; }
+.c-ruban .mini-sceau { width: 32px; height: 32px; flex: none; }
+.c-ruban .mini-sceau svg { width: 100%; height: 100%; display: block; }
+/* Podium de la cinématique. */
+.c-podium { --ph: min(24dvh, 200px); position: absolute; left: 50%; bottom: calc(max(18px, env(safe-area-inset-bottom, 0px)) + 196px); width: min(94vw, 420px); translate: -50% 0; overflow: hidden; padding-top: 40px; border-bottom: 3px solid #f6f6f2; display: grid; grid-template-columns: 1fr 1.14fr 1fr; align-items: end; gap: 6px; }
+.c-podium:empty { display: none; }
+.c-marche { display: grid; justify-items: center; gap: 8px; text-align: center; min-width: 0; }
+.c-marche .nom { display: grid; gap: 2px; opacity: 0; min-width: 0; width: 100%; }
+.c-marche .nom b { font: 400 var(--fs, 22px)/1.05 var(--f-titre); color: #fff; white-space: nowrap; -webkit-text-stroke: 1.5px var(--nuit); paint-order: stroke fill; }
+.c-marche .nom span { font: 600 13px/1.2 var(--f-texte); color: #d6d8dc; font-variant-numeric: tabular-nums; }
+.c-marche .bloc { width: 100%; position: relative; background: #f6f6f2; color: var(--nuit); display: grid; place-items: start center; padding-top: 14px; translate: 0 101%;
+  background-image: radial-gradient(rgba(17, 17, 17, 0.2) 1px, transparent 1.2px); background-size: 5px 5px; box-shadow: inset 0 0 0 3px var(--nuit); }
+.c-marche .bloc::before { content: ''; position: absolute; left: 3px; right: 3px; top: 3px; height: 12px; background: var(--metal); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.35); }
+.c-marche .bloc strong { margin-top: 10px; font: 400 min(13vw, 58px)/1 var(--f-titre); }
+.c-marche.p1 .bloc { height: var(--ph); --metal: var(--m-or); }
+.c-marche.p2 .bloc { height: calc(var(--ph) * 0.72); --metal: var(--m-argent); }
+.c-marche.p3 .bloc { height: calc(var(--ph) * 0.52); --metal: var(--m-bronze); }
+.c-marche.moi .bloc { background-color: #ffd9d6; }
+/* Ta place : tampon rouge qui tombe en dernier. */
+.c-tampon { position: absolute; left: 50%; top: 44%; width: min(70vw, 300px); translate: -50% -50%; rotate: -12deg; opacity: 0; z-index: 2; filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.45)); }
+.c-tampon svg { width: 100%; height: auto; display: block; overflow: visible; }
+.c-tampon.petit { width: min(27vw, 118px); }
+/* Abandon : la licence au centre, rayée. */
+.c-licence { position: absolute; left: 50%; top: 42%; width: min(62vw, 250px, 40dvh); translate: -50% -50%; opacity: 0; }
+.c-licence .licence-vol { width: 100%; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Encre des tampons : bord mangé et manques. -->
+    <filter id="encre" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" result="grain"/>
+      <feDisplacementMap in="SourceGraphic" in2="grain" scale="3.2" result="bord"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.22" numOctaves="2" seed="11" result="taches"/>
+      <feColorMatrix in="taches" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2.3 2.2" result="masque"/>
+      <feComposite in="bord" in2="masque" operator="in"/>
+    </filter>
+    <!-- Trait de pinceau : bords irréguliers. -->
+    <filter id="pinceau" x="-5%" y="-20%" width="110%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.06 0.5" numOctaves="2" seed="7" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="7"/>
+    </filter>
+    <radialGradient id="cire" cx="38%" cy="32%" r="70%">
+      <stop offset="0" stop-color="#fff3c4"/><stop offset="0.35" stop-color="#f2cd6a"/><stop offset="0.75" stop-color="#b8861f"/><stop offset="1" stop-color="#7a5510"/>
+    </radialGradient>
+    <radialGradient id="bronze" cx="40%" cy="34%" r="72%">
+      <stop offset="0" stop-color="#f3c98a"/><stop offset="0.3" stop-color="#c98a3c"/><stop offset="0.7" stop-color="#8a5420"/><stop offset="1" stop-color="#4a2a0e"/>
+    </radialGradient>
+  </defs>
+</svg>
+
+<div class="app">
+  <div class="proto" role="group" aria-label="Commandes du prototype">
+    <p>Prototype : tu es Gon, 23 joueurs classés, 14 cartes désignées. Choisis comment la partie finit et ta place, puis lance la fin.</p>
+    <div class="rang"><span>Fin</span>
+      <button id="p-temps" aria-pressed="true">heure de fin</button>
+      <button id="p-clear" aria-pressed="false">Clear de Kirua</button>
+    </div>
+    <div class="rang"><span>Ta place</span>
+      <button data-place="1" aria-pressed="false">1er</button>
+      <button data-place="3" aria-pressed="false">3e</button>
+      <button data-place="7" aria-pressed="true">7e</button>
+      <button data-place="19" aria-pressed="false">19e</button>
+    </div>
+    <div class="rang"><span>Partie</span>
+      <button id="p-fin">la partie se termine</button>
+      <button id="p-faux" aria-pressed="true">1 contrefaçon chez Gon</button>
+    </div>
+    <div class="rang"><span>Abandon</span>
+      <button id="p-licence">ouvrir la licence</button>
+      <button id="p-ss" aria-pressed="false">Gon a la SS</button>
+      <button id="p-reset">tout remettre</button>
+    </div>
+  </div>
+
+  <header class="barre" aria-label="État de la partie">
+    <span class="chrono" id="chrono" role="timer">0:04:12</span>
+    <span class="liaison"><i class="pastille"></i>En ligne</span>
+    <span class="jenny"><span>212</span><small>J</small></span>
+  </header>
+  <div class="bandeau-spect" id="bandeau-spect" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+    <span><b>Tu as quitté la partie.</b> Tu la suis jusqu'à la fin et tu restes classé.</span>
+  </div>
+
+  <!-- Accueil pendant la partie (seulement pour situer) ou en spectateur -->
+  <div id="page-accueil" style="display:grid;gap:14px">
+    <div class="titre-page"><h1>Accueil</h1></div>
+    <section class="case" id="acc-joueur">
+      <h2>Gon</h2>
+      <p class="aide">L'accueil de la partie (page ④). Il n'est montré ici que pour situer : la licence s'ouvre depuis cet écran, et la fin de partie arrive par-dessus n'importe quelle page.</p>
+      <button class="btn-encre" id="vers-licence">Ma licence</button>
+    </section>
+    <section class="case" id="acc-spect" hidden>
+      <h2>Ton Book au moment de partir</h2>
+      <div class="fige"><div><b>10/14</b><span>désignées</span></div><div><b>212</b><span>jenny</span></div><div><b>6</b><span>libres</span></div></div>
+      <p class="aide">Ton Book reste consultable, mais plus rien n'y bouge : pas de scan, de sort, d'échange ni d'achat.</p>
+      <button class="btn-trait" id="voir-book">Ouvrir mon Book</button>
+    </section>
+    <section class="case" id="acc-fil" hidden>
+      <h2>Annonces de l'île</h2>
+      <ul class="fil">
+        <li><time>1:52</time><span>Kirua a déclaré le Clear.</span></li>
+        <li><time>1:47</time><span>Le Raid de la Brigade est terminé : victoire des joueurs.</span></li>
+        <li><time>1:31</time><span>Une carte SS est réapparue sur l'île.</span></li>
+      </ul>
+    </section>
+  </div>
+
+  <!-- Licence -->
+  <div id="page-licence" hidden style="display:grid;gap:14px">
+    <div class="titre-page"><h1>Licence de Hunter</h1></div>
+    <section class="case" style="padding:16px">
+      <div class="licence-vol" id="licence-vol"></div>
+    </section>
+    <section class="case consigne" id="licence-consigne">
+      <p><b>Montre-la à un PNJ ou au GM</b> : checkpoint, enchère, arène, Clear.</p>
+      <p class="aide">Le code change toutes les 30 secondes et marche sans réseau.</p>
+    </section>
+    <button class="quitter" id="quitter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10"/></svg>Quitter la partie</button>
+  </div>
+
+  <!-- Classement final -->
+  <div id="page-fin" hidden style="display:grid;gap:14px">
+    <div class="fin-tete">
+      <h1>Classement final</h1>
+      <p id="fin-sous">Les plaines de Yorknew · 23 joueurs classés</p>
+    </div>
+    <div class="ruban-clear" id="ruban" hidden><span class="mini-sceau" id="ruban-sceau"></span><span><b>Clear réussi</b> par Kirua à 1:52 de jeu</span></div>
+    <section class="podium" id="podium" aria-label="Podium"></section>
+    <section class="ta-fiche" id="ta-fiche" aria-labelledby="ta-fiche-t"></section>
+    <div class="liste-tete" aria-hidden="true"><span>Place</span><span>Hunter</span><span>Cartes</span><span>Points</span></div>
+    <ol class="classement" id="classement" aria-label="Classement complet"></ol>
+    <details class="depart">
+      <summary><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>Comment on départage</summary>
+      <ol>
+        <li>Le plus de cartes désignées différentes (les vraies seulement : une contrefaçon ne compte pas).</li>
+        <li>Puis la somme de leurs rangs : SS 6, S 5, A 4, B 3, C 2, D 1.</li>
+        <li>Puis le plus de jenny.</li>
+        <li>Puis celui qui a obtenu sa dernière carte désignée le plus tôt.</li>
+      </ol>
+    </details>
+  </div>
+</div>
+
+<div class="epingle cache" id="epingle" aria-hidden="true"></div>
+
+<nav class="onglets" aria-label="Navigation">
+  <button data-onglet="accueil" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 3l9 8M6 9.5V21h12V9.5M10 21v-6h4v6"/></svg>Accueil</button>
+  <button data-onglet="scan" data-action><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5M7 12h10"/></svg>Scanner</button>
+  <button data-onglet="livre"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2zM5 19a2 2 0 0 1 2-2h12M9 7h6"/></svg>Book</button>
+  <button data-onglet="sorts" data-action><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 2.6 6.6L21 9.5l-5 4.4 1.6 6.6L12 17l-5.6 3.5L8 13.9 3 9.5l6.4-.9z"/></svg>Sorts</button>
+  <button data-onglet="echanges" data-action><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg>Échanges</button>
+</nav>
+
+<div class="gi-annonce" id="annonce" role="status"><span class="a-qui" id="an-qui">Greed Island</span><p class="a-texte" id="an-texte"></p></div>
+
+<div class="fond" id="fond" hidden><div class="feuille-bas" id="fiche" role="dialog" aria-modal="true" aria-labelledby="fiche-titre"></div></div>
+
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<!-- Cinématiques : fin de partie (gong et podium), abandon (licence rayée) -->
+<div class="cine" id="cine" aria-hidden="true">
+  <div class="scene" id="c-scene">
+    <div class="nuit" id="c-nuit"></div>
+    <div class="lignes" id="c-lignes"></div>
+    <div class="gong" id="c-gong"></div>
+    <div class="cri" id="c-cri"><span>FIN DE</span><span>PARTIE</span></div>
+    <div class="c-ruban" id="c-ruban"><span class="mini-sceau" id="c-ruban-sceau"></span><span><b>CLEAR</b> · Kirua</span></div>
+    <div class="c-podium" id="c-podium"></div>
+    <div class="c-licence" id="c-licence"></div>
+    <div class="c-tampon" id="c-tampon"></div>
+  </div>
+  <div class="flash" id="c-flash"></div>
+  <div class="dialogue gi-dialogue" id="c-dialogue" role="status">
+    <span class="a-qui" id="c-qui">Greed Island</span>
+    <p class="a-texte" id="c-texte"></p>
+    <p class="a-indice" id="c-indice">Touche pour continuer</p>
+  </div>
+  <span class="passer">Touche pour passer</span>
+</div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const vibrer = (p) => navigator.vibrate?.(p);
+const ordinal = (n) => (n === 1 ? '1er' : `${n}e`);
+
+// ---------- Données du prototype ----------
+// Dans l'app : évènement `classement_final` (place, pseudo, cartes, points ; ni jenny ni heure pour les autres),
+// et pour soi le détail (vraies cartes, points, jenny, heure de la dernière carte, contrefaçons écartées).
+const N = 14, TOTAL = 23;
+const AUTRES = [
+  ['Kirua', 14, 58], ['Kurapika', 13, 51], ['Biscuit', 12, 47], ['Tsezguerra', 12, 44], ['Leolio', 11, 40], ['Hisoka', 11, 40],
+  ['Machi', 10, 37], ['Knuckle', 10, 33], ['Shizuku', 9, 31], ['Goreinu', 9, 29], ['Morel', 8, 27], ['Shoot', 8, 25],
+  ['Zushi', 7, 22], ['Ponzu', 6, 19], ['Meleoron', 6, 17], ['Canary', 5, 14], ['Pokkle', 4, 12], ['Ikalgo', 4, 11],
+  ['Palm', 3, 9], ['Nobunaga', 2, 6], ['Wing', 1, 3], ['Kite', 0, 0],
+];
+const ABANDONS = new Set(['Nobunaga', 'Canary']);
+const S = { fin: 'temps', place: 7, faux: true, ss: false, abandon: false, termine: false, vue: 'accueil' };
+
+function classement() {
+  // Gon s'insère à la place choisie ; ses chiffres suivent ceux de la ligne qu'il remplace.
+  const l = AUTRES.map(([pseudo, cartes, points]) => ({ pseudo, cartes, points }));
+  const i = Math.min(S.place - 1, l.length);
+  const ref = l[Math.min(i, l.length - 1)];
+  const gon = { pseudo: 'Gon', cartes: S.place === 1 ? 14 : ref.cartes, points: S.place === 1 ? 60 : ref.points + 1, moi: true };
+  l.splice(i, 0, gon);
+  // Places avec ex æquo (1, 1, 3) : même nombre de cartes et de points ici.
+  let place = 0;
+  l.forEach((r, k) => { r.place = k > 0 && r.cartes === l[k - 1].cartes && r.points === l[k - 1].points ? l[k - 1].place : k + 1; place = r.place; });
+  l.forEach((r) => { r.exaequo = l.filter((x) => x.place === r.place).length > 1; r.abandon = ABANDONS.has(r.pseudo) || (r.moi && S.abandon); });
+  return l;
+}
+
+// ---------- Dessins ----------
+const sceauSVG = () => `<svg viewBox="-60 -60 120 120" aria-hidden="true">
+  <path d="M0 -56 C14 -58 22 -48 34 -46 C46 -42 46 -30 54 -20 C60 -8 52 4 56 16 C58 30 46 36 40 46 C30 56 18 52 6 58 C-8 62 -16 52 -28 50 C-42 46 -44 34 -52 24 C-60 12 -52 0 -56 -12 C-58 -26 -46 -32 -40 -44 C-30 -54 -14 -54 0 -56 Z" fill="url(#cire)" stroke="#5a3d08" stroke-width="2"/>
+  <circle r="40" fill="none" stroke="#7a5510" stroke-width="2.5"/>
+  <g transform="translate(-20 -20) scale(.4)" stroke="#5a3d08" fill="none"><path d="M36 38c0-6 4-10 10-10h8M36 38v24c0 6 4 10 10 10h8V52h-8" stroke-width="7"/><path d="M64 28v44" stroke-width="7"/></g>
+</svg>`;
+// Tampon d'encre rouge (ta place, l'abandon).
+const tampon = (grand, petit, haut = '') => `<svg viewBox="-100 -58 200 116" aria-hidden="true"><g filter="url(#encre)" fill="none" stroke="#c0272d">
+  <rect x="-94" y="-52" width="188" height="104" rx="8" stroke-width="7"/><rect x="-84" y="-42" width="168" height="84" rx="3" stroke-width="2"/>
+  ${haut ? `<text y="-22" text-anchor="middle" fill="#c0272d" stroke="none" style="font: 400 15px 'Dela Gothic One', sans-serif; letter-spacing: 3px">${haut}</text>` : ''}
+  <text y="${haut ? 22 : 14}" text-anchor="middle" fill="#c0272d" stroke="none" style="font: 400 ${grand.length > 4 ? 40 : 54}px 'Dela Gothic One', sans-serif; letter-spacing: -1px">${grand}</text>
+  ${petit ? `<text y="38" text-anchor="middle" fill="#c0272d" stroke="none" style="font: 400 14px 'Dela Gothic One', sans-serif; letter-spacing: 2px">${petit}</text>` : ''}
+</g></svg>`;
+// Tampon long sur une ligne (« ABANDON »).
+const tamponMot = (mot) => `<svg viewBox="-100 -34 200 68" aria-hidden="true"><g filter="url(#encre)" fill="none" stroke="#c0272d">
+  <rect x="-95" y="-29" width="190" height="58" rx="6" stroke-width="6"/><rect x="-87" y="-21" width="174" height="42" rx="2" stroke-width="1.8"/>
+  <text y="12" text-anchor="middle" fill="#c0272d" stroke="none" style="font: 400 31px 'Dela Gothic One', sans-serif; letter-spacing: 1px">${mot}</text>
+</g></svg>`;
+const emblemeHunter = '<svg viewBox="0 0 100 100" fill="none" aria-hidden="true"><path d="M50 4 92 28v44L50 96 8 72V28z" fill="#e7eaee"/><path d="M50 12 85 32v36L50 88 15 68V32z" fill="#121418"/><path d="M34 30v40M66 30v40M34 50h32" stroke="#e7eaee" stroke-width="8" stroke-linecap="square"/><path d="M50 22v8M50 70v8" stroke="#e7eaee" stroke-width="4"/></svg>';
+// Faux QR (dessin déterministe, ce n'est pas un vrai code).
+function fauxQr() {
+  let s = 97; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const n = 25; let d = '';
+  const oeil = (x, y) => `M${x} ${y}h7v7h-7zM${x + 1} ${y + 1}v5h5v-5zM${x + 2} ${y + 2}h3v3h-3z`;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    if ((x < 8 && y < 8) || (x > n - 9 && y < 8) || (x < 8 && y > n - 9)) continue;
+    if (r() < 0.48) d += `M${x} ${y}h1v1h-1z`;
+  }
+  return `<svg viewBox="-1 -1 27 27" shape-rendering="crispEdges"><path fill-rule="evenodd" d="${oeil(0, 0)}${oeil(n - 7, 0)}${oeil(0, n - 7)}${d}" fill="#111"/></svg>`;
+}
+const qr = fauxQr();
+const licenceHTML = (rayee) => `<div class="licence">
+    <div class="licence-tete">${emblemeHunter}<div><strong>HUNTER</strong><span>Licence de Hunter</span></div></div>
+    <div class="qr-plaque">${qr}</div>
+    <div class="licence-pied"><b>Gon</b><span><i>強化系</i>Renforcement</span></div>
+  </div>
+  <svg class="rature" viewBox="0 0 120 112" preserveAspectRatio="none" aria-hidden="true" ${rayee ? '' : 'hidden'}><path class="trait" d="M8 96 C 40 70, 70 46, 112 14" fill="none" stroke="#c0272d" stroke-width="9" stroke-linecap="round" filter="url(#pinceau)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="0"/></svg>
+  <div class="tampon-abandon" ${rayee ? '' : 'hidden'}>${tamponMot('ABANDON')}</div>`;
+function lignesSVG(couleur, graine) {
+  let s = graine; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  let d = '';
+  for (let i = 0; i < 130; i++) {
+    const a = r() * Math.PI * 2, r0 = 40 + r() * 26, w = 0.004 + r() * 0.014;
+    const p = (ang, rad) => `${(Math.cos(ang) * rad).toFixed(1)} ${(Math.sin(ang) * rad).toFixed(1)}`;
+    d += `M${p(a, r0)}L${p(a - w, 170)}L${p(a + w, 170)}Z`;
+  }
+  return `<svg viewBox="-100 -100 200 200" preserveAspectRatio="xMidYMid slice"><path d="${d}" fill="${couleur}"/></svg>`;
+}
+// Le gong : portique, cordes, disque de bronze cerclé, bosse au centre.
+const gongSVG = `<svg viewBox="0 0 200 200" aria-hidden="true">
+  <g stroke="#f6f6f2" stroke-width="7" stroke-linecap="square" fill="none"><path d="M22 196V20M178 196V20M10 22h180"/><path d="M14 12h172" stroke-width="5"/></g>
+  <g class="disque">
+    <path d="M70 22 84 52M130 22 116 52" stroke="#f6f6f2" stroke-width="3"/>
+    <circle cx="100" cy="112" r="64" fill="url(#bronze)" stroke="#1a0f05" stroke-width="4"/>
+    <circle cx="100" cy="112" r="54" fill="none" stroke="#4a2a0e" stroke-width="2.5" opacity=".8"/>
+    <circle cx="100" cy="112" r="40" fill="none" stroke="#f3c98a" stroke-width="1.5" opacity=".5"/>
+    <circle cx="100" cy="112" r="18" fill="#c98a3c" stroke="#4a2a0e" stroke-width="3"/>
+    <path d="M91 104c3-4 10-5 14-1" stroke="#fbe2b6" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>`;
+$('#c-lignes').innerHTML = lignesSVG('#e9ecf2', 23);
+$('#c-gong').innerHTML = gongSVG;
+$('#c-ruban-sceau').innerHTML = sceauSVG();
+$('#ruban-sceau').innerHTML = sceauSVG();
+
+// ---------- Effets (canvas) : étincelles, ondes du gong ----------
+const cv = $('#fx'), ctx = cv.getContext('2d');
+let dpr = 1, parts = [], ondes = [], image = 0, dernierT = 0;
+function taille() { dpr = Math.min(1.5, devicePixelRatio || 1); cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; }
+addEventListener('resize', taille); taille();
+const lueurs = {};
+function lueur(col) {
+  if (lueurs[col]) return lueurs[col];
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d'), rg = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  rg.addColorStop(0, col); rg.addColorStop(0.35, col + '99'); rg.addColorStop(1, col + '00');
+  g.fillStyle = rg; g.fillRect(0, 0, 64, 64); return (lueurs[col] = c);
+}
+function etincelles(x, y, n, col, force = 1, g = 60) {
+  lancerBoucle();
+  n = Math.min(n, 300 - parts.length);
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, v = (220 + Math.random() * 560) * force;
+    parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, col, vie: 0, max: 0.4 + Math.random() * 0.6, t: 2 + Math.random() * 3.5, g });
+  }
+}
+function onde(x, y, col, max = 1.4, epais = 10) { lancerBoucle(); ondes.push({ x, y, col, vie: 0, max: 0.7, rmax: Math.max(innerWidth, innerHeight) * 0.55 * max, epais }); }
+function boucle(now) {
+  const dt = Math.max(0, Math.min(0.05, (now - dernierT) / 1000)); dernierT = now;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, innerWidth, innerHeight);
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i]; p.vie += dt;
+    const a = 1 - p.vie / p.max; if (a <= 0) { parts.splice(i, 1); continue; }
+    p.vx *= 0.94; p.vy = p.vy * 0.94 + p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+    const t = p.t * (0.4 + a * 0.8);
+    ctx.globalAlpha = a; ctx.drawImage(lueur(p.col), p.x - t * 3, p.y - t * 3, t * 6, t * 6);
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  for (let i = ondes.length - 1; i >= 0; i--) {
+    const o = ondes[i]; o.vie += dt; const k = o.vie / o.max; if (k >= 1) { ondes.splice(i, 1); continue; }
+    ctx.globalAlpha = (1 - k) * 0.85; ctx.strokeStyle = o.col; ctx.lineWidth = o.epais * (1 - k) + 1;
+    ctx.beginPath(); ctx.arc(o.x, o.y, o.rmax * (1 - Math.pow(1 - k, 3)), 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  image = parts.length || ondes.length ? requestAnimationFrame(boucle) : 0;
+}
+const lancerBoucle = () => { if (!image && !reduit) { dernierT = performance.now(); image = requestAnimationFrame(boucle); } };
+
+// ---------- Boîte du jeu ----------
+let finAnnonce = 0;
+function annoncer(texte, qui = 'Greed Island', classe = '') {
+  $('#an-qui').textContent = qui; $('#an-qui').className = `a-qui ${classe}`;
+  $('#an-texte').textContent = texte;
+  $('#annonce').classList.add('visible');
+  clearTimeout(finAnnonce); finAnnonce = setTimeout(() => $('#annonce').classList.remove('visible'), 4200);
+}
+$('#annonce').addEventListener('click', () => $('#annonce').classList.remove('visible'));
+
+// ---------- Navigation ----------
+const PAGES = ['accueil', 'licence', 'fin'];
+function aller(v) {
+  S.vue = v;
+  PAGES.forEach((p) => ($(`#page-${p}`).hidden = p !== v));
+  $$('.onglets button').forEach((b) => (b.dataset.onglet === 'accueil' && (v === 'accueil' || v === 'fin')) ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
+  if (v !== 'fin') $('#epingle').classList.add('cache');
+  dessiner(); scrollTo(0, 0);
+}
+$$('.onglets button').forEach((b) => b.addEventListener('click', () => {
+  const o = b.dataset.onglet;
+  if (o === 'accueil') return aller(S.termine ? 'fin' : 'accueil');
+  if (b.hasAttribute('data-action') && (S.abandon || S.termine)) return annoncer(S.termine ? 'La partie est terminée : plus aucune action n’est possible.' : 'Tu as quitté la partie : tu ne peux plus agir, seulement suivre.', 'Greed Island');
+  annoncer(o === 'livre' ? 'Le Book (page ⑦) s’ouvre ici, en lecture seule après la fin ou l’abandon.' : 'Cet onglet n’est pas dans ce prototype.', 'Prototype');
+}));
+$('#vers-licence').addEventListener('click', () => aller('licence'));
+$('#p-licence').addEventListener('click', () => { if (!S.termine) aller('licence'); });
+$('#voir-book').addEventListener('click', () => annoncer('Le Book (page ⑦) s’ouvre ici, en lecture seule.', 'Prototype'));
+
+function dessiner() {
+  const spect = S.abandon && !S.termine;
+  $('#bandeau-spect').hidden = !spect;
+  $('#acc-joueur').hidden = S.abandon;
+  $('#acc-spect').hidden = !S.abandon;
+  $('#acc-fil').hidden = !S.abandon;
+  $('#quitter').hidden = S.abandon || S.termine;
+  $('#licence-consigne').hidden = S.abandon;
+  $('#licence-vol').innerHTML = licenceHTML(S.abandon);
+  $('#licence-vol').classList.toggle('rayee', S.abandon);
+  // Le chrono s'arrête à la fin : « Terminée » à sa place.
+  const ch = $('#chrono');
+  ch.classList.toggle('fini', S.termine); ch.textContent = S.termine ? 'Terminée' : ch.dataset.t || '0:04:12';
+  $$('.onglets button[data-action]').forEach((b) => b.classList.toggle('ferme', S.abandon || S.termine));
+  if (S.vue === 'fin') dessinerFin();
+}
+// Chrono du prototype.
+let reste = 4 * 60 + 12;
+setInterval(() => { if (S.termine) return; reste = Math.max(1, reste - 1); const t = `0:${String(Math.floor(reste / 60)).padStart(2, '0')}:${String(reste % 60).padStart(2, '0')}`; $('#chrono').dataset.t = t; $('#chrono').textContent = t; }, 1000);
+
+// ---------- Commandes du prototype ----------
+function presser(groupe, el) { groupe.forEach((b) => b.setAttribute('aria-pressed', String(b === el))); }
+$('#p-temps').addEventListener('click', (e) => { S.fin = 'temps'; presser([$('#p-temps'), $('#p-clear')], e.currentTarget); $('[data-place="1"]').disabled = false; });
+$('#p-clear').addEventListener('click', (e) => {
+  S.fin = 'clear'; presser([$('#p-temps'), $('#p-clear')], e.currentTarget);
+  // Après le Clear de Kirua, il est premier : Gon ne peut pas l'être.
+  $('[data-place="1"]').disabled = true; if (S.place === 1) $('[data-place="3"]').click();
+});
+$$('[data-place]').forEach((b) => b.addEventListener('click', () => { S.place = +b.dataset.place; presser($$('[data-place]'), b); if (S.vue === 'fin') dessinerFin(); }));
+$('#p-faux').addEventListener('click', (e) => { S.faux = !S.faux; e.currentTarget.setAttribute('aria-pressed', String(S.faux)); if (S.vue === 'fin') dessinerFin(); });
+$('#p-ss').addEventListener('click', (e) => { S.ss = !S.ss; e.currentTarget.setAttribute('aria-pressed', String(S.ss)); });
+$('#p-fin').addEventListener('click', () => { if (!S.termine) cineFin(); });
+$('#p-reset').addEventListener('click', () => { Object.assign(S, { abandon: false, termine: false }); reste = 4 * 60 + 12; fermerFiche(); aller('accueil'); });
+
+// ---------- Classement final ----------
+function dessinerFin() {
+  const l = classement(), moi = l.find((r) => r.moi), clear = S.fin === 'clear';
+  $('#ruban').hidden = !clear;
+  $('#fin-sous').textContent = `Les plaines de Yorknew · ${clear ? 'terminée par le Clear' : 'temps écoulé'} · ${TOTAL} joueurs classés`;
+  // Podium : 2e, 1er, 3e (de gauche à droite).
+  const top = [2, 1, 3].map((p) => l.find((r) => r.place === p) || l[p - 1]);
+  $('#podium').innerHTML = top.map((r, k) => {
+    const p = [2, 1, 3][k];
+    return `<div class="marche p${p}${r.moi ? ' moi' : ''}">
+      ${r.moi ? '<span class="toi">TOI</span>' : ''}
+      ${clear && r.pseudo === 'Kirua' ? `<span class="sceau-clear" title="Clear">${sceauSVG()}</span>` : ''}
+      <div class="qui"><b style="${taillNom(r.pseudo, Math.min(innerWidth - 32, 448) / 3.2, p === 1 ? 21 : 17)}">${r.pseudo}</b><span>${r.cartes}/${N} · ${r.points} pts</span></div>
+      <div class="bloc"><strong>${p}</strong></div>
+    </div>`;
+  }).join('');
+  // Ta fiche : vraies cartes comptées, points, jenny, dernière carte ; la place en tampon.
+  $('#ta-fiche').innerHTML = `<h2 id="ta-fiche-t">Ta partie${S.abandon ? ' <span class="aide" style="font:400 14px var(--f-jeu)">· abandon</span>' : ''}</h2>
+    <dl>
+      <div><dt>Cartes désignées</dt><i></i><dd>${moi.cartes}/${N}</dd></div>
+      <div><dt>Points de rang</dt><i></i><dd>${moi.points}</dd></div>
+      <div><dt>Jenny</dt><i></i><dd>212 J</dd></div>
+      <div><dt>Dernière carte</dt><i></i><dd>1:41</dd></div>
+    </dl>
+    ${S.faux ? '<p class="note">Une contrefaçon de ton Book n’a pas compté : seules les vraies cartes entrent au classement final.</p>' : ''}
+    <div class="tampon-place" aria-label="Ta place : ${ordinal(moi.place)} sur ${TOTAL}">${tampon(ordinal(moi.place), `SUR ${TOTAL}`, 'TA PLACE')}</div>`;
+  // Liste complète à partir de la 4e place.
+  $('#classement').innerHTML = l.filter((r) => r.place > 3).map(ligneHTML).join('');
+  $('#epingle').innerHTML = moi.place > 3 ? `<div class="classement" style="margin:0;border:0">${ligneHTML(moi)}</div>` : '';
+  suivreMaLigne();
+}
+const ligneHTML = (r) => `<li class="ligne${r.moi ? ' moi' : ''}"${r.moi ? ' id="ma-ligne"' : ''}>
+  <span class="pl">${ordinal(r.place)}${r.exaequo ? '<small>ex æquo</small>' : ''}</span>
+  <span class="ps">${r.pseudo}${r.moi ? ' <span class="sr" style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)">(toi)</span>' : ''}${r.abandon ? '<em>abandon</em>' : ''}</span>
+  <span class="nb">${r.cartes}<small>/${N}</small></span>
+  <span class="pt">${r.points}</span>
+</li>`;
+let obs = null;
+function suivreMaLigne() {
+  obs?.disconnect();
+  const el = $('#ma-ligne'), ep = $('#epingle');
+  if (!el) { ep.classList.add('cache'); return; }
+  obs = new IntersectionObserver(([e]) => ep.classList.toggle('cache', e.isIntersecting || S.vue !== 'fin'), { rootMargin: '0px 0px -150px 0px' });
+  obs.observe(el);
+}
+$('#epingle').addEventListener('click', () => $('#ma-ligne')?.scrollIntoView({ behavior: reduit ? 'auto' : 'smooth', block: 'center' }));
+
+// ---------- Fiche « Quitter la partie » ----------
+function ouvrirFiche(html) { $('#fiche').innerHTML = html; $('#fond').hidden = false; $('#fiche').querySelector('button')?.focus({ preventScroll: true }); }
+function fermerFiche() { $('#fond').hidden = true; }
+$('#fond').addEventListener('click', (e) => { if (e.target === $('#fond')) fermerFiche(); });
+addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#fond').hidden) fermerFiche(); });
+const ico = {
+  non: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  ss: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg>',
+  oui: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>',
+};
+$('#quitter').addEventListener('click', () => {
+  ouvrirFiche(`<h2 id="fiche-titre">Quitter la partie ?</h2>
+    <ul class="pertes">
+      <li class="perd">${ico.non}<span><b>Plus aucune action</b> jusqu’à la fin : ni scan, ni sort, ni échange, ni achat.</span></li>
+      ${S.ss ? `<li class="perd">${ico.ss}<span><b>Ta carte SS retourne sur l’île</b> : elle réapparaîtra pour les autres.</span></li>` : ''}
+      <li class="garde">${ico.oui}<span><b>Tu restes classé</b> avec les cartes de ton Book, et tu suis la partie jusqu’au classement final.</span></li>
+    </ul>
+    <p class="aide">C’est définitif : tu ne pourras pas revenir dans cette partie.</p>
+    <div class="actions">
+      <button class="btn-encre" id="f-rester">Je continue à jouer</button>
+      <button class="maintien" id="f-maintien" aria-describedby="f-aide"><i class="remplir"></i><span class="lib">Maintiens pour abandonner</span><span class="lib sur" aria-hidden="true">Maintiens pour abandonner</span></button>
+      <p class="maintien-aide" id="f-aide" aria-live="polite">Garde le doigt appuyé 2 secondes.</p>
+    </div>`);
+  $('#f-rester').addEventListener('click', fermerFiche);
+  brancherMaintien($('#f-maintien'), 2000, () => { fermerFiche(); cineAbandon(); });
+});
+// Maintien : l'encre monte pendant 2 s ; lâcher avant annule (et le dit).
+function brancherMaintien(btn, duree, fin) {
+  const rem = btn.querySelector('.remplir'), sur = btn.querySelector('.lib.sur');
+  let a1 = null, a2 = null, t = 0;
+  const debut = (e) => {
+    if (e.button > 0) return; e.preventDefault();
+    btn.setPointerCapture?.(e.pointerId);
+    vibrer(15);
+    a1 = rem.animate([{ scale: '0 1' }, { scale: '1 1' }], { duration: duree, easing: 'linear', fill: 'forwards' });
+    a2 = sur.animate([{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)' }], { duration: duree, easing: 'linear', fill: 'forwards' });
+    t = setTimeout(() => { vibrer([40, 30, 90]); fin(); }, duree);
+  };
+  const stop = () => {
+    if (!a1) return;
+    if (a1.playState === 'running') $('#f-aide').textContent = 'Pas encore : garde le doigt appuyé jusqu’au bout.';
+    clearTimeout(t); a1.cancel(); a2.cancel(); a1 = a2 = null;
+  };
+  btn.addEventListener('pointerdown', debut);
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => btn.addEventListener(ev, stop));
+  btn.addEventListener('contextmenu', (e) => e.preventDefault());
+  // Clavier : Entrée ou Espace maintenus.
+  btn.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && !e.repeat && !a1) { e.preventDefault(); debut({ button: 0, preventDefault() {}, pointerId: 0 }); } });
+  btn.addEventListener('keyup', (e) => { if (e.key === 'Enter' || e.key === ' ') stop(); });
+}
+
+// ---------- Mécanique des cinématiques ----------
+const cine = $('#cine');
+let anims = [], attentes = new Set(), saute = false, phase = 'repos', attenteToucher = null, revelA = 0;
+// L'opacité finale est aussi posée en style (leçon des pages ⑧ et ⑪ : sur certains téléphones, le `fill` ne tient pas).
+const A = (el, k, o) => {
+  const a = el.animate(k, { fill: 'both', easing: 'cubic-bezier(.16,1,.3,1)', ...o, duration: reduit || saute ? 1 : o.duration, delay: reduit || saute ? 0 : o.delay || 0 });
+  anims.push(a);
+  const fin = k[k.length - 1];
+  if (fin.opacity !== undefined) el.style.opacity = String(fin.opacity);
+  return a;
+};
+function pause(ms) { return new Promise((res) => { if (saute || reduit) return res(); const f = () => { clearTimeout(t); attentes.delete(f); res(); }; const t = setTimeout(f, ms); attentes.add(f); }); }
+const finAnim = (a) => a.finished.catch(() => {});
+function sauter() { if (saute) return; saute = true; [...attentes].forEach((f) => f()); anims.forEach((a) => { try { a.finish(); } catch {} }); }
+function taper(el, texte) {
+  el.textContent = '';
+  if (reduit || saute) { el.textContent = texte; return Promise.resolve(); }
+  return new Promise((res) => { let n = 0; const pas = () => { if (saute) { el.textContent = texte; return res(); } el.textContent = texte.slice(0, ++n); n >= texte.length ? res() : setTimeout(pas, 22); }; pas(); });
+}
+function toucher() { return new Promise((res) => { attenteToucher = res; }); }
+cine.addEventListener('pointerdown', (e) => {
+  if (phase === 'intro' || (phase === 'revele' && !attenteToucher)) sauter();
+  else if (phase === 'revele' && attenteToucher && performance.now() - revelA > 350) { const r = attenteToucher; attenteToucher = null; r(); }
+});
+addEventListener('keydown', (e) => { if (cine.classList.contains('joue') && ['Enter', ' ', 'Escape'].includes(e.key)) { e.preventDefault(); cine.dispatchEvent(new PointerEvent('pointerdown')); } });
+const els = () => ({ scene: $('#c-scene'), nuit: $('#c-nuit'), lignes: $('#c-lignes'), gong: $('#c-gong'), cri: $('#c-cri'), ruban: $('#c-ruban'), podium: $('#c-podium'), licence: $('#c-licence'), tampon: $('#c-tampon'), flash: $('#c-flash'), dlg: $('#c-dialogue') });
+function ouvrirCine() {
+  anims.forEach((a) => a.cancel()); anims = []; parts = []; ondes = []; saute = false;
+  const e = els();
+  Object.entries(e).forEach(([k, x]) => { if (k !== 'scene') x.style.opacity = '0'; });
+  e.podium.style.opacity = ''; e.podium.innerHTML = ''; e.licence.innerHTML = ''; e.tampon.innerHTML = '';
+  $('#c-texte').textContent = ''; $('#c-indice').classList.remove('visible');
+  cine.classList.add('joue', 'intro'); cine.setAttribute('aria-hidden', 'false');
+  phase = 'intro';
+  $('#annonce').classList.remove('visible');
+  return e;
+}
+async function fermerCine() {
+  await finAnim(A(cine, [{ opacity: 1 }, { opacity: 0 }], { duration: 300 }));
+  cine.classList.remove('joue', 'intro'); cine.setAttribute('aria-hidden', 'true'); cine.style.opacity = '';
+  anims.forEach((a) => a.cancel()); anims = []; phase = 'repos';
+}
+async function dire(e, qui, texte, classe = '', indice = 'Touche pour continuer') {
+  cine.classList.remove('intro'); phase = 'revele'; saute = false;
+  $('#c-qui').textContent = qui; $('#c-qui').className = `a-qui ${classe}`;
+  if (e.dlg.style.opacity === '0') A(e.dlg, [{ opacity: 0, translate: '-50% 20px' }, { opacity: 1, translate: '-50% 0' }], { duration: 300 });
+  $('#c-indice').classList.remove('visible');
+  await taper($('#c-texte'), texte);
+  $('#c-indice').textContent = indice; $('#c-indice').classList.add('visible');
+  revelA = performance.now();
+  await toucher();
+}
+const secousse = (el, force = 10) => A(el, [{ translate: '0 0' }, { translate: `${force}px ${-force * 0.6}px` }, { translate: `${-force * 0.8}px ${force * 0.5}px` }, { translate: `${force * 0.4}px 0` }, { translate: '0 0' }], { duration: 380, easing: 'linear' });
+const frappe = (el, rot = 0) => A(el, [{ opacity: 0, scale: 2.1, rotate: `${rot}deg` }, { opacity: 1, scale: 0.94, offset: 0.7 }, { opacity: 1, scale: 1, rotate: `${rot}deg` }], { duration: 300, easing: 'cubic-bezier(.3,1.5,.5,1)' });
+// Taille d'un nom de podium pour qu'il tienne sur sa marche (Tsezguerra comme Gon).
+const taillNom = (nom, largeur, max) => `--fs:${Math.max(12, Math.min(max, largeur / (nom.length * 0.82))).toFixed(1)}px`;
+const centre = (el) => { const b = el.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2]; };
+
+// ---------- 1. Fin de partie : le gong, « FIN DE PARTIE », le podium, ta place ----------
+async function cineFin() {
+  fermerFiche();
+  S.termine = true; dessiner();
+  const l = classement(), moi = l.find((r) => r.moi), clear = S.fin === 'clear';
+  const e = ouvrirCine();
+  // a. La nuit tombe, le gong descend.
+  A(e.nuit, [{ opacity: 0 }, { opacity: 1 }], { duration: 500 });
+  A(e.gong, [{ opacity: 0, translate: '-50% -62%' }, { opacity: 1, translate: '-50% -50%' }], { duration: 650, delay: 200 });
+  await pause(1000);
+  // b. Le coup : éclair, ondes, le disque tremble, l'écran aussi.
+  const [gx, gy] = centre(e.gong.querySelector('circle'));
+  vibrer([90, 50, 220]);
+  A(e.flash, [{ opacity: 0.9 }, { opacity: 0 }], { duration: 260 });
+  onde(gx, gy, '#f3c98a', 1.3, 12); setTimeout(() => onde(gx, gy, '#f6f6f2', 1.6, 6), reduit ? 0 : 160); setTimeout(() => onde(gx, gy, '#f3c98a', 1.9, 4), reduit ? 0 : 340);
+  etincelles(gx, gy, 40, '#f3c98a', 0.7, 140);
+  A(e.gong.querySelector('.disque'), [{ rotate: '0deg' }, { rotate: '7deg' }, { rotate: '-5deg' }, { rotate: '3deg' }, { rotate: '-1.5deg' }, { rotate: '0deg' }], { duration: 1600, easing: 'ease-out' });
+  A(e.gong, [{ scale: 1 }, { scale: 1.06 }, { scale: 0.98 }, { scale: 1.02 }, { scale: 1 }], { duration: 900, easing: 'ease-out' });
+  secousse(e.scene, 12);
+  A(e.lignes, [{ opacity: 0, scale: 1.3 }, { opacity: 0.55, scale: 1 }], { duration: 400 });
+  await pause(1100);
+  // c. Le gong s'efface, « FIN DE PARTIE » frappé.
+  A(e.gong, [{ opacity: 1 }, { opacity: 0.18 }], { duration: 400 });
+  frappe(e.cri, -4); vibrer(40);
+  setTimeout(() => secousse(e.scene, 8), reduit ? 0 : 200);
+  await pause(1100);
+  // d. Après un Clear : le gagnant du Clear rappelé en tête, ruban doré.
+  if (clear) {
+    A(e.ruban, [{ opacity: 1, clipPath: 'inset(0 50% 0 50%)' }, { opacity: 1, clipPath: 'inset(0 0% 0 0%)' }], { duration: 520 });
+    const [rx, ry] = centre(e.ruban); setTimeout(() => etincelles(rx, ry, 30, '#ffd877', 0.5, 80), reduit ? 0 : 300);
+    await pause(1000);
+  }
+  // e. Le podium : 3e, 2e, 1er. Les marches montent, les noms sont frappés.
+  A(e.gong, [{ opacity: 0.18 }, { opacity: 0 }], { duration: 300 });
+  A(e.lignes, [{ opacity: 0.55 }, { opacity: 0.25 }], { duration: 400 });
+  const top = { 1: l.find((r) => r.place === 1), 2: l.find((r) => r.place === 2) || l[1], 3: l.find((r) => r.place === 3) || l[2] };
+  e.podium.innerHTML = [2, 1, 3].map((p) => `<div class="c-marche p${p}${top[p].moi ? ' moi' : ''}" data-p="${p}">
+      <div class="nom"><b style="${taillNom(top[p].pseudo, Math.min(innerWidth * 0.94, 420) / 3.2, p === 1 ? 26 : 22)}">${top[p].pseudo}</b><span>${top[p].cartes}/${N} · ${top[p].points} pts</span></div>
+      <div class="bloc"><strong>${p}</strong></div></div>`).join('');
+  for (const p of [3, 2, 1]) {
+    const m = e.podium.querySelector(`[data-p="${p}"]`);
+    await finAnim(A(m.querySelector('.bloc'), [{ translate: '0 101%' }, { translate: '0 0' }], { duration: p === 1 ? 620 : 480, easing: 'cubic-bezier(.2,1.25,.4,1)' }));
+    frappe(m.querySelector('.nom')); vibrer(p === 1 ? [30, 30, 60] : 25);
+    const [mx, my] = centre(m.querySelector('.bloc'));
+    etincelles(mx, my - 20, p === 1 ? 50 : 22, p === 1 ? '#ffd877' : p === 2 ? '#e9ecef' : '#f2b48a', p === 1 ? 0.8 : 0.5, 90);
+    await pause(p === 1 ? 900 : 520);
+  }
+  // f. Ta place tombe en dernier, comme un tampon.
+  const surPodium = moi.place <= 3;
+  e.tampon.classList.toggle('petit', surPodium);
+  e.tampon.innerHTML = surPodium ? tampon('TOI', '', '') : tampon(ordinal(moi.place), `SUR ${TOTAL}`, 'TA PLACE');
+  if (surPodium) {
+    const b = e.podium.querySelector(`[data-p="${moi.place}"] .bloc`).getBoundingClientRect();
+    e.tampon.style.left = `${b.left + b.width / 2}px`; e.tampon.style.top = `${b.top + b.height * 0.6}px`;
+  } else { e.tampon.style.left = ''; e.tampon.style.top = ''; A(e.podium, [{ opacity: 1 }, { opacity: 0.35 }], { duration: 400 }); }
+  await pause(surPodium ? 100 : 350);
+  A(e.tampon, [{ opacity: 0, scale: 2.4, rotate: '-4deg' }, { opacity: 1, scale: 0.92, rotate: '-13deg', offset: 0.75 }, { opacity: 1, scale: 1, rotate: '-12deg' }], { duration: 340, easing: 'cubic-bezier(.4,0,.6,1)' });
+  setTimeout(() => { vibrer([70]); secousse(e.scene, 9); const [tx, ty] = centre(e.tampon); etincelles(tx, ty, 26, '#ff6a5a', 0.5, 40); }, reduit ? 0 : 260);
+  await pause(1100);
+  // g. La voix du jeu.
+  const debut = clear ? 'Kirua a réussi le Clear. La partie est terminée.' : 'Le temps est écoulé : personne n’a réussi le Clear.';
+  const fin = S.abandon ? `Tu avais quitté la partie, mais tu restes classé : ${ordinal(moi.place)} sur ${TOTAL}.`
+    : moi.place === 1 ? `Tu termines premier sur ${TOTAL}. Bravo, Hunter.` : `Tu termines ${ordinal(moi.place)} sur ${TOTAL}.`;
+  await dire(e, 'Greed Island', `${debut} ${fin}`, clear ? 'or' : '', 'Touche pour voir le classement');
+  await fermerCine();
+  aller('fin');
+}
+
+// ---------- 2. Abandon : la licence se raye, « ABANDON » ----------
+async function cineAbandon() {
+  const e = ouvrirCine();
+  e.licence.innerHTML = `<div class="licence-vol">${licenceHTML(false)}</div>`;
+  const vol = e.licence.firstElementChild;
+  A(e.nuit, [{ opacity: 0 }, { opacity: 1 }], { duration: 400 });
+  A(e.licence, [{ opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1 }], { duration: 500, delay: 150 });
+  await pause(800);
+  // Le trait de pinceau rouge traverse la licence.
+  vol.querySelector('.rature').removeAttribute('hidden');
+  const trait = vol.querySelector('.trait');
+  A(trait, [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 320, easing: 'cubic-bezier(.6,0,.4,1)' });
+  vibrer(35);
+  await pause(360);
+  vol.classList.add('rayee');
+  secousse(e.scene, 7);
+  await pause(420);
+  // Le tampon tombe.
+  const tp = vol.querySelector('.tampon-abandon'); tp.hidden = false;
+  A(tp, [{ opacity: 0, scale: 2.2 }, { opacity: 1, scale: 0.94, offset: 0.75 }, { opacity: 1, scale: 1 }], { duration: 320, easing: 'cubic-bezier(.4,0,.6,1)' });
+  setTimeout(() => { vibrer([60]); secousse(e.scene, 9); }, reduit ? 0 : 240);
+  await pause(1000);
+  S.abandon = true;
+  await dire(e, 'Greed Island', 'Tu as quitté la partie. Tu restes classé avec ton Book : rendez-vous au classement final.', 'rouge');
+  await fermerCine();
+  aller('accueil');
+}
+
+dessiner();
+</script>

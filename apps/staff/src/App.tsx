@@ -8,6 +8,7 @@ import { Connexion } from './ecrans/Connexion';
 import { Encheres } from './ecrans/Encheres';
 import { Carte } from './ecrans/gm/Carte';
 import { Clear } from './ecrans/gm/Clear';
+import { Creation } from './ecrans/gm/Creation';
 import { Evenements } from './ecrans/gm/Evenements';
 import { Parametres } from './ecrans/gm/Parametres';
 import { Planche } from './ecrans/gm/Planche';
@@ -53,6 +54,7 @@ export function App() {
   const [page, setPage] = useState('dashboard');
   const [menu, setMenu] = useState(false);
   const [cible, setCible] = useState<Cible | null>(null);
+  const [creation, setCreation] = useState(false);
   const [alertesVues, setAlertesVues] = useState(0);
   const nonLues = Math.max(0, eq.alertesRecues - alertesVues);
   useEffect(() => {
@@ -74,7 +76,11 @@ export function App() {
         <div className="bg-layer bg-glow" />
         <div className="bg-layer bg-grid" />
         <div className="app-shell" style={{ alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <Connexion partieUrl={partieUrl} connecter={eq.connecter} />
+          {creation ? (
+            <Creation connecter={eq.connecter} retour={() => setCreation(false)} />
+          ) : (
+            <Connexion partieUrl={partieUrl} connecter={eq.connecter} creer={() => setCreation(true)} />
+          )}
         </div>
       </>
     );

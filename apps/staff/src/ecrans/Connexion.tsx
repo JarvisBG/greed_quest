@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { ApiError } from '../lib/api';
 
-export function Connexion({ partieUrl, connecter }: { partieUrl: string | null; connecter: (partieId: string, code: string) => Promise<void> }) {
+export function Connexion({ partieUrl, connecter, creer }: { partieUrl: string | null; connecter: (partieId: string, code: string) => Promise<void>; creer: () => void }) {
   const [partie, setPartie] = useState(partieUrl ?? '');
   const [code, setCode] = useState('');
   const [erreur, setErreur] = useState<string | null>(null);
@@ -44,6 +44,9 @@ export function Connexion({ partieUrl, connecter }: { partieUrl: string | null; 
       {erreur && <p className="erreur">{erreur}</p>}
       <button type="submit" className="modal-btn modal-btn--primary" disabled={envoi || !partie.trim() || code.length < 4}>
         {envoi ? 'Connexion…' : 'Se connecter'}
+      </button>
+      <button type="button" className="lien" onClick={creer}>
+        Organisateur : créer une nouvelle partie
       </button>
     </form>
   );

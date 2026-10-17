@@ -24,8 +24,8 @@ export interface ApiOptions {
 export type Ok<T> = { ok: true } & T;
 
 export function createApi({ baseUrl, getToken, fetch: f }: ApiOptions) {
-  async function request<T>(method: 'GET' | 'POST' | 'PUT' | 'PATCH', path: string, body?: unknown): Promise<Ok<T>> {
-    const headers: Record<string, string> = {};
+  async function request<T>(method: 'GET' | 'POST' | 'PUT' | 'PATCH', path: string, body?: unknown, extra: Record<string, string> = {}): Promise<Ok<T>> {
+    const headers: Record<string, string> = { ...extra };
     const token = getToken();
     if (token) headers.authorization = `Bearer ${token}`;
     if (body !== undefined) headers['content-type'] = 'application/json';
@@ -46,6 +46,8 @@ export function createApi({ baseUrl, getToken, fetch: f }: ApiOptions) {
   return {
     get: <T>(path: string) => request<T>('GET', path),
     post: <T>(path: string, body: unknown = {}) => request<T>('POST', path, body),
+    /** POST avec des en-têtes en plus (code organisateur de la création de partie). */
+    postAvec: <T>(path: string, body: unknown, entetes: Record<string, string>) => request<T>('POST', path, body, entetes),
     put: <T>(path: string, body: unknown) => request<T>('PUT', path, body),
     patch: <T>(path: string, body: unknown) => request<T>('PATCH', path, body),
   };

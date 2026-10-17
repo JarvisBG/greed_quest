@@ -275,3 +275,17 @@ button.large { width: 100%; display: grid; gap: 2px; }
 .main select option { background: var(--panel); }
 .main label { display: grid; gap: 7px; font-family: var(--font-mono); font-size: .64rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); }
 .main label > * { text-transform: none; letter-spacing: 0; }
+/* Planche d'impression des QR : étiquettes blanches, et seule la planche s'imprime. */
+.planche { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; }
+.etiquette { background: #fff; color: #000; border-radius: 12px; padding: 12px; display: grid; gap: 8px; justify-items: center; text-align: center; break-inside: avoid; }
+.etiquette svg { width: 100%; max-width: 180px; height: auto; display: block; }
+.etiquette__titre { font-family: var(--font-display); font-size: .62rem; letter-spacing: .08em; }
+.etiquette__repere { font-family: var(--font-mono); font-size: .6rem; color: #555; border-top: 1px dashed #999; padding-top: 6px; width: 100%; }
+@media print {
+  @page { margin: 10mm; }
+  body, .app-shell, .main { background: #fff !important; }
+  .bg-layer, .sidebar, .topbar, .sans-impression, .modal-overlay { display: none !important; }
+  .main { padding: 0 !important; margin: 0 !important; }
+  .planche { grid-template-columns: repeat(3, 1fr); gap: 6mm; }
+  .etiquette { border: 1px solid #ccc; border-radius: 0; }
+}

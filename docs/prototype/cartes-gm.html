@@ -88,27 +88,51 @@ h1 + p { margin: 6px 0 0; color: var(--encre-2); font-size: 15px; }
 .r-A { --matiere: linear-gradient(125deg, #c97a4a 0%, #f2b48a 45%, #d88a58 100%); }
 .r-C { --matiere: linear-gradient(125deg, #9eb0c4 0%, #d6dfea 50%, #aebfd1 100%); }
 
-/* Famille noire : la photo du créateur entière (9:16) sur toute la hauteur, cernée d'or ; le nom et le numéro
-   courent en lettres d'or le long des côtés, sur un fond d'encre strié d'or. Pas de texte d'effet sur la carte
-   (il est dans la fiche) : la photo passe avant les mots. */
+/* Famille noire, version 3 « couverture de manga » : l'illustration remplit la carte (3:4), cernée d'encre et
+   d'un filet d'or ; titre vertical noir et or accroché en haut, côté opposé au visage, ombre décalée à la couleur
+   du dessin ; sceau rouge (hanko) au kanji de la carte ; trame de manga au pied, numéro en or. */
+.gi-carte.f-gm { --accent: #ff6a3d; }
+.gi-carte.f-gm.gm-ange { --accent: #2f6dff; }
 .gi-carte.f-gm .c-cadre {
-  background: #0d0d0f repeating-linear-gradient(135deg, rgba(215, 178, 90, 0.13) 0 0.5cqi, transparent 0.5cqi 3.2cqi);
-  box-shadow: inset 0 0 0 0.8cqi #000, inset 0 0 0 1.6cqi var(--or), inset 0 0 0 2.2cqi #0d0d0f, 0 0 0 0.4cqi #000;
-  padding: 4.5cqi 3.5cqi; grid-template-columns: 1fr auto 1fr; grid-template-rows: minmax(0, 1fr); gap: 1.2cqi;
+  display: block; padding: 0; overflow: hidden; background: #0d0d0f;
+  box-shadow: inset 0 0 0 0.9cqw #000, 0 0 0 0.4cqw #000;
 }
 .gi-carte.f-gm .gm-photo {
-  height: 100%; aspect-ratio: 9 / 16; min-height: 0; border-radius: 2.4cqi; overflow: hidden; position: relative;
-  box-shadow: 0 0 0 0.7cqi var(--or), 0 0 0 1.3cqi #000, 0 0 5cqi rgba(255, 216, 119, 0.35);
+  position: absolute; inset: 2.6cqw; border-radius: 2.6cqw; overflow: hidden;
+  box-shadow: 0 0 0 0.7cqw var(--or), 0 0 0 1.2cqw #000;
 }
 .gi-carte.f-gm .gm-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
-.gi-carte.f-gm .gm-cote {
-  writing-mode: vertical-rl; display: grid; place-items: center; white-space: nowrap; overflow: hidden;
-  font: 400 6.6cqw/1 var(--f-titre); letter-spacing: 0.05em; color: var(--or-vif); text-transform: uppercase;
-  text-shadow: 0 0 2cqw rgba(255, 216, 119, 0.45);
+/* Trame de manga (points d'encre) qui monte du pied, et assombrit pour le numéro. */
+.gi-carte.f-gm .gm-photo::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(circle, rgba(8, 8, 10, 0.7) 32%, transparent 36%) 0 0 / 2.4cqw 2.4cqw,
+    linear-gradient(to top, rgba(8, 8, 10, 0.85), transparent 22%);
+  -webkit-mask: linear-gradient(to top, #000 0%, rgba(0, 0, 0, 0.6) 14%, transparent 34%);
+  mask: linear-gradient(to top, #000 0%, rgba(0, 0, 0, 0.6) 14%, transparent 34%);
 }
-.gi-carte.f-gm .gm-cote.g { transform: rotate(180deg); }
-.gi-carte.f-gm .gm-cote .court { display: none; }
-.gi-carte.f-gm .gm-cote.d { font: 800 5cqw/1 var(--f-chiffre); letter-spacing: 0.12em; color: var(--or); text-shadow: none; }
+.gi-carte.f-gm .gm-titre {
+  position: absolute; top: 0; left: 7cqw; writing-mode: vertical-rl; white-space: nowrap;
+  display: flex; align-items: flex-start; gap: 1.2cqw; padding: 5.5cqw 2cqw 4cqw;
+  background: #0d0d0f; color: var(--or-vif); text-transform: uppercase;
+  box-shadow: inset 0 0 0 0.5cqw var(--or), 1.6cqw 1.6cqw 0 var(--accent);
+  border-radius: 0 0 1.4cqw 1.4cqw;
+}
+.gi-carte.f-gm.gm-ange .gm-titre { left: auto; right: 7cqw; box-shadow: inset 0 0 0 0.5cqw var(--or), -1.6cqw 1.6cqw 0 var(--accent); }
+.gi-carte.f-gm .gm-titre .long { display: flex; flex-direction: column; align-items: flex-start; gap: 1.4cqw; }
+.gi-carte.f-gm .gm-titre b { font: 400 11cqw/1 var(--f-titre); letter-spacing: 0.02em; }
+.gi-carte.f-gm .gm-titre small { font: 400 5cqw/1 var(--f-titre); letter-spacing: 0.06em; color: var(--or); padding-top: 0.6cqw; }
+.gi-carte.f-gm .gm-hanko {
+  position: absolute; right: 8cqw; bottom: 11cqw; width: 15cqw; height: 15cqw; display: grid; place-items: center;
+  background: #c8161d; color: #fff3e6; border-radius: 2cqw; rotate: -7deg;
+  font: 400 10.5cqw/1 var(--f-titre); box-shadow: inset 0 0 0 0.8cqw #c8161d, inset 0 0 0 1.3cqw #fff3e6, 0 1cqw 2cqw rgba(0, 0, 0, 0.45);
+}
+.gi-carte.f-gm.gm-ange .gm-hanko { right: auto; left: 8cqw; rotate: 6deg; }
+.gi-carte.f-gm .gm-pied {
+  position: absolute; left: 7cqw; right: 7cqw; bottom: 5.5cqw; display: flex; justify-content: space-between;
+  font: 800 4.6cqw/1 var(--f-chiffre); letter-spacing: 0.12em; color: var(--or-vif);
+}
+.gi-carte.f-gm .gm-titre .court { display: none; }
 
 @container (max-width: 130px) {
   .gi-carte .c-nom, .gi-carte .c-bas { display: none; }
@@ -116,11 +140,14 @@ h1 + p { margin: 6px 0 0; color: var(--encre-2); font-size: 15px; }
   .gi-carte .c-num, .gi-carte.f-gm .c-num { font-size: 15cqi; }
   .gi-carte .gi-rang { font-size: 13cqi; padding: 2.5cqi 4cqi; }
   .gi-carte .gi-rang .lim { display: none; }
-  .gi-carte.f-gm .c-cadre { padding: 5cqi 3cqi; gap: 1cqi; grid-template-rows: minmax(0, 1fr); }
-  .gi-carte.f-gm .gm-cote.g { font-size: 10cqw; }
-  .gi-carte.f-gm .gm-cote .long { display: none; }
-  .gi-carte.f-gm .gm-cote .court { display: inline; }
-  .gi-carte.f-gm .gm-cote.d { font-size: 6cqw; }
+  /* En pochette : l'illustration, le nom court sur son bandeau, rien d'autre. */
+  .gi-carte.f-gm .gm-photo { inset: 4cqw; }
+  .gi-carte.f-gm .gm-titre { left: 9cqw; padding: 6cqw 2.4cqw 5cqw; box-shadow: inset 0 0 0 0.8cqw var(--or), 2cqw 2cqw 0 var(--accent); }
+  .gi-carte.f-gm.gm-ange .gm-titre { right: 9cqw; box-shadow: inset 0 0 0 0.8cqw var(--or), -2cqw 2cqw 0 var(--accent); }
+  .gi-carte.f-gm .gm-titre .long, .gi-carte.f-gm .gm-pied { display: none; }
+  .gi-carte.f-gm .gm-titre .court { display: inline; font: 400 16cqw/1 var(--f-titre); }
+  .gi-carte.f-gm .gm-hanko { width: 22cqw; height: 22cqw; font-size: 15cqw; bottom: 8cqw; right: 8cqw; }
+  .gi-carte.f-gm.gm-ange .gm-hanko { left: 8cqw; }
   .gi-carte .c-cadre { padding: 6cqi; gap: 5cqi; grid-template-rows: auto 1fr; }
   .gi-carte .c-art { aspect-ratio: auto; min-height: 0; }
   .gi-carte .c-nom-petit {
@@ -329,8 +356,8 @@ h1 + p { margin: 6px 0 0; color: var(--encre-2); font-size: 15px; }
 
 <script>
 const CARTES = {
-  jarvis: { genre: 'gm', num: 'GM·01', nom: 'Jarvis tout-puissant', court: 'Jarvis', img: 'img-cartes/gm/jarvis.webp', texte: 'Le créateur du jeu réécrit les règles : la carte de ton choix apparaît, les joueurs proches se figent.' },
-  ange: { genre: 'gm', num: 'GM·02', nom: "Le Sceau d'Ange", court: 'Ange', img: 'img-cartes/gm/ange.webp', texte: 'Le Book d’un joueur proche se scelle : 5 minutes sans scanner, lancer, échanger ni ranger.' },
+  jarvis: { genre: 'gm', num: 'GM·01', nom: 'Jarvis tout-puissant', court: 'Jarvis', kanji: '神', img: 'img-cartes/gm/jarvis.webp', texte: 'Le créateur du jeu réécrit les règles : la carte de ton choix apparaît, les joueurs proches se figent.' },
+  ange: { genre: 'gm', num: 'GM·02', nom: "Le Sceau d'Ange", court: 'Ange', kanji: '封', img: 'img-cartes/gm/ange.webp', texte: 'Le Book d’un joueur proche se scelle : 5 minutes sans scanner, lancer, échanger ni ranger.' },
   '001': { genre: 'designee', rang: 'S', lim: 2, nom: "Le bois secret d'un Tsubo", texte: "L'entrée du Jardin du Dieu de la Montagne, peuplé d'espèces uniques et dociles." },
   '015': { genre: 'designee', rang: 'A', lim: 4, nom: 'Le génie capricieux', texte: 'Un génie qui exauce trois vœux, choisis parmi mille propositions toutes différentes.' },
   '049': { genre: 'designee', rang: 'C', lim: 8, nom: "La sirène qui s'emballe", texte: 'Une sirène qui tient dans la main et chante quand elle est heureuse.' },
@@ -347,11 +374,16 @@ const PROCHES = [{ nom: 'Kirua', d: '18 m' }, { nom: 'Leolio', d: '31 m' }, { no
 
 function carte(id) {
   const c = CARTES[id];
-  if (c.genre === 'gm') return `<div class="gi-carte f-gm" role="img" aria-label="${c.nom}, carte de Maître du jeu"><div class="c-cadre">
-    <span class="gm-cote g" aria-hidden="true"><span class="long">${c.nom}</span><span class="court">${c.court}</span></span>
+  if (c.genre === 'gm') {
+    // Le nom court en grand, le reste du nom en petit, dans l'ordre du nom (« Jarvis » + « tout-puissant »).
+    const i = c.nom.indexOf(c.court), avant = c.nom.slice(0, i).trim(), apres = c.nom.slice(i + c.court.length).trim();
+    return `<div class="gi-carte f-gm gm-${id}" role="img" aria-label="${c.nom}, carte de Maître du jeu"><div class="c-cadre">
     <span class="gm-photo"><img src="${c.img}" alt="" decoding="async"></span>
-    <span class="gm-cote d" aria-hidden="true">${c.num} · GM-1</span>
+    <span class="gm-titre" aria-hidden="true"><span class="long">${avant ? `<small>${avant}</small>` : ''}<b>${c.court}</b>${apres ? `<small>${apres}</small>` : ''}</span><span class="court">${c.court}</span></span>
+    <span class="gm-hanko" lang="ja" aria-hidden="true">${c.kanji}</span>
+    <span class="gm-pied" aria-hidden="true"><span>${c.num}</span><span>GM-1</span></span>
   </div></div>`;
+  }
   const num = c.genre === 'designee' ? id : c.num;
   const img = c.img || `img-cartes/designee/${id}.webp`;
   const coin = c.genre === 'gm' ? '<span class="gi-rang">GM<span class="lim">-1</span></span>'

@@ -8,7 +8,7 @@ Chasse au trésor numérique sur le terrain (inspirée de Greed Island) : balise
 - `docs/SIMULATION.md` : résultats du simulateur de calibrage (`pnpm --filter @gq/engine sim`).
 - `docs/PROMPT_INTERFACES.md` : périmètre exact et direction artistique des interfaces (console, écran géant, refonte joueur). À lire avant tout travail de front.
 - `docs/PROGRESS.md` (section « Reprise de session » en premier) : avancement, ambiguïtés du document, prochaine étape, décisions prises. À lire en début de session, à mettre à jour en fin de tâche.
-- `Greed Quest - Règles de gestion.docx` : source de vérité, à ne relire que s'il a changé.
+- `Greed Island - Règles de gestion.docx` : source de vérité, à ne relire que s'il a changé.
 
 ## Stack (validée le 2026-10-09)
 Monorepo TypeScript (pnpm workspaces). Poste de dev : Windows 10, Node 24.

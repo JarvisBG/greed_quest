@@ -1,6 +1,6 @@
 # Greed Island — Règles de gestion (version condensée)
 
-Source de vérité : `Greed Quest - Règles de gestion.docx` (9 oct. 2026, Sivraj · loJIC Solutions).
+Source de vérité : `Greed Island - Règles de gestion.docx` (9 oct. 2026, Sivraj · loJIC Solutions).
 Ce fichier en est le résumé fidèle pour le code. **Une règle absente n'est pas codée.** Citer `RG-x.y` dans le code et les tests.
 Si le .docx change, mettre ce fichier à jour.
 

@@ -26,6 +26,15 @@
   src: url('./polices/dela-gothic-kanji-nen.woff2') format('woff2');
   unicode-range: U+4F5C, U+5177, U+51FA, U+5316, U+5909, U+5F37, U+5FF5, U+64CD, U+653E, U+7279, U+73FE, U+7CFB, U+7DF4, U+8CEA;
 }
+/* Kanji des cartes de Maître du jeu (神 Jarvis, 封 Ange), même police : moins de 1 Ko. */
+@font-face {
+  font-family: 'Dela Gothic One';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./polices/dela-gothic-kanji-gm.woff2') format('woff2');
+  unicode-range: U+5C01, U+795E;
+}
 
 :root {
   color-scheme: light;
@@ -242,33 +251,64 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   .gi-carte:is(.f-sort, .f-objet) .c-filigrane { opacity: 0.35; }
 }
 
-/* Carte de Maître du jeu (RG-8.15) : photo entière 9:16 sur toute la hauteur, nom en or le long du bord.
+/* Carte de Maître du jeu (RG-8.15), « couverture de manga » (validée par Sivraj le 2026-10-17) : le dessin 3:4
+   remplit la carte, cerné d'encre et d'un filet d'or ; titre vertical noir et or accroché en haut, côté opposé au
+   visage, ombre décalée à la couleur du dessin ; hanko rouge au kanji de la carte ; trame de manga au pied.
    En écriture verticale, `cqi` suivrait la hauteur du conteneur : les tailles sont en `cqw`. */
-.gi-carte.f-gm { color: var(--encre); }
+.gi-carte.f-gm { color: var(--encre); --accent: #ff6a3d; }
+.gi-carte.f-gm.gm-ange { --accent: #2f6dff; }
 .gi-carte.f-gm .c-cadre {
-  background: #0d0d0f repeating-linear-gradient(135deg, rgba(215, 178, 90, 0.13) 0 0.5cqw, transparent 0.5cqw 3.2cqw);
-  box-shadow: inset 0 0 0 0.8cqw #000, inset 0 0 0 1.6cqw var(--or), inset 0 0 0 2.2cqw #0d0d0f, 0 0 0 0.4cqw #000;
-  padding: 4.5cqw 3.5cqw; grid-template-columns: 1fr auto 1fr; grid-template-rows: minmax(0, 1fr); gap: 1.2cqw;
+  display: block; padding: 0; overflow: hidden; background: #0d0d0f;
+  box-shadow: inset 0 0 0 0.9cqw #000, 0 0 0 0.4cqw #000;
 }
 .gi-carte.f-gm .gm-photo {
-  height: 100%; aspect-ratio: 9 / 16; min-height: 0; border-radius: 2.4cqw; overflow: hidden; position: relative;
-  box-shadow: 0 0 0 0.7cqw var(--or), 0 0 0 1.3cqw #000, 0 0 5cqw rgba(255, 216, 119, 0.35);
+  position: absolute; inset: 2.6cqw; border-radius: 2.6cqw; overflow: hidden;
+  box-shadow: 0 0 0 0.7cqw var(--or), 0 0 0 1.2cqw #000;
 }
 .gi-carte.f-gm .gm-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
-.gi-carte.f-gm .gm-cote {
-  writing-mode: vertical-rl; display: grid; place-items: center; white-space: nowrap; overflow: hidden;
-  font: 400 6.6cqw/1 var(--f-titre); letter-spacing: 0.05em; color: #ffd877; text-transform: uppercase;
-  text-shadow: 0 0 2cqw rgba(255, 216, 119, 0.45);
+/* Trame de manga (points d'encre) qui monte du pied et assombrit sous le numéro. */
+.gi-carte.f-gm .gm-photo::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(circle, rgba(8, 8, 10, 0.7) 32%, transparent 36%) 0 0 / 2.4cqw 2.4cqw,
+    linear-gradient(to top, rgba(8, 8, 10, 0.85), transparent 22%);
+  -webkit-mask: linear-gradient(to top, #000 0%, rgba(0, 0, 0, 0.6) 14%, transparent 34%);
+  mask: linear-gradient(to top, #000 0%, rgba(0, 0, 0, 0.6) 14%, transparent 34%);
 }
-.gi-carte.f-gm .gm-cote.g { transform: rotate(180deg); }
-.gi-carte.f-gm .gm-cote.d { font: 800 5cqw/1 var(--f-chiffre); letter-spacing: 0.12em; color: var(--or); text-shadow: none; }
-.gi-carte.f-gm .gm-cote .court { display: none; }
+/* Dans un flex vertical, l'axe « ligne » est vertical : `column` pose les colonnes côte à côte. */
+.gi-carte.f-gm .gm-titre {
+  position: absolute; top: 0; left: 7cqw; writing-mode: vertical-rl; white-space: nowrap;
+  display: flex; align-items: flex-start; padding: 5.5cqw 2cqw 4cqw;
+  background: #0d0d0f; color: #ffd877; text-transform: uppercase;
+  box-shadow: inset 0 0 0 0.5cqw var(--or), 1.6cqw 1.6cqw 0 var(--accent);
+  border-radius: 0 0 1.4cqw 1.4cqw;
+}
+.gi-carte.f-gm.gm-ange .gm-titre { left: auto; right: 7cqw; box-shadow: inset 0 0 0 0.5cqw var(--or), -1.6cqw 1.6cqw 0 var(--accent); }
+.gi-carte.f-gm .gm-titre .long { display: flex; flex-direction: column; align-items: flex-start; gap: 1.4cqw; }
+.gi-carte.f-gm .gm-titre b { font: 400 11cqw/1 var(--f-titre); letter-spacing: 0.02em; }
+.gi-carte.f-gm .gm-titre small { font: 400 5cqw/1 var(--f-titre); letter-spacing: 0.06em; color: var(--or); padding-top: 0.6cqw; }
+.gi-carte.f-gm .gm-titre .court { display: none; }
+.gi-carte.f-gm .gm-hanko {
+  position: absolute; right: 8cqw; bottom: 11cqw; width: 15cqw; height: 15cqw; display: grid; place-items: center;
+  background: #c8161d; color: #fff3e6; border-radius: 2cqw; rotate: -7deg;
+  font: 400 10.5cqw/1 var(--f-titre);
+  box-shadow: inset 0 0 0 0.8cqw #c8161d, inset 0 0 0 1.3cqw #fff3e6, 0 1cqw 2cqw rgba(0, 0, 0, 0.45);
+}
+.gi-carte.f-gm.gm-ange .gm-hanko { right: auto; left: 8cqw; rotate: 6deg; }
+.gi-carte.f-gm .gm-pied {
+  position: absolute; left: 7cqw; right: 7cqw; bottom: 5.5cqw; display: flex; justify-content: space-between;
+  font: 800 4.6cqw/1 var(--f-chiffre); letter-spacing: 0.12em; color: #ffd877;
+}
+/* En pochette : le dessin, le nom court sur son bandeau et le hanko. */
 @container (max-width: 130px) {
-  .gi-carte.f-gm .c-cadre { padding: 5cqw 3cqw; gap: 1cqw; grid-template-rows: minmax(0, 1fr); }
-  .gi-carte.f-gm .gm-cote.g { font-size: 10cqw; }
-  .gi-carte.f-gm .gm-cote .long { display: none; }
-  .gi-carte.f-gm .gm-cote .court { display: inline; }
-  .gi-carte.f-gm .gm-cote.d { font-size: 6cqw; }
+  .gi-carte.f-gm .c-cadre { padding: 0; }
+  .gi-carte.f-gm .gm-photo { inset: 4cqw; }
+  .gi-carte.f-gm .gm-titre { left: 9cqw; padding: 6cqw 2.4cqw 5cqw; box-shadow: inset 0 0 0 0.8cqw var(--or), 2cqw 2cqw 0 var(--accent); }
+  .gi-carte.f-gm.gm-ange .gm-titre { right: 9cqw; box-shadow: inset 0 0 0 0.8cqw var(--or), -2cqw 2cqw 0 var(--accent); }
+  .gi-carte.f-gm .gm-titre .long, .gi-carte.f-gm .gm-pied { display: none; }
+  .gi-carte.f-gm .gm-titre .court { display: inline; font: 400 16cqw/1 var(--f-titre); }
+  .gi-carte.f-gm .gm-hanko { width: 22cqw; height: 22cqw; font-size: 15cqw; bottom: 8cqw; right: 8cqw; }
+  .gi-carte.f-gm.gm-ange .gm-hanko { left: 8cqw; }
 }
 
 /* Dos de carte commun */

@@ -6,6 +6,7 @@ import { Arene } from './ecrans/Arene';
 import { Checkpoints } from './ecrans/Checkpoints';
 import { Connexion } from './ecrans/Connexion';
 import { Encheres } from './ecrans/Encheres';
+import { Carte } from './ecrans/gm/Carte';
 import { Clear } from './ecrans/gm/Clear';
 import { Evenements } from './ecrans/gm/Evenements';
 import { Parametres } from './ecrans/gm/Parametres';
@@ -30,6 +31,7 @@ const PAGES: PageDef[] = [
   { id: 'dashboard', titre: 'Dashboard', icone: 'fa-gauge-high' },
   { id: 'joueurs', titre: 'Joueurs', icone: 'fa-users' },
   { id: 'licence', titre: 'Scanner une licence', icone: 'fa-qrcode' },
+  { id: 'carte', titre: 'Carte', icone: 'fa-map-location-dot', gm: true },
   { id: 'evenements', titre: 'Évènements', icone: 'fa-bolt', gm: true },
   { id: 'clear', titre: 'Clear', icone: 'fa-flag-checkered', gm: true },
   { id: 'preparation', titre: 'Préparation', icone: 'fa-screwdriver-wrench', gm: true },
@@ -142,6 +144,7 @@ export function App() {
           {courante.id === 'dashboard' && <Tableau eq={eq} aller={aller} />}
           {courante.id === 'joueurs' && <Joueurs eq={eq} cible={cible} setCible={setCible} />}
           {courante.id === 'licence' && <Joueur eq={eq} cible={cible} setCible={setCible} />}
+          {courante.id === 'carte' && <Carte eq={eq} />}
           {courante.id === 'evenements' && <Evenements eq={eq} />}
           {courante.id === 'clear' && <Clear eq={eq} />}
           {courante.id === 'preparation' && <Preparation eq={eq} />}

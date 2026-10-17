@@ -289,3 +289,10 @@ button.large { width: 100%; display: grid; gap: 2px; }
   .planche { grid-template-columns: repeat(3, 1fr); gap: 6mm; }
   .etiquette { border: 1px solid #ccc; border-radius: 0; }
 }
+/* Carte du GM */
+.carte-gm { width: 100%; height: auto; max-height: 75dvh; background: rgba(var(--surf),.02); border: 1px solid rgba(var(--surf),.07); border-radius: 14px; display: block; }
+.carte-gm text { font-family: var(--font-mono); paint-order: stroke; stroke: #09090b; stroke-width: 4px; }
+.carte-gm__zone { font-size: 18px; text-anchor: middle; opacity: .8; }
+.carte-gm__balise { font-size: 12px; fill: var(--ink-dim); }
+.carte-gm__joueur { font-size: 14px; font-weight: 700; text-anchor: middle; }
+.carte-gm .cliquable { cursor: pointer; }

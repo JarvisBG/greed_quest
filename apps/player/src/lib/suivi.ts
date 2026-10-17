@@ -25,10 +25,22 @@ export interface SuiviOptions {
   now?: () => number;
   /** Erreur GPS (refus, introuvable) : affichée au joueur. */
   onErreur?: (message: string | null) => void;
+  /** Nouvelle position à montrer (la première, puis après plus de 3 m) : la carte de l'île se redessine. */
+  onPosition?: () => void;
 }
 
-export function creerSuivi({ geo, envoyer, now = Date.now, onErreur }: SuiviOptions) {
+/** Distance approchée en mètres entre deux positions proches. */
+const ecartM = (a: PositionInput, b: PositionInput) => Math.hypot((a.lat - b.lat) * 110_540, (a.lng - b.lng) * 111_320 * Math.cos((a.lat * Math.PI) / 180));
+
+export function creerSuivi({ geo, envoyer, now = Date.now, onErreur, onPosition }: SuiviOptions) {
   let courante: Horodatee | null = null;
+  let montree: PositionInput | null = null;
+  const signaler = () => {
+    if (courante && (!montree || ecartM(montree, courante) > 3)) {
+      montree = courante;
+      onPosition?.();
+    }
+  };
   let envoyee: Horodatee | null = null;
   let watchId: number | null = null;
   let timer: ReturnType<typeof setInterval> | null = null;
@@ -55,6 +67,7 @@ export function creerSuivi({ geo, envoyer, now = Date.now, onErreur }: SuiviOpti
         (pos) => {
           courante = { ...versPosition(pos.coords), a: now() };
           onErreur?.(null);
+          signaler();
           void tick();
         },
         (e) => onErreur?.(messageGeo(e.code).message),
@@ -76,6 +89,7 @@ export function creerSuivi({ geo, envoyer, now = Date.now, onErreur }: SuiviOpti
           (pos) => {
             courante = { ...versPosition(pos.coords), a: now() };
             onErreur?.(null);
+            signaler();
             void tick().then(fin);
           },
           (e) => {

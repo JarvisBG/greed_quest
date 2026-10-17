@@ -1,10 +1,13 @@
 // Carte agrandie : le parchemin se déroule entre deux rouleaux (ses bords restent enroulés), puis l'encre trace les zones une à une,
 // les trames et les noms se posent, et ton point tombe (≈ 2,3 s, toucher pour passer ; validé le 2026-10-10).
 // Ensuite : pincer pour zoomer, glisser pour bouger, toucher deux fois pour zoomer, « Me retrouver ».
+// v3 (validée le 2026-10-17) : la côte se trace, les territoires se peignent puis les noms se posent ; bandeau
+// « Tu es dans … » ; toucher une zone ouvre sa fiche (ce qu'on y fait, balises, distance, « Me guider ») ;
+// guidage = trait pointillé, flèche et distance (« tout droit / à ta droite… » avec la boussole du téléphone).
 // Rouleaux épais aux bouts déchirés ; la feuille serre la carte entière et se déplie quand on zoome (validé le 2026-10-10).
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { cadrer, zoomerVue, type Cadrage, type Plan, type Vue } from '../../lib/carte';
-import { DessinCarte, type EvenementZone } from './CarteIle';
+import { cadrer, ouSuisJe, versZone, zoomerVue, type Cadrage, type Plan, type Vue } from '../../lib/carte';
+import { DessinCarte, EpingleTexte, IconeZone, INFOS_ZONE, type EvenementZone } from './CarteIle';
 
 const EASE = 'cubic-bezier(.16,1,.3,1)';
 
@@ -25,15 +28,32 @@ function dechirures() {
 }
 
 const LEGENDE: { titre: string; dessin: React.JSX.Element }[] = [
-  { titre: 'Aucune', dessin: <rect x="1" y="1" width="20" height="14" className="leg-cadre" fill="none" /> },
+  { titre: '0', dessin: <rect x="1" y="1" width="20" height="14" className="leg-cadre" fill="none" /> },
   { titre: '1', dessin: <rect x="1" y="1" width="20" height="14" className="leg-cadre" fill="url(#legt1)" /> },
   { titre: '2 ou 3', dessin: <rect x="1" y="1" width="20" height="14" className="leg-cadre" fill="url(#legt2)" /> },
   { titre: '4 et plus', dessin: <rect x="1" y="1" width="20" height="14" className="leg-cadre" fill="url(#legt3)" /> },
-  { titre: 'Toi', dessin: <circle cx="11" cy="8" r="5" className="moi-point" /> },
-  { titre: 'Évènement', dessin: <rect x="1" y="1" width="20" height="14" className="leg-ev" /> },
 ];
 
-export function CartePleine({ plan, evenements, onFermer }: { plan: Plan; evenements: readonly EvenementZone[]; onFermer: () => void }) {
+/** Orientation du téléphone (degrés, 0 = nord), si la boussole répond ; sinon null (la carte reste nord en haut). */
+function useOrientation(): number | null {
+  const [cap, setCap] = useState<number | null>(null);
+  useEffect(() => {
+    const ecoute = (e: DeviceOrientationEvent) => {
+      const w = (e as DeviceOrientationEvent & { webkitCompassHeading?: number }).webkitCompassHeading;
+      if (typeof w === 'number') setCap(w);
+      else if (e.absolute && e.alpha !== null) setCap((360 - e.alpha) % 360);
+    };
+    addEventListener('deviceorientationabsolute', ecoute as EventListener);
+    addEventListener('deviceorientation', ecoute);
+    return () => {
+      removeEventListener('deviceorientationabsolute', ecoute as EventListener);
+      removeEventListener('deviceorientation', ecoute);
+    };
+  }, []);
+  return cap;
+}
+
+export function CartePleine({ plan, evenements, onFermer, guideInitial = null }: { plan: Plan; evenements: readonly EvenementZone[]; onFermer: () => void; guideInitial?: string | null }) {
   const calme = useRef(matchMedia('(prefers-reduced-motion: reduce)').matches).current;
   const W = plan.largeur;
   const H = plan.hauteur;
@@ -50,6 +70,10 @@ export function CartePleine({ plan, evenements, onFermer }: { plan: Plan; evenem
     setVue(v);
   };
   const dechire = useMemo(dechirures, []);
+  const [choisie, setChoisie] = useState<string | null>(guideInitial);
+  const [guidee, setGuidee] = useState<string | null>(guideInitial);
+  const orientation = useOrientation();
+  const ou = ouSuisJe(plan);
   const [joue, setJoue] = useState(!calme);
   const arreter = useRef<() => void>(() => undefined);
   const r = {
@@ -60,14 +84,16 @@ export function CartePleine({ plan, evenements, onFermer }: { plan: Plan; evenem
     fermer: useRef<HTMLButtonElement>(null),
   };
 
-  // Plein écran : la page dessous ne défile plus ; Échap ferme.
+  // Plein écran : la page dessous ne défile plus ; Échap ferme la fiche, puis la carte.
   const fermer = useRef(onFermer);
   fermer.current = onFermer;
+  const fermerFiche = useRef<() => boolean>(() => false);
+  fermerFiche.current = () => (choisie ? (setChoisie(null), true) : false);
   useEffect(() => {
     const avant = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     r.fermer.current?.focus({ preventScroll: true });
-    const touche = (e: KeyboardEvent) => e.key === 'Escape' && fermer.current();
+    const touche = (e: KeyboardEvent) => e.key === 'Escape' && (fermerFiche.current() || fermer.current());
     addEventListener('keydown', touche);
     return () => {
       document.body.style.overflow = avant;
@@ -136,28 +162,31 @@ export function CartePleine({ plan, evenements, onFermer }: { plan: Plan; evenem
     scene.querySelectorAll('.enroule').forEach((el) =>
       A(el, [{ opacity: 0, transform: 'scaleX(1.8)' }, { opacity: 1, transform: 'none' }], { duration: 320, delay: 760, easing: 'ease-out', fill: 'backwards' }),
     );
-    // 2. L'encre : chaque zone se trace, puis sa trame et son nom se posent.
-    const zones = [...svg.querySelectorAll('.zone')];
-    zones.forEach((z, i) => {
-      const t = 640 + i * 110;
-      const forme = z.querySelector<SVGPolygonElement>('.zone-forme')!;
-      const L = Math.ceil(forme.getTotalLength());
-      A(forme, [{ strokeDasharray: `${L} ${L}`, strokeDashoffset: L }, { strokeDasharray: `${L} ${L}`, strokeDashoffset: 0 }], {
-        duration: 520,
-        delay: t,
-        easing: 'cubic-bezier(.5,0,.3,1)',
-        fill: 'backwards',
-      });
-      A(z.querySelector('.zone-fond')!, [{ opacity: 0 }, { opacity: 1 }], { duration: 380, delay: t + 320, easing: 'ease-out', fill: 'backwards' });
-      A(z.querySelector('.zone-label')!, [{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 360, delay: t + 380, fill: 'backwards' });
+    // 2. L'encre : la côte se trace d'un trait, la terre et l'eau apparaissent ; les territoires se peignent l'un
+    // après l'autre, les frontières se pointillent, puis les noms se posent.
+    const cote = svg.querySelector<SVGPathElement>('.cote');
+    if (cote) {
+      const Lc = Math.ceil(cote.getTotalLength());
+      A(cote, [{ strokeDasharray: `${Lc} ${Lc}`, strokeDashoffset: Lc }, { strokeDasharray: `${Lc} ${Lc}`, strokeDashoffset: 0 }], { duration: 760, delay: 560, easing: 'cubic-bezier(.5,0,.3,1)', fill: 'backwards' });
+    }
+    for (const [sel, delai] of [['.terre', 900], ['.ondes', 1000], ['.vagues', 1100]] as const) {
+      const el = svg.querySelector(sel);
+      if (el) A(el, [{ opacity: 0 }, { opacity: 1 }], { duration: 480, delay: delai, easing: 'ease-out', fill: 'backwards' });
+    }
+    const zones = [...svg.querySelectorAll('.zone-terr')];
+    zones.forEach((z, i) => A(z, [{ opacity: 0 }, { opacity: 1 }], { duration: 480, delay: 1150 + i * 110, easing: 'ease-out', fill: 'backwards' }));
+    const front = svg.querySelector('.frontieres');
+    if (front) A(front, [{ opacity: 0 }, { opacity: 1 }], { duration: 400, delay: 1150 + zones.length * 110, easing: 'ease-out', fill: 'backwards' });
+    svg.querySelectorAll('.zone-etiq').forEach((z, i) => {
+      A(z.querySelector('.zone-label')!, [{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 360, delay: 1300 + i * 110, fill: 'backwards' });
       const ev = z.querySelector('.ev-etiquette');
-      if (ev) A(ev, [{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: t + 520, fill: 'backwards' });
+      if (ev) A(ev, [{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 1450 + i * 110, fill: 'backwards' });
     });
     // 3. Toi : le point tombe, une onde part une seule fois.
-    const fin = 640 + zones.length * 110 + 520;
+    const fin = 1150 + zones.length * 110 + 520;
     const moi = svg.querySelector('.moi');
     if (moi) {
-      A(moi, [{ opacity: 0, transform: 'translate(0,-18px) scale(1.6)' }, { opacity: 1, transform: 'none' }], { duration: 420, delay: fin, fill: 'backwards' });
+      A(moi, [{ opacity: 0, transform: 'translate(0,-22px) scale(1.5)' }, { opacity: 1, transform: 'none' }], { duration: 440, delay: fin, fill: 'backwards' });
       A(
         moi.querySelector('.moi-halo')!,
         [
@@ -168,6 +197,8 @@ export function CartePleine({ plan, evenements, onFermer }: { plan: Plan; evenem
         { duration: 900, delay: fin + 200, easing: 'ease-out', fill: 'backwards' },
       );
     }
+    const trait = svg.querySelector('.guide-trait');
+    if (trait) A(trait, [{ opacity: 0 }, { opacity: 1 }], { duration: 400, delay: fin + 300, fill: 'backwards' });
     const minuteur = window.setTimeout(() => setJoue(false), fin + 900);
     // Démontage (ou double montage du mode strict) : on arrête et on pourra relancer.
     const nettoyer = () => {
@@ -207,16 +238,20 @@ export function CartePleine({ plan, evenements, onFermer }: { plan: Plan; evenem
   const doigts = useRef(new Map<number, [number, number]>());
   const pince = useRef<number | null>(null);
   const dernierTap = useRef(0);
+  /** Départ du doigt et plus grand écart : un toucher sans glisser choisit la zone dessous. */
+  const depart = useRef<{ x: number; y: number; bouge: number } | null>(null);
   const surPose = (e: React.PointerEvent<SVGSVGElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId);
     doigts.current.set(e.pointerId, [e.clientX, e.clientY]);
     pince.current = null;
+    depart.current = doigts.current.size === 1 ? { x: e.clientX, y: e.clientY, bouge: 0 } : null;
   };
   const surBouge = (e: React.PointerEvent<SVGSVGElement>) => {
     const d = doigts.current;
     const avant = d.get(e.pointerId);
     if (!avant) return;
     d.set(e.pointerId, [e.clientX, e.clientY]);
+    if (depart.current) depart.current.bouge = Math.max(depart.current.bouge, Math.hypot(e.clientX - depart.current.x, e.clientY - depart.current.y));
     if (d.size === 1) {
       const { s } = versPlan(0, 0);
       const v = vueActuelle();
@@ -235,6 +270,11 @@ export function CartePleine({ plan, evenements, onFermer }: { plan: Plan; evenem
     doigts.current.delete(e.pointerId);
     pince.current = null;
     if (e.type !== 'pointerup') return;
+    if (depart.current && depart.current.bouge < 8 && !joue) {
+      const z = document.elementFromPoint(e.clientX, e.clientY)?.closest<SVGElement>('[data-zone]');
+      setChoisie(z?.dataset.zone ?? null);
+    }
+    depart.current = null;
     const t = performance.now();
     if (t - dernierTap.current < 300) {
       const m = versPlan(e.clientX, e.clientY);
@@ -259,6 +299,11 @@ export function CartePleine({ plan, evenements, onFermer }: { plan: Plan; evenem
     animerVers(v.z * f, v.cx, v.cy);
   };
   const vb = cadrage?.vb ?? { x: 0, y: 0, w: W, h: H };
+  const zChoisie = choisie ? plan.zones.find((z) => z.id === choisie) : undefined;
+  const zGuidee = guidee ? plan.zones.find((z) => z.id === guidee) : undefined;
+  const guidage = zGuidee ? versZone(plan, zGuidee, orientation) : null;
+  const infoChoisie = zChoisie ? versZone(plan, zChoisie, orientation) : null;
+  const evChoisie = zChoisie ? evenements.find((e) => e.zoneId === zChoisie.id) : undefined;
 
   return (
     <div ref={r.racine} className="carte-pleine" role="dialog" aria-modal="true" aria-labelledby="titre-carte-pleine">
@@ -271,6 +316,42 @@ export function CartePleine({ plan, evenements, onFermer }: { plan: Plan; evenem
             <path d="M5 5l14 14M19 5 5 19" />
           </svg>
         </button>
+      </div>
+      <div className="cp-position" aria-live="polite">
+        {zGuidee && guidage ? (
+          <div className="cp-guide">
+            <span className="cp-fleche" aria-hidden="true">
+              <svg viewBox="-15 -15 30 30" style={{ rotate: `${guidage.arrive ? 0 : guidage.cap - (orientation ?? 0)}deg` }}>
+                <path d="M0 -12 9 8 0 3 -9 8z" fill="#fff" />
+              </svg>
+            </span>
+            <span className="cp-guide-texte">
+              <b>{guidage.arrive ? `Tu es à ${zGuidee.nom} !` : zGuidee.nom}</b>
+              <span>
+                {guidage.arrive ? (
+                  'Tu y es.'
+                ) : (
+                  <>
+                    <span className="m">{guidage.metres} m</span> · {guidage.direction}
+                  </>
+                )}
+              </span>
+            </span>
+            <button className="cp-stop" onClick={() => setGuidee(null)}>
+              Arrêter
+            </button>
+          </div>
+        ) : ou ? (
+          <p className="ou">
+            <EpingleTexte />
+            <span>
+              {ou.dedans ? 'Tu es dans ' : 'Tu es près de '}
+              <b>{ou.zone.nom}</b>
+            </span>
+          </p>
+        ) : (
+          <p className="ou">Ta position n’est pas encore sur la carte (GPS en attente).</p>
+        )}
       </div>
       <div ref={r.scene} className="plein-scene" onPointerDownCapture={(e) => joue && (e.stopPropagation(), arreter.current())}>
         <div
@@ -288,8 +369,15 @@ export function CartePleine({ plan, evenements, onFermer }: { plan: Plan; evenem
               onPointerMove={surBouge}
               onPointerUp={surLeve}
               onPointerCancel={surLeve}
+              onKeyDown={(e) => {
+                const z = (e.target as Element).closest?.<SVGElement>('[data-zone]');
+                if (z && (e.key === 'Enter' || e.key === ' ')) {
+                  e.preventDefault();
+                  setChoisie(z.dataset.zone ?? null);
+                }
+              }}
             >
-              <DessinCarte plan={plan} evenements={evenements} p="pl" />
+              <DessinCarte plan={plan} evenements={evenements} p="pl" choisie={choisie} guide={guidee} interactive rose={false} />
             </svg>
           </div>
           {/* Bords restés enroulés, épais, aux bouts un peu déchirés (demande de Sivraj, 2026-10-10). */}
@@ -320,40 +408,80 @@ export function CartePleine({ plan, evenements, onFermer }: { plan: Plan; evenem
               <path d="M5 12h14" />
             </svg>
           </button>
+          {plan.moi && (
+            <button onClick={() => animerVers(Math.max(vueActuelle().z, 2.2), plan.moi!.x, plan.moi!.y)} aria-label="Me retrouver sur la carte">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="6" />
+                <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+              </svg>
+            </button>
+          )}
         </div>
         {joue && <span className="passer">Touche pour passer</span>}
       </div>
       <div className="plein-pied">
-        <ul className="legende">
-          {LEGENDE.map((l, i) => (
-            <li key={l.titre}>
-              <svg viewBox="0 0 22 16" aria-hidden="true">
-                {i === 0 && (
-                  <defs>
-                    <pattern id="legt1" width="6" height="6" patternUnits="userSpaceOnUse">
-                      <circle cx="3" cy="3" r=".8" fill="#1b150c" opacity=".55" />
-                    </pattern>
-                    <pattern id="legt2" width="4" height="4" patternUnits="userSpaceOnUse">
-                      <circle cx="2" cy="2" r="1" fill="#1b150c" opacity=".6" />
-                    </pattern>
-                    <pattern id="legt3" width="3" height="3" patternUnits="userSpaceOnUse">
-                      <circle cx="1.5" cy="1.5" r="1.2" fill="#1b150c" opacity=".78" />
-                    </pattern>
-                  </defs>
-                )}
-                {l.dessin}
+        {zChoisie ? (
+          <div className="cp-fiche">
+            <div className="cp-fiche-tete">
+              <svg className="cp-fiche-ic" viewBox="-16 -16 32 32" aria-hidden="true">
+                <IconeZone type={zChoisie.type} r={15} />
               </svg>
-              {l.titre}
-            </li>
-          ))}
-        </ul>
-        <p className="doux legende-note">Plus la trame est serrée, plus la zone a de balises actives. Leur place reste secrète.</p>
-        {plan.moi ? (
-          <button className="gi-btn-encre" onClick={() => animerVers(2.4, plan.moi!.x, plan.moi!.y)}>
-            Me retrouver
-          </button>
+              <div>
+                <h3>{zChoisie.nom}</h3>
+                <p>{INFOS_ZONE[zChoisie.type].titre}</p>
+              </div>
+              <button className="retour" onClick={() => setChoisie(null)} aria-label="Fermer la fiche">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 5l14 14M19 5 5 19" />
+                </svg>
+              </button>
+            </div>
+            {evChoisie && <p className="cp-fiche-ev">{evChoisie.texte}</p>}
+            <p className="cp-fiche-texte">{INFOS_ZONE[zChoisie.type].texte}</p>
+            <dl className="cp-faits">
+              <div>
+                <dt>Balises actives</dt>
+                <dd>{zChoisie.balises}</dd>
+              </div>
+              <div>
+                <dt>Distance</dt>
+                <dd>{infoChoisie ? (infoChoisie.arrive ? 'Tu y es' : `${infoChoisie.metres} m`) : '—'}</dd>
+              </div>
+            </dl>
+            {infoChoisie && !infoChoisie.arrive && (
+              <button className="gi-btn-encre" onClick={() => setGuidee(zChoisie.id)} disabled={guidee === zChoisie.id}>
+                {guidee === zChoisie.id ? 'Guidage en cours' : 'Me guider'}
+              </button>
+            )}
+          </div>
         ) : (
-          <p className="legende-note">Ta position n’est pas sur la carte (GPS en attente ou hors des zones).</p>
+          <>
+            <ul className="legende">
+              <li className="leg-titre">Balises actives :</li>
+              {LEGENDE.map((l, i) => (
+                <li key={l.titre}>
+                  <svg viewBox="0 0 22 16" aria-hidden="true">
+                    {i === 0 && (
+                      <defs>
+                        <pattern id="legt1" width="6" height="6" patternUnits="userSpaceOnUse">
+                          <circle cx="3" cy="3" r=".8" fill="#1b150c" opacity=".55" />
+                        </pattern>
+                        <pattern id="legt2" width="4" height="4" patternUnits="userSpaceOnUse">
+                          <circle cx="2" cy="2" r="1" fill="#1b150c" opacity=".6" />
+                        </pattern>
+                        <pattern id="legt3" width="3" height="3" patternUnits="userSpaceOnUse">
+                          <circle cx="1.5" cy="1.5" r="1.2" fill="#1b150c" opacity=".78" />
+                        </pattern>
+                      </defs>
+                    )}
+                    {l.dessin}
+                  </svg>
+                  {l.titre}
+                </li>
+              ))}
+            </ul>
+            <p className="doux legende-note">Touche une zone pour savoir ce qu’on y fait. La place des balises reste secrète.</p>
+          </>
         )}
       </div>
     </div>

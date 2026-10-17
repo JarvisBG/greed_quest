@@ -3,6 +3,8 @@
 // RG-6.5 : chaque zone porte seulement son nombre de balises actives, jamais leur place.
 // RG-10.12 : la seule position dessinée est celle du joueur.
 
+import { dessinerIle, distanceAuContour, MER, type Ile } from './ile';
+
 export type TypeZone = 'masadora' | 'antokiba' | 'soufrabi' | 'sauvage';
 
 export interface ZoneRecue {
@@ -33,11 +35,14 @@ export interface Plan {
   moi: { x: number; y: number; r: number } | null;
   /** Point du terrain → point du plan (Accompagnement : la cible, au seul lanceur). */
   projeter: (p: { lat: number; lng: number }) => [number, number];
+  /** Côte, territoires, lavis, vagues (prototype v3 validé le 2026-10-17) ; null sans zone. */
+  ile: Ile | null;
+  /** Mètres du terrain pour une unité du plan (distances affichées au joueur). */
+  metresParUnite: number;
 }
 
 /** Largeur fixe du plan : le dessin garde la même allure quelle que soit la taille du terrain. */
 export const LARGEUR = 420;
-const MARGE = 0.08;
 const M_PAR_DEGRE_LAT = 110_540;
 const M_PAR_DEGRE_LNG = 111_320;
 
@@ -77,7 +82,7 @@ export function construirePlan(
   position: { lat: number; lng: number; precisionM: number } | null,
 ): Plan {
   const tous = zones.flatMap((z) => z.polygone);
-  if (tous.length === 0) return { largeur: LARGEUR, hauteur: LARGEUR * 0.75, zones: [], moi: null, projeter: () => [LARGEUR / 2, LARGEUR * 0.375] };
+  if (tous.length === 0) return { largeur: LARGEUR, hauteur: LARGEUR * 0.75, zones: [], moi: null, projeter: () => [LARGEUR / 2, LARGEUR * 0.375], ile: null, metresParUnite: 1 };
   const lat0 = (Math.min(...tous.map((p) => p.lat)) + Math.max(...tous.map((p) => p.lat))) / 2;
   const kx = M_PAR_DEGRE_LNG * Math.cos((lat0 * Math.PI) / 180);
   const metres = (p: { lat: number; lng: number }): [number, number] => [p.lng * kx, -p.lat * M_PAR_DEGRE_LAT];
@@ -91,15 +96,16 @@ export function construirePlan(
   const w0 = Math.max(maxX - minX, 1);
   const h0 = Math.max(maxY - minY, w0 * 0.5);
   const cy0 = (minY + maxY) / 2;
-  const m = Math.max(w0, h0) * MARGE;
-  const ox = minX - m;
-  const oy = cy0 - h0 / 2 - m;
-  const echelle = LARGEUR / (w0 + 2 * m);
+  // v3 : une marge de mer fixe (MER unités) autour des zones, pour la côte et les vagues ; un terrain très haut
+  // reste limité à 420 unités de haut (hors mer).
+  const echelle = Math.min((LARGEUR - 2 * MER) / w0, 420 / h0);
+  const ox = minX - (LARGEUR - w0 * echelle) / 2 / echelle;
+  const oy = cy0 - h0 / 2 - MER / echelle;
   const plan = (p: { lat: number; lng: number }): [number, number] => {
     const [x, y] = metres(p);
     return [(x - ox) * echelle, (y - oy) * echelle];
   };
-  const hauteur = (h0 + 2 * m) * echelle;
+  const hauteur = h0 * echelle + 2 * MER;
 
   const zs: ZonePlan[] = zones.map((z) => {
     const points = z.polygone.map(plan);
@@ -120,10 +126,51 @@ export function construirePlan(
   if (position) {
     const [x, y] = plan(position);
     // Hors du plan (au-delà d'une demi-marge), on ne dessine pas : « Tu es hors de la carte ».
-    const tol = m * echelle * 0.5;
+    const tol = MER * 0.5;
     if (x >= -tol && x <= LARGEUR + tol && y >= -tol && y <= hauteur + tol) moi = { x, y, r: Math.max(6, position.precisionM * echelle) };
   }
-  return { largeur: LARGEUR, hauteur, zones: zs, moi, projeter: plan };
+  return { largeur: LARGEUR, hauteur, zones: zs, moi, projeter: plan, ile: ileDe(zs, hauteur), metresParUnite: 1 / echelle };
+}
+
+// L'île ne dépend que des zones : calculée une fois, pas à chaque pas du joueur.
+let ileCache: { cle: string; ile: Ile } | null = null;
+function ileDe(zs: readonly ZonePlan[], hauteur: number): Ile {
+  const cle = zs.map((z) => `${z.id}:${z.type}:${z.points.map((q) => `${q[0].toFixed(1)},${q[1].toFixed(1)}`).join(' ')}`).join('|');
+  if (ileCache?.cle !== cle) ileCache = { cle, ile: dessinerIle(zs, LARGEUR, hauteur) };
+  return ileCache.ile;
+}
+
+/**
+ * Où es-tu ? Dans une zone (son vrai contour, celui du GM), sinon près de la plus proche. null sans position.
+ */
+export function ouSuisJe(plan: Plan): { zone: ZonePlan; dedans: boolean } | null {
+  if (!plan.moi || plan.zones.length === 0) return null;
+  const p: [number, number] = [plan.moi.x, plan.moi.y];
+  const dans = plan.zones.find((z) => dansPolygone(p, z.points));
+  if (dans) return { zone: dans, dedans: true };
+  const proche = [...plan.zones].sort((a, b) => distanceAuContour(p, a.points) - distanceAuContour(p, b.points))[0]!;
+  return { zone: proche, dedans: false };
+}
+
+const POINTS_CARDINAUX = ['le nord', 'le nord-est', 'l’est', 'le sud-est', 'le sud', 'le sud-ouest', 'l’ouest', 'le nord-ouest'];
+
+/**
+ * Guidage vers une zone (son centre) : distance arrondie à 5 m, cap en degrés (0 = nord, sens horaire) et
+ * direction en clair : « tout droit / à ta droite… » si l'on connaît l'orientation du téléphone, sinon « vers le nord-est ».
+ */
+export function versZone(plan: Plan, z: ZonePlan, orientation: number | null = null): { metres: number; cap: number; direction: string; arrive: boolean } | null {
+  if (!plan.moi) return null;
+  const dx = z.centre[0] - plan.moi.x;
+  const dy = z.centre[1] - plan.moi.y;
+  const metres = Math.round((Math.hypot(dx, dy) * plan.metresParUnite) / 5) * 5;
+  const cap = ((Math.atan2(dx, -dy) * 180) / Math.PI + 360) % 360;
+  const arrive = dansPolygone([plan.moi.x, plan.moi.y], z.points);
+  let direction = `vers ${POINTS_CARDINAUX[Math.round(cap / 45) % 8]}`;
+  if (orientation !== null) {
+    const rel = (cap - orientation + 360) % 360;
+    direction = rel < 30 || rel > 330 ? 'tout droit' : rel < 150 ? 'à ta droite' : rel <= 210 ? 'derrière toi' : 'à ta gauche';
+  }
+  return { metres, cap, direction, arrive };
 }
 
 /** Le point est-il dans le polygone (lancer de rayon) ? */

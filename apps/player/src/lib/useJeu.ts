@@ -511,12 +511,15 @@ export function useJeu() {
   }, [sess]);
 
   // RG-10.9 : suivi de position tant qu'une session est ouverte.
+  const [, setPositionVue] = useState(0);
   useEffect(() => {
     if (!sess) return;
     const s = creerSuivi({
       geo: globalThis.navigator?.geolocation,
       envoyer: (p) => api.post(`/parties/${sess.partieId}/position`, p),
       onErreur: setGpsErreur,
+      // La carte de l'île lit `positionCarte()` au rendu : une nouvelle position la redessine.
+      onPosition: () => setPositionVue((n) => n + 1),
     });
     s.demarrer();
     suivi.current = s;

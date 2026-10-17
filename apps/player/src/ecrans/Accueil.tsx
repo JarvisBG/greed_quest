@@ -164,6 +164,7 @@ export function Accueil({
       )}
 
       <CaseCarte partieId={partie.id} version={version} position={position} evenements={surCarte}>
+        {(distanceDe) => (
         <div className="villes">
           {VILLES.map((v) => {
             const distance = retour?.ville === v.id;
@@ -182,6 +183,7 @@ export function Accueil({
                 )}
                 <b>{v.nom}</b>
                 <span>{v.lieu}</span>
+                {distanceDe(v.id) && <span className="dist-ville">{distanceDe(v.id)}</span>}
                 {distance ? (
                   <span className="etat-ville">
                     À distance <em className="temps">{formatChrono(retour.reste)}</em>
@@ -193,6 +195,7 @@ export function Accueil({
             );
           })}
         </div>
+        )}
       </CaseCarte>
 
       {!moi.examenFait && (

@@ -1,8 +1,9 @@
-// Case « L'île » de l'accueil : petite carte (toucher pour l'agrandir) et accès directs aux villes (children).
+// Case « L'île » de l'accueil : « Tu es dans … », petite carte (toucher pour l'agrandir) et accès directs aux villes
+// (children : une fonction qui reçoit la distance et la direction de chaque ville, v3 du 2026-10-17).
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { construirePlan, type ZoneRecue } from '../../lib/carte';
+import { construirePlan, ouSuisJe, versZone, type TypeZone, type ZoneRecue } from '../../lib/carte';
 import { api } from '../../lib/client';
-import { DessinCarte, type EvenementZone } from './CarteIle';
+import { DessinCarte, EpingleTexte, type EvenementZone } from './CarteIle';
 import { CartePleine } from './CartePleine';
 
 /** Zones et balises actives par zone, rechargées à chaque évènement reçu et toutes les minutes. */
@@ -34,7 +35,7 @@ export function CaseCarte({
   version: number;
   position: { lat: number; lng: number; precisionM: number } | null;
   evenements: readonly EvenementZone[];
-  children: ReactNode;
+  children: ReactNode | ((distance: (type: TypeZone) => string | null) => ReactNode);
 }) {
   const carte = useCarte(partieId, version);
   const [ouverte, setOuverte] = useState(false);
@@ -46,6 +47,17 @@ export function CaseCarte({
     [carte, cle], // eslint-disable-line react-hooks/exhaustive-deps
   );
   const total = plan ? plan.zones.reduce((s, z) => s + z.balises, 0) : 0;
+  const ou = plan ? ouSuisJe(plan) : null;
+  /** « 120 m · vers le nord » vers la zone de ce type la plus proche, ou « Tu y es ». */
+  const distance = (type: TypeZone) => {
+    if (!plan) return null;
+    const v = plan.zones
+      .filter((z) => z.type === type)
+      .map((z) => versZone(plan, z))
+      .filter((x) => x !== null)
+      .sort((a, b) => a.metres - b.metres)[0];
+    return v ? (v.arrive ? 'Tu y es' : `${v.metres} m · ${v.direction}`) : null;
+  };
 
   return (
     <section className="gi-case case-carte" aria-labelledby="titre-ile">
@@ -59,6 +71,15 @@ export function CaseCarte({
           </span>
         )}
       </div>
+      {ou && (
+        <p className="ou">
+          <EpingleTexte />
+          <span>
+            {ou.dedans ? 'Tu es dans ' : 'Tu es près de '}
+            <b>{ou.zone.nom}</b>
+          </span>
+        </p>
+      )}
       {plan && plan.zones.length > 0 && (
         <button
           ref={mini}
@@ -79,7 +100,7 @@ export function CaseCarte({
           </span>
         </button>
       )}
-      {children}
+      {typeof children === 'function' ? children(distance) : children}
       {ouverte && plan && <CartePleine plan={plan} evenements={evenements} onFermer={() => {
             setOuverte(false);
             mini.current?.focus({ preventScroll: true });

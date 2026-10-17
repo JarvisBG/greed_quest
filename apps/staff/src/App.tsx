@@ -8,6 +8,7 @@ import { Connexion } from './ecrans/Connexion';
 import { Encheres } from './ecrans/Encheres';
 import { Clear } from './ecrans/gm/Clear';
 import { Evenements } from './ecrans/gm/Evenements';
+import { Parametres } from './ecrans/gm/Parametres';
 import { Joueur, type Cible } from './ecrans/Joueur';
 import { Joueurs } from './ecrans/Joueurs';
 import { Journal } from './ecrans/Journal';
@@ -29,6 +30,7 @@ const PAGES: PageDef[] = [
   { id: 'licence', titre: 'Scanner une licence', icone: 'fa-qrcode' },
   { id: 'evenements', titre: 'Évènements', icone: 'fa-bolt', gm: true },
   { id: 'clear', titre: 'Clear', icone: 'fa-flag-checkered', gm: true },
+  { id: 'parametres', titre: 'Paramètres', icone: 'fa-sliders', gm: true },
   { id: 'checkpoints', titre: 'Checkpoints', icone: 'fa-location-dot' },
   { id: 'arene', titre: 'Arène', icone: 'fa-hand-fist' },
   { id: 'encheres', titre: 'Enchères', icone: 'fa-gavel' },
@@ -138,7 +140,8 @@ export function App() {
           {courante.id === 'licence' && <Joueur eq={eq} cible={cible} setCible={setCible} />}
           {courante.id === 'evenements' && <Evenements eq={eq} />}
           {courante.id === 'clear' && <Clear eq={eq} />}
-          {courante.id === 'checkpoints' && <Checkpoints eq={eq} />}
+          {courante.id === 'parametres' && <Parametres eq={eq} />}
+          {courante.id === 'checkpoints' &&<Checkpoints eq={eq} />}
           {courante.id === 'arene' && <Arene eq={eq} />}
           {courante.id === 'encheres' && <Encheres eq={eq} />}
           {courante.id === 'missions' && <Missions eq={eq} />}

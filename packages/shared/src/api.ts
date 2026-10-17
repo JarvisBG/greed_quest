@@ -17,6 +17,8 @@ export const PartieCreate = z.object({
   prereglage: z.string().default('standard'),
   /** Remplit la partie avec les données de démonstration (catalogue, zones, balises). */
   demo: z.boolean().default(false),
+  /** RG-8.1 (amendement 2026-10-17) : joueurs attendus, pour le nombre de cartes conseillé du catalogue tiré au hasard. */
+  joueursAttendus: z.number().int().min(1).max(1000).default(30),
   gm: z.object({ nom: z.string().trim().min(1).max(40), code: z.string().min(6, 'Code d’au moins 6 caractères') }),
 });
 export type PartieCreate = z.infer<typeof PartieCreate>;

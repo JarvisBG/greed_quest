@@ -1,6 +1,7 @@
 // Conseils d'organisation affichés au GM pendant la préparation (calibrage validé le 2026-10-09,
 // docs/SIMULATION.md). Ce sont des recommandations : rien n'est bloqué.
 import type { Rank } from '@gq/shared';
+import { randomInt, type Rng } from './rng.js';
 
 /** Balises à poser par joueur attendu : au-delà, trop de scans tombent sur des balises dormantes. */
 export const BALISES_PAR_JOUEUR = 0.75;
@@ -80,4 +81,19 @@ export function conseilOrganisation(joueursAttendus: number): ConseilOrganisatio
     cartesParCheckpoint,
     stockParCheckpoint: repartir(cartesParCheckpoint, RANGS_CHECKPOINT),
   };
+}
+
+/**
+ * RG-8.1 (amendement 2026-10-17, Sivraj : « la plateforme propose aléatoirement la constitution du Book ») :
+ * tirage au hasard de N cartes dans la banque, selon `repartitionCatalogue` (1 SS, au moins une de chaque rang).
+ * Si la banque manque de cartes d'un rang, on en prend moins. Résultat trié par numéro.
+ */
+export function tirerCatalogue<C extends { numero: number; rang: Rank }>(banque: readonly C[], n: number, rng: Rng): C[] {
+  const cible = repartitionCatalogue(n);
+  const pris: C[] = [];
+  for (const r of Object.keys(cible) as Rank[]) {
+    const reste = banque.filter((c) => c.rang === r);
+    for (let k = 0; k < cible[r] && reste.length > 0; k++) pris.push(reste.splice(randomInt(rng, reste.length), 1)[0]!);
+  }
+  return pris.sort((a, b) => a.numero - b.numero);
 }

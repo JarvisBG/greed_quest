@@ -205,8 +205,12 @@ export function Parametres({ eq }: { eq: Equipe }) {
 function Reglage({ base, p, fermer }: { base: string; p: ResolvedParam; fermer: () => void }) {
   const d = DEFS[p.key];
   const [mode, setMode] = useState<ParamSetting['mode']>(p.setting.mode);
-  const [valeur, setValeur] = useState(p.setting.mode === 'verrouille' ? p.setting.value : p.applied);
-  const [coef, setCoef] = useState(p.setting.mode === 'multiplicateur' ? p.setting.coef : 1);
+  // Saisies gardées telles quelles (« 1, » en cours de frappe) et bornées seulement à l'usage.
+  const [saisieValeur, setSaisieValeur] = useState(String(p.setting.mode === 'verrouille' ? p.setting.value : p.applied));
+  const [saisieCoef, setSaisieCoef] = useState(String(p.setting.mode === 'multiplicateur' ? p.setting.coef : 1));
+  const lire = (t: string) => Number(t.replace(',', '.')) || 0;
+  const valeur = Math.max(0, lire(saisieValeur));
+  const coef = Math.min(10, Math.max(0, lire(saisieCoef)));
   const [erreur, setErreur] = useState<string | null>(null);
   const pas = Number.isInteger(p.auto) ? 1 : 0.1;
   // Même calcul que le serveur (resolveParam) pour montrer le résultat avant d'enregistrer.
@@ -239,13 +243,13 @@ function Reglage({ base, p, fermer }: { base: string; p: ResolvedParam; fermer: 
       {mode === 'verrouille' && (
         <label>
           Valeur ({d.unite})
-          <input type="number" min={0} step={pas} value={valeur} onChange={(e) => setValeur(Math.max(0, Number(e.target.value) || 0))} />
+          <input type="number" min={0} step={pas} value={saisieValeur} onChange={(e) => setSaisieValeur(e.target.value)} onBlur={() => setSaisieValeur(String(valeur))} />
         </label>
       )}
       {mode === 'multiplicateur' && (
         <label>
           Coefficient (× la valeur auto, de 0 à 10)
-          <input type="number" min={0} max={10} step={0.1} value={coef} onChange={(e) => setCoef(Math.min(10, Math.max(0, Number(e.target.value) || 0)))} />
+          <input type="number" min={0} max={10} step={0.1} value={saisieCoef} onChange={(e) => setSaisieCoef(e.target.value)} onBlur={() => setSaisieCoef(String(coef))} />
         </label>
       )}
       <p className="info" style={{ margin: '14px 0' }}>

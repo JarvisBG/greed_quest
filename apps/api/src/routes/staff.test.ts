@@ -31,6 +31,22 @@ describe('RG-3 rôles et authentification', () => {
     expect(res.json()).toMatchObject({ ok: false, code: 'interdit' });
   });
 
+  it('RG-8.1 (amendement 2026-10-17) : sans démo, la partie naît avec un catalogue tiré au hasard, N conseillé', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/admin/parties',
+      headers: { 'x-code-admin': 'orga' },
+      payload: { nom: 'Neuve', joueursAttendus: 80, gm: { nom: 'G', code: 'code-neuve' } },
+    });
+    const { partieId: id, token } = res.json();
+    const cs = (await app.inject({ method: 'GET', url: `/parties/${id}/cartes` })).json().cartes as { rang: string }[];
+    // 120 min (Standard) et 80 joueurs : 16 cartes conseillées, 1 SS.
+    expect(cs).toHaveLength(16);
+    expect(cs.filter((c) => c.rang === 'SS')).toHaveLength(1);
+    const ps = (await app.inject({ method: 'GET', url: `/parties/${id}/parametres`, headers: bearer(token) })).json().parametres as { key: string; applied: number }[];
+    expect(ps.find((p) => p.key === 'cartesDesignees')?.applied).toBe(16);
+  });
+
   it('connexion de l’équipe par code', async () => {
     const ok = await app.inject({ method: 'POST', url: `/parties/${partieId}/staff/connexion`, payload: { code: 'secret-gm' } });
     expect(ok.json()).toMatchObject({ ok: true, id: expect.any(String), role: 'gm', nom: 'Sivraj' });

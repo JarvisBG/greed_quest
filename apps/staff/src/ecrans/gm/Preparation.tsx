@@ -1,7 +1,7 @@
 // Préparation de la partie (RG-4.1), GM seulement : conseils d'organisation (moteur conseils.ts), zones (polygone
 // relevé au GPS sur place ou saisi), balises (RG-6 : pose, activer / endormir / couper, rotation forcée), catalogue
 // pioché dans la banque des 100 cartes (RG-8.1, avant le démarrage), checkpoints PNJ (RG-5.2) et équipe (RG-3.2).
-import { conseilCartesDesignees, conseilOrganisation, repartitionCatalogue, N_MAX, N_MIN } from '@gq/engine';
+import { conseilCartesDesignees, conseilOrganisation, repartitionCatalogue, tirerCatalogue, N_MAX, N_MIN } from '@gq/engine';
 import { BANQUE_CARTES, RANKS, type CarteBanque, type Rank } from '@gq/shared';
 import { useEffect, useState } from 'react';
 import { ApiError } from '../../lib/api';
@@ -79,13 +79,20 @@ function lirePoints(texte: string): LatLng[] | null {
   if (pts.some((p) => p.length !== 2 || p.some((x) => !Number.isFinite(x)))) return null;
   return pts.map(([lat, lng]) => ({ lat: lat!, lng: lng! }));
 }
-const tirer = <T,>(liste: readonly T[], n: number): T[] => [...liste].sort(() => Math.random() - 0.5).slice(0, n);
+
+/** Nombre de cartes saisi, borné à N_MIN..N_MAX seulement à l'usage (pas à chaque touche). */
+const bornerN = (t: string) => Math.min(N_MAX, Math.max(N_MIN, Math.floor(Number(t) || N_MIN)));
 
 export function Preparation({ eq }: { eq: Equipe }) {
   const base = `/parties/${eq.session!.partieId}`;
   const [onglet, setOnglet] = useState<Onglet>('zones');
   const [zones, setZones] = useState<ZoneComplete[]>([]);
   const [attendus, setAttendus] = useState(30);
+  // Joueurs attendus saisis à la création de la partie (journal), sinon 30.
+  const attendusCreation = eq.journal.find((l) => l.action === 'creation_partie')?.details?.joueursAttendus;
+  useEffect(() => {
+    if (typeof attendusCreation === 'number') setAttendus(attendusCreation);
+  }, [attendusCreation]);
   const [duree, setDuree] = useState(120);
   const conseil = conseilOrganisation(attendus);
   const nConseil = conseilCartesDesignees(attendus, duree);
@@ -424,30 +431,75 @@ function Catalogue({ base, eq, nConseil }: { base: string; eq: Equipe; nConseil:
   const [composer, setComposer] = useState(false);
   const [edite, setEdite] = useState<CarteCatalogue | null>(null);
   const [message, setMessage] = useState<Message>(null);
+  const [saisieN, setSaisieN] = useState(String(eq.catalogue.length || nConseil));
+  const n = bornerN(saisieN);
+  const [aConfirmer, setAConfirmer] = useState(false);
   const demarree = eq.partie ? !['brouillon', 'inscriptions'].includes(eq.partie.etat) : false;
   const parRang = RANKS.map((r) => `${r} ${eq.catalogue.filter((c) => c.rang === r).length}`).join(' · ');
+  const avecLots = eq.catalogue.some((c) => c.lotReel);
+
+  // RG-8.1 (amendement 2026-10-17) : la plateforme propose un catalogue tiré au hasard ; le GM peut retirer.
+  async function retirer() {
+    setAConfirmer(false);
+    const cartes = tirerCatalogue(BANQUE_CARTES, n, { next: Math.random }).map((c) => ({ numero: c.numero, nom: c.nom, rang: c.rang, texte: c.texte }));
+    try {
+      await api.put(`${base}/catalogue`, { cartes });
+      setMessage({ ok: true, texte: `Nouveau tirage : ${cartes.length} cartes.` });
+      void eq.chargerCatalogue();
+    } catch (e) {
+      setMessage({ ok: false, texte: erreurDe(e, 'Tirage impossible') });
+    }
+  }
 
   return (
     <>
       <div className="panel-card">
         <div className="section-head">
           <h3>
-            <i className="fa-solid fa-book" aria-hidden="true" /> Catalogue : {eq.catalogue.length} cartes
+            <i className="fa-solid fa-book" aria-hidden="true" /> Book à compléter pour le Clear : {eq.catalogue.length} cartes
           </h3>
         </div>
         <p className="info">{eq.catalogue.length > 0 ? parRang : 'Pas encore de catalogue.'}</p>
         <p className="vide">
-          Les joueurs doivent réunir toutes ces cartes dans leur Book. Le lot réel est le cadeau remis au gagnant pour chaque carte ; les joueurs ne le voient pas.
+          Les joueurs doivent réunir toutes ces cartes dans leur Book. La plateforme les a tirées au hasard parmi les 100 cartes de Greed Island (1 seule SS). Le lot réel
+          est le cadeau remis au gagnant pour chaque carte ; les joueurs ne le voient pas.
         </p>
         {demarree ? (
           <p className="vide">La partie a démarré : le catalogue ne peut plus changer (seuls les noms et les lots).</p>
         ) : (
-          <button type="button" className="modal-btn modal-btn--primary" onClick={() => setComposer(true)}>
-            <i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" /> {eq.catalogue.length > 0 ? 'Recomposer le catalogue' : 'Composer le catalogue'}
-          </button>
+          <>
+            <label>
+              Nombre de cartes pour le Clear (conseillé : {nConseil})
+              <input type="number" min={N_MIN} max={N_MAX} value={saisieN} onChange={(e) => setSaisieN(e.target.value)} onBlur={() => setSaisieN(String(n))} />
+            </label>
+            <div className="segments">
+              <button type="button" className="modal-btn modal-btn--primary" onClick={() => (avecLots ? setAConfirmer(true) : void retirer())}>
+                <i className="fa-solid fa-dice" aria-hidden="true" /> {eq.catalogue.length > 0 ? 'Proposer un autre tirage' : 'Proposer un tirage'}
+              </button>
+              <button type="button" className="modal-btn modal-btn--ghost" onClick={() => setComposer(true)}>
+                <i className="fa-solid fa-pen" aria-hidden="true" /> Retoucher à la main
+              </button>
+            </div>
+          </>
         )}
         {message && <p className={`msg ${message.ok ? 'ok' : 'ko'}`}>{message.texte}</p>}
       </div>
+      {aConfirmer && (
+        <Modal titre="Autre tirage" icone="fa-dice" onFermer={() => setAConfirmer(false)}>
+          <div className="delete-warning">
+            <i className="fa-solid fa-triangle-exclamation" aria-hidden="true" />
+            <p>Des lots réels sont déjà saisis : un nouveau tirage remplace toutes les cartes et efface ces lots.</p>
+          </div>
+          <div className="segments">
+            <button type="button" className="modal-btn modal-btn--ghost" onClick={() => setAConfirmer(false)}>
+              Annuler
+            </button>
+            <button type="button" className="modal-btn modal-btn--primary" onClick={() => void retirer()}>
+              Tirer quand même
+            </button>
+          </div>
+        </Modal>
+      )}
 
       {eq.catalogue.length > 0 && (
         <div className="table-card">
@@ -491,7 +543,8 @@ function Catalogue({ base, eq, nConseil }: { base: string; eq: Equipe; nConseil:
       {composer && (
         <Composer
           base={base}
-          nConseil={nConseil}
+          nConseil={n}
+          initial={eq.catalogue.map((c) => c.numero)}
           fermer={(texte) => {
             setComposer(false);
             if (texte) {
@@ -506,17 +559,17 @@ function Catalogue({ base, eq, nConseil }: { base: string; eq: Equipe; nConseil:
   );
 }
 
-function Composer({ base, nConseil, fermer }: { base: string; nConseil: number; fermer: (texte?: string) => void }) {
-  const [n, setN] = useState(nConseil);
-  const [choix, setChoix] = useState<Set<number>>(new Set());
+function Composer({ base, nConseil, initial, fermer }: { base: string; nConseil: number; initial: number[]; fermer: (texte?: string) => void }) {
+  const [saisieN, setSaisieN] = useState(String(nConseil));
+  const n = bornerN(saisieN);
+  const [choix, setChoix] = useState<Set<number>>(() => new Set(initial));
   const [rang, setRang] = useState<Rank | ''>('');
   const [erreur, setErreur] = useState<string | null>(null);
   const cible = repartitionCatalogue(n);
   const compte = (r: Rank) => BANQUE_CARTES.filter((c) => c.rang === r && choix.has(c.numero)).length;
 
   function auHasard() {
-    const pris = RANKS.flatMap((r) => tirer(BANQUE_CARTES.filter((c) => c.rang === r), cible[r]).map((c) => c.numero));
-    setChoix(new Set(pris));
+    setChoix(new Set(tirerCatalogue(BANQUE_CARTES, n, { next: Math.random }).map((c) => c.numero)));
   }
   function basculer(c: CarteBanque) {
     setChoix((s) => {
@@ -538,11 +591,11 @@ function Composer({ base, nConseil, fermer }: { base: string; nConseil: number; 
   const visibles = BANQUE_CARTES.filter((c) => !rang || c.rang === rang);
 
   return (
-    <Modal titre="Composer le catalogue" icone="fa-book" large onFermer={() => fermer()}>
+    <Modal titre="Retoucher le catalogue" icone="fa-book" large onFermer={() => fermer()}>
       <p className="info">Choisis les cartes parmi les 100 cartes de Greed Island. Remplace le catalogue actuel (les stocks des checkpoints seront vidés).</p>
       <label style={{ margin: '12px 0' }}>
         Nombre de cartes conseillé ({N_MIN} à {N_MAX})
-        <input type="number" min={N_MIN} max={N_MAX} value={n} onChange={(e) => setN(Math.min(N_MAX, Math.max(N_MIN, Math.floor(Number(e.target.value) || N_MIN))))} />
+        <input type="number" min={N_MIN} max={N_MAX} value={saisieN} onChange={(e) => setSaisieN(e.target.value)} onBlur={() => setSaisieN(String(n))} />
       </label>
       <button type="button" className="modal-btn modal-btn--ghost" style={{ width: '100%' }} onClick={auHasard}>
         <i className="fa-solid fa-dice" aria-hidden="true" /> Tirer {n} cartes au hasard selon la répartition conseillée

@@ -15,6 +15,7 @@ export function Creation({ connecter, retour }: { connecter: (partieId: string, 
   const [nom, setNom] = useState('');
   const [prereglage, setPrereglage] = useState('standard');
   const [demo, setDemo] = useState(false);
+  const [attendus, setAttendus] = useState(30);
   const [gmNom, setGmNom] = useState('');
   const [gmCode, setGmCode] = useState('');
   const [erreur, setErreur] = useState<string | null>(null);
@@ -25,7 +26,7 @@ export function Creation({ connecter, retour }: { connecter: (partieId: string, 
     setEnvoi(true);
     setErreur(null);
     try {
-      const r = await api.postAvec<{ partieId: string }>('/admin/parties', { nom: nom.trim(), prereglage, demo, gm: { nom: gmNom.trim(), code: gmCode } }, { 'x-code-admin': codeOrga });
+      const r = await api.postAvec<{ partieId: string }>('/admin/parties', { nom: nom.trim(), prereglage, demo, joueursAttendus: attendus, gm: { nom: gmNom.trim(), code: gmCode } }, { 'x-code-admin': codeOrga });
       history.replaceState(null, '', `?partie=${r.partieId}`);
       await connecter(r.partieId, gmCode);
     } catch (e) {
@@ -64,6 +65,10 @@ export function Creation({ connecter, retour }: { connecter: (partieId: string, 
         ))}
       </div>
       <p className="vide">{PREREGLAGES.find((p) => p.id === prereglage)?.aide} · modifiable ensuite dans Paramètres.</p>
+      <label>
+        Joueurs attendus (pour le nombre de cartes du Book, tirées au hasard)
+        <input type="number" min={1} value={attendus} onChange={(e) => setAttendus(Math.max(1, Math.floor(Number(e.target.value) || 1)))} />
+      </label>
       <button type="button" className={`modal-btn modal-btn--ghost${demo ? ' choisi' : ''}`} onClick={() => setDemo((d) => !d)}>
         <i className={`fa-${demo ? 'solid fa-square-check' : 'regular fa-square'}`} aria-hidden="true" /> Remplir avec une partie de démonstration (catalogue, zones, balises)
       </button>

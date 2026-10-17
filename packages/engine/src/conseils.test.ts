@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { conseilCartesDesignees, conseilOrganisation, repartitionCatalogue } from './conseils.js';
+import { BANQUE_CARTES } from '@gq/shared';
+import { conseilCartesDesignees, conseilOrganisation, repartitionCatalogue, tirerCatalogue } from './conseils.js';
+import { seededRng } from './rng.js';
 
 describe('Calibrage : conseils d’organisation', () => {
   it('≈ 0,75 balise posée par joueur attendu, au moins 10', () => {
@@ -47,5 +49,28 @@ describe('RG-8.1 : conseil de N pour un Clear possible', () => {
     expect(conseilCartesDesignees(10, 150)).toBe(16);
     expect(conseilCartesDesignees(80, 180)).toBe(20);
     expect(conseilCartesDesignees(10, 30)).toBe(12);
+  });
+});
+
+describe('RG-8.1 (amendement 2026-10-17) : la plateforme propose le catalogue au hasard', () => {
+  it('tire N cartes distinctes de la banque, selon la répartition conseillée, triées par numéro', () => {
+    const cs = tirerCatalogue(BANQUE_CARTES, 14, seededRng(7));
+    expect(cs).toHaveLength(14);
+    expect(new Set(cs.map((c) => c.numero)).size).toBe(14);
+    const r = repartitionCatalogue(14);
+    for (const k of Object.keys(r) as (keyof typeof r)[]) expect(cs.filter((c) => c.rang === k)).toHaveLength(r[k]);
+    expect(cs.map((c) => c.numero)).toEqual([...cs.map((c) => c.numero)].sort((a, b) => a - b));
+  });
+  it('deux tirages différents ne donnent pas le même catalogue ; même graine, même catalogue', () => {
+    const a = tirerCatalogue(BANQUE_CARTES, 20, seededRng(1)).map((c) => c.numero);
+    expect(tirerCatalogue(BANQUE_CARTES, 20, seededRng(1)).map((c) => c.numero)).toEqual(a);
+    expect(tirerCatalogue(BANQUE_CARTES, 20, seededRng(2)).map((c) => c.numero)).not.toEqual(a);
+  });
+  it('prend moins de cartes d’un rang si la banque en manque', () => {
+    const banque = [
+      { numero: 0, rang: 'SS' as const },
+      { numero: 1, rang: 'D' as const },
+    ];
+    expect(tirerCatalogue(banque, 7, seededRng(3)).map((c) => c.numero)).toEqual([0, 1]);
   });
 });

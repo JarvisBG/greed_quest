@@ -112,6 +112,9 @@ importers:
 
   apps/staff:
     dependencies:
+      '@gq/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
       '@gq/shared':
         specifier: workspace:*
         version: link:../../packages/shared

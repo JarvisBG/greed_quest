@@ -8,6 +8,9 @@ export interface JoueurVue {
   nen: NenType | null;
   jenny?: number;
   geleJusqua?: number | null;
+  pouvoirSpe?: string | null;
+  /** Clear déclaré, en attente du GM (RG-13.1). */
+  livreGele?: boolean;
 }
 
 export interface CarteCatalogue {

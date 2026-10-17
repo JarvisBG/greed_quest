@@ -7,7 +7,6 @@ import type { Cible } from './Joueur';
 export function Alertes({ eq, viserJoueur }: { eq: Equipe; viserJoueur: (c: Cible) => void }) {
   return (
     <section className="pile">
-      <h1>Alertes</h1>
       {eq.alertes.length === 0 && <p className="info">Aucune alerte pour l’instant.</p>}
       <ul className="fil">
         {eq.alertes.map((a, i) => (

@@ -71,7 +71,6 @@ export function Checkpoints({ eq }: { eq: Equipe }) {
   if (!cp) {
     return (
       <section className="pile">
-        <h1>Checkpoints</h1>
         {tries.length === 0 && <p className="info">Aucun checkpoint : le GM les crée depuis sa console.</p>}
         <ul className="fil">
           {tries.map((c) => (

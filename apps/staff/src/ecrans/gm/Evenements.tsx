@@ -89,7 +89,6 @@ export function Evenements({ eq }: { eq: Equipe }) {
 
   return (
     <section className="pile">
-      <h1>Évènements</h1>
       {prop && propData && ignoree !== prop.id && (
         <div className="carte">
           <h2>Proposition de l’agenda</h2>

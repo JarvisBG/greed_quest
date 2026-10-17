@@ -24,7 +24,6 @@ export function Journal({ eq }: { eq: Equipe }) {
 
   return (
     <section className="pile">
-      <h1>Journal</h1>
       <div className="segments" role="group" aria-label="Acteur">
         {ACTEURS.map((a) => (
           <button key={a.id} type="button" className={`secondaire ${acteur === a.id ? 'choisi' : ''}`} onClick={() => setActeur(a.id)}>

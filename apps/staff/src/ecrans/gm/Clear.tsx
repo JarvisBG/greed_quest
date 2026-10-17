@@ -56,7 +56,6 @@ export function Clear({ eq }: { eq: Equipe }) {
 
   return (
     <section className="pile">
-      <h1>Clear</h1>
       {message && <p className={message.ok ? 'ok' : 'erreur'}>{message.texte}</p>}
       {!terminee && (
         <>

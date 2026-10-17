@@ -46,8 +46,6 @@ export function Partie({ eq }: { eq: Equipe }) {
   const p = eq.partie;
   if (!p) return <p className="info">Chargement…</p>;
 
-  const actifs = eq.joueurs.filter((j) => j.statut === 'actif').length;
-  const clears = eq.joueurs.filter((j) => j.livreGele).length;
 
   async function confirmer() {
     if (!choisie) return;
@@ -65,50 +63,41 @@ export function Partie({ eq }: { eq: Equipe }) {
   }
 
   return (
-    <section className="pile">
-      <h1>Partie</h1>
-      <div className="carte">
-        <p>
-          État : <strong>{libelleEtat(p.etat)}</strong>
-          {p.inscriptionsOuvertes ? ' · inscriptions ouvertes' : ' · inscriptions fermées'}
-        </p>
-        <p>
-          {eq.joueurs.length} inscrits · {actifs} actifs{eq.j !== null ? ` · J = ${eq.j}` : ''}
-        </p>
-        {clears > 0 && <p className="ok">{clears} Clear en attente : voir l’onglet Clear.</p>}
-        <p className="info">{eq.alertes.length} alerte{eq.alertes.length > 1 ? 's' : ''} au total (onglet Alertes).</p>
-      </div>
-
-      <div className="carte">
-        <h2>Que faire ?</h2>
-        {choisie ? (
-          <>
-            <p>
-              Confirmer : <strong>{LIBELLES[choisie]}</strong> ?
-            </p>
-            <label>
-              Motif (facultatif, noté dans le journal)
-              <input value={motif} onChange={(e) => setMotif(e.target.value)} maxLength={200} />
-            </label>
-            <button type="button" disabled={envoi} onClick={() => void confirmer()}>
-              {envoi ? 'Envoi…' : `Oui, ${LIBELLES[choisie].toLowerCase()}`}
+    <div>
+      <p className="info" style={{ marginBottom: 12 }}>
+        Partie : <strong>{libelleEtat(p.etat)}</strong>
+        {p.inscriptionsOuvertes ? ' · inscriptions ouvertes' : ' · inscriptions fermées'}
+      </p>
+      {choisie ? (
+        <div className="pile">
+          <p>
+            Confirmer : <strong>{LIBELLES[choisie]}</strong> ?
+          </p>
+          <label>
+            Motif (facultatif, noté dans le journal)
+            <input value={motif} onChange={(e) => setMotif(e.target.value)} maxLength={200} />
+          </label>
+          <div className="modal-actions">
+            <button type="button" className="modal-btn modal-btn--ghost" onClick={() => setChoisie(null)}>
+              Annuler
             </button>
-            <button type="button" className="secondaire" onClick={() => setChoisie(null)}>
-              Revenir
+            <button type="button" className={`modal-btn ${choisie === 'terminer' ? 'modal-btn--danger' : 'modal-btn--primary'}`} disabled={envoi} onClick={() => void confirmer()}>
+              {envoi ? 'Envoi…' : 'Confirmer'}
             </button>
-          </>
-        ) : (
-          <div className="choix">
-            {actionsPossibles(p.etat, p.inscriptionsOuvertes).map((a) => (
-              <button key={a} type="button" className={a === 'terminer' ? 'secondaire danger' : 'secondaire'} onClick={() => (setMessage(null), setChoisie(a))}>
-                {LIBELLES[a]}
-              </button>
-            ))}
-            {p.etat === 'terminee' && <p className="info">La partie est terminée : classement final dans l’onglet Clear.</p>}
           </div>
-        )}
-        {message && <p className={message.ok ? 'ok' : 'erreur'}>{message.texte}</p>}
-      </div>
-    </section>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+          {actionsPossibles(p.etat, p.inscriptionsOuvertes).map((a) => (
+            <button key={a} type="button" className={`modal-btn ${a === 'terminer' ? 'modal-btn--danger' : 'modal-btn--ghost'}`} style={{ flex: '0 1 auto' }} onClick={() => (setMessage(null), setChoisie(a))}>
+              {LIBELLES[a]}
+            </button>
+          ))}
+          {p.etat === 'terminee' && <p className="info">La partie est terminée : classement final dans la page Clear.</p>}
+        </div>
+      )}
+      {message && <p className={`msg ${message.ok ? 'ok' : 'ko'}`} style={{ marginTop: 10 }}>{message.texte}</p>}
+      <p className="vide" style={{ marginTop: 12 }}>Le changement est envoyé tout de suite à tous les téléphones et à l’écran géant.</p>
+    </div>
   );
 }

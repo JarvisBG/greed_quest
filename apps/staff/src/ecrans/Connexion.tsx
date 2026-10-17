@@ -10,7 +10,8 @@ export function Connexion({ partieUrl, connecter }: { partieUrl: string | null; 
 
   return (
     <form
-      className="carte"
+      className="modal-box"
+      style={{ display: 'grid', gap: 14 }}
       onSubmit={async (e) => {
         e.preventDefault();
         setEnvoi(true);
@@ -24,7 +25,11 @@ export function Connexion({ partieUrl, connecter }: { partieUrl: string | null; 
         }
       }}
     >
-      <h1>Console de l’équipe</h1>
+      <div className="modal-box__head">
+        <h3>
+          <i className="fa-solid fa-hexagon-nodes" aria-hidden="true" /> GREED QUEST · Équipe
+        </h3>
+      </div>
       <p className="info">Arbitres (PNJ) et Game Masters : connecte-toi avec ton code.</p>
       {!partieUrl && (
         <label>
@@ -37,7 +42,7 @@ export function Connexion({ partieUrl, connecter }: { partieUrl: string | null; 
         <input type="password" value={code} onChange={(e) => setCode(e.target.value)} autoComplete="current-password" />
       </label>
       {erreur && <p className="erreur">{erreur}</p>}
-      <button type="submit" disabled={envoi || !partie.trim() || code.length < 4}>
+      <button type="submit" className="modal-btn modal-btn--primary" disabled={envoi || !partie.trim() || code.length < 4}>
         {envoi ? 'Connexion…' : 'Se connecter'}
       </button>
     </form>

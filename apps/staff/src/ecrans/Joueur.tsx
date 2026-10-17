@@ -8,6 +8,7 @@ import { libelleNen, libelleStatut, lireLicence, heure, type JoueurVue } from '.
 import type { Equipe } from '../lib/useEquipe';
 import { Action } from './Action';
 import { CameraQr } from './CameraQr';
+import { Corrections, type ModeCorrection } from './gm/Corrections';
 
 /** Joueur ciblé par la console ; `licence` si elle vient d'être scannée (preuve de présence). */
 export interface Cible {
@@ -22,7 +23,7 @@ export interface Cible {
 /** Au-delà, la licence scannée a tourné (fenêtre de 30 s, RG-5.2) : on la redemande. */
 const LICENCE_FRAICHE_MS = 45_000;
 
-type Mode = 'fiche' | 'avertir' | 'geler' | 'annuler' | 'expertise' | 'disqualifier';
+type Mode = 'fiche' | 'avertir' | 'geler' | 'annuler' | 'expertise' | 'disqualifier' | ModeCorrection;
 
 export function Joueur({ eq, cible, setCible }: { eq: Equipe; cible: Cible | null; setCible: (c: Cible | null) => void }) {
   const [erreur, setErreur] = useState<string | null>(null);
@@ -58,7 +59,6 @@ export function Joueur({ eq, cible, setCible }: { eq: Equipe; cible: Cible | nul
   if (!cible || !j) {
     return (
       <section className="pile">
-        <h1>Licence d’un joueur</h1>
         {!liste ? (
           <>
             {scanner}
@@ -94,15 +94,30 @@ export function Joueur({ eq, cible, setCible }: { eq: Equipe; cible: Cible | nul
 
   return (
     <section className="pile">
-      <div className="carte">
-        <h1>{j.pseudo}</h1>
-        <p>
-          <span className={`statut s-${j.statut}`}>{libelleStatut(j.statut)}</span> · {libelleNen(j.nen)}
-          {j.jenny !== undefined && <> · {j.jenny} J</>}
-        </p>
-        {cible.licence ? <p className="ok">Licence vérifiée à {heure(cible.licence.luA)}</p> : <p className="info">Choisi dans la liste (licence non scannée)</p>}
+      <div>
+        <div className="profile-head">
+          <div className="avatar">{j.pseudo.charAt(0).toUpperCase()}</div>
+          <div>
+            <h4>{j.pseudo}</h4>
+            <p>{cible.licence ? `Licence vérifiée à ${heure(cible.licence.luA)}` : 'Choisi dans la liste (licence non scannée)'}</p>
+          </div>
+        </div>
+        <div className="profile-stats">
+          <div className="ps">
+            <div className={`n statut s-${j.statut}`}>{libelleStatut(j.statut)}</div>
+            <div className="l">Statut</div>
+          </div>
+          <div className="ps">
+            <div className="n">{j.jenny ?? '—'}</div>
+            <div className="l">Jenny</div>
+          </div>
+          <div className="ps">
+            <div className="n">{libelleNen(j.nen)}</div>
+            <div className="l">Nen</div>
+          </div>
+        </div>
         <button type="button" className="lien" onClick={() => setCible(null)}>
-          Autre joueur
+          Fermer la fiche
         </button>
       </div>
 
@@ -113,7 +128,12 @@ export function Joueur({ eq, cible, setCible }: { eq: Equipe; cible: Cible | nul
           <button type="button" className="secondaire" onClick={() => setMode('annuler')}>Annuler les gains d’une balise (photo)</button>
           <button type="button" className="secondaire" onClick={() => setMode('expertise')}>Expertise d’Antokiba</button>
           {eq.session!.role === 'gm' && (
-            <button type="button" className="secondaire danger" onClick={() => setMode('disqualifier')}>Disqualifier</button>
+            <>
+              <button type="button" className="secondaire" onClick={() => setMode('jenny')}>Corriger les jenny</button>
+              <button type="button" className="secondaire" onClick={() => setMode('livre')}>Corriger le Book (ajouter / retirer une carte)</button>
+              <button type="button" className="secondaire" onClick={() => setMode('carteGm')}>Donner une carte de Maître du jeu</button>
+              <button type="button" className="secondaire danger" onClick={() => setMode('disqualifier')}>Disqualifier</button>
+            </>
           )}
         </div>
       )}
@@ -159,6 +179,8 @@ export function Joueur({ eq, cible, setCible }: { eq: Equipe; cible: Cible | nul
             <button type="button" className="lien" onClick={fiche}>Annuler</button>
           </div>
         ))}
+
+      {(mode === 'jenny' || mode === 'livre' || mode === 'carteGm') && <Corrections eq={eq} joueur={j} mode={mode} onFini={fiche} />}
 
       {mode === 'disqualifier' && (
         <Action

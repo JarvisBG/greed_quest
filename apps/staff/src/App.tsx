@@ -9,6 +9,7 @@ import { Encheres } from './ecrans/Encheres';
 import { Clear } from './ecrans/gm/Clear';
 import { Evenements } from './ecrans/gm/Evenements';
 import { Parametres } from './ecrans/gm/Parametres';
+import { Preparation } from './ecrans/gm/Preparation';
 import { Joueur, type Cible } from './ecrans/Joueur';
 import { Joueurs } from './ecrans/Joueurs';
 import { Journal } from './ecrans/Journal';
@@ -30,6 +31,7 @@ const PAGES: PageDef[] = [
   { id: 'licence', titre: 'Scanner une licence', icone: 'fa-qrcode' },
   { id: 'evenements', titre: 'Évènements', icone: 'fa-bolt', gm: true },
   { id: 'clear', titre: 'Clear', icone: 'fa-flag-checkered', gm: true },
+  { id: 'preparation', titre: 'Préparation', icone: 'fa-screwdriver-wrench', gm: true },
   { id: 'parametres', titre: 'Paramètres', icone: 'fa-sliders', gm: true },
   { id: 'checkpoints', titre: 'Checkpoints', icone: 'fa-location-dot' },
   { id: 'arene', titre: 'Arène', icone: 'fa-hand-fist' },
@@ -140,6 +142,7 @@ export function App() {
           {courante.id === 'licence' && <Joueur eq={eq} cible={cible} setCible={setCible} />}
           {courante.id === 'evenements' && <Evenements eq={eq} />}
           {courante.id === 'clear' && <Clear eq={eq} />}
+          {courante.id === 'preparation' && <Preparation eq={eq} />}
           {courante.id === 'parametres' && <Parametres eq={eq} />}
           {courante.id === 'checkpoints' &&<Checkpoints eq={eq} />}
           {courante.id === 'arene' && <Arene eq={eq} />}

@@ -68,17 +68,23 @@ export function useEquipe(partieUrl: string | null) {
     if (r) setJoueurs(r.joueurs);
   }, [session, garde]);
 
+  const chargerCatalogue = useCallback(async () => {
+    if (!session) return;
+    const r = await garde(api.get<{ cartes: CarteCatalogue[] }>(`/parties/${session.partieId}/cartes`));
+    if (r) setCatalogue(r.cartes);
+  }, [session, garde]);
+
   useEffect(() => void chargerPartie(), [chargerPartie]);
 
   useEffect(() => {
     if (!session) return;
     const base = `/parties/${session.partieId}`;
     void chargerJoueurs();
-    void garde(api.get<{ cartes: CarteCatalogue[] }>(`${base}/cartes`)).then((r) => r && setCatalogue(r.cartes));
+    void chargerCatalogue();
     void garde(api.get<{ lignes: LigneJournal[] }>(`${base}/journal?limite=100`)).then((r) => r && setJournal(r.lignes));
     void garde(api.get<{ alertes: Alerte[] }>(`${base}/alertes`)).then((r) => r && setAlertes(r.alertes));
     void garde(api.get<{ J: number }>(`${base}/parametres`)).then((r) => r && setJ(r.J));
-  }, [session, chargerJoueurs, garde]);
+  }, [session, chargerJoueurs, chargerCatalogue, garde]);
 
   // Rechargement groupé de la liste des joueurs (beaucoup de lignes de journal en rafale).
   const joueursEnAttente = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -133,7 +139,7 @@ export function useEquipe(partieUrl: string | null) {
     [pseudos, session],
   );
 
-  return { session, partieId, partie, j, alertesRecues, joueurs, pseudos, catalogue, journal, alertes, connexion, version, connecter, deconnecter, chargerJoueurs, nomActeur };
+  return { session, partieId, partie, j, alertesRecues, joueurs, pseudos, catalogue, journal, alertes, connexion, version, connecter, deconnecter, chargerJoueurs, chargerPartie, chargerCatalogue, nomActeur };
 }
 
 export type Equipe = ReturnType<typeof useEquipe>;

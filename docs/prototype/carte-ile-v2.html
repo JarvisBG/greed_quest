@@ -1,0 +1,621 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Carte de l'île v2</title>
+<meta name="description" content="Prototype v2 de la carte de l'île de Greed Island : une vraie île dessinée à partir des zones du GM (côte, mer), « Tu es ici », fiche d'une zone, guidage vers une ville.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@800&family=Atkinson+Hyperlegible+Next:wght@400;600;800&family=Dela+Gothic+One&display=swap">
+<style>
+/* v2 (2026-10-17) : on garde le parchemin et l'encre de la v1 (validée le 2026-10-10). Nouveau : l'île est tirée
+   des zones du GM (enveloppe + côte tremblée + mer à vagues), les zones ont des bords adoucis à la plume, « Tu es
+   ici » se voit de loin, toucher une zone ouvre sa fiche, et une flèche guide vers la zone choisie.
+   Les balises ne sont jamais placées (RG-6.5) ; seule ta position est montrée (RG-10.12). */
+:root {
+  color-scheme: light;
+  --papier: #eeefe9;
+  --case: #fbfbf7;
+  --case-2: #ecece6;
+  --encre: #111111;
+  --encre-2: #3b3d40;
+  --trame: rgba(17, 17, 17, 0.16);
+  --bleu: #1f4a9c;
+  --alerte: #a8231f;
+  --parchemin: #f1e6c8;
+  --terre: #f6edd3;
+  --mer: #dcc794;
+  --parchemin-bord: #b99a5b;
+  --encre-carte: #1b150c;
+  --f-titre: 'Dela Gothic One', 'Arial Black', sans-serif;
+  --f-texte: 'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif;
+  --f-chiffre: 'Atkinson Hyperlegible Mono', ui-monospace, monospace;
+  --trait: 3px;
+  --sortie: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { box-sizing: border-box; }
+html, body { overflow-x: clip; }
+body { margin: 0; background: var(--papier); color: var(--encre); font: 400 17px/1.45 var(--f-texte); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+::selection { background: #d9a11a; color: var(--encre); }
+:focus-visible { outline: 3px solid var(--bleu); outline-offset: 3px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+h2, h3, p { text-wrap: balance; }
+
+.app { max-width: 480px; margin: 0 auto; padding: 0 16px 40px; display: grid; gap: 10px; }
+.proto { display: grid; gap: 8px; padding: 10px 12px; margin-inline: -16px; background: var(--encre); color: var(--case); }
+.proto p { margin: 0; font: 600 13px/1.3 var(--f-texte); }
+.proto .rang { display: flex; gap: 6px; flex-wrap: wrap; }
+.proto button { min-height: 36px; padding: 0 10px; border: 2px solid var(--case); background: transparent; color: var(--case); font: 700 13px var(--f-texte); }
+.proto button[aria-pressed='true'] { background: var(--case); color: var(--encre); }
+
+.barre { position: sticky; top: 0; z-index: 30; margin-inline: -16px; padding: 10px 16px; background: var(--case); border-bottom: var(--trait) solid var(--encre); display: flex; align-items: center; gap: 14px; }
+.chrono { font: 800 30px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.jenny { margin-left: auto; font: 800 20px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.case { position: relative; background: var(--case); border: var(--trait) solid var(--encre); padding: 16px; display: grid; gap: 12px; }
+.case h2 { margin: 0; font: 400 21px/1.1 var(--f-titre); }
+.fantome { min-height: 120px; display: grid; place-items: center; color: var(--encre-2); font-weight: 600; background-image: radial-gradient(var(--trame) 1px, transparent 1.3px); background-size: 6px 6px; }
+
+/* ---------- Accueil : la petite carte ---------- */
+.carte-tete { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.carte-tete span { font: 600 14px var(--f-texte); color: var(--encre-2); }
+/* « Où suis-je » : la première chose lue, en gros, au-dessus de la carte. */
+.ou { display: flex; align-items: center; gap: 10px; margin: 0; font: 600 16px/1.25 var(--f-texte); }
+.ou b { font: 400 19px/1.1 var(--f-titre); }
+.ou svg { width: 22px; height: 28px; flex: none; }
+.carte-mini { position: relative; display: block; width: 100%; padding: 0; border: var(--trait) solid var(--encre); background: var(--mer); overflow: hidden; }
+.carte-mini svg { display: block; width: 100%; height: auto; }
+.carte-mini .agrandir { position: absolute; right: 8px; bottom: 8px; display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 12px; background: var(--encre); color: var(--case); font: 700 14px var(--f-texte); }
+.carte-mini .agrandir svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: square; }
+.carte-mini:active { transform: translateY(2px); }
+.villes { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.ville { min-height: 60px; border: var(--trait) solid var(--encre); background: var(--case); padding: 8px 12px; text-align: left; display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 10px; }
+.ville .ic { width: 34px; height: 34px; }
+.ville b { display: block; font: 400 18px/1.1 var(--f-titre); }
+.ville span { font: 600 13px/1.25 var(--f-texte); color: var(--encre-2); }
+.ville .dist { text-align: right; font: 800 16px/1.1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.ville .dist small { display: block; font: 600 12px var(--f-texte); color: var(--encre-2); }
+@media (hover: hover) { .ville:hover { background: var(--case-2); } }
+
+/* ---------- Dessin de la carte ---------- */
+.mer-fond { fill: var(--mer); }
+.vague { fill: none; stroke: var(--encre-carte); stroke-width: 1.2; stroke-linecap: round; opacity: 0.32; }
+.cotes-ondes { fill: none; stroke: var(--encre-carte); }
+.terre { fill: var(--terre); }
+.cote { fill: none; stroke: var(--encre-carte); stroke-width: 2.8; stroke-linejoin: round; }
+.ilot { fill: var(--terre); stroke: var(--encre-carte); stroke-width: 1.8; }
+.cartouche text { font: 400 12px/1 var(--f-titre); letter-spacing: 0.14em; fill: var(--encre-carte); }
+.cartouche path { stroke: var(--encre-carte); stroke-width: 1.2; }
+.zone-fond { pointer-events: all; }
+.zone-forme { fill: none; stroke: var(--encre-carte); stroke-width: 2.2; stroke-linejoin: round; }
+.zone-ville .zone-teinte { fill: #ead8a6; }
+.zone-ville .zone-forme { stroke-width: 3; }
+.zone-ev .zone-forme { stroke: var(--alerte); stroke-width: 3.6; stroke-dasharray: 9 6; }
+.zone-choisie .zone-forme { stroke: var(--bleu); stroke-width: 4.2; stroke-dasharray: none; }
+.zone { cursor: pointer; outline: none; }
+.zone:focus-visible .zone-forme { stroke: var(--bleu); stroke-width: 4.2; }
+.zone-nom { font: 400 15px/1 var(--f-titre); fill: var(--encre-carte); paint-order: stroke; stroke: var(--terre); stroke-width: 5px; stroke-linejoin: round; }
+.zone-compte rect { fill: var(--encre-carte); }
+.zone-compte text { font: 800 12px/1 var(--f-chiffre); fill: var(--terre); }
+.zone-compte.vide rect { fill: var(--terre); stroke: var(--encre-carte); stroke-width: 1.4; }
+.zone-compte.vide text { fill: var(--encre-carte); }
+.zone-compte .ond { fill: none; stroke: var(--terre); stroke-width: 1.3; stroke-linecap: round; }
+.zone-compte.vide .ond { stroke: var(--encre-carte); }
+.ev-etiquette rect { fill: var(--alerte); }
+.ev-etiquette text { font: 800 11px/1 var(--f-texte); fill: #fff; }
+.zone-label, .moi, .moi-halo, .moi-onde { transform-box: fill-box; transform-origin: center; }
+.guide-trait { fill: none; stroke: var(--bleu); stroke-width: 3; stroke-dasharray: 2 7; stroke-linecap: round; }
+.moi-halo { fill: rgba(31, 74, 156, 0.14); stroke: rgba(31, 74, 156, 0.45); stroke-width: 1; }
+.moi-onde { fill: none; stroke: var(--bleu); stroke-width: 2.4; animation: onde 2.4s var(--sortie) infinite; }
+@keyframes onde { 0% { transform: scale(0.5); opacity: 0.9; } 100% { transform: scale(3.2); opacity: 0; } }
+.moi-epingle { fill: var(--bleu); stroke: #fff; stroke-width: 2.6; stroke-linejoin: round; }
+.moi-plaque rect { fill: var(--bleu); stroke: #fff; stroke-width: 2; }
+.moi-plaque text { font: 800 12px/1 var(--f-texte); fill: #fff; letter-spacing: 0.01em; }
+
+/* ---------- Carte agrandie ---------- */
+.plein { position: fixed; inset: 0; z-index: 50; display: none; grid-template-rows: auto auto 1fr auto; background: rgba(12, 10, 6, 0); }
+.plein.ouvert { display: grid; }
+.plein-tete { display: flex; align-items: center; gap: 12px; padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; background: var(--case); border-bottom: var(--trait) solid var(--encre); }
+.plein-tete h2 { margin: 0; font: 400 22px/1.1 var(--f-titre); flex: 1; }
+.fermer, .fiche-fermer { width: 48px; height: 48px; flex: none; display: grid; place-items: center; padding: 0; border: var(--trait) solid var(--encre); background: var(--case); }
+.fermer svg, .fiche-fermer svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: square; }
+/* Bandeau sous le titre : où tu es, et le guidage quand une zone est choisie. */
+.position { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 8px 16px; background: var(--case); border-bottom: var(--trait) solid var(--encre); }
+.position .ou { flex: 1; }
+.guide { display: none; align-items: center; gap: 10px; flex: 1; }
+.position.guidage .ou { display: none; }
+.position.guidage .guide { display: flex; }
+.fleche { width: 48px; height: 48px; flex: none; display: grid; place-items: center; background: var(--bleu); color: #fff; border-radius: 50%; }
+.fleche svg { width: 30px; height: 30px; transition: rotate 0.5s var(--sortie); }
+.guide-texte { flex: 1; display: grid; gap: 1px; }
+.guide-texte b { font: 400 18px/1.1 var(--f-titre); }
+.guide-texte span { font: 600 14px/1.25 var(--f-texte); color: var(--encre-2); }
+.guide-texte .m { font: 800 15px var(--f-chiffre); color: var(--encre); font-variant-numeric: tabular-nums; }
+.guide-stop { min-height: 44px; padding: 0 12px; border: var(--trait) solid var(--encre); background: var(--case); font: 700 14px var(--f-texte); }
+.plein-scene { position: relative; overflow: hidden; background: #2a2318; container-type: size; }
+.feuille { position: absolute; left: 50%; top: 50%; translate: -50% -50%; transition: width 0.42s var(--sortie), height 0.42s var(--sortie); filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.55)); }
+.parchemin { position: absolute; inset: 0; background: var(--mer); box-shadow: inset 0 0 0 2px var(--parchemin-bord), inset 0 0 40px rgba(120, 85, 30, 0.35); overflow: hidden; touch-action: none; }
+.parchemin svg { display: block; width: 100%; height: 100%; cursor: grab; }
+.parchemin svg:active { cursor: grabbing; }
+.rouleau { position: absolute; width: 40px; margin-left: -20px; border-radius: 20px; background: linear-gradient(90deg, #8a6a34, #e9d6a6 35%, #f6ead0 50%, #c8a86b 75%, #6e5226); box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5); opacity: 0; pointer-events: none; }
+.rouleau::before, .rouleau::after { content: ''; position: absolute; left: 50%; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; background: #3a2a14; }
+.rouleau::before { top: -10px; } .rouleau::after { bottom: -10px; }
+.enroule { position: absolute; top: -7px; bottom: -7px; width: 38px; pointer-events: none; }
+.enroule.gauche { left: -19px; transform-origin: left; }
+.enroule.droite { right: -19px; transform-origin: right; }
+.enroule::before { content: ''; position: absolute; inset: 0; clip-path: var(--dechire); }
+.enroule.gauche::before { background: linear-gradient(90deg, #6f5428 0%, #a88a52 10%, #dcc48f 26%, #f7ecd2 44%, #ecdab0 60%, #c3a368 78%, #8a6a36 92%, #5e461f 100%); }
+.enroule.droite::before { background: linear-gradient(270deg, #6f5428 0%, #a88a52 10%, #dcc48f 26%, #f7ecd2 44%, #ecdab0 60%, #c3a368 78%, #8a6a36 92%, #5e461f 100%); }
+.enroule::after { content: ''; position: absolute; top: 8px; bottom: 8px; width: 14px; }
+.enroule.gauche::after { left: 100%; background: linear-gradient(90deg, rgba(60, 38, 8, 0.45), transparent); }
+.enroule.droite::after { right: 100%; background: linear-gradient(270deg, rgba(60, 38, 8, 0.45), transparent); }
+.zoom { position: absolute; right: 54px; top: 22px; display: grid; gap: 8px; }
+.zoom button { width: 48px; height: 48px; display: grid; place-items: center; padding: 0; border: var(--trait) solid var(--encre); background: var(--case); }
+.zoom svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: square; }
+.passer { position: absolute; left: 50%; bottom: 18px; translate: -50% 0; font: 600 13px var(--f-texte); color: var(--encre-carte); background: var(--parchemin); padding: 4px 10px; white-space: nowrap; pointer-events: none; opacity: 0; }
+.plein-pied { background: var(--case); border-top: var(--trait) solid var(--encre); padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 10px; }
+.legende { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; margin: 0; padding: 0; list-style: none; font: 600 13px/1.2 var(--f-texte); }
+.legende li { display: flex; align-items: center; gap: 6px; }
+.legende li:first-child { font-weight: 800; }
+.legende svg { width: 22px; height: 16px; flex: none; }
+.legende-note { margin: 0; font: 400 14px/1.35 var(--f-texte); color: var(--encre-2); }
+/* Fiche d'une zone : remplace la légende quand on touche une zone. */
+.fiche { display: grid; gap: 10px; }
+.fiche[hidden] { display: none; }
+.fiche-tete { display: flex; align-items: center; gap: 12px; }
+.fiche-tete .ic { width: 44px; height: 44px; flex: none; }
+.fiche-tete div { flex: 1; }
+.fiche h3 { margin: 0; font: 400 22px/1.1 var(--f-titre); }
+.fiche-tete p { margin: 2px 0 0; font: 600 14px var(--f-texte); color: var(--encre-2); }
+.fiche-texte { margin: 0; font: 400 15px/1.4 var(--f-texte); }
+.fiche-faits { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; }
+.fiche-faits div { border: 2px solid var(--encre); padding: 6px 10px; }
+.fiche-faits dt { font: 600 12px var(--f-texte); color: var(--encre-2); }
+.fiche-faits dd { margin: 0; font: 800 20px/1.2 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.fiche-ev { margin: 0; padding: 6px 10px; background: var(--alerte); color: #fff; font: 800 14px var(--f-texte); }
+.fiche-ev[hidden] { display: none; }
+.action { min-height: 52px; border: var(--trait) solid var(--encre); background: var(--encre); color: var(--case); font: 400 19px/1.1 var(--f-titre); }
+.action.ici { background: var(--bleu); border-color: var(--bleu); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+</style>
+
+<div class="app">
+  <div class="proto" role="group" aria-label="Commandes du prototype">
+    <p>Prototype v2 : touche la carte pour l'agrandir, puis touche une zone. Pince pour zoomer, glisse pour bouger.</p>
+    <div class="rang">
+      <button id="p-terrain" aria-pressed="true">Zones carrées (démo)</button>
+      <button id="p-bouger">Bouger ma position</button>
+      <button id="p-balises">Changer les balises</button>
+      <button id="p-ev" aria-pressed="true">Double gain</button>
+      <button id="p-cap">Tourner le téléphone</button>
+    </div>
+  </div>
+
+  <header class="barre" aria-label="État de la partie">
+    <span class="chrono">1:24:10</span>
+    <span class="jenny">1 250 J</span>
+  </header>
+
+  <div class="case fantome">Profil, Nen, licence (inchangés)</div>
+
+  <section class="case" aria-labelledby="t-carte">
+    <div class="carte-tete">
+      <h2 id="t-carte">L'île</h2>
+      <span id="resume"></span>
+    </div>
+    <p class="ou" id="ou-mini"></p>
+    <button class="carte-mini" id="mini" aria-label="Agrandir la carte de l'île">
+      <svg id="svg-mini" aria-hidden="true"></svg>
+      <span class="agrandir" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg>Agrandir</span>
+    </button>
+    <div class="villes" id="villes"></div>
+  </section>
+
+  <div class="case fantome">Book fermé (inchangé)</div>
+</div>
+
+<div class="plein" id="plein" role="dialog" aria-modal="true" aria-labelledby="t-plein">
+  <div class="plein-tete">
+    <h2 id="t-plein">Carte de l'île</h2>
+    <button class="fermer" id="fermer" aria-label="Fermer la carte"><svg viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19"/></svg></button>
+  </div>
+  <div class="position" id="position" aria-live="polite">
+    <p class="ou" id="ou-grand"></p>
+    <div class="guide">
+      <span class="fleche" aria-hidden="true"><svg viewBox="-15 -15 30 30" id="fleche"><path d="M0 -12 9 8 0 3 -9 8z" fill="#fff"/></svg></span>
+      <div class="guide-texte"><b id="g-nom"></b><span id="g-dir"></span></div>
+      <button class="guide-stop" id="g-stop">Arrêter</button>
+    </div>
+  </div>
+  <div class="plein-scene" id="scene">
+    <div class="feuille" id="feuille">
+      <div class="parchemin" id="parchemin">
+        <svg id="svg-grand" role="img" aria-label="Carte de l'île"></svg>
+      </div>
+      <div class="enroule gauche" aria-hidden="true"></div>
+      <div class="enroule droite" aria-hidden="true"></div>
+    </div>
+    <div class="rouleau" id="rouleau"></div>
+    <div class="zoom" id="zoom">
+      <button id="z-plus" aria-label="Zoomer"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button id="z-moins" aria-label="Dézoomer"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+      <button id="recentrer" aria-label="Me retrouver sur la carte"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button>
+    </div>
+    <span class="passer" id="passer">Touche pour passer</span>
+  </div>
+  <div class="plein-pied">
+    <div id="legende-bloc">
+      <ul class="legende" id="legende"></ul>
+      <p class="legende-note">Touche une zone pour savoir ce qu'on y fait. La place des balises reste secrète.</p>
+    </div>
+    <div class="fiche" id="fiche" hidden>
+      <div class="fiche-tete">
+        <svg class="ic" id="f-ic" viewBox="-16 -16 32 32" aria-hidden="true"></svg>
+        <div><h3 id="f-nom"></h3><p id="f-type"></p></div>
+        <button class="fiche-fermer" id="f-fermer" aria-label="Fermer la fiche"><svg viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19"/></svg></button>
+      </div>
+      <p class="fiche-ev" id="f-ev" hidden></p>
+      <p class="fiche-texte" id="f-texte"></p>
+      <dl class="fiche-faits">
+        <div><dt>Balises actives</dt><dd id="f-bal"></dd></div>
+        <div><dt>Distance</dt><dd id="f-dist"></dd></div>
+      </dl>
+      <button class="action" id="f-guider">Me guider</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const calme = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---------- Données de démonstration (mètres : x vers l'est, y vers le sud). Dans l'app : `GET /carte`. ----------
+// « Carrés » = ce que le GM relève au plus simple (la démo : 6 carrés de 100 m, 20 m d'écart) ; « libres » = v1.
+const TERRAINS = {
+  carres: [
+    ['masadora', 'Masadora', 'masadora', 0, 0], ['prairie', 'Prairie', 'sauvage', 120, 0], ['antokiba', 'Antokiba', 'antokiba', 240, 0],
+    ['foret', 'Forêt', 'sauvage', 0, 120], ['rives', 'Rives', 'sauvage', 120, 120], ['soufrabi', 'Soufrabi', 'soufrabi', 240, 120],
+  ].map(([id, nom, type, x, y]) => ({ id, nom, type, pts: [[x, y], [x + 100, y], [x + 100, y + 100], [x, y + 100]] })),
+  libres: [
+    { id: 'masadora', nom: 'Masadora', type: 'masadora', pts: [[22, 24], [138, 16], [150, 92], [96, 118], [30, 104]] },
+    { id: 'prairie', nom: 'Prairie', type: 'sauvage', pts: [[164, 18], [292, 26], [300, 120], [262, 178], [176, 170], [160, 100]] },
+    { id: 'antokiba', nom: 'Antokiba', type: 'antokiba', pts: [[316, 22], [400, 30], [404, 128], [322, 132]] },
+    { id: 'foret', nom: 'Forêt', type: 'sauvage', pts: [[18, 126], [100, 136], [156, 190], [148, 300], [24, 298]] },
+    { id: 'rives', nom: 'Rives', type: 'sauvage', pts: [[170, 192], [262, 196], [292, 236], [278, 302], [166, 302]] },
+    { id: 'soufrabi', nom: 'Soufrabi', type: 'soufrabi', pts: [[312, 152], [404, 148], [402, 300], [306, 298], [300, 220]] },
+  ],
+};
+const POSITIONS = { carres: [[52, 170, 8], [110, 110, 12], [290, 40, 6], [170, 60, 9]], libres: [[80, 220, 8], [214, 150, 9], [356, 228, 6], [70, 60, 9]] };
+let terrain = 'carres', ZONES = TERRAINS[terrain], ip = 0;
+let moi = { x: 52, y: 170, precision: 8 };
+let balises = { masadora: 1, prairie: 5, antokiba: 0, foret: 3, rives: 2, soufrabi: 1 };
+let evenement = { zone: 'prairie', texte: 'Double gain · 8 min' };
+let choisie = null, guidee = null, cap = null; // cap : orientation du téléphone (degrés), null = pas de boussole
+
+const TYPES = {
+  masadora: { titre: 'Boutique de sorts', texte: "Achète des paquets de sorts avec tes jenny. Scanne le QR de la boutique, sur place.", ville: true },
+  antokiba: { titre: 'Salle des enchères', texte: 'Mise tes jenny sur des cartes rares. Scanne le QR de la salle pour entrer.', ville: true },
+  soufrabi: { titre: 'Arène', texte: 'Mise des jenny et affronte un PNJ : la victoire rapporte gros.', ville: true },
+  sauvage: { titre: 'Zone de chasse', texte: 'Des balises QR y sont cachées. Trouve-les et scanne-les pour tirer des cartes.' },
+};
+// Icônes à l'encre (même trait partout) : sac, marteau, poing, feuille.
+const ICONES = {
+  masadora: '<path d="M-7 -2h14l-1.6 10h-10.8z"/><path d="M-4 -2v-2a4 4 0 0 1 8 0v2"/>',
+  antokiba: '<path d="M-8 8h9"/><path d="M-5.5 2.5l7-7 4 4-7 7z"/><path d="M3 -2.5l5.5 5.5"/>',
+  soufrabi: '<path d="M-6 8v-6c0-2 1-3 2.6-3h6.8c1.8 0 2.6 1 2.6 3v2c0 2.6-2 4-4.4 4z"/><path d="M-6 1h12M-2.2 -2v3M1.6 -2v3"/><path d="M-6 3.5c-1.6 0-2.4-1-2.4-2.4"/>',
+  sauvage: '<path d="M-7 7c0-8 5-13 14-14 0 9-5 14-13 14z"/><path d="M-7 7l7-7"/>',
+};
+const icone = (type, r = 13) => `<circle r="${r}" fill="#f6edd3" stroke="#1b150c" stroke-width="2"/><g fill="none" stroke="#1b150c" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ICONES[type]}</g>`;
+
+// ---------- Géométrie ----------
+const graine = (s) => [...s].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0, 2166136261);
+function hasard(seed) { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function enveloppe(pts) { // enveloppe convexe (chaîne monotone)
+  const p = [...pts].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const x = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const bas = [], haut = [];
+  for (const q of p) { while (bas.length >= 2 && x(bas.at(-2), bas.at(-1), q) <= 0) bas.pop(); bas.push(q); }
+  for (const q of [...p].reverse()) { while (haut.length >= 2 && x(haut.at(-2), haut.at(-1), q) <= 0) haut.pop(); haut.push(q); }
+  return bas.slice(0, -1).concat(haut.slice(0, -1));
+}
+function reechantillonner(poly, pas) { // points tous les `pas` le long du contour fermé
+  const out = [];
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i], b = poly[(i + 1) % poly.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.round(L / pas));
+    for (let k = 0; k < n; k++) out.push([a[0] + ((b[0] - a[0]) * k) / n, a[1] + ((b[1] - a[1]) * k) / n]);
+  }
+  return out;
+}
+function chaikin(pts, n) { for (let r = 0; r < n; r++) { const o = []; pts.forEach((a, i) => { const b = pts[(i + 1) % pts.length]; o.push([a[0] * 0.75 + b[0] * 0.25, a[1] * 0.75 + b[1] * 0.25], [a[0] * 0.25 + b[0] * 0.75, a[1] * 0.25 + b[1] * 0.75]); }); pts = o; } return pts; }
+function trace(pts) { // courbe fermée lisse (Catmull-Rom → Bézier)
+  const n = pts.length, f = (v) => v.toFixed(1);
+  let d = `M${f(pts[0][0])} ${f(pts[0][1])}`;
+  for (let i = 0; i < n; i++) {
+    const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
+    d += `C${f(p1[0] + (p2[0] - p0[0]) / 6)} ${f(p1[1] + (p2[1] - p0[1]) / 6)} ${f(p2[0] - (p3[0] - p1[0]) / 6)} ${f(p2[1] - (p3[1] - p1[1]) / 6)} ${f(p2[0])} ${f(p2[1])}`;
+  }
+  return d + 'Z';
+}
+const centreSurface = (pts) => { let a = 0, cx = 0, cy = 0; pts.forEach((p, i) => { const q = pts[(i + 1) % pts.length], k = p[0] * q[1] - q[0] * p[1]; a += k; cx += (p[0] + q[0]) * k; cy += (p[1] + q[1]) * k; }); return Math.abs(a) < 1e-9 ? pts[0] : [cx / (3 * a), cy / (3 * a)]; };
+const dedans = (p, poly) => { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [xi, yi] = poly[i], [xj, yj] = poly[j]; if (yi > p[1] !== yj > p[1] && p[0] < ((xj - xi) * (p[1] - yi)) / (yj - yi) + xi) c = !c; } return c; };
+
+// Côte : enveloppe des zones poussée vers le large d'une marge qui ondule en baies et en caps (toujours ≥ 13 unités : jamais sur une zone).
+function cote(env, c, r) {
+  const s = reechantillonner(env, 5), n = s.length, ph = [r() * 6.3, r() * 6.3, r() * 6.3];
+  return chaikin(s.map((p, i) => {
+    const a = s[(i - 1 + n) % n], b = s[(i + 1) % n];
+    let nx = b[1] - a[1], ny = -(b[0] - a[0]); const L = Math.hypot(nx, ny) || 1; nx /= L; ny /= L;
+    if (nx * (p[0] - c[0]) + ny * (p[1] - c[1]) < 0) { nx = -nx; ny = -ny; }
+    const t = (i / n) * Math.PI * 2, d = 32 + 17 * (0.5 * Math.sin(2 * t + ph[0]) + 0.3 * Math.sin(3 * t + ph[1]) + 0.2 * Math.sin(7 * t + ph[2])) + 1.6 * Math.sin(23 * t);
+    return [p[0] + nx * d, p[1] + ny * d];
+  }), 1);
+}
+// Zone adoucie : coins déplacés de quelques unités, contour tremblé (graine = son identifiant), coins arrondis.
+function adoucir(pts, id) { const r = hasard(graine(id)); pts = pts.map(([x, y]) => [x + (r() - 0.5) * 11, y + (r() - 0.5) * 11]); return chaikin(reechantillonner(pts, 9).map((p, i, s) => { const a = s[(i - 1 + s.length) % s.length], b = s[(i + 1) % s.length]; let nx = b[1] - a[1], ny = -(b[0] - a[0]); const L = Math.hypot(nx, ny) || 1; const j = (r() - 0.5) * 3.4; return [p[0] + (nx / L) * j, p[1] + (ny / L) * j]; }), 2); }
+
+// ---------- Plan : mètres → unités du dessin (largeur ≈ 420, marge pour la mer) ----------
+const PAD = 70;
+let W = 420, H = 320, plan = null;
+function construire() {
+  const tous = ZONES.flatMap((z) => z.pts), xs = tous.map((p) => p[0]), ys = tous.map((p) => p[1]);
+  const x0 = Math.min(...xs), y0 = Math.min(...ys), lw = Math.max(...xs) - x0 || 1, lh = Math.max(...ys) - y0 || 1;
+  let k = (420 - 2 * PAD) / lw; if (lh * k > 420) k = 420 / lh;
+  W = lw * k + 2 * PAD; H = lh * k + 2 * PAD;
+  const P = ([x, y]) => [(x - x0) * k + PAD, (y - y0) * k + PAD];
+  const zones = ZONES.map((z) => { const pts = z.pts.map(P); return { ...z, plan: pts, doux: adoucir(pts, z.id), centre: centreSurface(pts) }; });
+  const env = enveloppe(zones.flatMap((z) => z.plan)), c = centreSurface(env), r = hasard(graine(ZONES.map((z) => z.id).join()));
+  const littoral = cote(env, c, r);
+  // Vagues et îlots dans la mer, tirés une fois, jamais sur la terre.
+  const loin = (p, m) => !dedans(p, littoral) && littoral.every((q) => Math.hypot(q[0] - p[0], q[1] - p[1]) > m);
+  const vagues = [], ilots = [];
+  for (let i = 0; i < 400 && vagues.length < 22; i++) { const p = [r() * W, r() * H]; if (loin(p, 14) && vagues.every((v) => Math.hypot(v[0] - p[0], v[1] - p[1]) > 34)) vagues.push(p); }
+  for (let i = 0; i < 200 && ilots.length < 2; i++) { const p = [10 + r() * (W - 20), 10 + r() * (H - 20)]; if (loin(p, 22) && !(p[0] < 140 && p[1] < 44)) ilots.push([...p, 4 + r() * 5]); }
+  plan = { k, P, zones, littoral, vagues, ilots };
+}
+const mPlan = () => plan.P([moi.x, moi.y]);
+const zoneDe = (id) => plan.zones.find((z) => z.id === id);
+const ouEstMoi = () => ZONES.find((z) => dedans([moi.x, moi.y], z.pts)) ?? null;
+const metres = (z) => { const c = centreSurface(z.pts); return Math.round(Math.hypot(c[0] - moi.x, c[1] - moi.y) / 5) * 5; };
+const cap_vers = (z) => { const c = centreSurface(z.pts); return (Math.atan2(c[0] - moi.x, -(c[1] - moi.y)) * 180) / Math.PI; };
+const POINTS = ['le nord', 'le nord-est', "l'est", 'le sud-est', 'le sud', 'le sud-ouest', "l'ouest", 'le nord-ouest'];
+function direction(z) {
+  const a = (cap_vers(z) + 360) % 360;
+  if (cap === null) return `vers ${POINTS[Math.round(a / 45) % 8]}`;
+  const rel = (a - cap + 360) % 360;
+  return rel < 30 || rel > 330 ? 'tout droit' : rel < 150 ? 'à ta droite' : rel <= 210 ? 'derrière toi' : 'à ta gauche';
+}
+
+// ---------- Dessin ----------
+const TRAMES = `
+  <pattern id="t1" width="12" height="12" patternUnits="userSpaceOnUse"><circle cx="6" cy="6" r="1" fill="#1b150c" opacity=".55"/></pattern>
+  <pattern id="t2" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1.35" fill="#1b150c" opacity=".6"/></pattern>
+  <pattern id="t3" width="4.5" height="4.5" patternUnits="userSpaceOnUse"><circle cx="2.25" cy="2.25" r="1.75" fill="#1b150c" opacity=".78"/></pattern>
+  <filter id="plume" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="3"/></filter>`;
+const niveau = (n) => (n <= 0 ? 0 : n === 1 ? 1 : n <= 3 ? 2 : 3);
+
+function dessiner(svg, grand) {
+  const P = grand ? 'g' : 'm', L = plan.littoral, littoral = trace(L);
+  if (!grand) svg.setAttribute('viewBox', `0 0 ${W.toFixed(1)} ${H.toFixed(1)}`);
+  const d = [`<defs>${TRAMES.replace(/id="(\w+)"/g, `id="${P}$1"`)}</defs>`];
+  d.push(`<rect class="mer-fond" x="-200" y="-200" width="${W + 400}" height="${H + 400}"/>`);
+  // Lignes d'eau autour de la côte (gravure) : traits épais de la côte recouverts de mer, du large vers le rivage.
+  d.push('<g class="ondes">' + [30, 20, 11].map((w, i) => `<path d="${littoral}" class="cotes-ondes" stroke-width="${w}" opacity="${0.16 + i * 0.06}"/><path d="${littoral}" fill="none" stroke="var(--mer)" stroke-width="${w - 1.6}"/>`).join('') + '</g>');
+  d.push('<g class="vagues">' + plan.vagues.map(([x, y]) => `<path class="vague" d="M${(x - 9).toFixed(1)} ${y.toFixed(1)}q4.5 -4 9 0t9 0"/>`).join('') + '</g>');
+  d.push(plan.ilots.map(([x, y, s]) => `<ellipse class="ilot" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="${s.toFixed(1)}" ry="${(s * 0.7).toFixed(1)}" filter="url(#${P}plume)"/>`).join(''));
+  d.push(`<g class="cartouche" transform="translate(14 22)"><text>GREED ISLAND</text><path d="M0 7h104"/></g>`);
+  d.push(`<path class="terre" d="${littoral}"/><path class="cote" d="${littoral}" filter="url(#${P}plume)"/>`);
+  for (const z of plan.zones) {
+    const n = balises[z.id] ?? 0, niv = niveau(n), ev = evenement?.zone === z.id, ville = TYPES[z.type].ville;
+    const forme = trace(z.doux), [mx0, my0] = mPlan();
+    // Le nom ne doit pas passer sous « Tu es ici » : s'il en est trop près, il monte (ou descend) dans la zone.
+    let [cx, cy] = z.centre;
+    const hautZ = Math.min(...z.plan.map((p) => p[1])), basZ = Math.max(...z.plan.map((p) => p[1]));
+    const decale = Math.abs(mx0 - cx) < 42 && my0 - cy > -24 && my0 - cy < 64;
+    if (decale) cy = my0 > (hautZ + basZ) / 2 ? hautZ + 22 : basZ - 6;
+    const cls = `zone zone-${ville ? 'ville' : 'sauvage'}${ev ? ' zone-ev' : ''}${grand && choisie === z.id ? ' zone-choisie' : ''}`;
+    let g = `<g class="${cls}" data-zone="${z.id}"${grand ? ` tabindex="0" role="button" aria-label="${z.nom}, ${TYPES[z.type].titre}, ${n} balise${n > 1 ? 's' : ''} active${n > 1 ? 's' : ''}"` : ''}>`;
+    if (ville) g += `<path class="zone-teinte" d="${forme}"/>`;
+    g += `<path class="zone-fond" d="${forme}" fill="${niv ? `url(#${P}t${niv})` : 'none'}"/>`;
+    g += `<path class="zone-forme" d="${forme}" filter="url(#${P}plume)"/>`;
+    // Étiquette : icône du type, nom en grand, pastille des balises actives.
+    const w = n >= 10 ? 34 : 28;
+    g += `<g transform="translate(${cx.toFixed(1)} ${(cy - 4).toFixed(1)})"><g class="zone-label">`;
+    if (!decale) g += `<g transform="translate(0 -24)">${icone(z.type)}</g>`; // déplacé : l'icône toucherait ton épingle
+    g += `<text class="zone-nom" text-anchor="middle" y="4">${z.nom}</text>`;
+    g += `<g class="zone-compte${n ? '' : ' vide'}" transform="translate(0 11)"><rect x="${-w / 2}" width="${w}" height="17" rx="2"/><path class="ond" d="M${-w / 2 + 6} 11.5a3.5 3.5 0 0 1 7 0M${-w / 2 + 7.8} 11.5a1.7 1.7 0 0 1 3.4 0"/><text x="${w / 2 - 5}" text-anchor="end" y="13">${n}</text></g>`;
+    g += '</g></g>';
+    if (ev) {
+      const tw = evenement.texte.length * 5.6 + 12;
+      g += `<g class="ev-etiquette" transform="translate(${(z.centre[0] - tw / 2).toFixed(1)} ${(basZ - 8).toFixed(1)})"><rect width="${tw}" height="17"/><text x="6" y="12.5">${evenement.texte}</text></g>`;
+    }
+    d.push(g + '</g>');
+  }
+  const [mx, my] = mPlan();
+  if (guidee) { const [gx, gy] = zoneDe(guidee).centre; d.push(`<path class="guide-trait" d="M${mx.toFixed(1)} ${my.toFixed(1)}L${gx.toFixed(1)} ${gy.toFixed(1)}"/>`); }
+  // Toi : épingle bleue, onde qui bat, plaque « Tu es ici » (la seule position montrée, RG-10.12).
+  d.push(`<g transform="translate(${mx.toFixed(1)} ${my.toFixed(1)})"><g class="moi">
+    <circle class="moi-halo" r="${Math.max(6, moi.precision * plan.k).toFixed(1)}"/>
+    <circle class="moi-onde" r="9"/>
+    <path class="moi-epingle" d="M0 0C-3 -5 -10 -11 -10 -19a10 10 0 1 1 20 0c0 8 -7 14 -10 19z"/><circle cy="-19" r="4" fill="#fff"/>
+    <g class="moi-plaque" transform="translate(0 -44)"><rect x="-33" y="-11" width="66" height="21" rx="3"/><text text-anchor="middle" y="4">Tu es ici</text></g>
+  </g></g>`);
+  d.push(`<g transform="translate(${(W - 26).toFixed(1)} ${(H - 30).toFixed(1)})"><path d="M0 -14 4 0 0 14 -4 0z" fill="#1b150c"/><path d="M0 -14 4 0 -4 0z" fill="#f6edd3" stroke="#1b150c" stroke-width="1"/><text y="-18" text-anchor="middle" style="font:400 10px var(--f-titre);fill:#1b150c">N</text></g>`);
+  svg.innerHTML = d.join('');
+}
+
+const PIN = '<svg viewBox="-11 -31 22 32" aria-hidden="true"><path d="M0 0C-3 -5 -10 -11 -10 -19a10 10 0 1 1 20 0c0 8 -7 14 -10 19z" fill="#1f4a9c" stroke="#fff" stroke-width="2"/><circle cy="-19" r="4" fill="#fff"/></svg>';
+function texteOu() { const z = ouEstMoi(); return z ? `${PIN}<span>Tu es dans <b>${z.nom}</b></span>` : `${PIN}<span><b>Entre deux zones</b></span>`; }
+function majTexte() {
+  const total = Object.values(balises).reduce((a, b) => a + b, 0);
+  $('#resume').textContent = `${total} balise${total > 1 ? 's' : ''} active${total > 1 ? 's' : ''}`;
+  $('#ou-mini').innerHTML = texteOu();
+  $('#ou-grand').innerHTML = texteOu();
+  $('#villes').innerHTML = ZONES.filter((z) => TYPES[z.type].ville).map((z) => `<button class="ville" data-guider="${z.id}"><svg class="ic" viewBox="-16 -16 32 32" aria-hidden="true">${icone(z.type, 14)}</svg><span><b>${z.nom}</b><span>${TYPES[z.type].titre}</span></span><span class="dist">${metres(z)} m<small>${direction(z)}</small></span></button>`).join('');
+  // Guidage
+  const pos = $('#position');
+  if (guidee) {
+    const z = ZONES.find((x) => x.id === guidee), arrive = dedans([moi.x, moi.y], z.pts);
+    pos.classList.add('guidage');
+    $('#g-nom').textContent = arrive ? `Tu es à ${z.nom} !` : z.nom;
+    $('#g-dir').innerHTML = arrive ? 'Tu y es.' : `<span class="m">${metres(z)} m</span> · ${direction(z)}`;
+    $('#fleche').style.rotate = `${arrive ? 0 : cap_vers(z) - (cap ?? 0)}deg`;
+  } else pos.classList.remove('guidage');
+  // Fiche
+  if (choisie) {
+    const z = ZONES.find((x) => x.id === choisie), t = TYPES[z.type], n = balises[z.id] ?? 0, ici = dedans([moi.x, moi.y], z.pts);
+    $('#f-ic').innerHTML = icone(z.type, 15);
+    $('#f-nom').textContent = z.nom; $('#f-type').textContent = t.titre; $('#f-texte').textContent = t.texte;
+    $('#f-bal').textContent = n; $('#f-dist').textContent = ici ? 'Tu y es' : `${metres(z)} m`;
+    const ev = evenement?.zone === z.id; $('#f-ev').hidden = !ev; if (ev) $('#f-ev').textContent = evenement.texte;
+    const b = $('#f-guider'); b.textContent = ici ? 'Tu es ici' : guidee === z.id ? 'Guidage en cours' : 'Me guider'; b.disabled = ici; b.classList.toggle('ici', ici);
+  }
+  $('#fiche').hidden = !choisie; $('#legende-bloc').hidden = !!choisie;
+}
+function tout() { dessiner($('#svg-mini'), false); dessiner($('#svg-grand'), true); majTexte(); if (plein.classList.contains('ouvert')) appliquer(); }
+
+$('#legende').innerHTML = [
+  ['', 'Balises actives :'],
+  ['<rect x="1" y="1" width="20" height="14" fill="none" stroke="#1b150c" stroke-width="1.5"/>', '0'],
+  ['<rect x="1" y="1" width="20" height="14" fill="url(#lt1)" stroke="#1b150c" stroke-width="1.5"/>', '1'],
+  ['<rect x="1" y="1" width="20" height="14" fill="url(#lt2)" stroke="#1b150c" stroke-width="1.5"/>', '2 ou 3'],
+  ['<rect x="1" y="1" width="20" height="14" fill="url(#lt3)" stroke="#1b150c" stroke-width="1.5"/>', '4 et plus'],
+].map(([s, t], i) => `<li>${s ? `<svg viewBox="0 0 22 16" aria-hidden="true">${i === 1 ? TRAMES.replace(/id="t(\d)"/g, 'id="lt$1"').replace(/<filter[\s\S]*<\/filter>/, '') : ''}${s}</svg>` : ''}${t}</li>`).join('');
+
+// ---------- Zoom et déplacement (repris de la v1) ----------
+const ZMAX = 5;
+let vue = { cx: 0, cy: 0, z: 1 }, vb = { x: 0, y: 0, w: W, h: H }, echelle = 1;
+const grand = $('#svg-grand'), feuilleEl = $('#feuille');
+function appliquer() {
+  vue.z = Math.min(ZMAX, Math.max(1, vue.z));
+  const sc = $('#scene').getBoundingClientRect(), aw = sc.width - 84, ah = sc.height - 36;
+  const fw0 = Math.min(aw, ah * (W / H)), fh0 = fw0 * (H / W), deplie = vue.z > 1.01;
+  const fw = deplie ? aw : fw0, fh = deplie ? ah : fh0;
+  feuilleEl.style.width = `${fw}px`; feuilleEl.style.height = `${fh}px`;
+  echelle = (fw0 / W) * vue.z; vb.w = fw / echelle; vb.h = fh / echelle;
+  vue.cx = vb.w >= W ? W / 2 : Math.min(W - vb.w / 2, Math.max(vb.w / 2, vue.cx));
+  vue.cy = vb.h >= H ? H / 2 : Math.min(H - vb.h / 2, Math.max(vb.h / 2, vue.cy));
+  vb.x = vue.cx - vb.w / 2; vb.y = vue.cy - vb.h / 2;
+  grand.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+}
+addEventListener('resize', () => { if (plein.classList.contains('ouvert')) appliquer(); });
+function zoomer(f, ux, uy) { const z = Math.min(ZMAX, Math.max(1, vue.z * f)), k = vue.z / z; vue = { cx: ux + (vue.cx - ux) * k, cy: uy + (vue.cy - uy) * k, z }; appliquer(); }
+const versUnites = (px, py) => { const r = grand.getBoundingClientRect(), s = Math.min(r.width / vb.w, r.height / vb.h), ox = r.left + (r.width - vb.w * s) / 2, oy = r.top + (r.height - vb.h * s) / 2; return [vb.x + (px - ox) / s, vb.y + (py - oy) / s, s]; };
+const doigts = new Map();
+let pince = null, depart = null, bouge = 0;
+grand.addEventListener('pointerdown', (e) => { grand.setPointerCapture(e.pointerId); doigts.set(e.pointerId, [e.clientX, e.clientY]); pince = null; if (doigts.size === 1) { depart = [e.clientX, e.clientY]; bouge = 0; } else bouge = 99; });
+grand.addEventListener('pointermove', (e) => {
+  if (!doigts.has(e.pointerId)) return;
+  const avant = doigts.get(e.pointerId); doigts.set(e.pointerId, [e.clientX, e.clientY]);
+  if (depart) bouge = Math.max(bouge, Math.hypot(e.clientX - depart[0], e.clientY - depart[1]));
+  if (doigts.size === 1) { const [, , s] = versUnites(0, 0); vue.cx -= (e.clientX - avant[0]) / s; vue.cy -= (e.clientY - avant[1]) / s; appliquer(); }
+  else if (doigts.size === 2) { const [a, b] = [...doigts.values()], dist = Math.hypot(a[0] - b[0], a[1] - b[1]), mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2; if (pince) { const [ux, uy] = versUnites(mx, my); zoomer(dist / pince, ux, uy); } pince = dist; }
+});
+const lacher = (e) => { doigts.delete(e.pointerId); pince = null; };
+// Toucher sans glisser = choisir la zone sous le doigt (ou fermer la fiche sur la mer).
+grand.addEventListener('pointerup', (e) => {
+  const tap = doigts.size === 1 && bouge < 8; lacher(e);
+  if (!tap || joue) return;
+  const z = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-zone]');
+  choisir(z ? z.dataset.zone : null);
+});
+grand.addEventListener('pointercancel', lacher);
+grand.addEventListener('wheel', (e) => { e.preventDefault(); const [ux, uy] = versUnites(e.clientX, e.clientY); zoomer(Math.pow(1.0018, -e.deltaY), ux, uy); }, { passive: false });
+grand.addEventListener('keydown', (e) => { const z = e.target.closest?.('[data-zone]'); if (z && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); choisir(z.dataset.zone); } });
+function animerVers(z, cx, cy) {
+  const de = { ...vue }, vers = { z: Math.min(ZMAX, Math.max(1, z)), cx, cy }, t0 = performance.now(), D = calme ? 1 : 380;
+  const pas = (t) => { const k = Math.min(1, (t - t0) / D), e = 1 - Math.pow(1 - k, 4); vue = { cx: de.cx + (vers.cx - de.cx) * e, cy: de.cy + (vers.cy - de.cy) * e, z: de.z + (vers.z - de.z) * e }; appliquer(); if (k < 1) requestAnimationFrame(pas); };
+  requestAnimationFrame(pas);
+}
+$('#z-plus').addEventListener('click', () => animerVers(vue.z * 1.6, vue.cx, vue.cy));
+$('#z-moins').addEventListener('click', () => animerVers(vue.z / 1.6, vue.cx, vue.cy));
+$('#recentrer').addEventListener('click', () => { const [x, y] = mPlan(); animerVers(Math.max(vue.z, 2.2), x, y); });
+
+function choisir(id) {
+  choisie = id; tout();
+  if (id) { const g = grand.querySelector(`[data-zone="${id}"]`); g?.focus({ preventScroll: true }); }
+}
+function guider(id) { guidee = id; tout(); }
+$('#f-fermer').addEventListener('click', () => choisir(null));
+$('#f-guider').addEventListener('click', () => guider(choisie));
+$('#g-stop').addEventListener('click', () => guider(null));
+$('#villes').addEventListener('click', (e) => { const b = e.target.closest('[data-guider]'); if (!b) return; guidee = b.dataset.guider; choisie = guidee; ouvrir(); tout(); });
+
+// ---------- Bords déchirés (v1) ----------
+(function () {
+  let g = 41; const r = () => (g = (g * 16807) % 2147483647) / 2147483647;
+  const bord = (y0, sens) => { const pts = []; for (let x = 0; x <= 100; x += 2 + r() * 3) pts.push(`${Math.min(100, x).toFixed(1)}% ${(y0 + sens * r() * 2).toFixed(2)}%`); pts.push(`100% ${y0}%`); return pts; };
+  $('#parchemin').style.clipPath = `polygon(${[...bord(0.4, 1), ...bord(99.6, -1).reverse()].join(',')})`;
+  const bout = (y, sens) => [0, 14, 27, 41, 55, 70, 84, 100].map((x) => `${x}% calc(${y}% + ${(sens * (1 + r() * 6)).toFixed(1)}px)`);
+  document.querySelectorAll('.enroule').forEach((e) => e.style.setProperty('--dechire', `polygon(${[...bout(0, 1), ...bout(100, -1).reverse()].join(',')})`));
+})();
+
+// ---------- Cinématique (v1) : le parchemin se déroule, l'encre trace la côte puis les zones, puis toi ----------
+const plein = $('#plein'), feuille = $('#feuille'), rouleau = $('#rouleau');
+let anims = [], minuteurs = [], joue = false;
+const A = (el, k, o) => { if (!el) return; const a = el.animate(k, { fill: 'forwards', easing: 'cubic-bezier(.16,1,.3,1)', ...o }); anims.push(a); return a; };
+function finir() { minuteurs.forEach(clearTimeout); minuteurs = []; anims.forEach((a) => a.cancel()); anims = []; joue = false; $('#passer').style.opacity = ''; }
+function ouvrir() {
+  finir();
+  plein.classList.add('ouvert');
+  feuilleEl.style.transition = 'none';
+  vue = { cx: W / 2, cy: H / 2, z: 1 }; appliquer();
+  feuilleEl.offsetWidth; feuilleEl.style.transition = '';
+  $('#fermer').focus({ preventScroll: true });
+  if (calme) return;
+  joue = true; navigator.vibrate?.(12);
+  const sc = $('#scene').getBoundingClientRect(), pr = feuille.getBoundingClientRect();
+  A(plein, [{ backgroundColor: 'rgba(12,10,6,0)' }, { backgroundColor: 'rgba(12,10,6,.5)' }], { duration: 200 });
+  A($('.plein-tete'), [{ transform: 'translateY(-100%)' }, { transform: 'none' }], { duration: 420 });
+  A($('.plein-pied'), [{ transform: 'translateY(100%)' }, { transform: 'none' }], { duration: 420 });
+  A($('#scene'), [{ opacity: 0 }, { opacity: 1 }], { duration: 120, easing: 'linear' });
+  A(feuille, [{ clipPath: 'inset(-40px 50% -40px 50%)', transform: 'scale(.94) rotate(-1.2deg)', easing: 'cubic-bezier(.45,0,.2,1)' }, { clipPath: 'inset(-40px -40px -40px -40px)', transform: 'scale(1) rotate(0deg)' }], { duration: 720, delay: 120, easing: 'linear' });
+  const r2 = rouleau.cloneNode(); r2.id = ''; $('#scene').appendChild(r2); minuteurs.push(setTimeout(() => r2.remove(), 2600));
+  const milieu = pr.left - sc.left + pr.width / 2;
+  [rouleau, r2].forEach((el) => { el.style.top = `${pr.top - sc.top - 8}px`; el.style.height = `${pr.height + 16}px`; });
+  [[rouleau, pr.left - sc.left], [r2, pr.right - sc.left]].forEach(([el, bord]) => A(el, [{ left: `${milieu}px`, opacity: 1, transform: 'scaleX(1.25)', easing: 'cubic-bezier(.45,0,.2,1)' }, { left: `${bord}px`, opacity: 1, transform: 'scaleX(1)', offset: 0.85 }, { left: `${bord}px`, opacity: 0, transform: 'scaleX(.6)' }], { duration: 840, delay: 120, easing: 'linear' }));
+  document.querySelectorAll('.enroule').forEach((el) => A(el, [{ opacity: 0, transform: 'scaleX(1.8)' }, { opacity: 1, transform: 'none' }], { duration: 320, delay: 760, easing: 'ease-out', fill: 'backwards' }));
+  // La côte se trace d'un seul trait, la terre et l'eau apparaissent derrière elle.
+  const c = $('.cote', grand), Lc = Math.ceil(c.getTotalLength());
+  A(c, [{ strokeDasharray: `${Lc} ${Lc}`, strokeDashoffset: Lc }, { strokeDasharray: `${Lc} ${Lc}`, strokeDashoffset: 0 }], { duration: 760, delay: 560, easing: 'cubic-bezier(.5,0,.3,1)', fill: 'backwards' });
+  A($('.terre', grand), [{ opacity: 0 }, { opacity: 1 }], { duration: 420, delay: 900, easing: 'ease-out', fill: 'backwards' });
+  A($('.ondes', grand), [{ opacity: 0 }, { opacity: 1 }], { duration: 500, delay: 1000, easing: 'ease-out', fill: 'backwards' });
+  A($('.vagues', grand), [{ opacity: 0, transform: 'translateX(-6px)' }, { opacity: 1, transform: 'none' }], { duration: 700, delay: 1100, fill: 'backwards' });
+  const zones = [...grand.querySelectorAll('.zone')];
+  zones.forEach((z, i) => {
+    const t = 1150 + i * 110, f = $('.zone-forme', z), L = Math.ceil(f.getTotalLength());
+    A(f, [{ strokeDasharray: `${L} ${L}`, strokeDashoffset: L }, { strokeDasharray: `${L} ${L}`, strokeDashoffset: 0 }], { duration: 520, delay: t, easing: 'cubic-bezier(.5,0,.3,1)', fill: 'backwards' });
+    A($('.zone-fond', z), [{ opacity: 0 }, { opacity: 1 }], { duration: 380, delay: t + 320, easing: 'ease-out', fill: 'backwards' });
+    A($('.zone-teinte', z), [{ opacity: 0 }, { opacity: 1 }], { duration: 380, delay: t + 280, easing: 'ease-out', fill: 'backwards' });
+    A($('.zone-label', z), [{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 360, delay: t + 380, fill: 'backwards' });
+    A($('.ev-etiquette', z), [{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: t + 520, fill: 'backwards' });
+  });
+  const fin = 1150 + zones.length * 110 + 520, m = grand.querySelector('.moi');
+  A(m, [{ opacity: 0, transform: 'translate(0,-22px) scale(1.5)' }, { opacity: 1, transform: 'none' }], { duration: 440, delay: fin, fill: 'backwards' });
+  A($('.guide-trait', grand), [{ opacity: 0 }, { opacity: 1 }], { duration: 400, delay: fin + 300, fill: 'backwards' });
+  A($('#passer'), [{ opacity: 0 }, { opacity: 1, offset: 0.2 }, { opacity: 1, offset: 0.8 }, { opacity: 0 }], { duration: fin, delay: 300, easing: 'linear', fill: 'none' });
+  minuteurs.push(setTimeout(() => { joue = false; }, fin + 700));
+}
+function fermer() { finir(); plein.classList.remove('ouvert'); choisie = null; tout(); $('#mini').focus({ preventScroll: true }); }
+$('#scene').addEventListener('pointerdown', (e) => { if (joue) { e.stopPropagation(); finir(); } }, true);
+$('#mini').addEventListener('click', ouvrir);
+$('#fermer').addEventListener('click', fermer);
+addEventListener('keydown', (e) => { if (e.key === 'Escape' && plein.classList.contains('ouvert')) { if (choisie) choisir(null); else fermer(); } });
+
+// Boussole du téléphone, si elle existe (sinon la flèche montre la direction sur la carte, nord en haut).
+addEventListener('deviceorientationabsolute', (e) => { if (e.alpha !== null) { cap = (360 - e.alpha) % 360; majTexte(); } });
+
+// ---------- Commandes du prototype ----------
+$('#p-terrain').addEventListener('click', (e) => {
+  terrain = terrain === 'carres' ? 'libres' : 'carres'; ZONES = TERRAINS[terrain]; ip = 0; [moi.x, moi.y, moi.precision] = POSITIONS[terrain][0];
+  e.currentTarget.textContent = terrain === 'carres' ? 'Zones carrées (démo)' : 'Zones libres (v1)'; choisie = null; construire(); vue = { cx: W / 2, cy: H / 2, z: 1 }; tout();
+});
+$('#p-bouger').addEventListener('click', () => { ip = (ip + 1) % POSITIONS[terrain].length; [moi.x, moi.y, moi.precision] = POSITIONS[terrain][ip]; tout(); });
+$('#p-balises').addEventListener('click', () => { for (const z of ZONES) balises[z.id] = Math.floor(Math.random() * 6); tout(); });
+$('#p-ev').addEventListener('click', (e) => { evenement = evenement ? null : { zone: 'prairie', texte: 'Double gain · 8 min' }; e.currentTarget.setAttribute('aria-pressed', String(!!evenement)); tout(); });
+const CAPS = [null, 0, 90, 180, 270];
+$('#p-cap').addEventListener('click', (e) => { cap = CAPS[(CAPS.indexOf(cap) + 1) % CAPS.length]; e.currentTarget.textContent = cap === null ? 'Tourner le téléphone' : `Téléphone vers ${POINTS[cap / 45]}`; majTexte(); });
+
+construire();
+vue = { cx: W / 2, cy: H / 2, z: 1 };
+tout();
+</script>

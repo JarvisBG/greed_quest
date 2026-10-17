@@ -66,3 +66,15 @@ describe('Page ⑱ classement final lu par le joueur', () => {
     expect(typeof r.moi.jenny).toBe('number');
   });
 });
+
+describe('Console : classement final pour l’équipe', () => {
+  it('RG-13.5 : le GM lit le classement final complet (jenny compris) ; refusé à un joueur', async () => {
+    const r = (await t.app.inject({ method: 'GET', url: `/parties/${t.partieId}/classement-final`, headers: t.bearer(gm) })).json();
+    expect(r).toMatchObject({ ok: true, gagnant: null, lots: [] });
+    expect(r.lignes.map((l: { pseudo: string }) => l.pseudo)).toEqual(['Kirua', 'Gon', 'Leolio']);
+    expect(typeof r.lignes[0].jenny).toBe('number');
+    const j = await t.app.inject({ method: 'GET', url: `/parties/${t.partieId}/classement-final`, headers: t.bearer(gon.token) });
+    expect(j.statusCode).toBe(403);
+  });
+});
+

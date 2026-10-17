@@ -67,7 +67,7 @@ export function Arene({ eq }: { eq: Equipe }) {
         <h2>Nouveau combattant</h2>
         {scan ? (
           <>
-            <CameraQr lire={lireLicence} onLu={entrer} invalide="Ce QR n’est pas une licence Greed Quest" saisie="Code de la licence (GQL1…)" />
+            <CameraQr lire={lireLicence} onLu={entrer} invalide="Ce QR n’est pas une licence Greed Island" saisie="Code de la licence (GQL1…)" />
             <button type="button" className="lien" onClick={() => setScan(false)}>
               Fermer
             </button>

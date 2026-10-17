@@ -49,7 +49,7 @@ export function Joueur({ eq, cible, setCible }: { eq: Equipe; cible: Cible | nul
 
   const scanner = (
     <>
-      <CameraQr lire={lireLicence} onLu={verifier} invalide="Ce QR n’est pas une licence Greed Quest" saisie="Code de la licence (GQL1…)" />
+      <CameraQr lire={lireLicence} onLu={verifier} invalide="Ce QR n’est pas une licence Greed Island" saisie="Code de la licence (GQL1…)" />
       {erreur && <p className="erreur">{erreur}</p>}
     </>
   );

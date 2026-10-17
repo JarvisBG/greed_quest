@@ -13,7 +13,7 @@ web
 - **Public et joueurs devant l'écran géant** : un téléviseur ou un vidéoprojecteur lu à 5-10 m, sans interaction.
 
 ## Product Purpose
-Greed Quest transpose le jeu *Greed Island* (arc de *Hunter × Hunter*) en chasse au trésor physique : balises QR posées dans un lieu réel, Livre de cartes numérotées à compléter, sorts entre joueurs proches (GPS), échanges, enchères, arène, évènements lancés par le GM. Réussir : un fan se sent dans Greed Island, et la partie reste lisible et juste sur le terrain. Client : loJIC Solutions.
+Greed Island transpose le jeu *Greed Island* (arc de *Hunter × Hunter*) en chasse au trésor physique : balises QR posées dans un lieu réel, Livre de cartes numérotées à compléter, sorts entre joueurs proches (GPS), échanges, enchères, arène, évènements lancés par le GM. Réussir : un fan se sent dans Greed Island, et la partie reste lisible et juste sur le terrain. Client : loJIC Solutions.
 
 ## Positioning
 Ce n'est pas un jeu de géolocalisation générique : c'est le jeu de l'anime rendu réel, avec ses objets (le Book, les cartes à rang, la licence de Hunter, le Nen) et sa règle « serveur autoritaire » : tout résultat vient du serveur, l'interface montre et demande.
@@ -31,7 +31,7 @@ Ce n'est pas un jeu de géolocalisation générique : c'est le jeu de l'anime re
 - Vocabulaire du jeu employé tel quel : Book, Clear, Hunter, Nen, Zetsu, jenny, rangs SS à D.
 
 ## Brand Commitments
-- Nom affiché du jeu : **Greed Island** (décision du 2026-10-10 ; le projet et le dépôt restent « Greed Quest »). Le classeur s'appelle **Book**.
+- Nom affiché du jeu : **Greed Island**, sur toutes les pages et dans tous les documents (décisions du 2026-10-10 et du 2026-10-17 ; seuls les identifiants techniques gardent « greed-quest » : dépôt, `package.json`, `@gq/*`). Le classeur s'appelle **Book**.
 - Habillage **Hunter × Hunter / Greed Island pleinement assumé** (décision du 2026-10-10) : Book, cartes à rang, voix du jeu, licence de Hunter, hexagone du Nen, villes de Greed Island. Droits sur l'œuvre à la charge du client.
 - **Écriture Hunter** (police de fan) autorisée en décor seulement, toujours doublée en français.
 - Aucun « marqueur IA » (liste dans `docs/PROMPT_INTERFACES.md` § 2.2).

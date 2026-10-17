@@ -95,7 +95,7 @@ export function App() {
       <div className="app-shell">
         <aside className={`sidebar${menu ? ' ouvert' : ''}`}>
           <div className="sidebar__brand">
-            <i className="fa-solid fa-hexagon-nodes" aria-hidden="true" /> GREED QUEST
+            <i className="fa-solid fa-hexagon-nodes" aria-hidden="true" /> GREED ISLAND
           </div>
           <div className="sidebar__tag">{gm ? 'Game Master' : 'PNJ'}</div>
           <nav className="sidebar__nav">
@@ -114,7 +114,7 @@ export function App() {
         <main className="main">
           <header className="topbar">
             <div className="topbar__greet">
-              <div className="eyebrow">{p?.nom ?? 'Greed Quest'}</div>
+              <div className="eyebrow">{p?.nom ?? 'Greed Island'}</div>
               <h1>{courante.titre}</h1>
             </div>
             <div className="topbar__actions">

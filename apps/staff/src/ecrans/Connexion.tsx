@@ -27,7 +27,7 @@ export function Connexion({ partieUrl, connecter }: { partieUrl: string | null; 
     >
       <div className="modal-box__head">
         <h3>
-          <i className="fa-solid fa-hexagon-nodes" aria-hidden="true" /> GREED QUEST · Équipe
+          <i className="fa-solid fa-hexagon-nodes" aria-hidden="true" /> GREED ISLAND · Équipe
         </h3>
       </div>
       <p className="info">Arbitres (PNJ) et Game Masters : connecte-toi avec ton code.</p>

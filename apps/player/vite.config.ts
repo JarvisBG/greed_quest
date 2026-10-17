@@ -15,8 +15,8 @@ export default defineConfig(({ mode }) => {
         registerType: 'autoUpdate',
         includeAssets: ['icon.svg'],
         manifest: {
-          name: 'Greed Quest',
-          short_name: 'Greed Quest',
+          name: 'Greed Island',
+          short_name: 'Greed Island',
           description: 'Chasse au trésor : balises, cartes et sorts',
           lang: 'fr',
           display: 'standalone',

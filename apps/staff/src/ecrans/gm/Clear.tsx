@@ -66,7 +66,7 @@ export function Clear({ eq }: { eq: Equipe }) {
               <li key={d.id} className="pile">
                 <strong>{d.pseudo} annonce un Clear</strong>
                 {scan === d.id ? (
-                  <CameraQr lire={lireLicence} onLu={(l) => void confirmer(l)} invalide="Ce QR n’est pas une licence Greed Quest" saisie="Code de la licence (GQL1…)" />
+                  <CameraQr lire={lireLicence} onLu={(l) => void confirmer(l)} invalide="Ce QR n’est pas une licence Greed Island" saisie="Code de la licence (GQL1…)" />
                 ) : (
                   <div className="segments">
                     <button type="button" onClick={() => (setMessage(null), setScan(d.id))}>

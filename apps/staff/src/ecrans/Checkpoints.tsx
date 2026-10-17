@@ -130,7 +130,7 @@ export function Checkpoints({ eq }: { eq: Equipe }) {
       ) : (
         <div className="carte">
           <h2>Licence du gagnant</h2>
-          <CameraQr lire={lireLicence} onLu={valider} invalide="Ce QR n’est pas une licence Greed Quest" saisie="Code de la licence (GQL1…)" />
+          <CameraQr lire={lireLicence} onLu={valider} invalide="Ce QR n’est pas une licence Greed Island" saisie="Code de la licence (GQL1…)" />
           {envoi && <p className="info">Envoi…</p>}
           {erreur && <p className="erreur">{erreur}</p>}
           <button type="button" className="lien" onClick={() => setScan(false)}>

@@ -1,4 +1,4 @@
-# Greed Quest
+# Greed Island
 
 Chasse au trésor numérique sur le terrain (inspirée de Greed Island) : balises QR physiques, cartes à collectionner, sorts ciblant les joueurs proches (GPS), échanges, événements lancés par un Game Master. Client : loJIC Solutions (Sivraj). Langue du projet : **français** (docs, messages joueurs, commits).
 

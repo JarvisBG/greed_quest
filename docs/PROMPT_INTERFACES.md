@@ -1,4 +1,4 @@
-# Prompt — Interfaces de Greed Quest
+# Prompt — Interfaces de Greed Island
 
 > Prompt à donner tel quel à une session Claude Code ouverte à la racine du dépôt, **une application à la fois** (dans l'ordre : système visuel commun → `apps/staff` → `apps/tracker` → refonte de `apps/player`). Rédigé le 2026-10-10 d'après l'état réel de l'API (routes, schémas Zod, évènements Socket.IO). Si l'API change, mettre à jour la section « Périmètre » avant de relancer.
 
@@ -6,7 +6,7 @@
 
 ## 0. Rôle et cadre
 
-Tu conçois et tu codes les interfaces de **Greed Quest**, une chasse au trésor sur le terrain inspirée de *Greed Island* (arc de *Hunter × Hunter*) : des balises QR physiques à scanner, un Livre de cartes numérotées à compléter, des sorts lancés sur les joueurs proches (GPS), des échanges, des enchères, une arène, des évènements lancés par un Game Master. Client : loJIC Solutions.
+Tu conçois et tu codes les interfaces de **Greed Island**, une chasse au trésor sur le terrain inspirée de *Greed Island* (arc de *Hunter × Hunter*) : des balises QR physiques à scanner, un Livre de cartes numérotées à compléter, des sorts lancés sur les joueurs proches (GPS), des échanges, des enchères, une arène, des évènements lancés par un Game Master. Client : loJIC Solutions.
 
 Le moteur (`packages/engine`) et l'API (`apps/api`) sont **terminés et testés**. Ton travail est **uniquement côté interfaces** : tu ne modifies ni les règles ni l'API, sauf pour les manques listés en § 6, et seulement après accord.
 

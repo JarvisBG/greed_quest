@@ -94,7 +94,7 @@ export function Planche({ eq }: { eq: Equipe }) {
         </div>
         <label>
           Adresse de l’app joueur (facultatif)
-          <input value={adresse} onChange={(e) => setAdresse(e.target.value)} placeholder="Ex. https://jeu.greedquest.fr" />
+          <input value={adresse} onChange={(e) => setAdresse(e.target.value)} placeholder="Ex. https://jeu.exemple.fr" />
         </label>
         <p className="vide">
           Avec l’adresse, un QR de balise scanné avec l’appareil photo du téléphone ouvre directement l’app ; on peut aussi imprimer le QR pour rejoindre la partie. Sans
@@ -125,7 +125,7 @@ export function Planche({ eq }: { eq: Equipe }) {
       <div className="planche">
         {etiquettes.map((e) => (
           <div key={e.cle} className="etiquette">
-            <div className="etiquette__titre">GREED QUEST · {e.titre}</div>
+            <div className="etiquette__titre">GREED ISLAND · {e.titre}</div>
             <Qr texte={e.texte} />
             {reperes && e.repere && <div className="etiquette__repere">{e.repere}</div>}
           </div>

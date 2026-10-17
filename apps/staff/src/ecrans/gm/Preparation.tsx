@@ -9,6 +9,7 @@ import { api } from '../../lib/client';
 import { numeroCarte, stockCheckpoint, type CarteCatalogue, type Checkpoint } from '../../lib/format';
 import type { Equipe } from '../../lib/useEquipe';
 import { Modal } from '../Modal';
+import { CarteReelle, type Fond } from './CarteReelle';
 
 type Onglet = 'zones' | 'balises' | 'catalogue' | 'checkpoints' | 'equipe';
 const ONGLETS: { id: Onglet; titre: string; icone: string }[] = [
@@ -158,12 +159,18 @@ function Zones({ base, zones, recharger }: { base: string; zones: ZoneComplete[]
   const [type, setType] = useState('sauvage');
   const [points, setPoints] = useState('');
   const [message, setMessage] = useState<Message>(null);
+  const [fond, setFond] = useState<Fond>('satellite');
+  const [ici, setIci] = useState<LatLng | null>(null);
+  const [horsLigne, setHorsLigne] = useState(false);
   const pts = lirePoints(points);
+  const ajouterCoin = (p: LatLng) => setPoints((t) => `${t.trim() ? `${t.trim()}\n` : ''}${p.lat}, ${p.lng}`);
+  const retirerCoin = () => setPoints((t) => t.trim().split('\n').slice(0, -1).join('\n'));
 
   async function ajouterIci() {
     try {
       const p = await maPosition();
-      setPoints((t) => `${t.trim() ? `${t.trim()}\n` : ''}${p.lat}, ${p.lng}`);
+      ajouterCoin(p);
+      setIci(p);
     } catch (e) {
       setMessage({ ok: false, texte: (e as Error).message });
     }
@@ -202,13 +209,35 @@ function Zones({ base, zones, recharger }: { base: string; zones: ZoneComplete[]
             ))}
           </select>
         </label>
-        <p className="info">Contour : marche jusqu’à chaque coin de la zone et touche « Ajouter ma position », ou colle des coordonnées (une ligne « latitude, longitude » par coin, au moins 3).</p>
-        <button type="button" className="modal-btn modal-btn--ghost" onClick={() => void ajouterIci()}>
-          <i className="fa-solid fa-location-crosshairs" aria-hidden="true" /> Ajouter ma position
-        </button>
+        <p className="info">
+          Contour (au moins 3 coins) : touche la carte à chaque coin de la zone. Sur place, tu peux aussi marcher jusqu’à chaque coin et toucher « Ajouter ma position ».
+        </p>
+        <div className="segments">
+          {(['satellite', 'plan'] as const).map((f) => (
+            <button key={f} type="button" className={`modal-btn modal-btn--ghost${fond === f ? ' choisi' : ''}`} onClick={() => (setFond(f), setHorsLigne(false))}>
+              {f === 'satellite' ? 'Satellite' : 'Plan'}
+            </button>
+          ))}
+          <button type="button" className="modal-btn modal-btn--ghost" onClick={() => void maPosition().then(setIci, (e: Error) => setMessage({ ok: false, texte: e.message }))}>
+            <i className="fa-solid fa-crosshairs" aria-hidden="true" /> Centrer sur moi
+          </button>
+        </div>
+        {horsLigne ? (
+          <p className="msg ko">Pas de réseau pour la carte : utilise « Ajouter ma position » ou colle les coordonnées.</p>
+        ) : (
+          <CarteReelle zones={zones} trace={pts ?? []} fond={fond} onClic={ajouterCoin} onHorsLigne={() => setHorsLigne(true)} centrerSur={ici} hauteur="50dvh" />
+        )}
+        <div className="segments">
+          <button type="button" className="modal-btn modal-btn--ghost" onClick={() => void ajouterIci()}>
+            <i className="fa-solid fa-location-crosshairs" aria-hidden="true" /> Ajouter ma position
+          </button>
+          <button type="button" className="modal-btn modal-btn--ghost" disabled={!points.trim()} onClick={retirerCoin}>
+            <i className="fa-solid fa-rotate-left" aria-hidden="true" /> Retirer le dernier coin
+          </button>
+        </div>
         <label>
           Coins ({pts?.length ?? 0})
-          <textarea rows={4} value={points} onChange={(e) => setPoints(e.target.value)} placeholder={'48.85660, 2.35220\n48.85700, 2.35300\n48.85610, 2.35350'} />
+          <textarea rows={4} value={points} onChange={(e) => setPoints(e.target.value)} placeholder={'4.05110, 9.76790\n4.05150, 9.76850\n4.05080, 9.76880'} />
         </label>
         {points.trim() && !pts && <p className="msg ko">Une ligne n’est pas lisible : « latitude, longitude » attendu.</p>}
         <button type="button" className="modal-btn modal-btn--primary" disabled={!nom.trim() || !pts || pts.length < 3} onClick={() => void creer()}>

@@ -1,10 +1,11 @@
 // Carte du GM : zones (contours), balises posées (couleur selon l'état) et positions exactes des joueurs
 // (RG-10.12 : GM seulement, jamais envoyées aux joueurs ni à l'écran géant). Rechargée à chaque évènement
 // `position` ou `balises` reçu (au plus toutes les 3 s).
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../../lib/client';
 import { libelleStatut, type JoueurVue } from '../../lib/format';
 import type { Equipe } from '../../lib/useEquipe';
+import { CarteReelle, type PointSurCarte } from './CarteReelle';
 
 interface LatLng {
   lat: number;
@@ -60,6 +61,9 @@ export function Carte({ eq }: { eq: Equipe }) {
   const [choisi, setChoisi] = useState<string | null>(null);
   const [voir, setVoir] = useState({ balises: true, joueurs: true });
   const [maj, setMaj] = useState<Date | null>(null);
+  // Vraie carte par défaut (satellite) ; « dessin » = plan sans fond, aussi utilisé sans réseau.
+  const [vue, setVue] = useState<'satellite' | 'plan' | 'dessin'>('satellite');
+  const [horsLigne, setHorsLigne] = useState(false);
   const attente = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dernier = useRef(0);
 
@@ -91,6 +95,15 @@ export function Carte({ eq }: { eq: Equipe }) {
   const posees = balises.filter((b) => b.position);
   const pr = projection([...zones.flatMap((z) => z.polygone), ...posees.map((b) => b.position!), ...positions]);
   const joueur = positions.find((p) => p.joueurId === choisi);
+  const points = useMemo<PointSurCarte[]>(
+    () => [
+      ...(voir.balises ? posees.map((b) => ({ id: b.id, libelle: b.libelle, couleur: COULEURS_BALISE[b.etat] ?? '#888', ...b.position! })) : []),
+      ...(voir.joueurs
+        ? positions.map((p) => ({ id: p.joueurId, libelle: p.pseudo, couleur: COULEURS_JOUEUR[p.statut] ?? '#fff', lat: p.lat, lng: p.lng, joueur: true, ...(p.precisionM !== undefined ? { precisionM: p.precisionM } : {}) }))
+        : []),
+    ],
+    [balises, positions, voir], // eslint-disable-line react-hooks/exhaustive-deps
+  );
   const r = (m: number) => Math.max(5, m * (pr?.parMetre ?? 1));
 
   return (
@@ -114,7 +127,23 @@ export function Carte({ eq }: { eq: Equipe }) {
             </button>
           ))}
         </div>
-        {!pr ? (
+        <div className="segments">
+          {(
+            [
+              ['satellite', 'Satellite'],
+              ['plan', 'Plan'],
+              ['dessin', 'Dessin (sans réseau)'],
+            ] as const
+          ).map(([k, nom]) => (
+            <button key={k} type="button" className={`modal-btn modal-btn--ghost${vue === k ? ' choisi' : ''}`} onClick={() => (setVue(k), setHorsLigne(false))}>
+              {nom}
+            </button>
+          ))}
+        </div>
+        {horsLigne && <p className="msg ko">Pas de réseau pour charger la vraie carte : voici le plan dessiné.</p>}
+        {vue !== 'dessin' ? (
+          <CarteReelle zones={zones} points={points} fond={vue} onHorsLigne={() => (setVue('dessin'), setHorsLigne(true))} />
+        ) : !pr ? (
           <p className="vide">Rien à afficher : crée d’abord les zones (Préparation).</p>
         ) : (
           <svg className="carte-gm" viewBox={`0 0 ${LARGEUR} ${pr.hauteur}`} role="img" aria-label="Carte du terrain">
@@ -167,8 +196,8 @@ export function Carte({ eq }: { eq: Equipe }) {
           </p>
         )}
         <p className="vide">
-          Carrés : balises (cyan active, gris endormie, bleu épuisée, rouge coupée). Ronds : joueurs (le halo montre l’imprécision du GPS). Ces positions ne sont
-          visibles que du GM.
+          Balises (petits points sur la vraie carte, carrés sur le dessin) : cyan active, gris endormie, bleu épuisée, rouge coupée. Joueurs : points avec leur
+          pseudo, le halo montre l’imprécision du GPS. Ces positions ne sont visibles que du GM.
         </p>
       </div>
     </div>

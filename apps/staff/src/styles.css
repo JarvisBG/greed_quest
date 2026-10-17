@@ -296,3 +296,11 @@ button.large { width: 100%; display: grid; gap: 2px; }
 .carte-gm__balise { font-size: 12px; fill: var(--ink-dim); }
 .carte-gm__joueur { font-size: 14px; font-weight: 700; text-anchor: middle; }
 .carte-gm .cliquable { cursor: pointer; }
+/* Vraie carte (Leaflet) du GM */
+.carte-reelle { width: 100%; border-radius: 14px; overflow: hidden; border: 1px solid rgba(var(--surf),.1); background: #111; z-index: 0; }
+.carte-reelle.tracable { cursor: crosshair; }
+.carte-reelle .leaflet-container, .carte-reelle.leaflet-container { font-family: var(--font-body); background: #111; }
+.leaflet-tooltip.gq-etiquette, .leaflet-tooltip.gq-etiquette-zone { background: rgba(9,9,11,.85); color: #fff; border: 1px solid rgba(255,255,255,.15); border-radius: 6px; font-family: var(--font-mono); font-size: 11px; padding: 2px 6px; box-shadow: none; }
+.leaflet-tooltip.gq-etiquette-zone { font-family: var(--font-display); font-size: 12px; letter-spacing: .04em; }
+.leaflet-tooltip.gq-etiquette::before, .leaflet-tooltip.gq-etiquette-zone::before { display: none; }
+.leaflet-control-attribution { font-size: 9px; }

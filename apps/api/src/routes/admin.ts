@@ -18,7 +18,8 @@ export async function adminRoutes(app: FastifyInstance) {
     const body = parse(PartieCreate, req.body);
     return app.gq.db.transaction(async (tx) => {
       const partieId = await createPartie(tx, { nom: body.nom, prereglage: body.prereglage });
-      if (body.demo) await seedDemoContent(tx, partieId);
+      // Démo créée depuis la console : posée à Douala (Akwa), le jeu se joue au Cameroun (les tests gardent leur centre).
+      if (body.demo) await seedDemoContent(tx, partieId, { centre: { lat: 4.0511, lng: 9.7679 } });
       else {
         // RG-8.1 (amendement 2026-10-17) : la plateforme propose tout de suite un catalogue tiré au hasard, avec le
         // nombre de cartes conseillé (durée du préréglage, joueurs attendus) ; le GM peut retirer ou retoucher.

@@ -52,8 +52,9 @@ Périmètre exact et direction artistique : `docs/PROMPT_INTERFACES.md` (§ 4.1)
 - [ ] 4.0 quinquies Cartes de Maître du jeu (RG-8.15 à 8.21, amendement 2026-10-15) : Jarvis tout-puissant (Décret + Jugement), Le Sceau d'Ange ; ~~moteur, API, app (cinématiques)~~ faits le 2026-10-15 ; reste console GM (don, raid, enchère, réglage `chanceCarteGmPct`), écran géant
 - [x] 4.0 quater Amendements « fidélité à l'anime » (REGLES.md, 2026-10-10) dans le moteur, l'API et l'app joueur : Book, rattrapage à 0, déplacer / cacher une carte, Vol (fixes) et Pickpocket, Voyance et Clairvoyance, Pénétration, Accompagnement, Retour ; tests nommés par RG ; simulateur à jour
 - [ ] 4.0 ter Maquettes de référence (Claude, `docs/PROMPT_MAQUETTES.md`) rapportées et validées par Sivraj
-- [ ] 4.1 Console PNJ : scan licence, checkpoint, expertise, arène, enchère, missions, joueurs, avertir / geler / annuler les gains, alertes, journal
+- [x] 4.1 Console PNJ : scan licence, checkpoint, expertise, arène, enchère, missions, joueurs, avertir / geler / annuler les gains, alertes, journal
 - [ ] 4.2 Console GM : création de partie, tableau de bord et cycle de vie, préparation (zones, balises, catalogue avec conseils, checkpoints, équipe), planche d'impression des QR, paramètres et préréglages, carte (balises + positions exactes), évènements et agenda, Clear et lots, corrections et disqualification, fin de partie
+  - 2026-10-17 : toutes les pages faites et vérifiées avec la vraie API (détail dans `docs/PROGRESS.md`), en attente de l'essai de Sivraj.
 
 ## Phase 5 — Écran géant (`apps/tracker`)
 - [ ] 5.1 Fil d'actualité, classement live, balises par zone, heatmap décalée, bannières d'événements, raid, QR d'accueil avant le démarrage, Clear plein écran, podium et classement final (`docs/PROMPT_INTERFACES.md` § 4.2)

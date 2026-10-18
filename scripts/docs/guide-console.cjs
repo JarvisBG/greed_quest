@@ -79,6 +79,7 @@ const contenu = [
   h1('1. Toutes les adresses'),
   p('Le jeu est en ligne gratuitement depuis le 18 octobre 2026. Garde ce tableau sous la main : ce sont les seules adresses à connaître.'),
   tableau(['À quoi ça sert', 'Adresse', 'Pour qui'], [
+    ['Page d’accueil', lien('https://greed-island.jarvismboummeu28.workers.dev'), 'Les partenaires : présentation du jeu, contact, et boutons vers les 3 apps'],
     ['Console (GM et PNJ)', lien(CONSOLE), 'Toi et ton équipe'],
     ['App joueur', lien(JOUEUR), 'Les joueurs (sur leur téléphone)'],
     ['Écran géant', [lien(ECRAN), t('/?partie=<identifiant de la partie>')], 'Le grand écran ou le vidéoprojecteur'],

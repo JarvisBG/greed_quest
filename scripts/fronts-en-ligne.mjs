@@ -1,5 +1,5 @@
 // Construit et envoie les apps sur Cloudflare (voir docs/DEPLOIEMENT.md).
-// Usage : node scripts/fronts-en-ligne.mjs <adresse de l'API> [player|staff|tracker …]
+// Usage : node scripts/fronts-en-ligne.mjs <adresse de l'API> [player|staff|tracker|accueil …]
 // Exemple : node scripts/fronts-en-ligne.mjs https://greed-island-api.onrender.com
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -9,7 +9,7 @@ if (!api || !/^https:\/\//.test(api)) {
   console.error("Donne l'adresse de l'API en https, par exemple https://greed-island-api.onrender.com");
   process.exit(1);
 }
-const apps = choix.length ? choix : ['player', 'staff', 'tracker'];
+const apps = choix.length ? choix : ['player', 'staff', 'tracker', 'accueil'];
 const racine = fileURLToPath(new URL('..', import.meta.url));
 
 function lancer(commande, dossier) {

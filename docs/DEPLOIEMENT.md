@@ -1,6 +1,6 @@
 # Mise en ligne (gratuite)
 
-**En ligne depuis le 2026-10-18** (Supabase `greed-island`, Render `greed-island-api` via le Blueprint `greed-island`, Cloudflare : 3 Workers statiques).
+**En ligne depuis le 2026-10-18** (Supabase `greed-island`, Render `greed-island-api` via le Blueprint `greed-island`, Cloudflare : 4 Workers statiques).
 
 Tout est gratuit, rien à acheter. Trois services :
 
@@ -8,6 +8,7 @@ Tout est gratuit, rien à acheter. Trois services :
 |---|---|---|
 | Base de données | **Supabase** (comme Otaku Quest) | — |
 | Serveur du jeu (API, temps réel, tâches) | **Render**, offre gratuite, Francfort | https://greed-island-api.onrender.com |
+| Page d'accueil (vitrine, accès aux 3 apps) | **Cloudflare** | https://greed-island.jarvismboummeu28.workers.dev (`?ouverture` rejoue l'ouverture) |
 | App joueur, console, écran géant | **Cloudflare** (comme Otaku Quest) | https://greed-island-joueur.jarvismboummeu28.workers.dev, https://greed-island-console.jarvismboummeu28.workers.dev, https://greed-island-ecran.jarvismboummeu28.workers.dev |
 
 Pourquoi pas Supabase seul : les règles du jeu tournent dans un serveur Node (`apps/api`) qui doit rester allumé

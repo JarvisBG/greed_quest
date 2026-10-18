@@ -20,5 +20,5 @@ function lancer(commande, dossier) {
 for (const app of apps) {
   console.log(`\n=== ${app}`);
   lancer(`pnpm --filter @gq/${app} build`, racine);
-  lancer('npx --yes wrangler@4.143.0 deploy', `${racine}apps/${app}`);
+  lancer('pnpm exec wrangler deploy', `${racine}apps/${app}`);
 }

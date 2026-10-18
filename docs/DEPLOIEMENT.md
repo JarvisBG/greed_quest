@@ -1,12 +1,14 @@
 # Mise en ligne (gratuite)
 
+**En ligne depuis le 2026-10-18** (Supabase `greed-island`, Render `greed-island-api` via le Blueprint `greed-island`, Cloudflare : 3 Workers statiques).
+
 Tout est gratuit, rien à acheter. Trois services :
 
 | Partie | Où | Adresse obtenue |
 |---|---|---|
 | Base de données | **Supabase** (comme Otaku Quest) | — |
-| Serveur du jeu (API, temps réel, tâches) | **Render**, offre gratuite, Francfort | `https://greed-island-api.onrender.com` (ou proche) |
-| App joueur, console, écran géant | **Cloudflare** (comme Otaku Quest) | `https://greed-island-joueur.<compte>.workers.dev`, `…-console…`, `…-ecran…` |
+| Serveur du jeu (API, temps réel, tâches) | **Render**, offre gratuite, Francfort | https://greed-island-api.onrender.com |
+| App joueur, console, écran géant | **Cloudflare** (comme Otaku Quest) | https://greed-island-joueur.jarvismboummeu28.workers.dev, https://greed-island-console.jarvismboummeu28.workers.dev, https://greed-island-ecran.jarvismboummeu28.workers.dev |
 
 Pourquoi pas Supabase seul : les règles du jeu tournent dans un serveur Node (`apps/api`) qui doit rester allumé
 (tâches planifiées, Socket.IO). Supabase garde les données, Render fait tourner le serveur.
@@ -42,7 +44,7 @@ node scripts/fronts-en-ligne.mjs https://<adresse Render>
 
 Construit les 3 apps avec l'adresse de l'API et les envoie (`apps/*/wrangler.jsonc`). Une seule :
 `node scripts/fronts-en-ligne.mjs https://<adresse Render> player`.
-Si wrangler demande de se connecter : `npx wrangler@4.143.0 login`.
+Si wrangler demande de se connecter : `pnpm exec wrangler login`.
 
 ## 4. Finir
 1. Render → service → **Environment** : `CORS_ORIGINS` = les 3 adresses Cloudflare, séparées par des virgules.

@@ -3,7 +3,7 @@
 // RG-6.5 : chaque zone porte seulement son nombre de balises actives, jamais leur place.
 // RG-10.12 : la seule position dessinée est celle du joueur.
 
-import { dessinerIle, distanceAuContour, MER, type Ile } from './ile';
+import { dessinerIle, distanceAuContour, MER, type Ile } from '@gq/ui/ile';
 
 export type TypeZone = 'masadora' | 'antokiba' | 'soufrabi' | 'sauvage';
 

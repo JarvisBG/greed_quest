@@ -12,6 +12,13 @@ export const MER = 70;
 /** Lavis des villes ; les zones de chasse prennent tour à tour un vert ou un ocre. */
 export const LAVIS: Record<string, string> = { masadora: '#d79a55', antokiba: '#c4705f', soufrabi: '#d3ad4c' };
 export const LAVIS_CHASSE = ['#8fb26a', '#5f8f57', '#b3c27a', '#a3b08a'];
+/** Icônes à l'encre, même trait partout : sac (boutique), marteau (enchères), poing (arène), feuille (chasse). */
+export const ICONES_ZONE: Record<'masadora' | 'antokiba' | 'soufrabi' | 'sauvage', string> = {
+  masadora: 'M-7 -2h14l-1.6 10h-10.8z M-4 -2v-2a4 4 0 0 1 8 0v2',
+  antokiba: 'M-8 8h9 M-5.5 2.5l7-7 4 4-7 7z M3 -2.5l5.5 5.5',
+  soufrabi: 'M-6 8v-6c0-2 1-3 2.6-3h6.8c1.8 0 2.6 1 2.6 3v2c0 2.6-2 4-4.4 4z M-6 1h12 M-2.2 -2v3 M1.6 -2v3 M-6 3.5c-1.6 0-2.4-1-2.4-2.4',
+  sauvage: 'M-7 7c0-8 5-13 14-14 0 9-5 14-13 14z M-7 7l7-7',
+};
 
 export const graine = (s: string) => [...s].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0, 2166136261);
 /** Tirage reproductible (mulberry32). */

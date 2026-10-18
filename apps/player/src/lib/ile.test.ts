@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { construirePlan, ouSuisJe, versZone, type ZoneRecue } from './carte';
-import { cote, dedans, dessinerIle, distanceAuContour, hasard, territoires, type Pt } from './ile';
+import { cote, dedans, dessinerIle, distanceAuContour, hasard, territoires, type Pt } from '@gq/ui/ile';
 
 const LAT = 4.05;
 const LNG = 9.77;

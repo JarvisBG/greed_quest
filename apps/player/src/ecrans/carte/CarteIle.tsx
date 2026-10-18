@@ -1,22 +1,15 @@
 // Dessin de la carte de l'île (prototype v3 validé le 2026-10-17 : docs/prototype/carte-ile-v3.html ; v1 du
-// 2026-10-10 pour le parchemin). L'île est tirée des zones (lib/ile.ts) : mer et côte, territoires qui se touchent
+// 2026-10-10 pour le parchemin). L'île est tirée des zones (@gq/ui/ile) : mer et côte, territoires qui se touchent
 // peints au lavis, frontières en pointillé qui ondulent, trame selon le nombre de balises actives (RG-6.5), icône et
 // nom de chaque zone, évènements de zone, ta position « Tu es ici » (RG-10.12). Le même dessin sert à l'accueil, à
 // la carte agrandie et aux cinématiques des sorts d'information.
+import { ICONES_ZONE as ICONES } from '@gq/ui/ile';
 import type { Plan, TypeZone, ZonePlan } from '../../lib/carte';
 
 export interface EvenementZone {
   zoneId: string;
   texte: string;
 }
-
-// Icônes à l'encre, même trait partout : sac (boutique), marteau (enchères), poing (arène), feuille (chasse).
-const ICONES: Record<TypeZone, string> = {
-  masadora: 'M-7 -2h14l-1.6 10h-10.8z M-4 -2v-2a4 4 0 0 1 8 0v2',
-  antokiba: 'M-8 8h9 M-5.5 2.5l7-7 4 4-7 7z M3 -2.5l5.5 5.5',
-  soufrabi: 'M-6 8v-6c0-2 1-3 2.6-3h6.8c1.8 0 2.6 1 2.6 3v2c0 2.6-2 4-4.4 4z M-6 1h12 M-2.2 -2v3 M1.6 -2v3 M-6 3.5c-1.6 0-2.4-1-2.4-2.4',
-  sauvage: 'M-7 7c0-8 5-13 14-14 0 9-5 14-13 14z M-7 7l7-7',
-};
 
 /** Fiche d'une zone (carte agrandie) : ce qu'on y fait, en clair. */
 export const INFOS_ZONE: Record<TypeZone, { titre: string; texte: string }> = {

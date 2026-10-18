@@ -14,7 +14,6 @@
     "@gq/engine": "workspace:*",
     "@gq/shared": "workspace:*",
     "@gq/ui": "workspace:*",
-    "d3-delaunay": "6.0.4",
     "qr-scanner": "1.4.2",
     "qrcode-generator": "2.0.4",
     "react": "^19.3.0",
@@ -22,7 +21,6 @@
     "socket.io-client": "^4.8.4"
   },
   "devDependencies": {
-    "@types/d3-delaunay": "6.0.4",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-basic-ssl": "^2.3.0",

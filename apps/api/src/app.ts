@@ -80,7 +80,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
 
   const corsOrigin = deps.corsOrigin ?? true;
-  await app.register(cors, { origin: corsOrigin });
+  // Fronts sur une autre adresse en ligne : PUT et PATCH (catalogue, paramètres) ne sont pas autorisés par défaut.
+  await app.register(cors, { origin: corsOrigin, methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'] });
   if (deps.realtime ?? true) attachRealtime(app, corsOrigin);
 
   app.decorateRequest('session', null);

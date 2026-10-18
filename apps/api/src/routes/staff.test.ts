@@ -24,6 +24,18 @@ afterAll(() => h.close());
 
 const bearer = (t: string) => ({ authorization: `Bearer ${t}` });
 
+describe('CORS (fronts sur une autre adresse)', () => {
+  it('autorise PUT et PATCH depuis une autre origine (catalogue, paramètres)', async () => {
+    const res = await app.inject({
+      method: 'OPTIONS',
+      url: '/admin/parties',
+      headers: { origin: 'https://console.exemple', 'access-control-request-method': 'PUT' },
+    });
+    expect(res.headers['access-control-allow-methods']).toContain('PUT');
+    expect(res.headers['access-control-allow-methods']).toContain('PATCH');
+  });
+});
+
 describe('RG-3 rôles et authentification', () => {
   it('création de partie réservée au code organisateur', async () => {
     const res = await app.inject({ method: 'POST', url: '/admin/parties', payload: { nom: 'X', gm: { nom: 'a', code: '123456' } } });

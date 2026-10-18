@@ -138,10 +138,28 @@ body { margin: 0; min-height: 0; overflow: hidden; background: #050506; color: v
 .legende { display: grid; gap: 14px; font: 600 28px/1.2 var(--f-texte); }
 .legende span { display: inline-flex; align-items: center; gap: 16px; }
 .legende svg { width: 56px; height: 40px; flex: none; }
-.zone-forme { stroke: var(--encre-carte); stroke-width: 2.4; stroke-linejoin: round; fill: none; }
-.zone-ville .zone-forme { stroke-width: 3.2; }
-.zone-maudite .zone-forme { stroke: #a8231f; stroke-width: 4; stroke-dasharray: 9 6; }
-.zone-nom { font: 400 15px/1 var(--f-titre); fill: var(--encre-carte); paint-order: stroke; stroke: var(--parchemin); stroke-width: 4px; stroke-linejoin: round; }
+.ile-cadre { --terre: #f3e6c4; --mer: #b5cbc0; --mer-encre: #2d5a5e; }
+.mer-fond { fill: var(--mer); }
+.cotes-ondes { fill: none; stroke: var(--mer-encre); }
+.cotes-mer { fill: none; stroke: var(--mer); }
+.vague { fill: none; stroke: var(--mer-encre); stroke-width: 1.3; stroke-linecap: round; opacity: 0.55; }
+.terre { fill: var(--terre); }
+.cote { fill: none; stroke: var(--encre-carte); stroke-width: 2.8; stroke-linejoin: round; }
+.ilot { fill: var(--terre); stroke: var(--encre-carte); stroke-width: 1.8; }
+.cartouche text { font: 400 12px/1 var(--f-titre); letter-spacing: 0.14em; fill: var(--encre-carte); }
+.cartouche path { stroke: var(--encre-carte); stroke-width: 1.2; }
+.terr-lavis { stroke-width: 1.2; stroke-linejoin: round; }
+.frontiere-ombre { fill: none; stroke: #5a4320; stroke-width: 5; stroke-linecap: round; opacity: 0.13; }
+.frontiere { fill: none; stroke: var(--encre-carte); stroke-width: 2.1; stroke-linecap: round; stroke-dasharray: 0 6.5; opacity: 0.8; }
+.zone-nom { font: 400 15px/1 var(--f-titre); fill: var(--encre-carte); paint-order: stroke; stroke: var(--terre); stroke-width: 5px; stroke-linejoin: round; }
+.zone-compte rect { fill: var(--encre-carte); }
+.zone-compte text { font: 800 12px/1 var(--f-chiffre); fill: var(--terre); }
+.zone-compte .ond { fill: none; stroke: var(--terre); stroke-width: 1.3; stroke-linecap: round; }
+.zone-compte.vide rect { fill: var(--terre); stroke: var(--encre-carte); stroke-width: 1.4; }
+.zone-compte.vide text { fill: var(--encre-carte); }
+.zone-compte.vide .ond { stroke: var(--encre-carte); }
+.ville-rond { fill: var(--terre); stroke: var(--encre-carte); stroke-width: 2; }
+.ville-trait { fill: none; stroke: var(--encre-carte); stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .zone-flash { fill: var(--jaune); opacity: 0; }
 .zone-flash.on { animation: allume 3.2s ease-out; }
 @keyframes allume { 0% { opacity: 0; } 8% { opacity: 0.75; } 30% { opacity: 0.45; } 100% { opacity: 0; } }

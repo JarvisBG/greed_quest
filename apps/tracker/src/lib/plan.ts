@@ -1,19 +1,19 @@
 // Plan de l'île dessinée (reprise de apps/player/src/lib/carte.ts) : contours des zones projetés sur 420 unités
-// de large, cadrés sur l'ensemble des zones. RG-6.5 : seulement le nombre de balises actives par zone.
+// de large, cadrés sur l'ensemble des zones, avec la marge de mer de l'île v3 (validée le 2026-10-17).
+// RG-6.5 : seulement le nombre de balises actives par zone.
+import { dessinerIle, MER, type Ile } from '@gq/ui/ile';
 import type { Point, ZoneEcran } from './types';
 
 export const LARGEUR = 420;
-const MARGE = 0.08;
 const M_PAR_DEGRE_LAT = 110_540;
 const M_PAR_DEGRE_LNG = 111_320;
 
 export interface ZonePlan {
   id: string;
   nom: string;
-  ville: boolean;
+  type: ZoneEcran['type'];
   points: [number, number][];
   centre: [number, number];
-  haut: number;
 }
 
 export interface Plan {
@@ -23,6 +23,8 @@ export interface Plan {
   /** Unités du plan pour un mètre du terrain (taille des halos). */
   parMetre: number;
   projeter: (p: Point) => [number, number];
+  /** Côte, territoires, lavis (null sans zone). */
+  ile: Ile | null;
 }
 
 function centreDeSurface(pts: [number, number][]): [number, number] {
@@ -46,7 +48,7 @@ function centreDeSurface(pts: [number, number][]): [number, number] {
 
 export function construirePlan(zones: readonly ZoneEcran[]): Plan {
   const tous = zones.flatMap((z) => z.polygone);
-  if (tous.length === 0) return { largeur: LARGEUR, hauteur: 320, zones: [], parMetre: 1, projeter: () => [LARGEUR / 2, 160] };
+  if (tous.length === 0) return { largeur: LARGEUR, hauteur: 320, zones: [], parMetre: 1, projeter: () => [LARGEUR / 2, 160], ile: null };
   const lat0 = (Math.min(...tous.map((p) => p.lat)) + Math.max(...tous.map((p) => p.lat))) / 2;
   const kx = M_PAR_DEGRE_LNG * Math.cos((lat0 * Math.PI) / 180);
   const metres = (p: Point): [number, number] => [p.lng * kx, -p.lat * M_PAR_DEGRE_LAT];
@@ -55,27 +57,18 @@ export function construirePlan(zones: readonly ZoneEcran[]): Plan {
   const maxX = Math.max(...brut.map((p) => p[0]));
   const minY = Math.min(...brut.map((p) => p[1]));
   const maxY = Math.max(...brut.map((p) => p[1]));
-  // L'écran est en paysage : au moins 0,6 de haut pour 1 de large, au plus 0,9 (le cadre garde sa place).
-  const w0 = Math.max(maxX - minX, (maxY - minY) / 0.9, 1);
-  const h0 = Math.max(maxY - minY, w0 * 0.6);
-  const cx0 = (minX + maxX) / 2;
-  const cy0 = (minY + maxY) / 2;
-  const m = Math.max(w0, h0) * MARGE;
-  const ox = cx0 - w0 / 2 - m;
-  const oy = cy0 - h0 / 2 - m;
-  const echelle = LARGEUR / (w0 + 2 * m);
+  // L'écran est en paysage : le plan entier (mer comprise) fait de 0,6 à 0,9 de haut pour 1 de large.
+  const echelle = Math.min((LARGEUR - 2 * MER) / Math.max(maxX - minX, 1), (LARGEUR * 0.9 - 2 * MER) / Math.max(maxY - minY, 1));
+  const hauteur = Math.max((maxY - minY) * echelle + 2 * MER, LARGEUR * 0.6);
+  const ox = (minX + maxX) / 2 - LARGEUR / 2 / echelle;
+  const oy = (minY + maxY) / 2 - hauteur / 2 / echelle;
   const projeter = (p: Point): [number, number] => {
     const [x, y] = metres(p);
     return [(x - ox) * echelle, (y - oy) * echelle];
   };
-  return {
-    largeur: LARGEUR,
-    hauteur: (h0 + 2 * m) * echelle,
-    parMetre: echelle,
-    projeter,
-    zones: zones.map((z) => {
-      const points = z.polygone.map(projeter);
-      return { id: z.id, nom: z.nom, ville: z.type !== 'sauvage', points, centre: centreDeSurface(points), haut: Math.min(...points.map((p) => p[1])) };
-    }),
-  };
+  const zs = zones.map((z) => {
+    const points = z.polygone.map(projeter);
+    return { id: z.id, nom: z.nom, type: z.type, points, centre: centreDeSurface(points) };
+  });
+  return { largeur: LARGEUR, hauteur, parMetre: echelle, projeter, zones: zs, ile: dessinerIle(zs, LARGEUR, hauteur) };
 }

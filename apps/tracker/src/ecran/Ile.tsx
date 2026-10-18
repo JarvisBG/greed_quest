@@ -1,6 +1,8 @@
-// L'île dessinée (parchemin, contours à la plume), reprise du prototype. Amendement RG-6.5 (2026-10-15) : halos
-// flous décalés par le serveur, zone qui s'allume au scan, vraies positions seulement à la fin.
+// L'île dessinée, même dessin que l'app joueur (île v3 validée le 2026-10-17 : mer et côte, territoires au lavis
+// qui se touchent, frontières en pointillé). Amendement RG-6.5 (2026-10-15) : halos flous décalés par le serveur,
+// territoire qui s'allume au scan, vraies positions seulement à la fin.
 // RG-10.12 : les Hunters ne sont qu'une heatmap anonyme décalée de 2 min.
+import { ICONES_ZONE } from '@gq/ui/ile';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { calme } from '../lib/son';
 import type { Plan } from '../lib/plan';
@@ -11,12 +13,22 @@ const HALO_M = 40;
 function Defs({ p }: { p: string }) {
   return (
     <defs>
-      <pattern id={`${p}hachure`} width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-        <path d="M0 0v7" stroke="#1b150c" strokeWidth="1" opacity=".22" />
+      <pattern id={`${p}maudite`} width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <path d="M0 0v8" stroke="#a8231f" strokeWidth="2.4" opacity=".6" />
       </pattern>
       <filter id={`${p}plume`} x="-5%" y="-5%" width="110%" height="110%">
         <feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="4" />
-        <feDisplacementMap in="SourceGraphic" scale="3.2" />
+        <feDisplacementMap in="SourceGraphic" scale="3" />
+      </filter>
+      {/* Grain d'aquarelle et dérive : les mêmes que l'app joueur. */}
+      <filter id={`${p}lavis`} x="0" y="0" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency=".045 .06" numOctaves="3" seed="9" result="n" />
+        <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -0.9 1.25" result="a" />
+        <feComposite in="SourceGraphic" in2="a" operator="in" />
+      </filter>
+      <filter id={`${p}derive`} x="-15%" y="-15%" width="130%" height="130%">
+        <feTurbulence type="fractalNoise" baseFrequency=".013" numOctaves="2" seed="11" />
+        <feDisplacementMap in="SourceGraphic" scale="28" xChannelSelector="R" yChannelSelector="G" />
       </filter>
       <radialGradient id={`${p}halo`}>
         <stop offset="0" stopColor="#d9a11a" stopOpacity=".85" />
@@ -104,22 +116,57 @@ export function IleSvg({ plan, p, balisesParZone, heatmap = [], halos = [], halo
   }, [revelees]);
 
   const proj = useMemo(() => (q: Point) => plan.projeter(q), [plan]);
+  const ile = plan.ile;
 
   return (
     <svg ref={svg} viewBox={`0 0 ${plan.largeur} ${plan.hauteur.toFixed(1)}`} role="img" aria-label="Carte de l'île">
       <Defs p={p} />
-      <rect width={plan.largeur} height={plan.hauteur} fill={`url(#${p}hachure)`} opacity=".5" />
-      {plan.zones.map((z) => {
-        const pts = z.points.map((q) => q.join(',')).join(' ');
-        return (
-          <g key={z.id}>
-            <polygon className="zone-flash" data-flash={z.id} points={pts} />
-            <g className={`zone ${z.ville ? 'zone-ville' : 'zone-sauvage'}${maudites.includes(z.id) ? ' zone-maudite' : ''}`}>
-              <polygon className="zone-forme" points={pts} filter={`url(#${p}plume)`} />
+      <rect className="mer-fond" x={-200} y={-200} width={plan.largeur + 400} height={plan.hauteur + 400} />
+      {ile && (
+        <>
+          <clipPath id={`${p}ile`}>
+            <path d={ile.littoral} />
+          </clipPath>
+          <g>
+            {[30, 20, 11].map((w, i) => (
+              <g key={w}>
+                <path d={ile.littoral} className="cotes-ondes" strokeWidth={w} opacity={0.16 + i * 0.06} />
+                <path d={ile.littoral} className="cotes-mer" strokeWidth={w - 1.6} />
+              </g>
+            ))}
+          </g>
+          {ile.vagues.map(([x, y], i) => (
+            <path key={i} className="vague" d={`M${(x - 9).toFixed(1)} ${y.toFixed(1)}q4.5 -4 9 0t9 0`} />
+          ))}
+          {ile.ilots.map(([x, y, t], i) => (
+            <ellipse key={i} className="ilot" cx={x} cy={y} rx={t} ry={t * 0.7} filter={`url(#${p}plume)`} />
+          ))}
+          <g className="cartouche" transform="translate(30 24)">
+            <text>GREED ISLAND</text>
+            <path d="M0 7h104" />
+          </g>
+          <path className="terre" d={ile.littoral} />
+          <g clipPath={`url(#${p}ile)`}>
+            <g filter={`url(#${p}derive)`}>
+              {plan.zones.map((z, i) => {
+                const t = ile.territoires[i]!;
+                return (
+                  <g key={z.id}>
+                    <g opacity=".62" filter={`url(#${p}lavis)`}>
+                      <path className="terr-lavis" d={t} fill={ile.lavis[i]} stroke={ile.lavis[i]} />
+                    </g>
+                    {maudites.includes(z.id) && <path d={t} fill={`url(#${p}maudite)`} />}
+                    <path className="zone-flash" data-flash={z.id} d={t} />
+                  </g>
+                );
+              })}
+              <path className="frontiere-ombre" d={ile.frontieres} />
+              <path className="frontiere" d={ile.frontieres} />
             </g>
           </g>
-        );
-      })}
+          <path className="cote" d={ile.littoral} filter={`url(#${p}plume)`} />
+        </>
+      )}
       {heatmap.length > 0 && (
         <g filter={`url(#${p}flou)`} opacity=".9">
           {heatmap.map((h, i) => {
@@ -156,24 +203,30 @@ export function IleSvg({ plan, p, balisesParZone, heatmap = [], halos = [], halo
       {plan.zones.map((z) => {
         const [cx, cy] = z.centre;
         const n = balisesParZone?.[z.id] ?? 0;
-        const w = n >= 10 ? 28 : 22;
+        const w = n >= 10 ? 34 : 28;
+        const bas = Math.max(...z.points.map((q) => q[1]));
         return (
           <g key={z.id}>
-            <g transform={`translate(${cx} ${cy - 6}) scale(${trait})`}>
-              <text className="zone-nom" textAnchor="middle">
+            <g transform={`translate(${cx.toFixed(1)} ${(cy - 4).toFixed(1)})`}>
+              <g transform="translate(0 -24)">
+                <circle r="13" className="ville-rond" />
+                <path d={ICONES_ZONE[z.type]} className="ville-trait" />
+              </g>
+              <text className="zone-nom" textAnchor="middle" y="4">
                 {z.nom}
               </text>
               {balisesParZone && (
-                <g transform="translate(0 7)">
-                  <rect x={-w / 2} width={w} height="20" {...(n ? { fill: '#1b150c' } : { fill: '#f1e6c8', stroke: '#1b150c', strokeWidth: 1.6 })} />
-                  <text textAnchor="middle" y="15" style={{ font: '800 15px var(--f-chiffre)', fill: n ? '#f1e6c8' : '#1b150c' }}>
+                <g className={`zone-compte${n ? '' : ' vide'}`} transform="translate(0 11)">
+                  <rect x={-w / 2} width={w} height="17" rx="2" />
+                  <path className="ond" d={`M${-w / 2 + 6} 11.5a3.5 3.5 0 0 1 7 0M${-w / 2 + 7.8} 11.5a1.7 1.7 0 0 1 3.4 0`} />
+                  <text x={w / 2 - 5} textAnchor="end" y="13">
                     {n}
                   </text>
                 </g>
               )}
             </g>
             {doubleGain.includes(z.id) && (
-              <g className="ev-etiquette" transform={`translate(${cx - 46 * trait} ${z.haut + 6 * trait}) scale(${trait})`}>
+              <g className="ev-etiquette" transform={`translate(${(cx - 46).toFixed(1)} ${(bas - 8).toFixed(1)})`}>
                 <rect width="92" height="17" />
                 <text x="6" y="12.5">
                   Double gain

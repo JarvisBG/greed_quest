@@ -102,6 +102,12 @@ export function App() {
     jeu.prendreRejoue();
     void tirages.jouer(etapesDuTirage(r.gains), { secondSouffle: r.secondSouffle, surJenny: jeu.ajouterJenny }).then(() => jeu.majJenny(r.jenny));
   }, [jeu.rejoues]);
+  // Cadeau de l'équipe (correction du GM, checkpoint, carte de Maître du jeu) : la carte jaillit, puis la boîte dit d'où elle vient.
+  const cadeau = jeu.cadeau;
+  useEffect(() => {
+    if (!cadeau) return;
+    void tirages.jouer(etapesDuTirage(cadeau.gains), { surJenny: jeu.ajouterJenny }).then(() => jeu.finCadeau(cadeau));
+  }, [cadeau?.id]);
   // Balise scannée avec l'appareil photo du téléphone : l'app s'ouvre sur `?balise=<id>`.
   const [baliseLien, setBaliseLien] = useState<string | null>(() => baliseDepuisUrl(location.search));
   // Option « garder l'écran allumé » (facultative, consomme de la batterie).

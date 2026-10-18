@@ -13,6 +13,7 @@ import { fusionnerLot, jeMene, texteAdjuge, texteClotureAutre, texteSurencheri, 
 import { ilYaRecu, issueRecu, texteSortRecu, type SortRecu } from './sorts';
 import { texteAnnulee, texteEntree, type EtatArene, type EvArene, type IssueArene } from './arene';
 import { texteFinRaid } from './raid';
+import { cadeauDe, type Cadeau } from './cadeaux';
 import { texteGmObtenue, texteGmRecue, texteGmRendue, texteJarvisAutres, type EvGmJouee, type EvGmRecue } from './cartesGm';
 import { useRaid } from './useRaid';
 import { useClear } from './useClear';
@@ -152,6 +153,9 @@ export function useJeu() {
   const [sortsRecus, setSortsRecus] = useState<SortRecu[]>([]);
   /** RG-8.20 : Sceaux d'Ange reçus, joués l'un après l'autre (cinématique côté cible). */
   const [sceauxRecus, setSceauxRecus] = useState<{ lanceur: string; texte: string }[]>([]);
+  /** Ce que l'équipe donne (cinématique du tirage, puis la boîte) et les expertises, un à la fois. */
+  const [cadeaux, setCadeaux] = useState<Cadeau[]>([]);
+  const nCadeau = useRef(0);
   /** Qui t'a gelé (Gel, Accompagnement), pour le bandeau ; inconnu après un rechargement. */
   const [gelePar, setGelePar] = useState<{ pseudo: string; accompagnement: boolean } | null>(null);
   /** RG-7.5 : tirages reçus au rejeu de la file, en attente de leur cinématique (l'app les joue un par un). */
@@ -304,6 +308,13 @@ export function useJeu() {
           return;
         }
         setVersion((v) => v + 1);
+        const cadeau = cadeauDe(nom, data, ++nCadeau.current);
+        if (cadeau) {
+          notifier(cadeau.texte);
+          navigator.vibrate?.([60, 40, 120]);
+          setCadeaux((l) => [...l, cadeau]);
+          return;
+        }
         if (nom === 'classement_final') {
           // Page ⑱ : le classement figé est relu (avec ton détail), puis la cinématique de fin.
           void finCharger.current();
@@ -624,6 +635,13 @@ export function useJeu() {
     finSortRecu: () => setSortsRecus((l) => l.slice(1)),
     /** RG-8.20 : Sceau d'Ange reçu (cinématique côté cible), un à la fois. */
     sceauRecu: sceauxRecus[0] ?? null,
+    /** Cadeau de l'équipe ou expertise à montrer ; `finCadeau` après la cinématique : la boîte, puis l'état relu. */
+    cadeau: cadeaux[0] ?? null,
+    finCadeau: (c: Cadeau) => {
+      setCadeaux((l) => l.filter((x) => x.id !== c.id));
+      setAlerte({ n: Date.now(), genre: 'info', qui: c.qui, texte: c.texte });
+      void rafraichir();
+    },
     finSceauRecu: () => setSceauxRecus((l) => l.slice(1)),
     echange,
     /** Page ⑫ : session à jour (réponse d'une action, ou évènement). */

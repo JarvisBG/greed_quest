@@ -212,6 +212,9 @@
 .menu-btn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(var(--surf),.1); background: rgba(var(--surf),.04); color: var(--ink); border-radius: 10px; padding: 10px 14px; font-size: .85rem; cursor: pointer; }
 @media (min-width:1000px){ .menu-btn { display: none; } }
 .sidebar.ouvert { display: flex; position: fixed; left: 0; top: 0; background: var(--void); box-shadow: 0 0 60px rgba(0,0,0,.8); }
+/* Le menu du GM dépasse la hauteur d'un téléphone : il défile, et le bouton Menu reste en haut de l'écran. */
+.sidebar.ouvert { height: 100dvh; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 32px; }
+@media (max-width:999px){ .sidebar__nav { flex: none; } .topbar { position: sticky; top: 0; z-index: 10; background: var(--void); padding: 10px 0; margin-top: -10px; } }
 .nav-item { background: none; border: 0; cursor: pointer; text-align: left; width: 100%; font-family: inherit; }
 .nav-item .badge { margin-left: auto; min-width: 20px; height: 20px; border-radius: 10px; background: var(--danger); color: #fff; font-size: .7rem; line-height: 20px; text-align: center; padding: 0 6px; }
 .live-chip.hors { color: var(--ink-faint); background: rgba(var(--surf),.04); border-color: rgba(var(--surf),.08); }

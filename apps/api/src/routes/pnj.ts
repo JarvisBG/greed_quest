@@ -19,7 +19,7 @@ import type { Role } from '../auth/tokens.js';
 import { verifyLicence } from '../core/licence.js';
 import { paramsOf } from '../core/params.js';
 import type { ActionCtx } from '../core/runner.js';
-import { catalogForDraw, limitesOf, loadBook, loadCatalogue, loadJoueur, saveBooks, updateJoueur, type JoueurRow } from '../core/state.js';
+import { catalogForDraw, limitesOf, loadBook, loadCatalogue, loadJoueur, saveBooks, updateJoueur, vueCarte, type JoueurRow } from '../core/state.js';
 import { checkpoints, zones } from '../db/schema.js';
 import { introuvable } from '../errors.js';
 import { refus, send } from '../http.js';
@@ -117,8 +117,11 @@ export async function pnjRoutes(app: FastifyInstance) {
       const cat = await loadCatalogue(c.tx, c.partie.id);
       let after = await loadBook(c.tx, j.id);
       const before = after;
+      let retrait: string | null = null;
       if (input.retirerItemId) {
-        if (!after.items.some((i) => i.id === input.retirerItemId)) return refus('element_absent', 'Élément absent du Book');
+        const item = after.items.find((i) => i.id === input.retirerItemId);
+        if (!item) return refus('element_absent', 'Élément absent du Book');
+        retrait = item.kind === 'carte' ? cat.nomDe(item.cardId) : null;
         after = removeItem(after, input.retirerItemId, { cause: 'sanction', a: c.now });
       }
       if (input.ajouterCarteId) {
@@ -127,7 +130,10 @@ export async function pnjRoutes(app: FastifyInstance) {
       }
       await saveBooks(c.tx, c.partie.id, c.now, [{ joueurId: j.id, before, after }]);
       await c.log({ action: 'correction_livre', resultat: 'ok', motif: input.motif, details: { joueurId: j.id, ajout: input.ajouterCarteId ?? null, retrait: input.retirerItemId ?? null } });
-      c.emit({ type: 'joueur', id: j.id }, 'correction', { motif: input.motif });
+      // Le joueur voit la carte arriver (cinématique du tirage) ou apprend laquelle lui est retirée.
+      const limites = limitesOf(await paramsOf(c.tx, c.partie));
+      const gains = input.ajouterCarteId ? [{ kind: 'carte' as const, carteId: input.ajouterCarteId, ...vueCarte(cat, input.ajouterCarteId, limites) }] : [];
+      c.emit({ type: 'joueur', id: j.id }, 'correction', { motif: input.motif, gains, retrait });
       return { ok: true as const };
     });
     return send(reply, r);
@@ -139,7 +145,7 @@ export async function pnjRoutes(app: FastifyInstance) {
       const jenny = Math.max(0, j.jenny + input.delta);
       await updateJoueur(c.tx, j.id, { jenny });
       await c.log({ action: 'correction_jenny', resultat: 'ok', motif: input.motif, details: { joueurId: j.id, delta: input.delta, jenny } });
-      c.emit({ type: 'joueur', id: j.id }, 'correction', { motif: input.motif, jenny });
+      c.emit({ type: 'joueur', id: j.id }, 'correction', { motif: input.motif, jenny, delta: input.delta });
       return { ok: true as const, jenny };
     });
   });
@@ -186,6 +192,7 @@ export async function pnjRoutes(app: FastifyInstance) {
       const before = await loadBook(c.tx, j.id);
       let after = before;
       const donnees: string[] = [];
+      const gains: unknown[] = []; // vue du tirage pour la cinématique du joueur
       if (input.carteId) {
         const idx = cp.cartes.indexOf(input.carteId);
         if (idx === -1) return refus('carte_indisponible', 'Cette carte n’est plus dans le stock du checkpoint');
@@ -194,6 +201,7 @@ export async function pnjRoutes(app: FastifyInstance) {
         if (!entry || entry.enCirculation >= limitesOf(p)[entry.rank]) return refus('limite_atteinte', 'Cette carte a atteint sa limite d’exemplaires'); // RG-8.2
         after = addItem(after, { kind: 'carte', id: newId(), cardId: input.carteId, origine: { type: 'pnj', checkpointId: cp.id }, obtenuA: c.now });
         donnees.push(cat.nomDe(input.carteId));
+        gains.push({ kind: 'carte', carteId: input.carteId, ...vueCarte(cat, input.carteId, limitesOf(p)) });
         const reste = [...cp.cartes];
         reste.splice(idx, 1);
         await c.tx.update(checkpoints).set({ cartes: reste }).where(eq(checkpoints.id, cp.id));
@@ -205,18 +213,21 @@ export async function pnjRoutes(app: FastifyInstance) {
         if (g.kind === 'carte') {
           after = addItem(after, { kind: 'carte', id: newId(), cardId: g.cardId, origine: { type: 'pnj', checkpointId: cp.id }, obtenuA: c.now });
           bonus = { kind: 'carte', nom: cat.nomDe(g.cardId), rang: g.rank };
+          gains.push({ kind: 'carte', carteId: g.cardId, ...vueCarte(cat, g.cardId, limitesOf(p)), rang: g.rank });
         } else if (g.kind === 'sort') {
           after = addItem(after, { kind: 'sort', id: newId(), spell: g.spell, obtenuA: c.now });
           bonus = { kind: 'sort', sort: g.spell };
+          gains.push(bonus);
         } else {
           jenny += g.amount;
           bonus = { kind: 'jenny', montant: g.amount };
+          gains.push(bonus);
         }
       }
       await saveBooks(c.tx, partieId, c.now, [{ joueurId: j.id, before, after }]);
       await updateJoueur(c.tx, j.id, { jenny, derniereActionA: c.now, ...(j.statut === 'inactif' ? { statut: 'actif' as const } : {}) });
       await c.log({ action: 'checkpoint', resultat: 'ok', details: { checkpointId: cp.id, joueurId: j.id, cartes: donnees, jenny: input.jenny, bonus } });
-      c.emit({ type: 'joueur', id: j.id }, 'checkpoint', { cartes: donnees, jenny: input.jenny, bonus });
+      c.emit({ type: 'joueur', id: j.id }, 'checkpoint', { cartes: donnees, jenny: input.jenny, bonus, gains: input.jenny > 0 ? [{ kind: 'jenny', montant: input.jenny }, ...gains] : gains, solde: jenny });
       return { ok: true as const, joueur: j.pseudo, cartes: donnees, bonus };
     });
     return send(reply, r);
@@ -238,7 +249,7 @@ export async function pnjRoutes(app: FastifyInstance) {
       await saveBooks(c.tx, partieId, c.now, [{ joueurId: j.id, before, after: res.book }]);
       await updateJoueur(c.tx, j.id, { jenny: j.jenny - res.cout });
       await c.log({ action: 'expertise', resultat: 'ok', details: { joueurId: j.id, page: input.page ?? null, cout: res.cout, trouvees: res.contrefacons.length } });
-      c.emit({ type: 'joueur', id: j.id }, 'expertise', { contrefacons: res.contrefacons, cout: res.cout });
+      c.emit({ type: 'joueur', id: j.id }, 'expertise', { contrefacons: res.contrefacons, cout: res.cout, page: input.page ?? null });
       return { ok: true as const, joueur: j.pseudo, cout: res.cout, trouvees: res.contrefacons.length };
     });
     return send(reply, r);

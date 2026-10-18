@@ -87,3 +87,11 @@ export const NOMS_CARTES_GM: Record<CarteGm, { nom: string; court: string; numer
   jarvis: { nom: 'Jarvis tout-puissant', court: 'Jarvis', numero: 'GM·01' },
   ange: { nom: "Le Sceau d'Ange", court: 'Ange', numero: 'GM·02' },
 };
+
+/** Code d'une partie : 6 caractères sans O, 0, I ni 1 (pas de confusion à la lecture ni au clavier). */
+export const ALPHABET_CODE_PARTIE = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+/** Code saisi ou lu dans un lien → identifiant : un code court passe en majuscules ; les anciens identifiants longs restent tels quels. */
+export const codePartie = (saisie: string): string => {
+  const s = saisie.trim();
+  return /^[a-z0-9]{6}$/i.test(s) ? s.toUpperCase() : s;
+};

@@ -4,7 +4,7 @@ import { carteDeBanque, type CarteBanque } from '@gq/shared';
 import { SYSTEM_PRESETS, presetSettings, type LatLng, type Polygon } from '@gq/engine';
 import { eq } from 'drizzle-orm';
 import { Refus } from '../errors.js';
-import { newBeaconId, newId, newSecret } from '../ids.js';
+import { newBeaconId, newCodePartie, newId, newSecret } from '../ids.js';
 import type { DbOrTx } from './client.js';
 import { balises, cartes, parties, prereglages, zones, type ZoneType } from './schema.js';
 
@@ -75,7 +75,8 @@ export async function createPartie(db: DbOrTx, o: { nom: string; prereglage?: st
   const [enBase] = await db.select().from(prereglages).where(eq(prereglages.id, id));
   const preset = enBase ?? SYSTEM_PRESETS.find((p) => p.id === id);
   if (!preset) throw new Refus('prereglage_inconnu', 'Préréglage inconnu', 400);
-  const partieId = newId();
+  let partieId = newCodePartie();
+  while ((await db.select({ id: parties.id }).from(parties).where(eq(parties.id, partieId))).length) partieId = newCodePartie();
   await db.insert(parties).values({ id: partieId, nom: o.nom, parametres: presetSettings(preset), graine: o.graine ?? 0 });
   return partieId;
 }

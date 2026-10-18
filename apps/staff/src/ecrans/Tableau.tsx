@@ -112,7 +112,7 @@ function Acces({ partieId }: { partieId: string }) {
         <div className="pile" style={{ flex: '1 1 240px' }}>
           <p className="info">Scanne ce QR avec l’appareil photo du téléphone : la console s’ouvre sur cette partie, il ne reste qu’à taper son code (GM ou PNJ).</p>
           <p className="info">
-            Code de la partie : <code style={{ wordBreak: 'break-all' }}>{partieId}</code>
+            Code de la partie : <code style={{ wordBreak: 'break-all', fontSize: partieId.length <= 8 ? '1.5rem' : undefined, letterSpacing: '.12em' }}>{partieId}</code>
           </p>
           <div>
             <button

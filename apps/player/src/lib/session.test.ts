@@ -38,5 +38,8 @@ describe('session', () => {
     expect(partieFromUrl('?partie=abc')).toBe('abc');
     expect(partieFromUrl('?partie=')).toBeNull();
     expect(partieFromUrl('')).toBeNull();
+    // Code court tapé en minuscules : même partie ; un ancien identifiant long reste tel quel.
+    expect(partieFromUrl('?partie=kx7p2m')).toBe('KX7P2M');
+    expect(partieFromUrl('?partie=3f2a9c1e-0000-4000-8000-000000000000')).toBe('3f2a9c1e-0000-4000-8000-000000000000');
   });
 });

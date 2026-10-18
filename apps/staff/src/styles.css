@@ -284,6 +284,8 @@ button.large { width: 100%; display: grid; gap: 2px; }
 .etiquette svg { width: 100%; max-width: 180px; height: auto; display: block; }
 .etiquette__titre { font-family: var(--font-display); font-size: .62rem; letter-spacing: .08em; }
 .etiquette__repere { font-family: var(--font-mono); font-size: .6rem; color: #555; border-top: 1px dashed #999; padding-top: 6px; width: 100%; }
+.etiquette__dl { border: 1px solid #ccc; background: #f4f4f5; color: #111; border-radius: 8px; padding: 6px 10px; font-size: .72rem; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.etiquette__dl:hover { background: #e4e4e7; }
 @media print {
   @page { margin: 10mm; }
   body, .app-shell, .main { background: #fff !important; }
@@ -291,6 +293,13 @@ button.large { width: 100%; display: grid; gap: 2px; }
   .main { padding: 0 !important; margin: 0 !important; }
   .planche { grid-template-columns: repeat(3, 1fr); gap: 6mm; }
   .etiquette { border: 1px solid #ccc; border-radius: 0; }
+  /* Affiche : un QR par page A4, en grand. */
+  .planche--affiche { display: block; }
+  .planche--affiche .etiquette { border: 0; height: 270mm; align-content: center; break-after: page; gap: 10mm; }
+  .planche--affiche .etiquette:last-child { break-after: auto; }
+  .planche--affiche .etiquette svg { max-width: 150mm; }
+  .planche--affiche .etiquette__titre { font-size: 22pt; }
+  .planche--affiche .etiquette__repere { font-size: 14pt; max-width: 150mm; }
 }
 /* Carte du GM */
 .carte-gm { width: 100%; height: auto; max-height: 75dvh; background: rgba(var(--surf),.02); border: 1px solid rgba(var(--surf),.07); border-radius: 14px; display: block; }

@@ -1,5 +1,6 @@
 // Session joueur gardée sur le téléphone : identifiant d'appareil (RG-5.1, une inscription
 // par appareil) et jeton de la partie en cours. Le stockage est injecté pour les tests.
+import { codePartie } from '@gq/shared';
 
 export interface Session {
   partieId: string;
@@ -49,6 +50,6 @@ export type SessionStore = ReturnType<typeof createSessionStore>;
 
 /** Partie visée : `?partie=<id>` (QR d'accueil) sinon celle de la session. */
 export function partieFromUrl(search: string): string | null {
-  const id = new URLSearchParams(search).get('partie')?.trim();
+  const id = codePartie(new URLSearchParams(search).get('partie') ?? '');
   return id ? id : null;
 }

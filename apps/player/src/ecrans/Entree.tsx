@@ -1,5 +1,6 @@
 // Entrée : rejoindre une partie (code saisi, ou lien du QR d'accueil qui ouvre l'app sur `?partie=`).
 import { Concentration, DosCarte } from '@gq/ui';
+import { codePartie } from '@gq/shared';
 import { useState } from 'react';
 
 export function Entree({ onChoix }: { onChoix: (id: string) => void }) {
@@ -20,7 +21,7 @@ export function Entree({ onChoix }: { onChoix: (id: string) => void }) {
         className="gi-case"
         onSubmit={(e) => {
           e.preventDefault();
-          if (id.trim()) onChoix(id.trim());
+          if (id.trim()) onChoix(codePartie(id));
         }}
       >
         <h2 className="sous-titre">Rejoindre une partie</h2>

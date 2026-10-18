@@ -7,7 +7,9 @@ import { Plateau } from './ecran/Plans';
 import { activerSon, dire } from './lib/son';
 import { enMarche, useEcran } from './lib/useEcran';
 
-const partieId = new URLSearchParams(location.search).get('partie');
+const lu = new URLSearchParams(location.search).get('partie')?.trim() ?? '';
+// Code court tapé en minuscules : même code (les anciens identifiants longs restent tels quels).
+const partieId = /^[a-z0-9]{6}$/i.test(lu) ? lu.toUpperCase() : lu || null;
 
 /** L'écran garde ses 1920 × 1080, centré et mis à l'échelle de la fenêtre. */
 function useEchelle(ref: React.RefObject<HTMLDivElement | null>) {

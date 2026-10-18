@@ -1,4 +1,5 @@
 // Connexion de l'équipe par code (RG-3) : le GM crée les codes des PNJ.
+import { codePartie } from '@gq/shared';
 import { useState } from 'react';
 import { ApiError } from '../lib/api';
 
@@ -17,7 +18,7 @@ export function Connexion({ partieUrl, connecter, creer }: { partieUrl: string |
         setEnvoi(true);
         setErreur(null);
         try {
-          await connecter(partie.trim(), code);
+          await connecter(codePartie(partie), code);
         } catch (err) {
           setErreur(err instanceof ApiError ? err.message : 'Connexion impossible');
         } finally {
@@ -34,7 +35,7 @@ export function Connexion({ partieUrl, connecter, creer }: { partieUrl: string |
       {!partieUrl && (
         <label>
           Partie
-          <input value={partie} onChange={(e) => setPartie(e.target.value)} placeholder="Identifiant de la partie" autoCapitalize="off" />
+          <input value={partie} onChange={(e) => setPartie(e.target.value)} placeholder="Code de la partie (ex. KX7P2M)" autoCapitalize="off" />
         </label>
       )}
       <label>

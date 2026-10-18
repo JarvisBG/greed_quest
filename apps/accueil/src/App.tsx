@@ -124,7 +124,8 @@ function EcranGeant() {
   }, [ouvert]);
   const ouvrir = (e: FormEvent) => {
     e.preventDefault();
-    const v = id.trim();
+    const lu = id.trim();
+    const v = /^[a-z0-9]{6}$/i.test(lu) ? lu.toUpperCase() : lu; // code court de la partie
     if (!v) return;
     try {
       localStorage.setItem('gi-partie', v);

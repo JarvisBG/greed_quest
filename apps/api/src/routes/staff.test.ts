@@ -19,6 +19,7 @@ beforeAll(async () => {
     payload: { nom: 'Test', demo: true, gm: { nom: 'Sivraj', code: 'secret-gm' } },
   });
   ({ partieId, token: gm } = res.json());
+  expect(partieId).toMatch(/^[A-HJ-NP-Z2-9]{6}$/); // code court à taper ou à dicter
 });
 afterAll(() => h.close());
 

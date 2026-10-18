@@ -1,4 +1,5 @@
 // Session d'un membre de l'équipe (PNJ ou GM), gardée sur l'appareil. Le stockage est injecté pour les tests.
+import { codePartie } from '@gq/shared';
 
 export type Role = 'pnj' | 'gm';
 
@@ -35,6 +36,6 @@ export type SessionStore = ReturnType<typeof createSessionStore>;
 
 /** Partie visée : `?partie=<id>` sinon celle de la session. */
 export function partieFromUrl(search: string): string | null {
-  const id = new URLSearchParams(search).get('partie')?.trim();
+  const id = codePartie(new URLSearchParams(search).get('partie') ?? '');
   return id ? id : null;
 }

@@ -35,7 +35,7 @@ const lireAdresse = () => {
   }
 };
 
-function Qr({ texte }: { texte: string }) {
+export function Qr({ texte }: { texte: string }) {
   const { n, chemin } = useMemo(() => {
     const qr = qrcode(0, 'M');
     qr.addData(texte);

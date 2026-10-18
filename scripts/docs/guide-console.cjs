@@ -1,8 +1,8 @@
-// Guide de la console GM / PNJ de Greed Island (Word). Usage : node scripts/docs/guide-console.cjs "docs/Greed Island - Guide de la console.docx" (bibliothèque docx@9 requise), puis mettre à jour le sommaire dans Word.
+// Guide de la console GM / PNJ de Greed Island (Word). Usage : node scripts/docs/guide-console.cjs "docs/Greed Island - Guide de la console.docx" (bibliothèque docx@9 requise), sommaire compris.
 const fs = require('fs');
 const {
   Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType, ShadingType,
-  AlignmentType, LevelFormat, BorderStyle, ExternalHyperlink, Footer, PageNumber, PageBreak, TableOfContents,
+  AlignmentType, LevelFormat, BorderStyle, ExternalHyperlink, Footer, PageNumber, PageBreak, Bookmark, InternalHyperlink,
 } = require('docx');
 
 const OUT = process.argv[2];
@@ -14,8 +14,16 @@ const t = (text, o = {}) => new TextRun({ text, ...o });
 const b = (text) => t(text, { bold: true });
 const lien = (url, label) => new ExternalHyperlink({ link: url, children: [t(label ?? url, { style: 'Hyperlink' })] });
 const p = (...children) => new Paragraph({ spacing: { after: 120 }, children: children.map((c) => (typeof c === 'string' ? t(c) : c)) });
-const h1 = (text) => new Paragraph({ heading: HeadingLevel.HEADING_1, children: [t(text)] });
-const h2 = (text) => new Paragraph({ heading: HeadingLevel.HEADING_2, children: [t(text)] });
+// Sommaire écrit ici (liens vers des signets) : un champ « table des matières » demande Word pour se remplir.
+const titres = [];
+const titre = (niv) => (text) => {
+  const id = `t${titres.length + 1}`;
+  titres.push({ text, id, niv });
+  return new Paragraph({ heading: niv === 1 ? HeadingLevel.HEADING_1 : HeadingLevel.HEADING_2, children: [new Bookmark({ id, children: [t(text)] })] });
+};
+const h1 = titre(1);
+const h2 = titre(2);
+const SOMMAIRE = 'sommaire';
 const puce = (...children) => new Paragraph({ numbering: { reference: 'puces', level: 0 }, spacing: { after: 60 }, children: children.map((c) => (typeof c === 'string' ? t(c) : c)) });
 const etape = (ref, ...children) => new Paragraph({ numbering: { reference: ref, level: 0 }, spacing: { after: 80 }, children: children.map((c) => (typeof c === 'string' ? t(c) : c)) });
 const encadre = (...children) => new Paragraph({
@@ -72,7 +80,7 @@ const contenu = [
   new Paragraph({ children: [new PageBreak()] }),
 
   new Paragraph({ spacing: { after: 200 }, children: [t('Sommaire', { bold: true, size: 32, color: ENCRE })] }),
-  new TableOfContents('Sommaire', { hyperlink: true, headingStyleRange: '1-2' }),
+  SOMMAIRE,
   new Paragraph({ children: [new PageBreak()] }),
 
   // 1. Adresses
@@ -221,6 +229,12 @@ const contenu = [
     ['Un PNJ a oublié son code', 'Les codes ne sont jamais réaffichés : crée-lui un nouvel accès dans Préparation → Équipe (par exemple « Wing 2 ») avec un nouveau code.'],
   ], [3600, 6038]),
 ];
+
+contenu.splice(contenu.indexOf(SOMMAIRE), 1, ...titres.map((x) => new Paragraph({
+  spacing: { after: x.niv === 1 ? 80 : 40, before: x.niv === 1 ? 120 : 0 },
+  indent: x.niv === 2 ? { left: 400 } : undefined,
+  children: [new InternalHyperlink({ anchor: x.id, children: [t(x.text, x.niv === 1 ? { bold: true, color: ENCRE } : { color: '444444' })] })],
+})));
 
 const doc = new Document({
   creator: 'loJIC Solutions',

@@ -170,6 +170,7 @@ const ACTIONS: Record<string, string> = {
   zone_creation: 'Zone créée',
   ajout_staff: 'Membre de l’équipe ajouté',
   creation_partie: 'Partie créée',
+  terrain_repris: 'Terrain repris d’une partie précédente',
   recalcul_j: 'Recalcul de J',
   vague_boutique: 'Vague de la boutique',
   retour_ss: 'Retour d’une SS',

@@ -4,11 +4,9 @@ import { useEffect, useState } from 'react';
 import { Alertes } from './ecrans/Alertes';
 import { Arene } from './ecrans/Arene';
 import { Checkpoints } from './ecrans/Checkpoints';
-import { Connexion } from './ecrans/Connexion';
 import { Encheres } from './ecrans/Encheres';
 import { Carte } from './ecrans/gm/Carte';
 import { Clear } from './ecrans/gm/Clear';
-import { Creation } from './ecrans/gm/Creation';
 import { Evenements } from './ecrans/gm/Evenements';
 import { Parametres } from './ecrans/gm/Parametres';
 import { Planche } from './ecrans/gm/Planche';
@@ -17,9 +15,10 @@ import { Joueur, type Cible } from './ecrans/Joueur';
 import { Joueurs } from './ecrans/Joueurs';
 import { Journal } from './ecrans/Journal';
 import { Missions } from './ecrans/Missions';
+import { Parties } from './ecrans/Parties';
 import { Tableau } from './ecrans/Tableau';
 import { formatDuree, libelleEtat } from './lib/format';
-import { partieFromUrl } from './lib/session';
+import { adressePartie, partieFromUrl } from './lib/session';
 import { useEquipe } from './lib/useEquipe';
 
 interface PageDef {
@@ -49,12 +48,14 @@ const PAGES: PageDef[] = [
 const CHRONO_TOURNE = new Set(['en_cours', 'phase_finale']);
 
 export function App() {
-  const partieUrl = partieFromUrl(location.search);
+  const [partieUrl] = useState(() => partieFromUrl(location.search));
   const eq = useEquipe(partieUrl);
+  // L'adresse suit la partie ouverte (sans `?partie` : « Mes parties ») ; un rechargement revient au même endroit.
+  const ouverte = eq.session?.partieId ?? null;
+  useEffect(() => history.replaceState(null, '', adressePartie(ouverte)), [ouverte]);
   const [page, setPage] = useState('dashboard');
   const [menu, setMenu] = useState(false);
   const [cible, setCible] = useState<Cible | null>(null);
-  const [creation, setCreation] = useState(false);
   const [alertesVues, setAlertesVues] = useState(0);
   const nonLues = Math.max(0, eq.alertesRecues - alertesVues);
   useEffect(() => {
@@ -75,12 +76,15 @@ export function App() {
       <>
         <div className="bg-layer bg-glow" />
         <div className="bg-layer bg-grid" />
-        <div className="app-shell" style={{ alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          {creation ? (
-            <Creation connecter={eq.connecter} retour={() => setCreation(false)} />
-          ) : (
-            <Connexion partieUrl={partieUrl} connecter={eq.connecter} creer={() => setCreation(true)} />
-          )}
+        <div
+          className="app-shell"
+          style={{
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
+          }}
+        >
+          <Parties partieUrl={partieUrl} connecter={eq.connecter} ouvrir={eq.ouvrir} />
         </div>
       </>
     );
@@ -114,8 +118,8 @@ export function App() {
               </button>
             ))}
           </nav>
-          <button type="button" className="sidebar__foot nav-item" onClick={eq.deconnecter}>
-            <i className="fa-solid fa-arrow-right-from-bracket" aria-hidden="true" /> Déconnexion
+          <button type="button" className="sidebar__foot nav-item" onClick={eq.quitter}>
+            <i className="fa-solid fa-layer-group" aria-hidden="true" /> Mes parties
           </button>
         </aside>
         {menu && <div className="modal-overlay show" style={{ zIndex: 20 }} onClick={() => setMenu(false)} />}
@@ -126,8 +130,12 @@ export function App() {
               <h1>{courante.titre}</h1>
             </div>
             <div className="topbar__actions">
+              <button type="button" className="parties-btn" onClick={eq.quitter} title="Changer de partie, en créer une, se déconnecter">
+                <i className="fa-solid fa-layer-group" aria-hidden="true" /> Mes parties
+              </button>
               <button type="button" className="menu-btn" onClick={() => setMenu(true)}>
-                <i className="fa-solid fa-bars" aria-hidden="true" /> Menu{nonLues > 0 ? ` (${nonLues})` : ''}
+                <i className="fa-solid fa-bars" aria-hidden="true" /> Menu
+                {nonLues > 0 ? ` (${nonLues})` : ''}
               </button>
               {p && (
                 <div className="etat-chip">
@@ -156,7 +164,7 @@ export function App() {
           {courante.id === 'preparation' && <Preparation eq={eq} />}
           {courante.id === 'planche' && <Planche eq={eq} />}
           {courante.id === 'parametres' && <Parametres eq={eq} />}
-          {courante.id === 'checkpoints' &&<Checkpoints eq={eq} />}
+          {courante.id === 'checkpoints' && <Checkpoints eq={eq} />}
           {courante.id === 'arene' && <Arene eq={eq} />}
           {courante.id === 'encheres' && <Encheres eq={eq} />}
           {courante.id === 'missions' && <Missions eq={eq} />}

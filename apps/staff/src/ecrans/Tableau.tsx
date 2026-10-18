@@ -3,8 +3,7 @@
 import { heure, libelleAlerte, libelleLigne } from '../lib/format';
 import type { Equipe } from '../lib/useEquipe';
 import { Partie } from './gm/Partie';
-import { Qr } from './gm/Planche';
-import { useState } from 'react';
+import { Acces } from './Acces';
 
 export function Tableau({ eq, aller }: { eq: Equipe; aller: (page: string) => void }) {
   const actifs = eq.joueurs.filter((j) => j.statut === 'actif').length;
@@ -42,7 +41,16 @@ export function Tableau({ eq, aller }: { eq: Equipe; aller: (page: string) => vo
         </div>
       )}
 
-      {eq.session!.role === 'gm' && <Acces partieId={eq.session!.partieId} />}
+      {eq.session!.role === 'gm' && (
+        <div className="panel-card">
+          <div className="section-head">
+            <h3>
+              <i className="fa-solid fa-key" aria-hidden="true" /> Accès à la partie
+            </h3>
+          </div>
+          <Acces partieId={eq.session!.partieId} />
+        </div>
+      )}
 
       <div className="grid-main">
         <div className="panel-card">
@@ -87,42 +95,6 @@ export function Tableau({ eq, aller }: { eq: Equipe; aller: (page: string) => vo
               </div>
             ))}
             {eq.alertes.length === 0 && <p className="vide">Aucune alerte.</p>}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/** Code de la partie et QR pour ouvrir la console sur un autre appareil (téléphone du GM, PNJ) : `?partie=` préremplit la partie. */
-function Acces({ partieId }: { partieId: string }) {
-  const [copie, setCopie] = useState(false);
-  const lien = `${location.origin}/?partie=${encodeURIComponent(partieId)}`;
-  return (
-    <div className="panel-card">
-      <div className="section-head">
-        <h3>
-          <i className="fa-solid fa-mobile-screen" aria-hidden="true" /> Ouvrir la console sur un téléphone
-        </h3>
-      </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center' }}>
-        <div style={{ width: 150, flex: '0 0 auto' }}>
-          <Qr texte={lien} />
-        </div>
-        <div className="pile" style={{ flex: '1 1 240px' }}>
-          <p className="info">Scanne ce QR avec l’appareil photo du téléphone : la console s’ouvre sur cette partie, il ne reste qu’à taper son code (GM ou PNJ).</p>
-          <p className="info">
-            Code de la partie : <code style={{ wordBreak: 'break-all', fontSize: partieId.length <= 8 ? '1.5rem' : undefined, letterSpacing: '.12em' }}>{partieId}</code>
-          </p>
-          <div>
-            <button
-              type="button"
-              className="modal-btn modal-btn--ghost"
-              style={{ flex: '0 1 auto' }}
-              onClick={() => void navigator.clipboard?.writeText(partieId).then(() => setCopie(true), () => {})}
-            >
-              {copie ? 'Copié' : 'Copier le code'}
-            </button>
           </div>
         </div>
       </div>

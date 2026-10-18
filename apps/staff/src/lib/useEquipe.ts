@@ -21,8 +21,11 @@ const CHANGE_JOUEURS = new Set(['inscription', 'statut', 'gel_sanction', 'annula
 
 export function useEquipe(partieUrl: string | null) {
   const [session, setSession] = useState<SessionEquipe | null>(() => {
-    const s = store.get();
-    return s && (!partieUrl || s.partieId === partieUrl) ? s : null;
+    // `?partie=X` ouvre X si ce membre s'y est déjà connecté sur cet appareil ; sinon « Mes parties ».
+    const s = partieUrl ? (store.liste().find((x) => x.partieId === partieUrl) ?? null) : store.get();
+    if (s) store.set(s);
+    else store.clear();
+    return s;
   });
   const [partie, setPartie] = useState<PartiePublique | null>(null);
   const [joueurs, setJoueurs] = useState<JoueurVue[]>([]);
@@ -38,9 +41,33 @@ export function useEquipe(partieUrl: string | null) {
   const [version, setVersion] = useState<Partial<Record<EvenementEquipe, number>>>({});
   const partieId = session?.partieId ?? partieUrl;
 
-  const deconnecter = useCallback(() => {
+  // Changement de partie (page « Mes parties ») : rien de l'ancienne ne reste affiché.
+  useEffect(() => {
+    setPartie(null);
+    setJoueurs([]);
+    setCatalogue([]);
+    setJournal([]);
+    setAlertes([]);
+    setJ(null);
+    setAlertesRecues(0);
+    setVersion({});
+  }, [session?.partieId]);
+
+  /** Retour à « Mes parties » : la partie reste retenue sur l'appareil. */
+  const quitter = useCallback(() => {
     store.clear();
     setSession(null);
+  }, []);
+  /** Déconnexion de la partie ouverte : elle est oubliée sur cet appareil. */
+  const deconnecter = useCallback(() => {
+    const s = store.get();
+    if (s) store.oublier(s.partieId);
+    setSession(null);
+  }, []);
+  /** Rouvre une partie retenue (page « Mes parties »). */
+  const ouvrir = useCallback((s: SessionEquipe) => {
+    store.set(s);
+    setSession(s);
   }, []);
 
   /** Jeton refusé (partie supprimée, secret changé) : retour à l'écran de connexion. */
@@ -139,7 +166,7 @@ export function useEquipe(partieUrl: string | null) {
     [pseudos, session],
   );
 
-  return { session, partieId, partie, j, alertesRecues, joueurs, pseudos, catalogue, journal, alertes, connexion, version, connecter, deconnecter, chargerJoueurs, chargerPartie, chargerCatalogue, nomActeur };
+  return { session, partieId, partie, j, alertesRecues, joueurs, pseudos, catalogue, journal, alertes, connexion, version, connecter, ouvrir, quitter, deconnecter, chargerJoueurs, chargerPartie, chargerCatalogue, nomActeur };
 }
 
 export type Equipe = ReturnType<typeof useEquipe>;

@@ -90,7 +90,7 @@ const contenu = [
     ['Page d’accueil', lien('https://greed-island.jarvismboummeu28.workers.dev'), 'Les partenaires : présentation du jeu, contact, et boutons vers les 3 apps'],
     ['Console (GM et PNJ)', lien(CONSOLE), 'Toi et ton équipe'],
     ['App joueur', lien(JOUEUR), 'Les joueurs (sur leur téléphone)'],
-    ['Écran géant', [lien(ECRAN), t('/?partie=<identifiant de la partie>')], 'Le grand écran ou le vidéoprojecteur'],
+    ['Écran géant', [lien(ECRAN), t('/?partie=<code de la partie>')], 'Le grand écran ou le vidéoprojecteur'],
     ['Serveur du jeu (vérifier qu’il est réveillé)', [lien(`${API}/sante`)], 'Toi : doit afficher {"ok":true}'],
   ], [2500, 4938, 2200]),
   espace(),
@@ -106,7 +106,7 @@ const contenu = [
 
   // 2. Rôles
   h1('2. Qui fait quoi'),
-  p('La console sert à deux rôles. Chacun se connecte avec l’identifiant de la partie et son propre code.'),
+  p('La console sert à deux rôles. Chacun se connecte avec le code de la partie (6 caractères, ex. KX7P2M) et son propre code.'),
   tableau(['Rôle', 'Ce qu’il voit dans le menu', 'Son travail'], [
     ['Game Master (GM)', 'Tout : Dashboard, Joueurs, Scanner une licence, Carte, Évènements, Clear, Préparation, Planche QR, Paramètres, Checkpoints, Arène, Enchères, Missions, Alertes, Journal', 'Prépare la partie, la lance et la termine, lance les évènements, corrige et sanctionne, confirme le Clear.'],
     ['PNJ (arbitre)', 'Dashboard, Joueurs, Scanner une licence, Checkpoints, Arène, Enchères, Missions, Alertes, Journal', 'Arbitre sur le terrain : checkpoints, arène, enchères, missions, avertissements.'],
@@ -123,7 +123,7 @@ const contenu = [
   etape('avant', b('Joueurs attendus'), ' : sert à choisir combien de cartes il faudra réunir dans le Book (tirées au hasard).'),
   etape('avant', 'Case ', b('« Remplir avec une partie de démonstration »'), ' : coche-la seulement pour un essai (catalogue, zones et balises d’exemple, posés à Douala).'),
   etape('avant', b('Ton nom'), ' de Game Master et ', b('ton code de connexion (6 caractères ou plus)'), ', puis ', b('Créer la partie'), '.'),
-  encadre(b('Note l’identifiant de la partie. '), t('Après la création, l’adresse de la console se termine par « ?partie=… ». Copie cette adresse entière : envoyée à un PNJ, elle remplit l’identifiant pour lui, il n’a plus qu’à taper son code. Le même identifiant sert pour l’écran géant.')),
+  encadre(b('Note le code de la partie. '), t('Il s’affiche sur le Dashboard, dans « Ouvrir la console sur un téléphone » (6 caractères, ex. KX7P2M, sans O, 0, I ni 1), avec un QR : scanné avec l’appareil photo d’un téléphone, il ouvre la console sur la partie, il ne reste qu’à taper son code GM ou PNJ. Le même code sert aux joueurs (champ « Code de la partie ») et à l’écran géant.')),
 
   // 4. Préparer
   h1('4. Préparer le terrain (page Préparation)'),
@@ -152,7 +152,8 @@ const contenu = [
   puce('Le nombre de cartes à réunir se fixe avant le démarrage. Un ', b('préréglage'), ' s’applique après confirmation ; tu peux aussi enregistrer tes réglages comme nouveau préréglage.'),
   h2('Planche QR'),
   puce('Dans ', b('« Adresse de l’app joueur »'), ', mets : ', lien(JOUEUR), '. Les QR deviennent alors des liens : scannés avec l’appareil photo du téléphone, ils ouvrent directement le jeu.'),
-  puce('La planche contient les QR des balises, des lieux et le QR ', b('« Rejoindre la partie »'), ' (inscription des joueurs). Impression 3 par ligne.'),
+  puce('La planche contient les QR des balises, des lieux et le QR ', b('« Rejoindre la partie »'), ' (inscription des joueurs). Impression ', b('3 par ligne'), ' ou ', b('un QR par page (affiche A4)'), '.'),
+  puce('Sous chaque QR, le bouton ', b('Télécharger'), ' enregistre son étiquette en image (PNG) : à envoyer à un imprimeur ou à imprimer à part.'),
   puce('Sous chaque QR, un repère (ex. « B07 · Forêt ») aide à poser la balise au bon endroit : découpe-le ou plie-le au dos pour que les joueurs ne le voient pas.'),
   encadre(b('Attention : '), t('l’adresse de l’app joueur est imprimée dans les QR. Si on change d’adresse un jour (vrai nom de domaine), il faudra réimprimer.')),
 
@@ -160,7 +161,7 @@ const contenu = [
   h1('6. Le jour J'),
   etape('jourj', b('30 minutes avant'), ' : ouvre ', lien(`${API}/sante`), '. Le serveur gratuit s’endort après 15 minutes sans visite ; la première ouverture peut prendre environ 1 minute. Quand la page affiche {"ok":true}, il est réveillé.'),
   etape('jourj', 'Connecte-toi à la console et laisse-la ouverte : tant qu’elle (ou l’écran géant) est ouverte, le serveur reste éveillé.'),
-  etape('jourj', 'Allume l’écran géant : ', t(`${ECRAN}/?partie=<identifiant>`, { bold: true }), '. Clique sur ', b('« Lancer avec le son »'), ' (voix off et bruitages ; les navigateurs coupent le son tant que personne n’a touché la page).'),
+  etape('jourj', 'Allume l’écran géant : ', t(`${ECRAN}/?partie=<code de la partie>`, { bold: true }), '. Clique sur ', b('« Lancer avec le son »'), ' (voix off et bruitages ; les navigateurs coupent le son tant que personne n’a touché la page).'),
   etape('jourj', b('Dashboard → Phase du jeu'), ' : ', b('Ouvrir les inscriptions'), '. Les joueurs scannent le QR « Rejoindre la partie » ou ouvrent ', lien(JOUEUR), '.'),
   etape('jourj', b('Démarrer la partie'), ' : le chrono part. Chaque bouton demande une confirmation et s’applique tout de suite à tous les téléphones et à l’écran géant.'),
   etape('jourj', 'Ensuite, selon le besoin : ', b('Mettre en pause'), ' / ', b('Reprendre la partie'), ' (le chrono s’arrête en pause), ', b('Lancer la phase finale'), ', puis ', b('Terminer la partie'), '.'),

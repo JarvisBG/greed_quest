@@ -1,0 +1,28 @@
+# Mise en ligne du serveur du jeu sur Render (offre gratuite, Francfort). Voir docs/DEPLOIEMENT.md.
+# Un seul serveur : les tâches planifiées et le temps réel vivent en mémoire (ne jamais en lancer deux).
+services:
+  - type: web
+    name: greed-island-api
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: refonte-joueur
+    buildCommand: npm install -g pnpm@10.34.6 && pnpm install --frozen-lockfile
+    startCommand: pnpm --filter @gq/api start
+    healthCheckPath: /sante
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      # Chaîne « Session pooler » de Supabase (sans ?sslmode), mot de passe compris.
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_SSL
+        value: "1"
+      - key: GQ_SECRET
+        generateValue: true
+      # Code de l'organisateur pour créer une partie (choisi par Sivraj).
+      - key: GQ_ADMIN_CODE
+        sync: false
+      # Adresses des 3 apps Cloudflare, séparées par des virgules.
+      - key: CORS_ORIGINS
+        sync: false

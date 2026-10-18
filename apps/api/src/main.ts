@@ -6,7 +6,7 @@ import { Scheduler } from './core/taches.js';
 import { seedPresets } from './db/seed.js';
 
 const config = loadConfig();
-const { db, close } = await openDb({ url: config.databaseUrl, dataDir: config.pgliteDir });
+const { db, close } = await openDb({ url: config.databaseUrl, dataDir: config.pgliteDir, ssl: config.databaseSsl });
 await seedPresets(db);
 const app = await buildApp({ db, secret: config.secret, adminCode: config.adminCode, corsOrigin: config.corsOrigin, logger: true });
 // Tâches planifiées (J, rotation, recharge, événements, enchères, écran…).

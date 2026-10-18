@@ -1,0 +1,6 @@
+{
+  // Mise en ligne sur Cloudflare (fichiers statiques seulement, comme Otaku Quest) : voir docs/DEPLOIEMENT.md.
+  "name": "greed-island-ecran",
+  "compatibility_date": "2026-09-29",
+  "assets": { "directory": "./dist" }
+}

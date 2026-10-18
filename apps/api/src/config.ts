@@ -4,6 +4,8 @@ export interface Config {
   host: string;
   /** postgres://… en prod ; vide = PGlite embarqué. */
   databaseUrl: string | undefined;
+  /** Connexion chiffrée à la base (Supabase l'exige) : DATABASE_SSL=1. */
+  databaseSsl: boolean;
   /** Dossier du PGlite persistant (dev) ; vide = en mémoire. */
   pgliteDir: string | undefined;
   /** Secret de signature des jetons (sessions, licences). */
@@ -19,6 +21,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     port: Number(env.PORT ?? 3000),
     host: env.HOST ?? '0.0.0.0',
     databaseUrl: env.DATABASE_URL || undefined,
+    databaseSsl: env.DATABASE_SSL === '1',
     pgliteDir: env.PGLITE_DIR || undefined,
     secret: env.GQ_SECRET ?? 'dev-secret-a-changer',
     adminCode: env.GQ_ADMIN_CODE ?? 'admin-dev',

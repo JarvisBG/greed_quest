@@ -26,10 +26,12 @@ export interface DbHandle {
 /**
  * `url` : chaîne postgres:// (prod) ; sinon `dataDir` pour un PGlite persistant sur disque,
  * ou rien pour une base en mémoire (tests). Les migrations sont appliquées à l'ouverture.
+ * `ssl` : connexion chiffrée (Supabase), sans vérifier le certificat (celui du pooler Supabase n'est pas signé
+ * par une autorité connue de Node).
  */
-export async function openDb(opts: { url?: string | undefined; dataDir?: string | undefined } = {}): Promise<DbHandle> {
+export async function openDb(opts: { url?: string | undefined; dataDir?: string | undefined; ssl?: boolean } = {}): Promise<DbHandle> {
   if (opts.url) {
-    const pool = new pg.Pool({ connectionString: opts.url });
+    const pool = new pg.Pool({ connectionString: opts.url, ...(opts.ssl ? { ssl: { rejectUnauthorized: false } } : {}) });
     const db = drizzlePg(pool, { schema });
     await migratePg(db, { migrationsFolder });
     return { db: db as unknown as Db, close: () => pool.end() };

@@ -4,6 +4,11 @@ import type { EtatEcran } from './types';
 
 const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? '';
 
+/** Hébergement gratuit : le serveur s'endort après 15 min sans visite. Tant que l'écran est allumé, on le garde éveillé. */
+export function garderEveille(): void {
+  if (BASE) setInterval(() => void fetch(`${BASE}/sante`).catch(() => {}), 10 * 60_000);
+}
+
 export async function chargerEcran(partieId: string): Promise<EtatEcran> {
   const r = await fetch(`${BASE}/parties/${encodeURIComponent(partieId)}/ecran`);
   if (!r.ok) throw new Error(r.status === 404 ? 'Partie introuvable' : `Erreur ${r.status}`);

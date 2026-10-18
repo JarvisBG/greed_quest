@@ -20,7 +20,9 @@ const SORTS = [
 ];
 
 const reduit = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+/** Déjà vue pendant cette visite ? `?ouverture` la rejoue toujours (pour la montrer). */
 function dejaVue(): boolean {
+  if (new URLSearchParams(window.location.search).has('ouverture')) return false;
   try {
     return sessionStorage.getItem('gi-intro') === '1';
   } catch {

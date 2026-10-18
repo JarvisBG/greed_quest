@@ -1,6 +1,6 @@
 // Schéma de la base (entités de docs/REGLES.md « Entités »).
 // Heures « de jeu » : ms d'horloge de jeu (gameClock, integer). Heures réelles : ms epoch (bigint) ou timestamptz.
-import type { CarteGm, GameState, NenType, ObjetType, PlayerStatus, PouvoirSpe, Rank, SpellType, BeaconState, BeaconType } from '@gq/shared';
+import type { CarteGm, GameState, NenType, ObjetType, PlayerStatus, PouvoirSpe, ProfilJoueur, Rank, SpellType, BeaconState, BeaconType } from '@gq/shared';
 import type { Bid, RankingEntry, EventData, GameEvent, JState, ShopConfig, ShopWave, TradeSessionState, TradeSide, Origine, Faux, ParamKey, ParamSetting, ParamSettings, Perte, Position, Polygon } from '@gq/engine';
 import { bigint, boolean, index, integer, jsonb, pgTable, primaryKey, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 
@@ -108,6 +108,12 @@ export const joueurs = pgTable(
     nen: text('nen').$type<NenType>(),
     /** RG-5.3 : bonnes réponses à l'Examen, null tant qu'il n'est pas passé. */
     examenScore: integer('examen_score'),
+    /** RG-5.3 (amendement 2026-10-18) : Fiche Hunter (profil), null tant qu'elle n'est pas remplie. */
+    profil: jsonb('profil').$type<ProfilJoueur>(),
+    /** Numéro WhatsApp normalisé (+237…), jamais envoyé aux joueurs ni à l'écran ; null pour les moins de 15 ans. */
+    telephone: text('telephone'),
+    /** Case libre de la fiche : seuls ceux qui l'ont cochée sont recontactés. */
+    accordRecontact: boolean('accord_recontact').notNull().default(false),
     jenny: integer('jenny').notNull().default(0),
     statut: text('statut').$type<PlayerStatus>().notNull().default('actif'),
     position: jsonb('position').$type<Position>(),

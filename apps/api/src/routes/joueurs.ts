@@ -19,7 +19,7 @@ import {
   scoreExamen,
   validQuizAnswers,
 } from '@gq/engine';
-import { Inscription, LicenceScan, Reconnexion, ReponseSecrete, ReponsesQuiz } from '@gq/shared';
+import { FicheHunter, Inscription, LicenceScan, Reconnexion, ReponseSecrete, ReponsesQuiz, telephoneCamerounais } from '@gq/shared';
 import { and, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { STAFF, requireRole } from '../auth/guard.js';
@@ -142,6 +142,25 @@ export async function joueursRoutes(app: FastifyInstance) {
     return send(reply, r);
   });
 
+  // RG-5.3 (amendement 2026-10-18) : Fiche Hunter, obligatoire, à la place de l'Examen ; bonus à la fiche remplie
+  // (récompense de l'acte, jamais de la réponse). Le téléphone n'entre jamais dans le Journal.
+  app.post<P>('/parties/:partieId/fiche', async (req, reply) => {
+    const { partieId } = req.params;
+    const s = requireRole(req, partieId, 'joueur');
+    const { telephone, accordRecontact, ...profil } = parse(FicheHunter, req.body);
+    const r = await runner.run(partieId, { type: 'joueur', id: s.sub }, async (c) => {
+      const [j] = await c.tx.select().from(joueurs).where(eq(joueurs.id, s.sub));
+      if (!j) throw introuvable('Joueur');
+      if (j.profil) return refus('deja_fait', 'Tu as déjà rempli ta fiche Hunter');
+      const tel = profil.age === 'moins15' ? null : telephoneCamerounais(telephone ?? '');
+      const bonus = 3 * (await paramsOf(c.tx, c.partie)).bonusExamenJ;
+      await c.tx.update(joueurs).set({ profil, telephone: tel, accordRecontact: tel !== null && accordRecontact, jenny: j.jenny + bonus }).where(eq(joueurs.id, j.id));
+      await c.log({ action: 'fiche_hunter', resultat: 'ok', details: { bonus, telephone: tel !== null, accordRecontact: tel !== null && accordRecontact } });
+      return { ok: true as const, bonus, jenny: j.jenny + bonus };
+    });
+    return send(reply, r);
+  });
+
   app.post<P>('/parties/:partieId/nen', async (req, reply) => {
     const { partieId } = req.params;
     const s = requireRole(req, partieId, 'joueur');
@@ -192,7 +211,7 @@ export async function joueursRoutes(app: FastifyInstance) {
     const pouvoir = power && p ? pouvoirDisponibleDans(j, power, now, rechargesNenMs(p)[power]) : null;
     return {
       ok: true,
-      joueur: { id: j.id, pseudo: j.pseudo, jenny: j.jenny, nen: j.nen, pouvoirSpe: j.pouvoirSpe, statut: j.statut, examenFait: j.examenScore !== null },
+      joueur: { id: j.id, pseudo: j.pseudo, jenny: j.jenny, nen: j.nen, pouvoirSpe: j.pouvoirSpe, statut: j.statut, examenFait: j.examenScore !== null, ficheFaite: j.profil !== null },
       // Spécialisation : Zetsu en cours, Fortune armée (amendement 2026-10-10).
       specialisation: { zetsu: Math.max(0, (j.zetsuJusqua ?? 0) - now), fortuneArmee: j.fortuneArmee },
       // Amendements 2026-10-10 : villes déjà visitées (Retour), visite à distance en cours (ms restantes), Accompagnement subi.

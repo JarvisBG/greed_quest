@@ -6,7 +6,7 @@ import { count, desc, eq } from 'drizzle-orm';
 import { paramsOf, settingsOf } from '../core/params.js';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { requireRole } from '../auth/guard.js';
-import { journalExport, statistiquesDe } from '../core/statistiques.js';
+import { contacts, journalExport, statistiquesDe } from '../core/statistiques.js';
 import { hashCode } from '../auth/tokens.js';
 import { writeLog } from '../core/journal.js';
 import { createPartie, seedDemoContent } from '../db/seed.js';
@@ -53,6 +53,16 @@ export async function adminRoutes(app: FastifyInstance) {
     const stats = await statistiquesDe(app.gq.db, req.params.partieId);
     if (!stats) throw new Refus('introuvable', 'Partie introuvable', 404);
     return { ok: true, statistiques: stats };
+  });
+
+  // RG-5.3 : contacts qui acceptent d'être recontactés (organisateur et GM de la partie, décision 2026-10-18).
+  app.get<P>('/parties/:partieId/contacts', async (req) => {
+    gmOuOrga(req, req.params.partieId);
+    return { ok: true, contacts: await contacts(app.gq.db, req.params.partieId) };
+  });
+  app.get('/admin/contacts', async (req) => {
+    exigerOrga(req);
+    return { ok: true, contacts: await contacts(app.gq.db) };
   });
 
   // Journal complet (export CSV des données brutes), sans positions.

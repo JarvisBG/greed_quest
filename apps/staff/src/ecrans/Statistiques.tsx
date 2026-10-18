@@ -5,7 +5,26 @@ import { useEffect, useState } from 'react';
 import { ApiError } from '../lib/api';
 import { api } from '../lib/client';
 import { libelleEtat } from '../lib/format';
-import { ACTIVITES, csv, csvPartie, csvParties, date, documentWord, duree, heureDe, nomFichier, telecharger, type Statistiques } from '../lib/rapport';
+import {
+  ACTIVITES,
+  RUBRIQUES_PUBLIC,
+  csv,
+  csvContacts,
+  csvPartie,
+  csvParties,
+  cumulerPublic,
+  date,
+  documentWord,
+  duree,
+  heureDe,
+  libelleChoix,
+  nomFichier,
+  pct,
+  telecharger,
+  type Contact,
+  type Public,
+  type Statistiques,
+} from '../lib/rapport';
 import type { Equipe } from '../lib/useEquipe';
 
 const CSV = 'text/csv;charset=utf-8';
@@ -52,6 +71,62 @@ function ParHeure({ heures }: { heures: Statistiques['parHeure'] }) {
         ))}
       </div>
     </div>
+  );
+}
+
+/** RG-5.3 : qui est venu (Fiche Hunter), une rubrique par carte. */
+function QuiEstVenu({ p }: { p: Public }) {
+  return (
+    <div className="panel-card">
+      <div className="section-head">
+        <h3>
+          <i className="fa-solid fa-id-card" aria-hidden="true" /> Qui est venu
+        </h3>
+      </div>
+      {p.fiches === 0 ? (
+        <p className="vide">Aucune fiche Hunter remplie pour l’instant.</p>
+      ) : (
+        <>
+          <p className="profile-meta">
+            <strong>{p.fiches}</strong> fiches · <strong>{p.numeros}</strong> numéros WhatsApp · <strong>{p.consentis}</strong> acceptent d’être recontactés ·{' '}
+            <strong>{p.revenus}</strong> revenus d’une partie précédente
+          </p>
+          <div className="public">
+            {RUBRIQUES_PUBLIC.filter((r) => p[r.cle].length).map((r) => (
+              <div key={r.cle}>
+                <h4>{r.titre}</h4>
+                <Barres lignes={p[r.cle].map((c) => ({ libelle: `${libelleChoix(r.choix, c.id)} · ${pct(c.n, p.fiches)}`, n: c.n }))} />
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** Bouton d'export des contacts qui acceptent d'être recontactés (GM de la partie ou organisateur). */
+function ExportContacts({ chemin, entetes, fichier }: { chemin: string; entetes: Record<string, string>; fichier: string }) {
+  const [msg, setMsg] = useState<string | null>(null);
+  return (
+    <>
+      <button
+        type="button"
+        className="modal-btn modal-btn--ghost"
+        onClick={async () => {
+          try {
+            const r = await api.getAvec<{ contacts: Contact[] }>(chemin, entetes);
+            telecharger(fichier, csvContacts(r.contacts), CSV);
+            setMsg(`${r.contacts.length} contacts exportés.`);
+          } catch (e) {
+            setMsg(e instanceof ApiError ? e.message : 'Export impossible');
+          }
+        }}
+      >
+        <i className="fa-brands fa-whatsapp" aria-hidden="true" /> Contacts à recontacter (CSV)
+      </button>
+      {msg && <span className="vide">{msg}</span>}
+    </>
   );
 }
 
@@ -126,6 +201,7 @@ export function Rapport({ s }: { s: Statistiques }) {
           </p>
         </div>
       </div>
+      <QuiEstVenu p={s.public} />
       {s.classement.length > 0 && (
         <div className="panel-card">
           <div className="section-head">
@@ -190,6 +266,7 @@ function ExportsPartie({ s, entetes }: { s: Statistiques; entetes: Record<string
       <button type="button" className="modal-btn modal-btn--ghost" onClick={() => void journal()}>
         <i className="fa-solid fa-list" aria-hidden="true" /> Journal complet (CSV)
       </button>
+      <ExportContacts chemin={`/parties/${s.partie.id}/contacts`} entetes={entetes} fichier={`${base}-contacts.csv`} />
       {msg && <span className="vide">{msg}</span>}
     </div>
   );
@@ -274,6 +351,7 @@ export function StatsFestivals({ codeOrga, retour }: { codeOrga: string; retour:
             <button type="button" className="modal-btn modal-btn--ghost" onClick={() => telecharger('greed-island-toutes-les-parties.csv', csvParties(stats), CSV)}>
               <i className="fa-solid fa-file-csv" aria-hidden="true" /> Tableau (CSV)
             </button>
+            <ExportContacts chemin="/admin/contacts" entetes={entetes} fichier="greed-island-contacts.csv" />
           </div>
           <div className="kpi-row">
             {[
@@ -301,6 +379,7 @@ export function StatsFestivals({ codeOrga, retour }: { codeOrga: string; retour:
             </div>
             {stats.length ? <Barres lignes={stats.map((s) => ({ libelle: `${s.partie.nom} (${s.partie.id})`, n: s.joueurs.inscrits }))} /> : <p className="vide">Aucune partie.</p>}
           </div>
+          <QuiEstVenu p={cumulerPublic(stats.map((s) => s.public))} />
           <div className="panel-card" style={{ overflowX: 'auto' }}>
             <table className="tableau-simple">
               <thead>

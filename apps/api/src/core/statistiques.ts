@@ -1,6 +1,7 @@
 // Statistiques d'une partie pour les rapports (bilan d'un festival, comparaison entre festivals) : tout est relu dans
 // la base (joueurs, terrain, Journal), rien n'est gardé à part. Jamais de position (RG-10.12), même pour le GM.
-import { asc, eq } from 'drizzle-orm';
+import type { ProfilJoueur } from '@gq/shared';
+import { and, asc, eq, inArray, lt, ne } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { balises, joueurs, journal, parties, zones } from '../db/schema.js';
 
@@ -30,11 +31,35 @@ export interface Statistiques {
   activites: Record<Activite, number>;
   equipe: { gm: number; pnj: number };
   classement: { place: number; pseudo: string; cartes: number; points: number; jenny: number }[];
+  /** RG-5.3 (Fiche Hunter) : qui est venu. Comptes par choix (`id` des listes de @gq/shared), du plus fréquent au moins fréquent. */
+  public: {
+    fiches: number;
+    age: Compte[];
+    genre: Compte[];
+    occupation: Compte[];
+    ville: Compte[];
+    /** 10 quartiers les plus cités (écriture du joueur, regroupée sans accents ni majuscules). */
+    quartiers: Compte[];
+    reseaux: Compte[];
+    source: Compte[];
+    /** Numéros recueillis, dont ceux qui acceptent d'être recontactés. */
+    numeros: number;
+    consentis: number;
+    /** Joueurs dont le numéro figurait déjà dans une partie plus ancienne. */
+    revenus: number;
+  };
+}
+
+export interface Compte {
+  id: string;
+  n: number;
 }
 
 export interface DonneesStat {
   partie: { id: string; nom: string; etat: string; creeLe: Date; demarreeA: number | null; gagnantId: string | null; classementFinal: { place: number; pseudo: string; cartes: number; points: number; jenny: number }[] | null };
-  joueurs: { id: string; pseudo: string; statut: string; creeLe: Date }[];
+  joueurs: { id: string; pseudo: string; statut: string; creeLe: Date; profil?: ProfilJoueur | null; telephone?: string | null; accordRecontact?: boolean }[];
+  /** Numéros de cette partie déjà vus dans une partie plus ancienne. */
+  telephonesRevenus?: Set<string>;
   zones: { id: string; nom: string }[];
   balises: { id: string; libelle: string; zoneId: string }[];
   lignes: { creeLe: Date; acteurType: string; acteurId: string | null; action: string; resultat: string; details: Record<string, unknown> | null }[];
@@ -94,6 +119,11 @@ export function calculerStatistiques(d: DonneesStat): Statistiques {
     (Object.entries(ACTIVITES) as [Activite, string][]).map(([k, action]) => [k, d.lignes.filter((l) => l.action === action && l.resultat !== 'refus').length]),
   ) as Record<Activite, number>;
 
+  const fiches = d.joueurs.filter((j) => j.profil);
+  const parChoix = (f: (p: ProfilJoueur) => string | string[]) => compter(fiches.flatMap((j) => f(j.profil!))).map(([id, n]) => ({ id, n }));
+  const sansAccent = (q: string) => q.normalize('NFD').replace(/\p{M}/gu, '').trim().toLowerCase();
+  const avecTel = d.joueurs.filter((j) => j.telephone);
+
   const demarree = d.partie.demarreeA;
   const derniere = d.lignes.length ? Math.max(...d.lignes.map((l) => l.creeLe.getTime())) : null;
   return {
@@ -121,6 +151,19 @@ export function calculerStatistiques(d: DonneesStat): Statistiques {
     activites,
     equipe: { gm: d.lignes.filter((l) => l.acteurType === 'gm').length, pnj: d.lignes.filter((l) => l.acteurType === 'pnj').length },
     classement: (d.partie.classementFinal ?? []).slice(0, 10).map(({ place, pseudo, cartes, points, jenny }) => ({ place, pseudo, cartes, points, jenny })),
+    public: {
+      fiches: fiches.length,
+      age: parChoix((p) => p.age),
+      genre: parChoix((p) => p.genre),
+      occupation: parChoix((p) => p.occupation),
+      ville: parChoix((p) => p.ville),
+      quartiers: parChoix((p) => sansAccent(p.quartier)).slice(0, 10),
+      reseaux: parChoix((p) => p.reseaux),
+      source: parChoix((p) => p.source),
+      numeros: avecTel.length,
+      consentis: avecTel.filter((j) => j.accordRecontact).length,
+      revenus: avecTel.filter((j) => d.telephonesRevenus?.has(j.telephone!)).length,
+    },
   };
 }
 
@@ -129,7 +172,10 @@ export async function statistiquesDe(db: Db, partieId: string): Promise<Statisti
   const [p] = await db.select().from(parties).where(eq(parties.id, partieId));
   if (!p) return null;
   const [js, zs, bs, ls] = await Promise.all([
-    db.select({ id: joueurs.id, pseudo: joueurs.pseudo, statut: joueurs.statut, creeLe: joueurs.creeLe }).from(joueurs).where(eq(joueurs.partieId, partieId)),
+    db
+      .select({ id: joueurs.id, pseudo: joueurs.pseudo, statut: joueurs.statut, creeLe: joueurs.creeLe, profil: joueurs.profil, telephone: joueurs.telephone, accordRecontact: joueurs.accordRecontact })
+      .from(joueurs)
+      .where(eq(joueurs.partieId, partieId)),
     db.select({ id: zones.id, nom: zones.nom }).from(zones).where(eq(zones.partieId, partieId)),
     db.select({ id: balises.id, libelle: balises.libelle, zoneId: balises.zoneId }).from(balises).where(eq(balises.partieId, partieId)),
     db
@@ -138,7 +184,17 @@ export async function statistiquesDe(db: Db, partieId: string): Promise<Statisti
       .where(eq(journal.partieId, partieId))
       .orderBy(asc(journal.id)),
   ]);
+  // Joueurs revenus : même numéro dans une partie créée avant celle-ci.
+  const tels = js.flatMap((j) => (j.telephone ? [j.telephone] : []));
+  const anciens = tels.length
+    ? await db
+        .select({ telephone: joueurs.telephone })
+        .from(joueurs)
+        .innerJoin(parties, eq(parties.id, joueurs.partieId))
+        .where(and(ne(joueurs.partieId, partieId), lt(parties.creeLe, p.creeLe), inArray(joueurs.telephone, tels)))
+    : [];
   return calculerStatistiques({
+    telephonesRevenus: new Set(anciens.map((a) => a.telephone!)),
     partie: { id: p.id, nom: p.nom, etat: p.etat, creeLe: p.creeLe, demarreeA: p.demarreeA ?? null, gagnantId: p.gagnantId, classementFinal: p.classementFinal ?? null },
     joueurs: js,
     zones: zs,
@@ -164,4 +220,29 @@ export async function journalExport(db: Db, partieId: string) {
       details: JSON.stringify(details),
     };
   });
+}
+
+/** RG-5.3 : contacts à recontacter (case cochée) d'une partie, ou de toutes (un numéro = une ligne, la plus récente). */
+export async function contacts(db: Db, partieId?: string) {
+  const rows = await db
+    .select({ partie: parties.nom, code: parties.id, creeLe: parties.creeLe, pseudo: joueurs.pseudo, telephone: joueurs.telephone, profil: joueurs.profil })
+    .from(joueurs)
+    .innerJoin(parties, eq(parties.id, joueurs.partieId))
+    .where(and(eq(joueurs.accordRecontact, true), partieId ? eq(joueurs.partieId, partieId) : undefined))
+    .orderBy(asc(parties.creeLe));
+  const parNumero = new Map<string, (typeof rows)[number] & { parties: number }>();
+  for (const r of rows) {
+    if (!r.telephone) continue;
+    parNumero.set(r.telephone, { ...r, parties: (parNumero.get(r.telephone)?.parties ?? 0) + 1 });
+  }
+  return [...parNumero.values()].map((r) => ({
+    telephone: r.telephone!,
+    pseudo: r.pseudo,
+    age: r.profil?.age ?? '',
+    genre: r.profil?.genre ?? '',
+    ville: r.profil?.ville ?? '',
+    quartier: r.profil?.quartier ?? '',
+    derniere: `${r.partie} (${r.code})`,
+    parties: r.parties,
+  }));
 }

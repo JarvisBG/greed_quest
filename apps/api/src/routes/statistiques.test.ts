@@ -85,3 +85,50 @@ describe('calcul des statistiques', () => {
     expect(s.classement[0]).toMatchObject({ place: 1, pseudo: 'Gon' });
   });
 });
+
+describe('RG-5.3 Fiche Hunter (collecte de profil)', () => {
+  const fiche = { age: '18-24', genre: 'fille', occupation: 'etudiant', ville: 'douala', quartier: 'Akwa', reseaux: ['tiktok', 'whatsapp'], source: 'ami' };
+  let gon: string;
+  let kurapika: string;
+  beforeAll(async () => {
+    gon = (await t.inscrire('Gon2')).token;
+    kurapika = (await t.inscrire('Kurapika')).token;
+  });
+
+  it('RG-5.3 : toutes les réponses obligatoires, téléphone camerounais vérifié', async () => {
+    const res = await t.app.inject({ method: 'POST', url: `/parties/${t.partieId}/fiche`, headers: t.bearer(gon), payload: { ...fiche, telephone: '12345' } });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().message).toContain('Numéro WhatsApp camerounais invalide');
+  });
+
+  it('RG-5.3 : fiche remplie = 30 J, une seule fois ; le téléphone n’entre pas dans le Journal', async () => {
+    const res = await t.app.inject({ method: 'POST', url: `/parties/${t.partieId}/fiche`, headers: t.bearer(gon), payload: { ...fiche, telephone: '6 77 12 34 56', accordRecontact: true } });
+    expect(res.json()).toMatchObject({ ok: true, bonus: 30 });
+    const encore = await t.app.inject({ method: 'POST', url: `/parties/${t.partieId}/fiche`, headers: t.bearer(gon), payload: { ...fiche, telephone: '677123456' } });
+    expect(encore.json()).toMatchObject({ ok: false, code: 'deja_fait' });
+    const lignes = (await t.app.inject({ method: 'GET', url: `/parties/${t.partieId}/journal/export`, headers: t.bearer(gm) })).json().lignes as { details: string }[];
+    expect(lignes.every((l) => !l.details.includes('677'))).toBe(true);
+  });
+
+  it('RG-5.3 : moins de 15 ans, pas de téléphone ; accord de recontact libre', async () => {
+    const res = await t.app.inject({ method: 'POST', url: `/parties/${t.partieId}/fiche`, headers: t.bearer(kurapika), payload: { ...fiche, age: 'moins15', genre: 'garcon', quartier: 'AKWÁ', telephone: '699000000', accordRecontact: true } });
+    expect(res.json()).toMatchObject({ ok: true });
+    const s = (await t.app.inject({ method: 'GET', url: `/parties/${t.partieId}/statistiques`, headers: t.bearer(gm) })).json().statistiques;
+    expect(s.public).toMatchObject({ fiches: 2, numeros: 1, consentis: 1, revenus: 0, quartiers: [{ id: 'akwa', n: 2 }] });
+    expect(s.public.genre).toEqual(expect.arrayContaining([{ id: 'fille', n: 1 }, { id: 'garcon', n: 1 }]));
+    expect(s.public.reseaux).toEqual(expect.arrayContaining([{ id: 'tiktok', n: 2 }]));
+  });
+
+  it('RG-5.3 : contacts consentis exportés par le GM et l’organisateur, pas par un PNJ', async () => {
+    const c = (await t.app.inject({ method: 'GET', url: `/parties/${t.partieId}/contacts`, headers: t.bearer(gm) })).json().contacts;
+    expect(c).toEqual([expect.objectContaining({ telephone: '+237677123456', pseudo: 'Gon2', parties: 1 })]);
+    expect((await t.app.inject({ method: 'GET', url: '/admin/contacts', headers: orga })).json().contacts).toHaveLength(1);
+    expect((await t.app.inject({ method: 'GET', url: `/parties/${t.partieId}/contacts`, headers: t.bearer(pnj) })).statusCode).toBe(403);
+  });
+
+  it('RG-5.3 : le numéro n’est jamais renvoyé au joueur', async () => {
+    const moi = await t.app.inject({ method: 'GET', url: `/parties/${t.partieId}/moi`, headers: t.bearer(gon) });
+    expect(JSON.stringify(moi.json())).not.toContain('677123456');
+    expect(moi.json().joueur).toMatchObject({ ficheFaite: true });
+  });
+});

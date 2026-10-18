@@ -185,6 +185,12 @@ async function events(c: ActionCtx) {
   for (const e of termines) await finishEvent(c, e, false);
 }
 
+/**
+ * Les 20 min d'inactivité comptent depuis la dernière action, ou depuis l'arrivée de la carte si elle est plus récente :
+ * une carte donnée par le GM à un joueur déjà inactif ne lui est pas reprise la minute suivante.
+ */
+const inactifDepuis = (derniereActionA: number | null, items: { obtenuA: number }[]) => Math.max(derniereActionA ?? 0, ...items.map((i) => i.obtenuA));
+
 /** RG-8.12 : SS d'un joueur inactif depuis 20 min, qui abandonne ou est disqualifié → retour en jeu. */
 async function returnSS(c: ActionCtx) {
   const joueurs = await loadJoueurs(c.tx, c.partie.id);
@@ -192,7 +198,8 @@ async function returnSS(c: ActionCtx) {
   const cat = await loadCatalogue(c.tx, c.partie.id);
   for (const j of joueurs) {
     const before = books.get(j.id)!;
-    const r = reclaimSS({ status: j.statut, derniereActionA: j.derniereActionA ?? 0, book: before }, c.now, cat.rangDe);
+    const ss = before.items.filter((i) => i.kind === 'carte' && cat.rangDe(i.cardId) === 'SS');
+    const r = reclaimSS({ status: j.statut, derniereActionA: inactifDepuis(j.derniereActionA, ss), book: before }, c.now, cat.rangDe);
     if (r.rendues.length === 0) continue;
     await saveBooks(c.tx, c.partie.id, c.now, [{ joueurId: j.id, before, after: r.book }]);
     const cartes = r.rendues.map((i) => (i.kind === 'carte' ? cat.nomDe(i.cardId) : ''));
@@ -203,7 +210,7 @@ async function returnSS(c: ActionCtx) {
   const apres = await loadBooks(c.tx, joueurs.map((j) => j.id));
   for (const j of joueurs) {
     const before = apres.get(j.id)!;
-    if (cartesGmDe(before).length === 0 || !doitRendreCartesGm({ status: j.statut, derniereActionA: j.derniereActionA ?? 0 }, c.now)) continue;
+    if (cartesGmDe(before).length === 0 || !doitRendreCartesGm({ status: j.statut, derniereActionA: inactifDepuis(j.derniereActionA, cartesGmDe(before)) }, c.now)) continue;
     const r = rendreCartesGm(before);
     await saveBooks(c.tx, c.partie.id, c.now, [{ joueurId: j.id, before, after: r.book }]);
     await c.log({ action: 'retour_carte_gm', resultat: 'ok', details: { joueurId: j.id, cartes: r.rendues.map((i) => i.gm) } });

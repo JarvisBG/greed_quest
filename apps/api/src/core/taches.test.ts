@@ -106,6 +106,14 @@ describe('tâches planifiées', () => {
     expect(recues.some((e) => e.a === gon.id && e.evenement === 'perte')).toBe(true);
   });
 
+  it('RG-8.12 / RG-8.17 : une carte reçue par un joueur inactif depuis longtemps n’est pas reprise tout de suite', async () => {
+    const ss = newId();
+    await t.db.insert(exemplaires).values({ id: ss, partieId: t.partieId, joueurId: kirua.id, carteId: t.carteIds[0]!, origine: { type: 'kit' }, obtenuA: 32 * MIN });
+    await tickA(32.5);
+    expect(await t.db.select().from(exemplaires).where(eq(exemplaires.id, ss))).toHaveLength(1);
+    await t.db.delete(exemplaires).where(eq(exemplaires.id, ss));
+  });
+
   it('RG-12.3 : agenda automatique, une proposition au GM quand il est activé', async () => {
     const p = await partie();
     await t.db.update(parties).set({ parametres: { ...p.parametres, agendaIntervalleMin: { mode: 'verrouille', value: 10 } } }).where(eq(parties.id, t.partieId));

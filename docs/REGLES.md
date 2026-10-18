@@ -48,6 +48,7 @@ Seul le GM avance l'état, sauf passage auto en phase finale et fin du temps. Un
 - 5.1 Pseudo unique par partie ; 1 appareil = 1 joueur par partie ; géoloc obligatoire.
 - 5.2 Licence = QR dans l'app renouvelé toutes les 30 s ; sert aux interactions consenties (échange, checkpoint, enchère, Clear). Pas de badge. *(Plus utilisée pour les échanges depuis l'amendement RG-11.1.)*
 - 5.3 Examen Hunter : quiz 3 questions, non bloquant ; bonne réponse = bonus jenny.
+  - *Amendement 2026-10-18 (Sivraj) : l'Examen est REMPLACÉ par la **Fiche Hunter** (collecte de profil, à coder).* Juste après le pseudo, non bloquante (« Plus tard »), une question par écran, un tap, toujours « Je préfère ne pas dire » : **tranche d'âge** (−15, 15-17, 18-24, 25-34, 35+), **ville puis quartier** (liste + texte court), **téléphone WhatsApp** (écran à part, case d'accord non cochée, but écrit : être prévenu des prochaines parties ; jamais demandé aux moins de 15 ans). **Récompense de l'acte, jamais de la réponse** : `bonusExamenJ` (10 J) par question répondue, « préfère ne pas dire » / « non merci » compris (max 30 J, comme l'Examen). Numéros : jamais sur l'écran géant ni chez les joueurs ; export par l'**organisateur et le GM de la partie** ; les rapports montrent les chiffres (âges, villes, contacts consentis, joueurs revenus d'une partie à l'autre).
 - 5.4 Test de Nen : 5 questions → 1 des 6 types. Spécialisation rare (5 % réglable).
 - 5.5 Kit : jenny + 1 sort aléatoire commun.
 - 5.6 Retardataire : kit + bonus de rattrapage proportionnel au temps écoulé (désactivable).

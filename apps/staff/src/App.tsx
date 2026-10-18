@@ -16,6 +16,7 @@ import { Joueurs } from './ecrans/Joueurs';
 import { Journal } from './ecrans/Journal';
 import { Missions } from './ecrans/Missions';
 import { Parties } from './ecrans/Parties';
+import { PageStatistiques } from './ecrans/Statistiques';
 import { Tableau } from './ecrans/Tableau';
 import { formatDuree, libelleEtat } from './lib/format';
 import { adressePartie, partieFromUrl } from './lib/session';
@@ -37,6 +38,7 @@ const PAGES: PageDef[] = [
   { id: 'preparation', titre: 'Préparation', icone: 'fa-screwdriver-wrench', gm: true },
   { id: 'planche', titre: 'Planche QR', icone: 'fa-print', gm: true },
   { id: 'parametres', titre: 'Paramètres', icone: 'fa-sliders', gm: true },
+  { id: 'statistiques', titre: 'Statistiques', icone: 'fa-chart-column', gm: true },
   { id: 'checkpoints', titre: 'Checkpoints', icone: 'fa-location-dot' },
   { id: 'arene', titre: 'Arène', icone: 'fa-hand-fist' },
   { id: 'encheres', titre: 'Enchères', icone: 'fa-gavel' },
@@ -164,6 +166,7 @@ export function App() {
           {courante.id === 'preparation' && <Preparation eq={eq} />}
           {courante.id === 'planche' && <Planche eq={eq} />}
           {courante.id === 'parametres' && <Parametres eq={eq} />}
+          {courante.id === 'statistiques' && <PageStatistiques eq={eq} />}
           {courante.id === 'checkpoints' && <Checkpoints eq={eq} />}
           {courante.id === 'arene' && <Arene eq={eq} />}
           {courante.id === 'encheres' && <Encheres eq={eq} />}

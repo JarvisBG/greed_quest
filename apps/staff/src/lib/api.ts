@@ -45,6 +45,8 @@ export function createApi({ baseUrl, getToken, fetch: f }: ApiOptions) {
   }
   return {
     get: <T>(path: string) => request<T>('GET', path),
+    /** GET avec des en-têtes en plus (code organisateur : toutes les parties, statistiques). */
+    getAvec: <T>(path: string, entetes: Record<string, string>) => request<T>('GET', path, undefined, entetes),
     post: <T>(path: string, body: unknown = {}) => request<T>('POST', path, body),
     /** POST avec des en-têtes en plus (code organisateur de la création de partie). */
     postAvec: <T>(path: string, body: unknown, entetes: Record<string, string>) => request<T>('POST', path, body, entetes),

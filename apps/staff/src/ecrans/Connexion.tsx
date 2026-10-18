@@ -13,7 +13,7 @@ export function Connexion({
   partieInitiale: string;
   connecter: (partieId: string, code: string) => Promise<void>;
   creer: () => void;
-  retour?: (() => void) | undefined;
+  retour: () => void;
 }) {
   const [partie, setPartie] = useState(partieInitiale);
   const [code, setCode] = useState('');
@@ -58,11 +58,9 @@ export function Connexion({
       <button type="button" className="lien" onClick={creer}>
         Organisateur : créer une nouvelle partie
       </button>
-      {retour && (
-        <button type="button" className="lien" onClick={retour}>
-          ← Mes parties
-        </button>
-      )}
+      <button type="button" className="lien" onClick={retour}>
+        ← Mes parties
+      </button>
     </form>
   );
 }

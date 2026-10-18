@@ -95,9 +95,8 @@ h1, h2, h3, p { margin: 0; }
   border: var(--trait) solid var(--encre);
   white-space: nowrap;
 }
-.ouv-titre .blanc { width: 0.32em; }
-.ouv-titre span { display: inline-block; animation: frappe 0.42s var(--sortie) both; }
-@keyframes frappe { from { transform: scale(2.6) rotate(-8deg); opacity: 0; filter: blur(6px); } to { transform: none; opacity: 1; filter: none; } }
+.ouv-titre span { display: inline-block; animation: frappe 0.5s var(--sortie) both; }
+@keyframes frappe { from { transform: scale(2.4) rotate(-6deg); opacity: 0; filter: blur(8px); } to { transform: none; opacity: 1; filter: none; } }
 .ouv-passer {
   position: absolute; top: 16px; right: 16px;
   min-height: 48px; padding: 8px 18px;
@@ -107,14 +106,15 @@ h1, h2, h3, p { margin: 0; }
 /* Le rideau s'ouvre : le papier se déchire en diagonale et laisse voir la planche. */
 .ouverture.envol { animation: rideau 0.75s cubic-bezier(0.7, 0, 0.3, 1) forwards; pointer-events: none; }
 @keyframes rideau { from { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); } to { clip-path: polygon(100% 0, 100% 0, 100% 0, 100% 0); } }
-.ph-titre .vol { visibility: hidden; }
+.ph-attente .vol, .ph-titre .vol { visibility: hidden; }
+.ouverture.attente > :not(.ouv-passer) { visibility: hidden; }
 .ph-envol .vol { animation: envol 0.95s var(--sortie) both; }
 @keyframes envol {
   from { transform: translate(var(--dx, 0), var(--dy, 0)) rotate(calc(var(--i) * 47deg - 90deg)) scale(0.4); opacity: 0; }
   20% { opacity: 1; }
   to { transform: none; opacity: 1; }
 }
-.ph-titre .une-texte > *, .ph-envol .une-texte > * { animation: monte 0.7s var(--sortie) both; animation-play-state: paused; }
+.ph-attente .une-texte > *, .ph-titre .une-texte > *, .ph-envol .une-texte > * { animation: monte 0.7s var(--sortie) both; animation-play-state: paused; }
 .ph-envol .une-texte > * { animation-play-state: running; }
 .ph-envol .une-texte > :nth-child(2) { animation-delay: 0.12s; }
 .ph-envol .une-texte > :nth-child(3) { animation-delay: 0.2s; }
@@ -241,9 +241,13 @@ h1, h2, h3, p { margin: 0; }
   .une { grid-template-columns: minmax(0, 1fr); min-height: 0; }
   .une-texte { padding: 32px 22px 30px; }
   .une-cartes { padding: 22px 12px 16px; transform: rotate(-1deg); }
-  .titre { font-size: clamp(48px, 15.5vw, 96px); }
+  .titre { font-size: clamp(46px, 14vw, 96px); }
+  /* Les cartes d'abord : leur envol, à la fin de l'ouverture, se voit sans faire défiler. */
+  .une-cartes { order: -1; }
+  .eventail { height: 210px; }
+  .ouv-titre { font-size: clamp(44px, 13.5vw, 96px); line-height: 0.95; text-align: center; padding: 0.14em 0.3em; }
+  .ouv-titre span { display: block; }
   .titre span + span { margin-left: 0.32em; }
-  .eventail { height: 250px; }
   .vol { width: 116px; margin-left: -58px; }
   .pose { transform: translateX(calc((var(--i) - 2) * 42%)) rotate(calc((var(--i) - 2) * 9deg)) translateY(calc(var(--y) * 1%)); }
   .jeu-grille { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'ile' 'book' 'clear'; }

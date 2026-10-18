@@ -48,12 +48,30 @@ function Fleche({ bas }: { bas?: boolean }) {
   );
 }
 
+type Phase = 'attente' | 'titre' | 'envol' | 'fini';
+
 /**
- * Ouverture (une fois par visite) : lignes de concentration, « GREED ISLAND » frappé lettre à lettre, puis le rideau
+ * Ouverture (une fois par visite) : lignes de concentration, « GREED » puis « ISLAND » frappés comme deux coups de tampon, puis le rideau
  * s'ouvre et les cartes de l'éventail partent du centre de l'écran vers leur place.
  */
 function useOuverture(eventail: React.RefObject<HTMLDivElement | null>) {
-  const [phase, setPhase] = useState<'titre' | 'envol' | 'fini'>(() => (reduit() || dejaVue() ? 'fini' : 'titre'));
+  const [phase, setPhase] = useState<Phase>(() => (reduit() || dejaVue() ? 'fini' : 'attente'));
+  // On attend la police du titre (1,5 s au plus) : frappées dans la police de secours, plus large, les lettres débordent.
+  useEffect(() => {
+    if (phase !== 'attente') return;
+    // La police latine du titre (pas les kanji) : on la demande et on guette son chargement.
+    const latines = () => [...document.fonts].filter((f) => f.family.replace(/["']/g, '') === 'Dela Gothic One' && /^U\+0{1,4}|^U\+0-/.test(f.unicodeRange));
+    const debut = Date.now();
+    const t = setInterval(() => {
+      const faces = latines();
+      faces.forEach((f) => f.status === 'unloaded' && void f.load().catch(() => {}));
+      if ((faces.length > 0 && faces.every((f) => f.status === 'loaded')) || Date.now() - debut > 1500) {
+        clearInterval(t);
+        setPhase((p) => (p === 'attente' ? 'titre' : p));
+      }
+    }, 80);
+    return () => clearInterval(t);
+  }, [phase]);
   useLayoutEffect(() => {
     if (phase !== 'envol' || !eventail.current) return;
     const cx = window.innerWidth / 2;
@@ -65,7 +83,7 @@ function useOuverture(eventail: React.RefObject<HTMLDivElement | null>) {
     });
   }, [phase, eventail]);
   useEffect(() => {
-    if (phase === 'fini') return;
+    if (phase === 'fini' || phase === 'attente') return;
     try {
       sessionStorage.setItem('gi-intro', '1');
     } catch {
@@ -77,16 +95,12 @@ function useOuverture(eventail: React.RefObject<HTMLDivElement | null>) {
   return { phase, passer: () => setPhase('fini') };
 }
 
-function Ouverture({ phase, passer }: { phase: 'titre' | 'envol'; passer: () => void }) {
+function Ouverture({ phase, passer }: { phase: Exclude<Phase, 'fini'>; passer: () => void }) {
   return (
     <div className={`ouverture ${phase}`} onClick={passer} aria-hidden="true">
       <Concentration graine={23} className="ouv-lignes" />
       <p className="ouv-titre">
-        {'GREED ISLAND'.split('').map((l, i) => (
-          <span key={i} className={l === ' ' ? 'blanc' : undefined} style={{ animationDelay: `${120 + i * 55}ms` }}>
-            {l}
-          </span>
-        ))}
+        <span style={{ animationDelay: '120ms' }}>GREED</span> <span style={{ animationDelay: '520ms' }}>ISLAND</span>
       </p>
       <button type="button" className="ouv-passer" onClick={passer}>
         Passer

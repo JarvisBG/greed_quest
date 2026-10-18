@@ -110,3 +110,23 @@ describe('RG-3 rôles et authentification', () => {
     expect(res.json().message).toBe('code : Code d’au moins 6 caractères');
   });
 });
+
+describe('Terrain repris d’une partie précédente (mêmes QR)', () => {
+  it('copie zones et balises avec les mêmes QR, après le code GM de l’ancienne partie', async () => {
+    const res = await app.inject({ method: 'POST', url: '/admin/parties', headers: { 'x-code-admin': 'orga' }, payload: { nom: 'Suite', gm: { nom: 'G', code: 'code-suite' } } });
+    const { partieId: neuve, token } = res.json();
+    const reprendre = (codeGm: string) =>
+      app.inject({ method: 'POST', url: `/parties/${neuve}/terrain/reprendre`, headers: bearer(token), payload: { depuis: partieId.toLowerCase(), codeGm } });
+    expect((await reprendre('mauvais')).json()).toMatchObject({ ok: false, code: 'code_invalide' });
+    const ok = (await reprendre('secret-gm')).json();
+    expect(ok.ok).toBe(true);
+    const lire = async (id: string, t: string, quoi: string) => (await app.inject({ method: 'GET', url: `/parties/${id}/${quoi}`, headers: bearer(t) })).json();
+    const [avant, apres] = [await lire(partieId, gm, 'balises'), await lire(neuve, token, 'balises')];
+    expect(apres.balises.map((b: { id: string }) => b.id).sort()).toEqual(avant.balises.map((b: { id: string }) => b.id).sort());
+    expect(apres.balises.every((b: { etat: string }) => b.etat === 'dormante')).toBe(true);
+    const qrs = async (id: string, t: string) => (await lire(id, t, 'zones')).zones.map((z: { qr: string | null }) => z.qr).sort();
+    expect(await qrs(neuve, token)).toEqual(await qrs(partieId, gm));
+    // Une seule reprise, dans une partie encore vide.
+    expect((await reprendre('secret-gm')).json()).toMatchObject({ ok: false, code: 'terrain_existant' });
+  });
+});

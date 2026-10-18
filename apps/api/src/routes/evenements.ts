@@ -92,7 +92,7 @@ export async function evenementsRoutes(app: FastifyInstance) {
           const before = await loadBeacons(c.tx, partieId);
           res = startApparition(base, zoneId, before, c.rng);
           if (res.ok && res.beacons) {
-            await saveBeacons(c.tx, before, res.beacons.beacons);
+            await saveBeacons(c.tx, c.partie.id, before, res.beacons.beacons);
             await emitBeaconChanges(c, res.beacons.changes);
           }
           break;

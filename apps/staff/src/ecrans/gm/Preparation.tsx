@@ -154,6 +154,52 @@ export function Preparation({ eq }: { eq: Equipe }) {
 
 // --- Zones ---
 
+/** Terrain d'une partie précédente : mêmes zones, mêmes balises, donc les QR déjà imprimés et posés resservent. */
+function Reprise({ base, recharger }: { base: string; recharger: () => void }) {
+  const [depuis, setDepuis] = useState('');
+  const [codeGm, setCodeGm] = useState('');
+  const [message, setMessage] = useState<Message>(null);
+  const [envoi, setEnvoi] = useState(false);
+  async function reprendre() {
+    setEnvoi(true);
+    try {
+      const r = await api.post<{ zones: number; balises: number }>(`${base}/terrain/reprendre`, { depuis: depuis.trim(), codeGm });
+      setMessage({ ok: true, texte: `Terrain repris : ${r.zones} zones et ${r.balises} balises, avec les mêmes QR. Les balises sont endormies : active-les dans l’onglet Balises.` });
+      setCodeGm('');
+      recharger();
+    } catch (e) {
+      setMessage({ ok: false, texte: erreurDe(e, 'Reprise impossible') });
+    } finally {
+      setEnvoi(false);
+    }
+  }
+  return (
+    <div className="panel-card">
+      <div className="section-head">
+        <h3>
+          <i className="fa-solid fa-clone" aria-hidden="true" /> Reprendre le terrain d’une partie précédente
+        </h3>
+      </div>
+      <p className="vide">
+        Recopie les zones et les balises d’une autre partie avec les mêmes QR : ceux déjà imprimés et posés resservent, seul le QR « Rejoindre la partie » change.
+        Pratique pour les essais ; pour une partie avec public, des QR neufs sont plus sûrs (un ancien joueur a pu photographier les QR).
+      </p>
+      <label>
+        Code de l’ancienne partie
+        <input value={depuis} onChange={(e) => setDepuis(e.target.value)} autoCapitalize="characters" placeholder="Ex. KX7P2M" />
+      </label>
+      <label>
+        Code GM de l’ancienne partie
+        <input type="password" value={codeGm} onChange={(e) => setCodeGm(e.target.value)} autoComplete="off" />
+      </label>
+      <button type="button" className="modal-btn modal-btn--primary" disabled={envoi || !depuis.trim() || codeGm.length < 4} onClick={() => void reprendre()}>
+        {envoi ? 'Reprise…' : 'Reprendre ce terrain'}
+      </button>
+      {message && <p className={`msg ${message.ok ? 'ok' : 'ko'}`}>{message.texte}</p>}
+    </div>
+  );
+}
+
 function Zones({ base, zones, recharger }: { base: string; zones: ZoneComplete[]; recharger: () => void }) {
   const [nom, setNom] = useState('');
   const [type, setType] = useState('sauvage');
@@ -189,6 +235,7 @@ function Zones({ base, zones, recharger }: { base: string; zones: ZoneComplete[]
 
   return (
     <>
+      {zones.length === 0 && <Reprise base={base} recharger={recharger} />}
       <div className="panel-card">
         <div className="section-head">
           <h3>

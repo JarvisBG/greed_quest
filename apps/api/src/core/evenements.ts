@@ -24,7 +24,7 @@ export async function finishEvent(c: ActionCtx, e: GameEvent, annule: boolean): 
     // La balise fantôme non épuisée redevient dormante.
     const before = await loadBeacons(c.tx, c.partie.id);
     const up = endApparition(e, before);
-    await saveBeacons(c.tx, before, up.beacons);
+    await saveBeacons(c.tx, c.partie.id, before, up.beacons);
     await emitBeaconChanges(c, up.changes);
   }
   if (d.type === 'carte_maudite') {

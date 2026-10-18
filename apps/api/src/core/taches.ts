@@ -169,7 +169,7 @@ async function beacons(c: ActionCtx, taches: Taches) {
     taches.rotationA = c.now;
     tourne = true;
   }
-  await saveBeacons(c.tx, before, up.beacons);
+  await saveBeacons(c.tx, c.partie.id, before, up.beacons);
   await emitBeaconChanges(c, changes);
   if (tourne) {
     // Amendement RG-6.5 : nouveaux halos de l'écran géant à chaque rotation.

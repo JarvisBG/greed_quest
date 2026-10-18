@@ -251,11 +251,11 @@ export async function loadBeacons(db: DbOrTx, partieId: string): Promise<Beacon[
 }
 
 /** Enregistre les balises modifiées. */
-export async function saveBeacons(db: DbOrTx, before: readonly Beacon[], after: readonly Beacon[]): Promise<void> {
+export async function saveBeacons(db: DbOrTx, partieId: string, before: readonly Beacon[], after: readonly Beacon[]): Promise<void> {
   const old = new Map(before.map((b) => [b.id, b]));
   for (const b of after) {
     if (same(old.get(b.id), b)) continue;
-    await db.update(balises).set({ type: b.type, etat: b.state, stock: b.stock, epuiseeA: b.epuiseeA }).where(eq(balises.id, b.id));
+    await db.update(balises).set({ type: b.type, etat: b.state, stock: b.stock, epuiseeA: b.epuiseeA }).where(and(eq(balises.partieId, partieId), eq(balises.id, b.id))); // même QR possible dans une autre partie
   }
 }
 

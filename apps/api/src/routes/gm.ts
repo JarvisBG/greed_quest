@@ -22,17 +22,20 @@ import {
   PrereglageCreation,
   ZoneCreation,
   carteDeBanque,
+  TerrainReprise,
+  codePartie,
 } from '@gq/shared';
 import { and, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { STAFF, requireRole } from '../auth/guard.js';
+import { checkCode } from '../auth/tokens.js';
 import { applyLifecycle } from '../core/cycle.js';
 import { paramsOf, paramsView, settingsOf } from '../core/params.js';
 import { lifecycleOf } from '../core/partie.js';
 import type { ActionCtx } from '../core/runner.js';
 import { loadBeacons, saveBeacons } from '../core/state.js';
 import { tickPartie } from '../core/taches.js';
-import { balises, cartes, checkpoints, exemplaires, joueurs, parties, prereglages, zones } from '../db/schema.js';
+import { balises, cartes, checkpoints, exemplaires, joueurs, parties, prereglages, staff, zones } from '../db/schema.js';
 import { introuvable } from '../errors.js';
 import { refus, send } from '../http.js';
 import { newBeaconId, newId, newSecret } from '../ids.js';
@@ -210,7 +213,7 @@ export async function gmRoutes(app: FastifyInstance) {
         next = { ...b, state: input.action === 'couper' ? 'coupee' : 'dormante', type: null, stock: 0, epuiseeA: null };
       }
       const after = before.map((x) => (x.id === b.id ? next : x));
-      await saveBeacons(c.tx, before, after);
+      await saveBeacons(c.tx, c.partie.id, before, after);
       await c.log({ action: 'balise_gm', resultat: input.action, motif: input.motif, details: { baliseId: b.id } });
       await emitBeaconChanges(c, [
         { beaconId: b.id, zoneId: b.zoneId, from: b.state, to: next.state, cause: 'cible', ...(next.type ? { type: next.type, stock: next.stock } : {}) },
@@ -226,7 +229,7 @@ export async function gmRoutes(app: FastifyInstance) {
       const p = await paramsOf(c.tx, c.partie);
       const before = await loadBeacons(c.tx, c.partie.id);
       const up = rotate(before, p.balisesActives, { stockBalise: p.stockBalise, partRaresPct: p.partRaresPct, visitesParZone: await visitesParZone(c) }, c.rng);
-      await saveBeacons(c.tx, before, up.beacons);
+      await saveBeacons(c.tx, c.partie.id, before, up.beacons);
       await c.log({ action: 'rotation_forcee', resultat: 'ok', details: { changements: up.changes.length } });
       await emitBeaconChanges(c, up.changes);
       return { ok: true as const, changements: up.changes.length };
@@ -244,6 +247,33 @@ export async function gmRoutes(app: FastifyInstance) {
       await c.log({ action: 'zone_creation', resultat: 'ok', details: { id, nom: input.nom, type: input.type } });
       return { ok: true as const, id, qr };
     });
+  });
+
+  // Terrain repris d'une partie précédente : mêmes zones et mêmes balises, donc mêmes QR imprimés (endormies, sans stock).
+  // Le code GM de l'ancienne partie est demandé : sinon, connaître son code suffirait pour copier ses QR.
+  app.post<P>('/parties/:partieId/terrain/reprendre', async (req, reply) => {
+    const input = parse(TerrainReprise, req.body);
+    const r = await gm(req, async (c) => {
+      if (c.partie.etat !== 'brouillon' && c.partie.etat !== 'inscriptions') return refus('partie_lancee', 'Le terrain se reprend avant le démarrage de la partie');
+      const depuis = codePartie(input.depuis);
+      if (depuis === c.partie.id) return refus('meme_partie', 'C’est la partie en cours : donne le code d’une partie précédente');
+      const gms = await c.tx.select().from(staff).where(and(eq(staff.partieId, depuis), eq(staff.role, 'gm')));
+      if (!gms.some((m) => checkCode(input.codeGm, m.codeHash))) return refus('code_invalide', 'Partie inconnue ou code GM invalide pour cette partie');
+      if ((await c.tx.select({ id: zones.id }).from(zones).where(eq(zones.partieId, c.partie.id))).length) {
+        return refus('terrain_existant', 'Cette partie a déjà des zones : le terrain se reprend dans une partie encore vide');
+      }
+      const anciennes = await c.tx.select().from(zones).where(eq(zones.partieId, depuis));
+      if (!anciennes.length) return refus('terrain_vide', 'Cette partie n’a pas de zones à reprendre');
+      const nouvelle = new Map(anciennes.map((z) => [z.id, newId()]));
+      await c.tx.insert(zones).values(anciennes.map((z) => ({ id: nouvelle.get(z.id)!, partieId: c.partie.id, nom: z.nom, type: z.type, polygone: z.polygone, qr: z.qr })));
+      const bal = await c.tx.select().from(balises).where(eq(balises.partieId, depuis));
+      if (bal.length) {
+        await c.tx.insert(balises).values(bal.map((b) => ({ id: b.id, partieId: c.partie.id, zoneId: nouvelle.get(b.zoneId)!, libelle: b.libelle, position: b.position })));
+      }
+      await c.log({ action: 'terrain_repris', resultat: 'ok', details: { depuis, zones: anciennes.length, balises: bal.length } });
+      return { ok: true as const, zones: anciennes.length, balises: bal.length };
+    });
+    return send(reply, r);
   });
 
   app.get<P>('/parties/:partieId/zones', async (req) => {

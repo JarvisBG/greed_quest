@@ -194,6 +194,8 @@ export const ZoneCreation = z.object({
   type: z.enum(['masadora', 'antokiba', 'soufrabi', 'sauvage']),
   polygone: z.array(LatLngInput).min(3),
 });
+/** Reprendre le terrain (zones, balises, mêmes QR) d'une partie précédente : son code et le code GM de cette partie. */
+export const TerrainReprise = z.object({ depuis: z.string().trim().min(1).max(64), codeGm: z.string().min(4).max(64) });
 export const BaliseCreation = z.object({ zoneId: z.string(), libelle: z.string().trim().min(1).max(20), position: LatLngInput.optional() });
 /** RG-8.1 : carte du catalogue (nom, lot réel). */
 /**

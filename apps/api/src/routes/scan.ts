@@ -236,7 +236,7 @@ export async function scanRoutes(app: FastifyInstance) {
         next = rep.beacons;
         changes.push(...rep.changes);
       }
-      await saveBeacons(c.tx, beacons, next);
+      await saveBeacons(c.tx, c.partie.id, beacons, next);
 
       const vue = gains.map((g) =>
         g.kind === 'carte'

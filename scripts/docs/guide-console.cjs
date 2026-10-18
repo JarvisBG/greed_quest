@@ -150,6 +150,7 @@ const contenu = [
   puce('Chaque réglage est en ', b('Auto'), ' (calculé par le jeu), en ', b('Valeur fixe'), ' ou en ', b('Multiplicateur'), ' de la valeur auto ; un aperçu montre la valeur appliquée.'),
   puce('À régler selon le lieu : ', b('Portée des sorts'), ' (distance maximale entre deux joueurs) et ', b('Marge GPS acceptée'), '.'),
   puce('Le nombre de cartes à réunir se fixe avant le démarrage. Un ', b('préréglage'), ' s’applique après confirmation ; tu peux aussi enregistrer tes réglages comme nouveau préréglage.'),
+  encadre(b('Réutiliser les QR déjà posés. '), t('Dans une partie neuve, Préparation → Zones → « Reprendre le terrain d’une partie précédente » : code de l’ancienne partie et son code GM. Zones et balises sont recopiées avec les mêmes QR (balises endormies, à réactiver). Pratique pour les essais ; pour une partie avec public, des QR neufs sont plus sûrs.')),
   h2('Planche QR'),
   puce('Dans ', b('« Adresse de l’app joueur »'), ', mets : ', lien(JOUEUR), '. Les QR deviennent alors des liens : scannés avec l’appareil photo du téléphone, ils ouvrent directement le jeu.'),
   puce('La planche contient les QR des balises, des lieux et le QR ', b('« Rejoindre la partie »'), ' (inscription des joueurs). Impression ', b('3 par ligne'), ' ou ', b('un QR par page (affiche A4)'), '.'),

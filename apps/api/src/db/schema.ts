@@ -2,7 +2,7 @@
 // Heures « de jeu » : ms d'horloge de jeu (gameClock, integer). Heures réelles : ms epoch (bigint) ou timestamptz.
 import type { CarteGm, GameState, NenType, ObjetType, PlayerStatus, PouvoirSpe, Rank, SpellType, BeaconState, BeaconType } from '@gq/shared';
 import type { Bid, RankingEntry, EventData, GameEvent, JState, ShopConfig, ShopWave, TradeSessionState, TradeSide, Origine, Faux, ParamKey, ParamSetting, ParamSettings, Perte, Position, Polygon } from '@gq/engine';
-import { bigint, boolean, index, integer, jsonb, pgTable, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import { bigint, boolean, index, integer, jsonb, pgTable, primaryKey, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 
 const heureJeu = (nom: string) => integer(nom);
 
@@ -63,15 +63,20 @@ export const parties = pgTable('parties', {
 export type ZoneType = 'masadora' | 'antokiba' | 'soufrabi' | 'sauvage';
 
 /** Zone : Masadora (boutique), Antokiba (enchères, expertise), Soufrabi (arène), zones sauvages. */
-export const zones = pgTable('zones', {
+export const zones = pgTable(
+  'zones',
+  {
   id: text('id').primaryKey(),
   partieId: text('partie_id').notNull().references(() => parties.id, { onDelete: 'cascade' }),
   nom: text('nom').notNull(),
   type: text('type').$type<ZoneType>().notNull(),
   polygone: jsonb('polygone').$type<Polygon>().notNull(),
   /** QR affiché sur place (boutique de Masadora, enchères d'Antokiba, arène) : prouve la présence (RG-9.2, RG-11.4). */
-  qr: text('qr').unique(),
-});
+  qr: text('qr'),
+  },
+  // Unique dans une partie : le terrain d'une partie précédente se reprend avec les mêmes QR imprimés.
+  (t) => [uniqueIndex('zones_partie_qr').on(t.partieId, t.qr)],
+);
 
 /** Carte du catalogue (RG-8.1) : numéro 001..N, rang, lot réel. */
 export const cartes = pgTable(
@@ -241,7 +246,8 @@ export const pertes = pgTable(
 export const balises = pgTable(
   'balises',
   {
-    id: text('id').primaryKey(),
+    /** Imprimé dans le QR ; unique dans une partie (terrain repris d'une partie précédente : mêmes QR). */
+    id: text('id').notNull(),
     partieId: text('partie_id').notNull().references(() => parties.id, { onDelete: 'cascade' }),
     zoneId: text('zone_id').notNull().references(() => zones.id),
     /** Repère pour l'équipe (étiquette au dos, plan de pose). Jamais envoyé aux joueurs. */
@@ -253,7 +259,7 @@ export const balises = pgTable(
     /** Position de pose (GM seulement). */
     position: jsonb('position').$type<{ lat: number; lng: number }>(),
   },
-  (t) => [index('balises_partie').on(t.partieId)],
+  (t) => [primaryKey({ columns: [t.partieId, t.id] }), index('balises_partie').on(t.partieId)],
 );
 
 /** Membre de l'équipe : PNJ ou GM (RG-3). */

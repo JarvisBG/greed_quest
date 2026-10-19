@@ -3,7 +3,7 @@ import type { GameState } from '@gq/shared';
 import { eq } from 'drizzle-orm';
 import { buildApp } from '../app.js';
 import { openDb, type DbHandle } from '../db/client.js';
-import { parties } from '../db/schema.js';
+import { joueurs, parties } from '../db/schema.js';
 import { seedDemoGame, seedPresets, type DemoOptions } from '../db/seed.js';
 
 /** Base PGlite en mémoire, migrée, avec préréglages et une partie de démonstration. */
@@ -15,6 +15,8 @@ export async function testDb(o: DemoOptions = {}) {
 }
 
 export const CENTRE = { lat: 48.8566, lng: 2.3522 };
+/** Fiche Hunter des joueurs de test (RG-5.3). */
+export const PROFIL_TEST = { age: '18-24', genre: 'garcon', occupation: 'etudiant', ville: 'douala', quartier: 'Akwa', reseaux: ['whatsapp'], source: 'ami' };
 
 /** API complète sur une base de test, horloge réelle pilotable (`clock.t`), aléa seedé. */
 export async function testApp(o: DemoOptions & { seed?: number } = {}) {
@@ -32,14 +34,17 @@ export async function testApp(o: DemoOptions & { seed?: number } = {}) {
     async setEtat(etat: GameState, patch: Partial<typeof parties.$inferInsert> = {}) {
       await t.db.update(parties).set({ etat, ...patch }).where(eq(parties.id, t.partieId));
     },
-    async inscrire(pseudo: string, position = { ...CENTRE, precisionM: 5 }) {
+    /** Inscrit un joueur ; sa Fiche Hunter (RG-5.3) est remplie d'office, sauf `{ fiche: false }`. */
+    async inscrire(pseudo: string, position = { ...CENTRE, precisionM: 5 }, { fiche = true } = {}) {
       const appareilId = `appareil-${pseudo}-${++n}-xxxxxxxx`;
       const res = await app.inject({
         method: 'POST',
         url: `/parties/${t.partieId}/inscription`,
         payload: { pseudo, appareilId, position },
       });
-      return { res, body: res.json(), appareilId, token: res.json().token as string, id: res.json().joueurId as string };
+      const id = res.json().joueurId as string | undefined;
+      if (fiche && id) await t.db.update(joueurs).set({ profil: PROFIL_TEST }).where(eq(joueurs.id, id));
+      return { res, body: res.json(), appareilId, token: res.json().token as string, id: id as string };
     },
   };
 }

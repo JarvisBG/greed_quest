@@ -1,12 +1,14 @@
 // Construction du serveur Fastify. Les dépendances (base, horloge, aléa) sont injectées pour les tests.
 import type { Rng } from '@gq/engine';
 import cors from '@fastify/cors';
+import { eq } from 'drizzle-orm';
 import Fastify, { type FastifyInstance } from 'fastify';
 import type { Session } from './auth/tokens.js';
 import { Tokens } from './auth/tokens.js';
 import { Bus } from './core/bus.js';
 import { Runner, cryptoRng } from './core/runner.js';
 import type { Db } from './db/client.js';
+import { joueurs } from './db/schema.js';
 import { Refus } from './errors.js';
 import { attachRealtime } from './realtime.js';
 import { adminRoutes } from './routes/admin.js';
@@ -63,6 +65,9 @@ declare module 'fastify' {
   }
 }
 
+/** Intentions permises avant la Fiche Hunter (RG-5.3). */
+const SANS_FICHE = new Set(['fiche', 'nen', 'nen/secret', 'position', 'abandon'].map((r) => `/parties/:partieId/${r}`));
+
 export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   const app = Fastify({ logger: deps.logger ?? false });
   const now = deps.now ?? Date.now;
@@ -88,6 +93,15 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   app.addHook('onRequest', async (req) => {
     const h = req.headers.authorization;
     req.session = h?.startsWith('Bearer ') ? tokens.verify(h.slice(7)) : null;
+  });
+
+  // RG-5.3 (amendement 2026-10-18) : sans Fiche Hunter remplie, un joueur ne fait rien d'autre que la remplir, passer
+  // le test de Nen, envoyer sa position ou abandonner. Un seul point de contrôle pour toutes les intentions.
+  app.addHook('preHandler', async (req) => {
+    const s = req.session;
+    if (s?.role !== 'joueur' || req.method === 'GET' || SANS_FICHE.has(req.routeOptions.url ?? '')) return;
+    const [j] = await deps.db.select({ profil: joueurs.profil }).from(joueurs).where(eq(joueurs.id, s.sub));
+    if (j && !j.profil) throw new Refus('fiche_requise', 'Remplis d’abord ta fiche Hunter', 403);
   });
 
   app.setErrorHandler((err, _req, reply) => {

@@ -11,8 +11,8 @@ beforeAll(async () => {
   gm = t.app.gq.tokens.issue({ role: 'gm', sub: 'gm1', partieId: t.partieId });
   pnj = t.app.gq.tokens.issue({ role: 'pnj', sub: 'pnj1', partieId: t.partieId });
   await t.setEtat('inscriptions', { inscriptionsOuvertes: true });
-  await t.inscrire('Gon');
-  await t.inscrire('Kirua');
+  await t.inscrire('Gon', undefined, { fiche: false });
+  await t.inscrire('Kirua', undefined, { fiche: false });
 });
 afterAll(() => t.close());
 
@@ -91,8 +91,16 @@ describe('RG-5.3 Fiche Hunter (collecte de profil)', () => {
   let gon: string;
   let kurapika: string;
   beforeAll(async () => {
-    gon = (await t.inscrire('Gon2')).token;
-    kurapika = (await t.inscrire('Kurapika')).token;
+    gon = (await t.inscrire('Gon2', undefined, { fiche: false })).token;
+    kurapika = (await t.inscrire('Kurapika', undefined, { fiche: false })).token;
+  });
+
+  it('RG-5.3 : sans fiche, aucune action de jeu (scan refusé) ; le test de Nen reste permis', async () => {
+    const scan = await t.app.inject({ method: 'POST', url: `/parties/${t.partieId}/scan`, headers: t.bearer(gon), payload: { baliseId: 'x', position: { lat: 1, lng: 1, precisionM: 5 } } });
+    expect(scan.statusCode).toBe(403);
+    expect(scan.json()).toMatchObject({ ok: false, code: 'fiche_requise', message: 'Remplis d’abord ta fiche Hunter' });
+    const nen = await t.app.inject({ method: 'POST', url: `/parties/${t.partieId}/nen`, headers: t.bearer(gon), payload: { reponses: [] } });
+    expect(nen.json().code).not.toBe('fiche_requise');
   });
 
   it('RG-5.3 : toutes les réponses obligatoires, téléphone camerounais vérifié', async () => {

@@ -6,7 +6,7 @@ import { Echanges } from './ecrans/echanges/Echanges';
 import { SessionEchange } from './ecrans/echanges/SessionEchange';
 import { Trade } from './ecrans/echanges/Trade';
 import { Entree } from './ecrans/Entree';
-import { Examen } from './ecrans/Examen';
+import { Fiche } from './ecrans/Fiche';
 import { IconeAccueil, IconeBook, IconeEchanges, IconeScanner, IconeSorts } from './ecrans/Icones';
 import { Inscription, type Kit as KitRecu } from './ecrans/Inscription';
 import { Kit } from './ecrans/Kit';
@@ -76,8 +76,6 @@ export function App() {
   const jeu = useJeu();
   const [kit, setKit] = useState<KitRecu | null>(null);
   const [quiz, setQuiz] = useState<Questionnaires | null>(null);
-  const [examenOuvert, setExamenOuvert] = useState(false);
-  const [, majReport] = useState(0);
   const [onglet, setOnglet] = useState<Onglet>('accueil');
   /** Écran ouvert depuis l'accueil (licence, lieux, raid). */
   const [sous, setSous] = useState<SousEcran | null>(null);
@@ -135,11 +133,11 @@ export function App() {
   const [jeuGm, setJeuGm] = useState<CarteGmRecue | null>(null);
   const moiRef = useRef(moi);
   moiRef.current = moi;
-  // Parcours d'arrivée : kit → Examen (RG-5.3, peut attendre) → test de Nen (RG-5.4) → accueil.
-  let ecran: 'kit' | 'examen' | 'nen' | 'accueil' = 'accueil';
+  // Parcours d'arrivée : kit → Fiche Hunter (RG-5.3, obligatoire) → test de Nen (RG-5.4) → accueil.
+  let ecran: 'kit' | 'fiche' | 'nen' | 'accueil' = 'accueil';
   if (jeu.phase === 'en_jeu' && moi) {
     if (kit) ecran = 'kit';
-    else if (!moi.examenFait && (examenOuvert || !session.examenReporte(moi.id))) ecran = 'examen';
+    else if (!moi.ficheFaite) ecran = 'fiche';
     // Un Spécialiste sans pouvoir (page rechargée avant la question secrète) y revient.
     else if (moi.nen === null || (moi.nen === 'specialisation' && moi.pouvoirSpe === null)) ecran = 'nen';
   }
@@ -154,10 +152,7 @@ export function App() {
     window.scrollTo(0, 0);
   }, [onglet, sous, ecran]);
 
-  const finEtape = () => {
-    setExamenOuvert(false);
-    void jeu.rafraichir();
-  };
+  const finEtape = () => void jeu.rafraichir();
   const enJeu = jeu.phase === 'en_jeu' && partie && moi;
   /** Page ⑱ : partie terminée (RG-4.6) ou joueur parti (abandon, RG-5.7) : plus d'action, seulement suivre. */
   const termine = partie?.etat === 'terminee';
@@ -281,21 +276,9 @@ export function App() {
         {enJeu && (
           <>
             {ecran === 'kit' && kit && <Kit kit={kit} onSuite={() => setKit(null)} />}
-            {ecran === 'examen' && quiz && (
-              <Examen
-                partieId={partie.id}
-                questions={quiz.examen}
-                onBonus={(bonus) => jeu.majJenny(moi.jenny + bonus)}
-                onReporter={() => {
-                  session.reporterExamen(moi.id);
-                  setExamenOuvert(false);
-                  majReport((n) => n + 1);
-                }}
-                onFini={finEtape}
-              />
-            )}
+            {ecran === 'fiche' && <Fiche partieId={partie.id} pseudo={moi.pseudo} onJenny={jeu.majJenny} onFini={finEtape} />}
             {ecran === 'nen' && quiz && <Nen partieId={partie.id} nenConnu={moi.nen} questions={quiz.nen} secrete={quiz.specialisation} onFini={finEtape} />}
-            {(ecran === 'examen' || ecran === 'nen') && !quiz && (
+            {ecran === 'nen' && !quiz && (
               <div className="planche">
                 <p className="doux">Chargement…</p>
               </div>
@@ -430,7 +413,6 @@ export function App() {
                   setEcranAllume(oui);
                   void eveil.current?.regler(oui);
                 }}
-                onExamen={() => setExamenOuvert(true)}
                 onOuvrir={setSous}
                 pastilleAntokiba={jeu.encheres.pastille}
                 onBook={() => setOnglet('livre')}

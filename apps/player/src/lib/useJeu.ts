@@ -39,7 +39,8 @@ export interface Moi {
   /** Spécialisation : pouvoir secret (amendement 2026-10-10). */
   pouvoirSpe: PouvoirSpe | null;
   statut: string;
-  examenFait: boolean;
+  /** RG-5.3 : Fiche Hunter remplie (obligatoire avant de jouer). */
+  ficheFaite: boolean;
   /**
    * Délais restants à la réception (`recuA`), en ms : sort offensif (RG-10.3), Transformation, gel ;
    * `pouvoir` = recharge du pouvoir de Nen (0 = disponible, null = aucun), `reserve` = tirage de Matérialisation

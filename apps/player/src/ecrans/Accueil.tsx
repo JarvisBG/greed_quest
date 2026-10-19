@@ -1,7 +1,7 @@
 // Accueil : profil et pouvoir de Nen (RG-5.4), gel (RG-10), Book fermé à invoquer, évènements en cours
 // (RG-12 : bannières, raid), carte de l'île (zones, balises actives par zone RG-6.5, ta position, évènements de zone)
 // et villes (boutique de Masadora RG-9, enchères d'Antokiba RG-11.4, Retour),
-// licence (RG-5.2), Examen reporté, options, notifications.
+// licence (RG-5.2), options, notifications.
 import { Dialogue } from '@gq/ui';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { api } from '../lib/client';
@@ -57,7 +57,6 @@ export function Accueil({
   notifs,
   ecranAllume,
   onEcranAllume,
-  onExamen,
   onOuvrir,
   pastilleAntokiba = 0,
   onBook,
@@ -70,7 +69,6 @@ export function Accueil({
   notifs: Notif[];
   ecranAllume: boolean;
   onEcranAllume: (oui: boolean) => void;
-  onExamen: () => void;
   onOuvrir: (s: SousEcran) => void;
   /** Page ⑭ : surenchères subies hors de la page d'Antokiba. */
   pastilleAntokiba?: number;
@@ -197,15 +195,6 @@ export function Accueil({
         </div>
         )}
       </CaseCarte>
-
-      {!moi.examenFait && (
-        <>
-          <Dialogue qui="Examinateur">L’Examen Hunter t’attend : trois questions, des jenny à gagner.</Dialogue>
-          <button className="gi-btn-trait" onClick={onExamen}>
-            Passer l’Examen
-          </button>
-        </>
-      )}
 
       <section className="gi-case">
         <h2 className="sous-titre">Notifications</h2>

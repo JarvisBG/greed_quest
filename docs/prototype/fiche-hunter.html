@@ -1,0 +1,495 @@
+<title>Fiche Hunter</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Prototype de la Fiche Hunter de Greed Island : 4 cases obligatoires à l'inscription (âge, genre, occupation ; ville ; réseaux ; WhatsApp), puis le sceau de l'Association et +30 J.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@500;800&family=Atkinson+Hyperlegible+Next:wght@400;600;800&family=Dela+Gothic+One&family=DotGothic16&display=swap">
+<style>
+/* RG-5.3 (amendement 2026-10-18) : la Fiche Hunter remplace l'Examen. Une planche de 4 cases ; la miniature de la
+   planche en haut se remplit d'encre case après case ; le sceau de l'Association frappe la fiche à la fin. */
+:root {
+  color-scheme: light;
+  --papier: #eeefe9;
+  --case: #fbfbf7;
+  --encre: #111111;
+  --encre-2: #3b3d40;
+  --gris: #5d6066;
+  --trame: rgba(17, 17, 17, 0.16);
+  --bleu: #1f4a9c;
+  --alerte: #b3161c;
+  --sceau: #c0272d;
+  --or: #d7b25a;
+  --or-fonce: #8a6a12;
+  --nuit: #0c0c0e;
+  --f-titre: 'Dela Gothic One', 'Arial Black', sans-serif;
+  --f-texte: 'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif;
+  --f-chiffre: 'Atkinson Hyperlegible Mono', ui-monospace, monospace;
+  --f-jeu: 'DotGothic16', ui-monospace, monospace;
+  --trait: 3px;
+  --sortie: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { overflow-x: clip; }
+body { margin: 0; background: var(--papier); color: var(--encre); font: 400 17px/1.45 var(--f-texte); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+::selection { background: #d9a11a; color: var(--encre); }
+:focus-visible { outline: 3px solid var(--bleu); outline-offset: 3px; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+input { caret-color: var(--bleu); }
+
+.app { max-width: 480px; margin: 0 auto; padding-block: 0 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 10px; }
+
+/* Commandes du prototype (pas dans l'app) */
+.proto { display: grid; gap: 8px; padding: 10px 12px; margin-inline: -16px; background: var(--encre); color: var(--case); }
+.proto p { margin: 0; font: 600 13px/1.3 var(--f-texte); }
+.proto .rang { display: flex; gap: 6px; flex-wrap: wrap; }
+.proto button { min-height: 36px; padding: 0 10px; border: 2px solid var(--case); background: transparent; color: var(--case); font: 700 13px var(--f-texte); }
+.proto button[aria-pressed='true'] { background: var(--case); color: var(--encre); }
+
+/* Barre d'état de l'app */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 40; background: var(--case); }
+.barre { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; margin-inline: -16px; padding: 10px 16px; background: var(--case); border-bottom: var(--trait) solid var(--encre); display: flex; align-items: center; gap: 12px; }
+.barre .partie { font: 800 15px/1.1 var(--f-texte); }
+.jenny { margin-left: auto; display: flex; align-items: baseline; gap: 4px; font: 800 22px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+.jenny small { font-size: 15px; }
+.jenny.gagne { animation: pouls 520ms var(--sortie); }
+@keyframes pouls { 30% { transform: scale(1.25); color: var(--or-fonce); } }
+
+/* Miniature de la planche : 4 cases qui se remplissent d'encre */
+.planche-mini { display: grid; grid-template-columns: 1.3fr 1fr; grid-template-rows: 26px 26px; gap: 4px; padding: 4px; background: var(--case); border: var(--trait) solid var(--encre); width: 112px; flex: none; }
+.planche-mini span { border: 2px solid var(--encre); background: var(--case); transition: background 320ms var(--sortie); }
+.planche-mini span:nth-child(1) { grid-row: span 2; }
+.planche-mini span:nth-child(4) { grid-column: 2; }
+.planche-mini span.fait { background: var(--encre); }
+.planche-mini span.ici { background: repeating-linear-gradient(-45deg, var(--encre) 0 2px, transparent 2px 6px); }
+.planche-mini span.sautee { background: var(--case); border-style: dashed; opacity: 0.5; }
+.tete { display: flex; gap: 14px; align-items: center; padding-top: 6px; }
+.tete h1 { margin: 0; font: 400 30px/1 var(--f-titre); letter-spacing: 0.01em; }
+.tete p { margin: 6px 0 0; font: 600 15px/1.3 var(--f-texte); color: var(--encre-2); }
+
+/* Boîte de dialogue du jeu (Joy Station) */
+.dialogue { position: relative; margin-top: 4px; padding: 14px 16px 16px; background: var(--nuit); color: #f4f4ef; border: 3px solid var(--nuit); box-shadow: inset 0 0 0 2px var(--nuit), inset 0 0 0 4px #f4f4ef; font: 400 17px/1.5 var(--f-jeu); }
+.dialogue b { display: block; margin-bottom: 4px; font: 400 14px/1 var(--f-jeu); color: var(--or); letter-spacing: 0.04em; }
+.dialogue em { font-style: normal; color: var(--or); }
+
+/* Cases */
+.case { position: relative; background: var(--case); border: var(--trait) solid var(--encre); padding: 16px 14px 18px; display: grid; gap: 12px; }
+.case h2 { margin: 0; font: 400 20px/1.15 var(--f-titre); }
+.case .aide { margin: -6px 0 0; font: 400 15px/1.35 var(--f-texte); color: var(--gris); }
+.case.manque h2::after { content: ' : à remplir'; font: 800 14px var(--f-texte); color: var(--alerte); }
+.trame-coin { position: absolute; inset: auto 0 0 auto; width: 70px; height: 46px; background: radial-gradient(var(--trame) 1.1px, transparent 1.3px) 0 0 / 6px 6px; pointer-events: none; }
+.etape { display: grid; gap: 10px; }
+.etape[hidden] { display: none; }
+.etape.entre { animation: entree 360ms var(--sortie); }
+@keyframes entree { from { clip-path: inset(0 0 0 100%); transform: translateX(14px); } to { clip-path: inset(0 0 0 0); transform: none; } }
+.etape.recule { animation: recule 360ms var(--sortie); }
+@keyframes recule { from { clip-path: inset(0 100% 0 0); transform: translateX(-14px); } to { clip-path: inset(0 0 0 0); transform: none; } }
+
+/* Choix d'un tap */
+.choix { display: flex; flex-wrap: wrap; gap: 8px; }
+.choix.deux > * { flex: 1 1 0; }
+.puce { position: relative; min-height: 48px; padding: 10px 14px; border: 2px solid var(--encre); background: var(--case); font: 800 16px/1.15 var(--f-texte); display: inline-flex; align-items: center; gap: 8px; text-align: left; transition: background 140ms, color 140ms; }
+.puce:active { transform: translateY(1px); }
+.puce[aria-checked='true'], .puce[aria-pressed='true'] { background: var(--encre); color: var(--case); }
+.puce .coche { width: 18px; height: 18px; border: 2px solid currentColor; flex: none; display: grid; place-items: center; }
+.puce .coche svg { width: 12px; height: 12px; opacity: 0; }
+.puce[aria-pressed='true'] .coche svg { opacity: 1; }
+.groupe { display: grid; gap: 8px; }
+.groupe > span { font: 800 14px/1 var(--f-texte); letter-spacing: 0.04em; text-transform: uppercase; color: var(--encre-2); }
+.groupe.manque > span { color: var(--alerte); }
+.groupe.manque > span::after { content: ' · à choisir'; text-transform: none; letter-spacing: 0; }
+
+/* Champs */
+.case > *, .champ, .saisie { min-width: 0; }
+.champ { display: grid; gap: 6px; }
+.champ > span { font: 800 14px/1 var(--f-texte); letter-spacing: 0.04em; text-transform: uppercase; color: var(--encre-2); }
+.saisie { display: flex; align-items: stretch; border: var(--trait) solid var(--encre); background: #fff; min-height: 56px; }
+.saisie .prefixe { display: grid; place-items: center; padding: 0 12px; background: var(--encre); color: var(--case); font: 800 18px/1 var(--f-chiffre); }
+.saisie input { flex: 1; width: 100%; min-width: 0; border: 0; background: transparent; padding: 0 14px; font: 800 22px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; letter-spacing: 0.02em; outline: none; }
+.saisie.texte input { font: 600 19px/1 var(--f-texte); letter-spacing: 0; }
+.saisie input::placeholder { color: #6a6d72; font-weight: 500; }
+.saisie:focus-within { outline: 3px solid var(--bleu); outline-offset: 2px; }
+.saisie.ko { border-color: var(--alerte); }
+.erreur { margin: 0; font: 800 15px/1.3 var(--f-texte); color: var(--alerte); display: flex; gap: 6px; align-items: flex-start; }
+.erreur svg { flex: none; width: 18px; height: 18px; margin-top: 1px; }
+
+/* Accord de recontact : case libre, non cochée */
+.accord { display: flex; gap: 12px; align-items: flex-start; padding: 12px; border: 2px dashed var(--encre); background: var(--papier); text-align: left; min-height: 48px; }
+.accord .boite { width: 28px; height: 28px; border: var(--trait) solid var(--encre); background: #fff; flex: none; display: grid; place-items: center; }
+.accord .boite svg { width: 18px; height: 18px; opacity: 0; transform: scale(0.4); transition: opacity 120ms, transform 200ms var(--sortie); }
+.accord[aria-checked='true'] .boite svg { opacity: 1; transform: none; }
+.accord strong { display: block; font: 800 16px/1.3 var(--f-texte); }
+.accord small { display: block; margin-top: 3px; font: 400 14px/1.35 var(--f-texte); color: var(--gris); }
+.secret { margin: 0; font: 600 14px/1.35 var(--f-texte); color: var(--encre-2); display: flex; gap: 8px; align-items: center; }
+.secret svg { flex: none; width: 18px; height: 18px; }
+
+/* Actions */
+.actions { display: grid; gap: 8px; margin-top: 4px; }
+.btn-encre { min-height: 56px; border: 0; background: var(--encre); color: var(--case); font: 400 21px/1.1 var(--f-titre); letter-spacing: 0.03em; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.btn-encre:active:not([aria-disabled='true']) { transform: translateY(2px); }
+.btn-encre[aria-disabled='true'] { background: repeating-linear-gradient(-45deg, #2b2c2e 0 3px, #4a4c50 3px 7px); color: #d8d9d4; }
+.btn-encre svg { width: 22px; height: 22px; }
+.retour { justify-self: start; min-height: 44px; padding: 0 4px; border: 0; background: none; font: 800 16px var(--f-texte); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; display: inline-flex; align-items: center; gap: 6px; }
+.retour svg { width: 16px; height: 16px; }
+
+/* Final : la fiche tamponnée */
+.fiche-finale { position: relative; overflow: hidden; display: grid; gap: 6px; padding: 18px 16px 20px; background: var(--case); border: var(--trait) solid var(--encre); }
+.fiche-finale h2 { margin: 0 0 6px; font: 400 22px/1.1 var(--f-titre); }
+.fiche-finale dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 16px; position: relative; z-index: 1; }
+.fiche-finale dt { font: 800 13px/1.4 var(--f-texte); letter-spacing: 0.04em; text-transform: uppercase; color: var(--gris); }
+.fiche-finale dd { margin: 0; font: 800 16px/1.4 var(--f-texte); }
+.vitesse { position: absolute; inset: -40%; pointer-events: none; opacity: 0; z-index: 0; }
+.sceau { position: absolute; z-index: 3; right: 10px; top: 54px; mix-blend-mode: multiply; width: 132px; height: 132px; display: grid; place-items: center; color: var(--sceau); opacity: 0; transform: rotate(-14deg) scale(2.6); pointer-events: none; }
+.sceau svg { width: 100%; height: 100%; filter: url(#encre-sceau); }
+.gain { position: fixed; z-index: 50; font: 800 26px/1 var(--f-chiffre); color: var(--or-fonce); pointer-events: none; opacity: 0; display: flex; align-items: center; gap: 6px; }
+.gain svg { width: 26px; height: 26px; }
+.encadre-final { display: grid; gap: 10px; }
+.encadre-final[hidden] { display: none; }
+
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) {
+  .etape.entre, .etape.recule, .jenny.gagne { animation: none; }
+}
+</style>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="encre-sceau"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.4 1.75"/><feComposite in="SourceGraphic" operator="in"/></filter>
+  <symbol id="i-coche" viewBox="0 0 24 24"><path d="M4 12.5 9.5 18 20 6.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="square"/></symbol>
+  <symbol id="i-fleche" viewBox="0 0 24 24"><path d="M4 12h15M13 5.5 19.5 12 13 18.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square"/></symbol>
+  <symbol id="i-retour" viewBox="0 0 24 24"><path d="M20 12H5M11 5.5 4.5 12 11 18.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square"/></symbol>
+  <symbol id="i-alerte" viewBox="0 0 24 24"><path d="M12 2.5 23 21.5H1Z" fill="currentColor"/><path d="M12 9v6M12 17.2v1.6" stroke="#fbfbf7" stroke-width="2.6"/></symbol>
+  <symbol id="i-cadenas" viewBox="0 0 24 24"><rect x="4" y="10.5" width="16" height="11" fill="currentColor"/><path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5" fill="none" stroke="currentColor" stroke-width="2.8"/></symbol>
+  <symbol id="i-piece" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#d7b25a" stroke="#8a6a12" stroke-width="2"/><circle cx="12" cy="12" r="6.5" fill="none" stroke="#8a6a12" stroke-width="1.6"/><path d="M12 8.5v7M9.6 10.6h4.8" stroke="#8a6a12" stroke-width="1.8"/></symbol>
+</svg>
+
+<div class="app">
+  <div class="proto" aria-label="Commandes du prototype">
+    <p>Prototype · Fiche Hunter (remplace l'Examen) · tout est obligatoire</p>
+    <div class="rang">
+      <button type="button" id="p-moins15" aria-pressed="false">Joueur de moins de 15 ans</button>
+      <button type="button" id="p-remplir">Remplir pour moi</button>
+      <button type="button" id="p-reset">Recommencer</button>
+    </div>
+  </div>
+
+  <header class="barre">
+    <span class="partie">Greed Island</span>
+    <span class="jenny" id="jenny" aria-live="polite"><span id="jenny-n">50</span><small>J</small></span>
+  </header>
+
+  <div class="tete">
+    <div class="planche-mini" id="mini" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+    <div>
+      <h1>Fiche Hunter</h1>
+      <p id="compteur">Case 1 sur 4</p>
+    </div>
+  </div>
+
+  <div class="dialogue" id="intro">
+    <b>ASSOCIATION DES HUNTERS</b>
+    Avant d'entrer sur l'île, chaque Hunter s'enregistre. Quatre cases, une minute. Fiche remplie&nbsp;: <em>+30 J</em>.
+  </div>
+
+  <form id="fiche" novalidate>
+    <!-- Case 1 : qui es-tu -->
+    <section class="etape" data-etape="0">
+      <div class="case" id="c-qui">
+        <h2>Qui es-tu&nbsp;?</h2>
+        <div class="groupe" data-groupe="age"><span>Âge</span><div class="choix" role="radiogroup" aria-label="Âge"></div></div>
+        <div class="groupe" data-groupe="genre"><span>Genre</span><div class="choix deux" role="radiogroup" aria-label="Genre"></div></div>
+        <div class="groupe" data-groupe="occupation"><span>Tu es</span><div class="choix" role="radiogroup" aria-label="Tu es"></div></div>
+        <i class="trame-coin" aria-hidden="true"></i>
+      </div>
+    </section>
+
+    <!-- Case 2 : d'où viens-tu -->
+    <section class="etape" data-etape="1" hidden>
+      <div class="case" id="c-ou">
+        <h2>D'où viens-tu&nbsp;?</h2>
+        <div class="groupe" data-groupe="ville"><span>Ville</span><div class="choix" role="radiogroup" aria-label="Ville"></div></div>
+        <label class="champ">
+          <span id="l-quartier">Ton quartier</span>
+          <span class="saisie texte"><input id="quartier" type="text" maxlength="40" autocomplete="address-level3" placeholder="Ex. Akwa, Bastos, Bonamoussadi"></span>
+        </label>
+        <p class="erreur" id="e-quartier" hidden><svg aria-hidden="true"><use href="#i-alerte"/></svg>Écris ton quartier (2 lettres au moins).</p>
+        <i class="trame-coin" aria-hidden="true"></i>
+      </div>
+    </section>
+
+    <!-- Case 3 : réseaux -->
+    <section class="etape" data-etape="2" hidden>
+      <div class="case" id="c-reseaux">
+        <h2>Où es-tu actif&nbsp;?</h2>
+        <p class="aide">Tous ceux que tu utilises.</p>
+        <div class="groupe" data-groupe="reseaux"><span>Réseaux</span><div class="choix" aria-label="Réseaux"></div></div>
+        <div class="groupe" data-groupe="source"><span>Tu as connu le jeu par</span><div class="choix" role="radiogroup" aria-label="Tu as connu le jeu par"></div></div>
+        <i class="trame-coin" aria-hidden="true"></i>
+      </div>
+    </section>
+
+    <!-- Case 4 : WhatsApp -->
+    <section class="etape" data-etape="3" hidden>
+      <div class="case" id="c-tel">
+        <h2>Ton numéro WhatsApp</h2>
+        <label class="champ">
+          <span>Numéro</span>
+          <span class="saisie" id="s-tel"><span class="prefixe">+237</span><input id="tel" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="6 77 12 34 56" aria-describedby="e-tel"></span>
+        </label>
+        <p class="erreur" id="e-tel" hidden><svg aria-hidden="true"><use href="#i-alerte"/></svg><span>9 chiffres, qui commencent par 6 (ou 2 pour un fixe).</span></p>
+        <button type="button" class="accord" id="accord" role="checkbox" aria-checked="false">
+          <span class="boite"><svg aria-hidden="true"><use href="#i-coche"/></svg></span>
+          <span><strong>Préviens-moi des prochaines parties</strong><small>Un message WhatsApp quand une nouvelle partie est annoncée. Tu peux décocher.</small></span>
+        </button>
+        <p class="secret"><svg aria-hidden="true"><use href="#i-cadenas"/></svg>Ton numéro n'est jamais montré aux autres joueurs.</p>
+        <i class="trame-coin" aria-hidden="true"></i>
+      </div>
+    </section>
+
+    <div class="actions" id="actions">
+      <button type="submit" class="btn-encre" id="suivant" aria-disabled="true"><span id="suivant-txt">Case suivante</span><svg aria-hidden="true"><use href="#i-fleche"/></svg></button>
+      <button type="button" class="retour" id="retour" hidden><svg aria-hidden="true"><use href="#i-retour"/></svg>Case précédente</button>
+    </div>
+  </form>
+
+  <!-- Fiche tamponnée -->
+  <div class="encadre-final" id="final" hidden>
+    <div class="fiche-finale" id="fiche-finale">
+      <svg class="vitesse" id="vitesse" viewBox="-100 -100 200 200" aria-hidden="true"></svg>
+      <h2>Fiche de <span id="f-pseudo">Gon</span></h2>
+      <dl id="recap"></dl>
+      <div class="sceau" id="sceau" aria-hidden="true">
+        <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="55" fill="none" stroke="currentColor" stroke-width="7"/><circle cx="60" cy="60" r="45" fill="none" stroke="currentColor" stroke-width="2.5"/><text x="60" y="50" text-anchor="middle" font-family="Dela Gothic One" font-size="13.5" fill="currentColor" letter-spacing="0.5">HUNTER</text><path d="M24 57h72" stroke="currentColor" stroke-width="2.5"/><text x="60" y="76" text-anchor="middle" font-family="Dela Gothic One" font-size="11" textLength="74" lengthAdjust="spacingAndGlyphs" fill="currentColor">ENREGISTRÉ</text></svg>
+      </div>
+    </div>
+    <div class="dialogue" id="d-final" hidden>
+      <b>ASSOCIATION DES HUNTERS</b>
+      Fiche enregistrée. Voici <em>30 J</em> pour ton voyage. Il est temps de découvrir ton Nen.
+    </div>
+    <button type="button" class="btn-encre" id="continuer" hidden>Continuer<svg aria-hidden="true"><use href="#i-fleche"/></svg></button>
+  </div>
+</div>
+
+<div class="gain" id="gain" aria-hidden="true"><svg><use href="#i-piece"/></svg>+30 J</div>
+
+<script>
+const LISTES = {
+  age: [['moins15', 'Moins de 15 ans'], ['15-17', '15-17 ans'], ['18-24', '18-24 ans'], ['25-34', '25-34 ans'], ['35+', '35 ans et plus']],
+  genre: [['fille', 'Fille'], ['garcon', 'Garçon']],
+  occupation: [['eleve', 'Élève'], ['etudiant', 'Étudiant'], ['travaille', 'Je travaille'], ['autre', 'Autre']],
+  ville: [['douala', 'Douala'], ['yaounde', 'Yaoundé'], ['bafoussam', 'Bafoussam'], ['bamenda', 'Bamenda'], ['garoua', 'Garoua'], ['kribi', 'Kribi'], ['limbe', 'Limbé'], ['buea', 'Buéa'], ['autre', 'Autre ville']],
+  reseaux: [['whatsapp', 'WhatsApp'], ['tiktok', 'TikTok'], ['instagram', 'Instagram'], ['facebook', 'Facebook'], ['snapchat', 'Snapchat'], ['youtube', 'YouTube'], ['x', 'X (Twitter)']],
+  source: [['ami', 'Un ami'], ['tiktok', 'TikTok'], ['instagram', 'Instagram'], ['facebook', 'Facebook'], ['whatsapp', 'WhatsApp'], ['affiche', 'Une affiche'], ['radio_tv', 'Radio / TV'], ['sur_place', 'Sur place']],
+};
+const MULTI = new Set(['reseaux']);
+const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = (s) => document.querySelector(s);
+const etat = { age: null, genre: null, occupation: null, ville: null, reseaux: [], source: null, quartier: '', tel: '', accord: false };
+let etape = 0;
+let tente = false; // un appui sur « suivant » montre ce qui manque
+
+// Choix d'un tap
+for (const [cle, liste] of Object.entries(LISTES)) {
+  const boite = document.querySelector(`[data-groupe="${cle}"] .choix`);
+  for (const [id, libelle] of liste) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'puce';
+    b.dataset.id = id;
+    if (MULTI.has(cle)) {
+      b.setAttribute('aria-pressed', 'false');
+      b.innerHTML = `<span class="coche"><svg aria-hidden="true"><use href="#i-coche"/></svg></span>${libelle}`;
+    } else {
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-checked', 'false');
+      b.textContent = libelle;
+    }
+    b.addEventListener('click', () => {
+      if (MULTI.has(cle)) {
+        const on = !etat[cle].includes(id);
+        etat[cle] = on ? [...etat[cle], id] : etat[cle].filter((x) => x !== id);
+        b.setAttribute('aria-pressed', String(on));
+      } else {
+        etat[cle] = id;
+        boite.querySelectorAll('.puce').forEach((x) => x.setAttribute('aria-checked', String(x === b)));
+      }
+      if (cle === 'ville') $('#l-quartier').textContent = id === 'autre' ? 'Ta ville et ton quartier' : 'Ton quartier';
+      maj();
+    });
+    boite.append(b);
+  }
+}
+
+// Numéro : chiffres seulement, groupés « 6 77 12 34 56 »
+const tel = $('#tel');
+const chiffres = (v) => v.replace(/\D/g, '').replace(/^(00)?237/, '').slice(0, 9);
+const grouper = (d) => [d.slice(0, 1), d.slice(1, 3), d.slice(3, 5), d.slice(5, 7), d.slice(7, 9)].filter(Boolean).join(' ');
+const telValide = (d) => /^[62]\d{8}$/.test(d);
+tel.addEventListener('input', () => {
+  etat.tel = chiffres(tel.value);
+  tel.value = grouper(etat.tel);
+  maj();
+});
+tel.addEventListener('blur', () => { if (etat.tel) montrerErreurTel(!telValide(etat.tel)); });
+function montrerErreurTel(ko) {
+  $('#e-tel').hidden = !ko;
+  $('#s-tel').classList.toggle('ko', ko);
+}
+$('#quartier').addEventListener('input', (e) => { etat.quartier = e.target.value; maj(); });
+$('#accord').addEventListener('click', (e) => {
+  etat.accord = !etat.accord;
+  e.currentTarget.setAttribute('aria-checked', String(etat.accord));
+});
+
+const moins15 = () => etat.age === 'moins15';
+const nbCases = () => (moins15() ? 3 : 4);
+function manques(n) {
+  if (n === 0) return ['age', 'genre', 'occupation'].filter((k) => !etat[k]);
+  if (n === 1) return [...(etat.ville ? [] : ['ville']), ...(etat.quartier.trim().length >= 2 ? [] : ['quartier'])];
+  if (n === 2) return [...(etat.reseaux.length ? [] : ['reseaux']), ...(etat.source ? [] : ['source'])];
+  return telValide(etat.tel) ? [] : ['tel'];
+}
+
+function maj() {
+  const m = manques(etape);
+  const derniere = etape === nbCases() - 1;
+  $('#suivant').setAttribute('aria-disabled', String(m.length > 0));
+  $('#suivant-txt').textContent = derniere ? 'Valider ma fiche' : 'Case suivante';
+  $('#retour').hidden = etape === 0;
+  $('#compteur').textContent = `Case ${etape + 1} sur ${nbCases()}`;
+  $('#intro').hidden = etape > 0;
+  document.querySelectorAll('[data-groupe]').forEach((g) => g.classList.toggle('manque', tente && m.includes(g.dataset.groupe)));
+  if (etape === 1) $('#e-quartier').hidden = !(tente && m.includes('quartier'));
+  if (etape === 3 && tente) montrerErreurTel(m.includes('tel'));
+  const mini = [...$('#mini').children];
+  mini.forEach((s, i) => {
+    s.className = i < etape ? 'fait' : i === etape ? 'ici' : '';
+    if (i === 3 && moins15()) s.className = 'sautee';
+  });
+}
+
+function aller(n, sens) {
+  const avant = document.querySelector(`[data-etape="${etape}"]`);
+  const apres = document.querySelector(`[data-etape="${n}"]`);
+  avant.hidden = true;
+  apres.hidden = false;
+  apres.classList.remove('entre', 'recule');
+  if (!reduit) { void apres.offsetWidth; apres.classList.add(sens > 0 ? 'entre' : 'recule'); }
+  etape = n;
+  tente = false;
+  maj();
+  window.scrollTo({ top: 0, behavior: reduit ? 'auto' : 'smooth' });
+  const premier = apres.querySelector('button, input');
+  if (premier && sens > 0) premier.focus({ preventScroll: true });
+}
+
+$('#fiche').addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (manques(etape).length) {
+    tente = true;
+    maj();
+    const g = document.querySelector('.groupe.manque, .saisie.ko, #e-quartier:not([hidden])');
+    g?.scrollIntoView({ block: 'center', behavior: reduit ? 'auto' : 'smooth' });
+    return;
+  }
+  if (etape < nbCases() - 1) aller(etape + 1, 1);
+  else enregistrer();
+});
+$('#retour').addEventListener('click', () => aller(etape - 1, -1));
+
+// Final : récapitulatif, lignes de vitesse, sceau, pièces vers le compteur
+const lib = (cle, id) => LISTES[cle].find(([i]) => i === id)?.[1] ?? '';
+function enregistrer() {
+  $('#fiche').hidden = true;
+  $('#intro').hidden = true;
+  $('#compteur').textContent = 'Fiche complète';
+  [...$('#mini').children].forEach((s, i) => (s.className = i === 3 && moins15() ? 'sautee' : 'fait'));
+  const lignes = [
+    ['Âge', lib('age', etat.age)],
+    ['Genre', lib('genre', etat.genre)],
+    ['Tu es', lib('occupation', etat.occupation)],
+    ['Ville', `${lib('ville', etat.ville)} · ${etat.quartier.trim()}`],
+    ['Réseaux', etat.reseaux.map((r) => lib('reseaux', r)).join(', ')],
+    ['Connu par', lib('source', etat.source)],
+    ...(moins15() ? [] : [['WhatsApp', `+237 ${grouper(etat.tel)}`]]),
+  ];
+  $('#recap').innerHTML = lignes.map(([k, v]) => `<dt>${k}</dt><dd>${v.replace(/</g, '&lt;')}</dd>`).join('');
+  $('#final').hidden = false;
+  window.scrollTo({ top: 0 });
+  tamponner();
+}
+
+function lignesDeVitesse() {
+  const svg = $('#vitesse');
+  let d = '';
+  for (let i = 0; i < 64; i++) {
+    const a = (i / 64) * Math.PI * 2 + Math.sin(i * 7.3) * 0.04;
+    const r0 = 34 + ((i * 37) % 23), r1 = 140;
+    const e = 0.012 + ((i * 13) % 5) * 0.004;
+    d += `M${Math.cos(a - e) * r1} ${Math.sin(a - e) * r1}L${Math.cos(a) * r0} ${Math.sin(a) * r0}L${Math.cos(a + e) * r1} ${Math.sin(a + e) * r1}Z`;
+  }
+  svg.innerHTML = `<path d="${d}" fill="#111"/>`;
+}
+
+function tamponner() {
+  const sceau = $('#sceau'), fiche = $('#fiche-finale'), vitesse = $('#vitesse');
+  lignesDeVitesse();
+  const fin = () => { sceau.style.opacity = '0.92'; sceau.style.transform = 'rotate(-14deg)'; $('#d-final').hidden = false; $('#continuer').hidden = false; };
+  if (reduit) { fin(); crediter(); return; }
+  sceau.animate(
+    [
+      { opacity: 0, transform: 'rotate(-30deg) scale(2.6)', filter: 'blur(3px)' },
+      { opacity: 1, transform: 'rotate(-12deg) scale(0.92)', filter: 'blur(0)', offset: 0.72 },
+      { opacity: 0.92, transform: 'rotate(-14deg) scale(1)' },
+    ],
+    { duration: 520, delay: 420, easing: 'cubic-bezier(0.55, 0, 1, 0.45)', fill: 'both' },
+  );
+  vitesse.animate([{ opacity: 0 }, { opacity: 0.16, offset: 0.25 }, { opacity: 0 }], { duration: 700, delay: 800, fill: 'both' });
+  fiche.animate(
+    [{ transform: 'none' }, { transform: 'translate(-3px, 4px) rotate(-0.6deg)' }, { transform: 'translate(2px, -2px)' }, { transform: 'none' }],
+    { duration: 260, delay: 800, easing: 'ease-out' },
+  );
+  if (navigator.vibrate) setTimeout(() => navigator.vibrate(40), 800);
+  setTimeout(() => { fin(); crediter(); }, 1200);
+}
+
+function crediter() {
+  const gain = $('#gain'), cible = $('#jenny').getBoundingClientRect(), depart = $('#sceau').getBoundingClientRect();
+  const n = $('#jenny-n');
+  const finir = () => { n.textContent = '80'; $('#jenny').classList.remove('gagne'); void n.offsetWidth; $('#jenny').classList.add('gagne'); };
+  if (reduit) { finir(); return; }
+  const x0 = depart.left + depart.width / 2 - 50, y0 = depart.top + depart.height / 2;
+  const x1 = cible.left, y1 = cible.top;
+  gain.style.left = '0px';
+  gain.style.top = '0px';
+  gain.animate(
+    [
+      { opacity: 0, transform: `translate(${x0}px, ${y0}px) scale(0.6)` },
+      { opacity: 1, transform: `translate(${x0}px, ${y0 - 40}px) scale(1.1)`, offset: 0.3 },
+      { opacity: 1, transform: `translate(${(x0 + x1) / 2}px, ${Math.min(y0, y1) - 30}px) scale(1)`, offset: 0.65 },
+      { opacity: 0, transform: `translate(${x1}px, ${y1}px) scale(0.5)` },
+    ],
+    { duration: 900, easing: 'cubic-bezier(0.3, 0, 0.2, 1)', fill: 'both' },
+  ).finished.then(finir);
+}
+
+// Commandes du prototype
+$('#p-moins15').addEventListener('click', (e) => {
+  const on = e.currentTarget.getAttribute('aria-pressed') !== 'true';
+  e.currentTarget.setAttribute('aria-pressed', String(on));
+  const b = document.querySelector(`[data-groupe="age"] [data-id="${on ? 'moins15' : '18-24'}"]`);
+  b.click();
+});
+$('#p-remplir').addEventListener('click', () => {
+  const clic = (g, id) => { const b = document.querySelector(`[data-groupe="${g}"] [data-id="${id}"]`); if (b.getAttribute('aria-checked') !== 'true' && b.getAttribute('aria-pressed') !== 'true') b.click(); };
+  if (!etat.age) clic('age', '18-24');
+  clic('genre', 'garcon'); clic('occupation', 'etudiant'); clic('ville', 'douala');
+  $('#quartier').value = 'Akwa'; etat.quartier = 'Akwa';
+  clic('reseaux', 'tiktok'); clic('reseaux', 'whatsapp'); clic('source', 'ami');
+  tel.value = '6 77 12 34 56'; etat.tel = '677123456';
+  maj();
+});
+$('#p-reset').addEventListener('click', () => location.reload());
+$('#continuer').addEventListener('click', (e) => { e.currentTarget.textContent = 'Dans l’app : le test de Nen s’ouvre'; });
+maj();
+</script>

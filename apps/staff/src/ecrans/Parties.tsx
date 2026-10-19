@@ -152,7 +152,7 @@ export function Parties({
   };
 
   if (vue.quoi === 'code') return <Connexion partieInitiale={vue.partie ?? ''} connecter={connecter} retour={retour} creer={() => setVue({ quoi: 'creer' })} />;
-  if (vue.quoi === 'creer') return <Creation depuis={vue.depuis} connecter={connecter} retour={retour} />;
+  if (vue.quoi === 'creer') return <Creation depuis={vue.depuis} orga={orga} connecter={connecter} retour={retour} />;
   if (vue.quoi === 'orga') {
     const pour = vue.pour;
     return (

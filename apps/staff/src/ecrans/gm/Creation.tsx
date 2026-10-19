@@ -20,14 +20,17 @@ export interface Depuis {
 
 export function Creation({
   depuis,
+  orga = '',
   connecter,
   retour,
 }: {
   depuis?: Depuis | undefined;
+  /** Code organisateur déjà validé dans cet onglet : pré-rempli. */
+  orga?: string;
   connecter: (partieId: string, code: string) => Promise<void>;
   retour: () => void;
 }) {
-  const [codeOrga, setCodeOrga] = useState('');
+  const [codeOrga, setCodeOrga] = useState(orga);
   const [nom, setNom] = useState(depuis?.nom ?? '');
   const [prereglage, setPrereglage] = useState('standard');
   const [demo, setDemo] = useState(false);
@@ -38,7 +41,14 @@ export function Creation({
   const [gmCode, setGmCode] = useState('');
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
-  const pret = codeOrga && nom.trim() && gmNom.trim() && gmCode.length >= 6;
+  // Ce qui manque encore, affiché sous le bouton (sinon le bouton grisé ne dit pas pourquoi).
+  const manque = [
+    !codeOrga && 'le code organisateur',
+    !nom.trim() && 'le nom de la partie',
+    !gmNom.trim() && 'ton nom',
+    gmCode.length < 6 && `un code de connexion d’au moins 6 caractères${gmCode ? ` (${gmCode.length} pour l’instant)` : ''}`,
+  ].filter((x): x is string => !!x);
+  const pret = manque.length === 0;
 
   async function creer() {
     setEnvoi(true);
@@ -123,6 +133,7 @@ export function Creation({
         <input type="password" value={gmCode} onChange={(e) => setGmCode(e.target.value)} autoComplete="new-password" />
       </label>
       {erreur && <p className="erreur">{erreur}</p>}
+      {!pret && !creee && <p className="vide">Il manque : {manque.join(', ')}.</p>}
       {creee ? (
         <button type="button" className="modal-btn modal-btn--primary" onClick={() => void connecter(creee, gmCode)}>
           Ouvrir la nouvelle partie

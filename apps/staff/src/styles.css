@@ -385,3 +385,12 @@ button.large { width: 100%; display: grid; gap: 2px; }
 .public { display: grid; gap: 18px; grid-template-columns: 1fr; margin-top: 14px; }
 @media (min-width: 800px) { .public { grid-template-columns: 1fr 1fr; } }
 .public h4 { font-family: var(--font-mono); font-size: .64rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 8px; }
+/* Menu du GM (16 entrées) : resserré selon la hauteur de l'écran, pour tenir sans défiler sur un portable (768 px). */
+@media (min-width:1000px){
+  .sidebar { padding-block: clamp(12px, 2.2vh, 24px); scrollbar-width: thin; }
+  .sidebar__brand { padding-bottom: clamp(10px, 2vh, 26px); }
+  .sidebar__tag { padding-bottom: clamp(8px, 1.4vh, 18px); }
+  .sidebar__nav { gap: 2px; }
+  .sidebar .nav-item { padding-block: clamp(6px, 1.05vh, 11px); white-space: nowrap; font-size: .82rem; }
+  .sidebar__foot { margin-top: auto; padding-top: clamp(8px, 1.4vh, 16px); }
+}

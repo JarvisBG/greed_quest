@@ -5,6 +5,9 @@ import { openDb } from './db/client.js';
 import { Scheduler } from './core/taches.js';
 import { seedPresets } from './db/seed.js';
 
+// Une promesse rejetée oubliée ne doit pas arrêter la partie en cours : on la note dans les journaux de Render.
+process.on('unhandledRejection', (e) => console.error('Promesse rejetée non traitée', e));
+
 const config = loadConfig();
 const { db, close } = await openDb({ url: config.databaseUrl, dataDir: config.pgliteDir, ssl: config.databaseSsl });
 await seedPresets(db);

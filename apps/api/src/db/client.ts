@@ -31,7 +31,20 @@ export interface DbHandle {
  */
 export async function openDb(opts: { url?: string | undefined; dataDir?: string | undefined; ssl?: boolean } = {}): Promise<DbHandle> {
   if (opts.url) {
-    const pool = new pg.Pool({ connectionString: opts.url, ...(opts.ssl ? { ssl: { rejectUnauthorized: false } } : {}) });
+    const pool = new pg.Pool({
+      connectionString: opts.url,
+      ...(opts.ssl ? { ssl: { rejectUnauthorized: false } } : {}),
+      // Offre gratuite : le pooler de Supabase (mode session) n'ouvre qu'une quinzaine de connexions réelles.
+      max: 8,
+      idleTimeoutMillis: 60_000,
+      connectionTimeoutMillis: 15_000,
+      // Une requête bloquée ne garde pas le verrou d'une partie indéfiniment.
+      query_timeout: 20_000,
+      keepAlive: true,
+    });
+    // Sans écouteur, une connexion au repos coupée par Supabase (maintenance, redémarrage du pooler) ferait tomber
+    // tout le serveur ; le pool la remplace à la requête suivante.
+    pool.on('error', (e) => console.error('Base : connexion perdue, elle sera rouverte', e.message));
     const db = drizzlePg(pool, { schema });
     await migratePg(db, { migrationsFolder });
     return { db: db as unknown as Db, close: () => pool.end() };

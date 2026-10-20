@@ -13,6 +13,9 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "24"
+      # Offre gratuite = 512 Mo : le ramasse-miettes travaille avant d'atteindre la limite (sinon Render tue le serveur).
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=320"
       # Chaîne « Session pooler » de Supabase (sans ?sslmode), mot de passe compris.
       - key: DATABASE_URL
         sync: false

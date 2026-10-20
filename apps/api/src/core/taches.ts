@@ -3,6 +3,8 @@
 // ne fait que ce qui est dû. L'horloge étant arrêtée en pause, rien n'avance pendant la pause (RG-4.4).
 import {
   EVENT_TYPES,
+  RETOUR_GM_INACTIVITE_MS,
+  SS_RETURN_INACTIVITY_MS,
   cartesGmDe,
   doitRendreCartesGm,
   rendreCartesGm,
@@ -25,7 +27,7 @@ import {
 } from '@gq/engine';
 import { and, eq, gte, inArray, lte } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { journal, parties, zones, type Taches } from '../db/schema.js';
+import { cartes, cartesGm, exemplaires, joueurs, journal, parties, zones, type Taches } from '../db/schema.js';
 import { closeDueAuctions } from '../routes/encheres.js';
 import { emitBeaconChanges, visitesParZone } from '../routes/scan.js';
 import { computeRanking, publicRanking } from './classement.js';
@@ -38,7 +40,7 @@ import { SYSTEME } from './journal.js';
 import { paramsOf } from './params.js';
 import { lifecycleOf } from './partie.js';
 import type { ActionCtx, Runner } from './runner.js';
-import { catalogForDraw, limitesOf, loadActiveEvents, loadBeacons, loadBooks, loadCatalogue, loadJoueurs, saveBeacons, saveBooks, updateJoueur } from './state.js';
+import { catalogForDraw, limitesOf, loadActiveEvents, loadBeacons, loadBooks, loadCatalogue, loadJoueurs, saveBeacons, saveBooks, updateJoueur, loadJoueursTache, type JoueurTache } from './state.js';
 import { newId } from '../ids.js';
 
 export const INACTIVITY_MS = 15 * 60_000; // RG-5.7
@@ -53,15 +55,17 @@ export async function tickPartie(c: ActionCtx): Promise<void> {
   if (c.partie.etat !== 'en_cours' && c.partie.etat !== 'phase_finale') return;
 
   const taches: Taches = { ...c.partie.taches };
-  await markInactive(c);
-  await alertNoPosition(c, taches, p0.ciblableMin * 60_000);
+  // Charge (offre gratuite) : les joueurs sont lus une fois par passage, pas une fois par tâche.
+  const tous = await loadJoueursTache(c.tx, c.partie.id);
+  await markInactive(c, tous);
+  await alertNoPosition(c, tous, taches, p0.ciblableMin * 60_000);
   if (taches.jA === undefined || c.now - taches.jA >= J_RECALC_INTERVAL_MS) {
-    await recalcJ(c);
+    await recalcJ(c, tous);
     taches.jA = c.now;
   }
   await beacons(c, taches);
   await events(c);
-  await returnSS(c);
+  await returnSS(c, tous);
   await closeDueAuctions(c);
   await expireTrades(c);
   await shopWave(c);
@@ -80,7 +84,8 @@ export async function tickPartie(c: ActionCtx): Promise<void> {
  * même sans checkpoint. Comme le bonus de checkpoint, il peut déborder d'un Livre plein.
  */
 async function reserveMaterialisation(c: ActionCtx, intervalleMs: number) {
-  const dus = (await loadJoueurs(c.tx, c.partie.id)).filter(
+  // Seuls les joueurs de Matérialisation sont lus (la réserve ne concerne qu'eux).
+  const dus = (await c.tx.select().from(joueurs).where(and(eq(joueurs.partieId, c.partie.id), eq(joueurs.nen, 'materialisation')))).filter(
     (j) => j.statut !== 'disqualifie' && j.statut !== 'abandon' && reserveMaterialisationDans(j, c.now, intervalleMs) === 0,
   );
   if (dus.length === 0) return;
@@ -109,17 +114,19 @@ async function reserveMaterialisation(c: ActionCtx, intervalleMs: number) {
 }
 
 /** RG-5.7 : sans action depuis 15 min, un joueur devient inactif (exclu de J). Fin des gels de sanction. */
-async function markInactive(c: ActionCtx) {
-  for (const j of await loadJoueurs(c.tx, c.partie.id)) {
+async function markInactive(c: ActionCtx, tous: JoueurTache[]) {
+  for (const j of tous) {
     // Fin du gel infligé par un PNJ (5 min).
     if (j.statut === 'gele' && (j.geleJusqua ?? 0) <= c.now) {
       await updateJoueur(c.tx, j.id, { statut: 'actif', derniereActionA: c.now });
+      Object.assign(j, { statut: 'actif', derniereActionA: c.now });
       await c.log({ action: 'statut', resultat: 'degele', details: { joueurId: j.id } });
       c.emit({ type: 'joueur', id: j.id }, 'degel', {});
       continue;
     }
     if (j.statut !== 'actif' || (j.derniereActionA ?? 0) > c.now - INACTIVITY_MS) continue;
     await updateJoueur(c.tx, j.id, { statut: 'inactif' });
+    j.statut = 'inactif';
     await c.log({ action: 'statut', resultat: 'inactif', details: { joueurId: j.id } });
   }
 }
@@ -128,9 +135,9 @@ async function markInactive(c: ActionCtx) {
  * Amendement RG-10.10 : un joueur actif sans nouvelle position depuis `ciblableMin` n'est plus ciblable.
  * L'équipe est prévenue une fois par disparition (GPS coupé, téléphone en veille, triche possible).
  */
-async function alertNoPosition(c: ActionCtx, taches: Taches, delaiMs: number) {
+async function alertNoPosition(c: ActionCtx, tous: readonly JoueurTache[], taches: Taches, delaiMs: number) {
   const vus = { ...taches.sansPosition };
-  for (const j of await loadJoueurs(c.tx, c.partie.id)) {
+  for (const j of tous) {
     if ((j.statut !== 'actif' && j.statut !== 'gele') || !j.position || c.now - j.position.a <= delaiMs) continue;
     if (vus[j.id] === j.position.a) continue;
     vus[j.id] = j.position.a;
@@ -140,8 +147,7 @@ async function alertNoPosition(c: ActionCtx, taches: Taches, delaiMs: number) {
 }
 
 /** RG-14.1 : J = joueurs actifs, recalculé toutes les 2 min ; hausse immédiate, baisse lissée. */
-async function recalcJ(c: ActionCtx) {
-  const joueurs = await loadJoueurs(c.tx, c.partie.id);
+async function recalcJ(c: ActionCtx, joueurs: readonly JoueurTache[]) {
   const mesure = joueurs.filter((j) => (j.statut === 'actif' || j.statut === 'gele') && (j.derniereActionA ?? -Infinity) > c.now - INACTIVITY_MS).length;
   const j = smoothJ(c.partie.j, mesure, c.now);
   if (j.value === c.partie.j.value && j.lastDecreaseAt === c.partie.j.lastDecreaseAt) return;
@@ -192,8 +198,19 @@ async function events(c: ActionCtx) {
 const inactifDepuis = (derniereActionA: number | null, items: { obtenuA: number }[]) => Math.max(derniereActionA ?? 0, ...items.map((i) => i.obtenuA));
 
 /** RG-8.12 : SS d'un joueur inactif depuis 20 min, qui abandonne ou est disqualifié → retour en jeu. */
-async function returnSS(c: ActionCtx) {
-  const joueurs = await loadJoueurs(c.tx, c.partie.id);
+async function returnSS(c: ActionCtx, tous: readonly JoueurTache[]) {
+  // Seuls les joueurs partis ou sans action depuis 20 min peuvent rendre quelque chose : les Livres des autres ne sont pas lus.
+  const seuil = c.now - Math.min(SS_RETURN_INACTIVITY_MS, RETOUR_GM_INACTIVITE_MS);
+  const partis = tous.filter((j) => j.statut === 'abandon' || j.statut === 'disqualifie' || (j.derniereActionA ?? 0) <= seuil).map((j) => j.id);
+  if (partis.length === 0) return;
+  // … et seulement ceux qui détiennent une SS ou une carte de Maître du jeu.
+  const [avecSS, avecGm] = await Promise.all([
+    c.tx.selectDistinct({ id: exemplaires.joueurId }).from(exemplaires).innerJoin(cartes, eq(cartes.id, exemplaires.carteId)).where(and(inArray(exemplaires.joueurId, partis), eq(cartes.rang, 'SS'))),
+    c.tx.selectDistinct({ id: cartesGm.joueurId }).from(cartesGm).where(inArray(cartesGm.joueurId, partis)),
+  ]);
+  const detenteurs = new Set([...avecSS, ...avecGm].map((r) => r.id));
+  const joueurs = tous.filter((j) => detenteurs.has(j.id));
+  if (joueurs.length === 0) return;
   const books = await loadBooks(c.tx, joueurs.map((j) => j.id));
   const cat = await loadCatalogue(c.tx, c.partie.id);
   for (const j of joueurs) {

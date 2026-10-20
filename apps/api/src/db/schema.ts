@@ -407,5 +407,6 @@ export const journal = pgTable(
     motif: text('motif'),
     details: jsonb('details').$type<Record<string, unknown>>(),
   },
-  (t) => [index('journal_partie').on(t.partieId, t.id)],
+  // journal_action : lectures à chaque passage des tâches (visites par zone, carte de chaleur) sans parcourir tout le journal.
+  (t) => [index('journal_partie').on(t.partieId, t.id), index('journal_action').on(t.partieId, t.action, t.heureJeu)],
 );

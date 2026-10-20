@@ -1,0 +1,1 @@
+CREATE INDEX "journal_action" ON "journal" USING btree ("partie_id","action","heure_jeu");

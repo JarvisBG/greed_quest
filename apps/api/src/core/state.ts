@@ -1,7 +1,6 @@
 // Passage base ⇄ structures du moteur : Livres, joueurs, balises, catalogue, événements.
 // Les actions chargent ce dont elles ont besoin, appellent le moteur (pur), puis enregistrent les différences.
 import {
-  countInCirculation,
   type Beacon,
   type Book,
   type BookItem,
@@ -14,7 +13,7 @@ import {
   type SpellItem,
 } from '@gq/engine';
 import type { CarteGm, Rank } from '@gq/shared';
-import { and, eq, inArray, notInArray } from 'drizzle-orm';
+import { and, count, eq, inArray, notInArray, sql } from 'drizzle-orm';
 import type { DbOrTx } from '../db/client.js';
 import { balises, cartes, cartesGm, evenements, exemplaires, joueurs, livres, objets, pertes, sorts } from '../db/schema.js';
 import { newId } from '../ids.js';
@@ -221,8 +220,11 @@ export async function loadCatalogue(db: DbOrTx, partieId: string): Promise<Catal
 
 /** RG-8.2 / RG-8.6 : exemplaires vrais en circulation, pour la table de tirage. */
 export async function circulation(db: DbOrTx, partieId: string): Promise<Map<string, number>> {
-  const rows = await db.select().from(exemplaires).where(eq(exemplaires.partieId, partieId));
-  return countInCirculation([{ items: rows.map(cardItemOf), pertes: [] }]);
+  // Lu à chaque tirage : la base compte elle-même (une ligne par carte au lieu d'une par exemplaire, offre gratuite).
+  // Même règle que countInCirculation : un exemplaire compte pour sa carte, un déguisé pour sa vraie carte, une copie ratée pour rien.
+  const vraie = sql<string | null>`case when ${exemplaires.faux} is null then ${exemplaires.carteId} when ${exemplaires.faux}->>'nature' = 'deguise' then ${exemplaires.faux}->>'vraieCarteId' end`;
+  const rows = await db.select({ carteId: vraie, n: count() }).from(exemplaires).where(eq(exemplaires.partieId, partieId)).groupBy(vraie);
+  return new Map(rows.flatMap((r) => (r.carteId === null ? [] : [[r.carteId, r.n] as const])));
 }
 
 export async function catalogForDraw(db: DbOrTx, cat: Catalogue, partieId: string): Promise<CatalogCard[]> {
@@ -287,6 +289,21 @@ export async function saveEvent(db: DbOrTx, partieId: string, e: GameEvent, lanc
 }
 
 /** Joueurs de la partie hors ceux exclus (ids). */
+/** Ce que lisent les tâches planifiées à chaque passage (toutes les 5 s) : pas la fiche entière. */
+export type JoueurTache = Pick<JoueurRow, 'id' | 'pseudo' | 'statut' | 'geleJusqua' | 'derniereActionA' | 'position'>;
+export async function loadJoueursTache(db: DbOrTx, partieId: string): Promise<JoueurTache[]> {
+  return db
+    .select({ id: joueurs.id, pseudo: joueurs.pseudo, statut: joueurs.statut, geleJusqua: joueurs.geleJusqua, derniereActionA: joueurs.derniereActionA, position: joueurs.position })
+    .from(joueurs)
+    .where(eq(joueurs.partieId, partieId));
+}
+
+/** Pseudos des joueurs d'une partie (provenances du Livre, noms dans les messages). */
+export async function loadPseudos(db: DbOrTx, partieId: string): Promise<Map<string, string>> {
+  const rows = await db.select({ id: joueurs.id, pseudo: joueurs.pseudo }).from(joueurs).where(eq(joueurs.partieId, partieId));
+  return new Map(rows.map((j) => [j.id, j.pseudo]));
+}
+
 export async function loadJoueurs(db: DbOrTx, partieId: string, sauf: readonly string[] = []): Promise<JoueurRow[]> {
   const cond = sauf.length > 0 ? and(eq(joueurs.partieId, partieId), notInArray(joueurs.id, [...sauf])) : eq(joueurs.partieId, partieId);
   return db.select().from(joueurs).where(cond);

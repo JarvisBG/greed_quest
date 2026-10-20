@@ -10,7 +10,7 @@ import {
   type ParamSettings,
   type ResolvedParam,
 } from '@gq/engine';
-import { and, count, eq } from 'drizzle-orm';
+import { count, eq, sql } from 'drizzle-orm';
 import type { DbOrTx } from '../db/client.js';
 import { balises } from '../db/schema.js';
 import type { PartieRow } from './partie.js';
@@ -21,12 +21,12 @@ export function settingsOf(p: PartieRow): ParamSettings {
 }
 
 export async function paramContext(db: DbOrTx, p: PartieRow): Promise<ParamContext> {
-  const [posees] = await db.select({ n: count() }).from(balises).where(eq(balises.partieId, p.id));
-  const [actives] = await db
-    .select({ n: count() })
+  // Une seule requête pour les deux comptes (appelé à chaque action : offre gratuite de la base).
+  const [n] = await db
+    .select({ posees: count(), actives: sql<number>`count(*) filter (where ${balises.etat} = 'active')`.mapWith(Number) })
     .from(balises)
-    .where(and(eq(balises.partieId, p.id), eq(balises.etat, 'active')));
-  return { J: p.j.value, balisesPosees: posees?.n ?? 0, balisesActivesCourantes: actives?.n ?? 0 };
+    .where(eq(balises.partieId, p.id));
+  return { J: p.j.value, balisesPosees: n?.posees ?? 0, balisesActivesCourantes: n?.actives ?? 0 };
 }
 
 /** Valeurs appliquées de tous les paramètres. */

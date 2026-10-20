@@ -23,8 +23,9 @@ export function Arene({ eq }: { eq: Equipe }) {
   const [annuler, setAnnuler] = useState<Tentative | null>(null);
 
   const charger = () => api.get<{ tentatives: Tentative[] }>(`${base}/arene`).then((r) => setTentatives(r.tentatives), () => {});
-  // Rechargée à chaque ligne de journal (entrée, issue, annulation faites par un autre PNJ).
-  useEffect(() => void charger(), [base, eq.version.journal]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Rechargée à chaque ligne de journal de l'Arène (entrée, issue, annulation faites par un autre PNJ), pas à chaque scan ou position.
+  const derniereArene = eq.journal.find((l) => l.action.startsWith('arene'))?.id ?? 0;
+  useEffect(() => void charger(), [base, derniereArene]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function faire(p: Promise<string>) {
     try {

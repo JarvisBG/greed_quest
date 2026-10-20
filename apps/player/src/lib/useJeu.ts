@@ -90,6 +90,15 @@ function noterRepere(joueurId: string, n: number | undefined) {
   }
 }
 
+/** Reçus sans rien recharger : la page concernée suit en direct (barre du raid, salle des enchères, suivi). */
+const SANS_RECHARGE: ReadonlySet<string> = new Set(['raid', 'enchere', 'enchere_close', 'accompagnement']);
+/**
+ * Envoyés à tous les joueurs d'un coup : chacun recharge à un moment tiré au hasard dans les 3 s,
+ * pour que le serveur gratuit ne reçoive pas toutes les demandes dans la même seconde.
+ */
+const DIFFUSES: ReadonlySet<string> = new Set(['partie', 'evenement', 'evenement_fin', 'boutique', 'carte_gm_jouee', 'clear', 'classement_final']);
+const plusTard = (fn: () => void) => setTimeout(fn, Math.random() * 3000);
+
 /** Évènements annoncés en boîte de dialogue, en plus du fil des notifications. */
 const ANNONCES: Partial<Record<string, { genre: Alerte['genre']; qui: string }>> = {
   evenement: { genre: 'evenement', qui: 'Évènement' },
@@ -169,6 +178,8 @@ export function useJeu() {
   const lots = useRef(new Map<string, Lot>());
   const surAntokiba = useRef(false);
   const [clotures, setClotures] = useState<Cloture[]>([]);
+  /** Salle des enchères relue à chaque offre, seulement par ceux qui y sont (les autres ne rechargent rien). */
+  const [versionEncheres, setVersionEncheres] = useState(0);
   const [adjuges, setAdjuges] = useState<Adjuge[]>([]);
   /** Page ⑮ : l'arène de Soufrabi lue côté joueur (combat en cours, prochaine tentative) et les issues à jouer. */
   const [arene, setArene] = useState<{ etat: EtatArene; recuA: number } | null>(null);
@@ -308,7 +319,9 @@ export function useJeu() {
           raidRecevoir.current(nom, data);
           return;
         }
-        setVersion((v) => v + 1);
+        if (DIFFUSES.has(nom)) plusTard(() => setVersion((v) => v + 1));
+        else if (!SANS_RECHARGE.has(nom)) setVersion((v) => v + 1);
+        if ((nom === 'enchere' || nom === 'enchere_close') && surAntokiba.current) setVersionEncheres((v) => v + 1);
         const cadeau = cadeauDe(nom, data, ++nCadeau.current);
         if (cadeau) {
           notifier(cadeau.texte);
@@ -663,6 +676,7 @@ export function useJeu() {
       /** Lot lu ou modifié par la page (GET, ma propre offre). */
       noter: (l: Lot) => lots.current.set(l.id, l),
       clotures,
+      version: versionEncheres,
       pastille: pastilleAntokiba,
       adjuge: adjuges[0] ?? null,
       finAdjuge: () => setAdjuges((x) => x.slice(1)),

@@ -371,7 +371,7 @@ export function App() {
                 partieId={partie.id}
                 moi={moi.id}
                 jenny={moi.jenny}
-                version={jeu.version}
+                version={jeu.version + jeu.encheres.version}
                 positionAction={jeu.positionAction}
                 annoncer={jeu.annoncer}
                 onRetour={() => setSous(null)}

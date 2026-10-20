@@ -214,7 +214,9 @@ export function DessinCarte({
         <g transform={`translate(${plan.moi.x} ${plan.moi.y})`}>
           <g className="moi">
             <circle className="moi-halo" r={plan.moi.r} />
-            <circle className="moi-onde" r="9" />
+            {/* Trois pulsations à chaque nouvelle position, puis repos : une animation sans fin dans ce SVG le ferait
+                redessiner en entier (filtres de l'île compris) 60 fois par seconde, ce qui rame sur un téléphone d'entrée de gamme. */}
+            <circle key={`${Math.round(plan.moi.x)} ${Math.round(plan.moi.y)}`} className="moi-onde" r="9" />
             <path className="moi-epingle" d="M0 0C-3 -5 -10 -11 -10 -19a10 10 0 1 1 20 0c0 8 -7 14 -10 19z" />
             <circle cy="-19" r="4" fill="#fff" />
             <g className="moi-plaque" transform="translate(0 -44)">

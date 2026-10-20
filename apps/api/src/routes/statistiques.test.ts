@@ -84,6 +84,11 @@ describe('calcul des statistiques', () => {
     expect(s.equipe).toEqual({ gm: 1, pnj: 0 });
     expect(s.classement[0]).toMatchObject({ place: 1, pseudo: 'Gon' });
   });
+
+  it('grosse partie (300 000 lignes de journal, positions comprises) : pas de plantage', () => {
+    const lignes = Array.from({ length: 300_000 }, (_, i) => ({ creeLe: h(i % 120), acteurType: 'joueur', acteurId: `j${i % 80}`, action: 'position', resultat: 'ok', details: null }));
+    expect(() => calculerStatistiques({ ...d, lignes })).not.toThrow();
+  });
 });
 
 describe('RG-5.3 Fiche Hunter (collecte de profil)', () => {

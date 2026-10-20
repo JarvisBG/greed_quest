@@ -1,7 +1,7 @@
 // Statistiques d'une partie pour les rapports (bilan d'un festival, comparaison entre festivals) : tout est relu dans
 // la base (joueurs, terrain, Journal), rien n'est gardé à part. Jamais de position (RG-10.12), même pour le GM.
 import type { ProfilJoueur } from '@gq/shared';
-import { and, asc, eq, inArray, lt, ne } from 'drizzle-orm';
+import { and, asc, eq, inArray, lt, ne, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { balises, joueurs, journal, parties, zones } from '../db/schema.js';
 
@@ -125,7 +125,8 @@ export function calculerStatistiques(d: DonneesStat): Statistiques {
   const avecTel = d.joueurs.filter((j) => j.telephone);
 
   const demarree = d.partie.demarreeA;
-  const derniere = d.lignes.length ? Math.max(...d.lignes.map((l) => l.creeLe.getTime())) : null;
+  // Pas de Math.max(...lignes) : au-delà de ~100 000 lignes (grosse partie, positions comprises), JavaScript refuse.
+  const derniere = d.lignes.length ? d.lignes.reduce((m, l) => Math.max(m, l.creeLe.getTime()), -Infinity) : null;
   return {
     partie: {
       id: d.partie.id,
@@ -179,7 +180,15 @@ export async function statistiquesDe(db: Db, partieId: string): Promise<Statisti
     db.select({ id: zones.id, nom: zones.nom }).from(zones).where(eq(zones.partieId, partieId)),
     db.select({ id: balises.id, libelle: balises.libelle, zoneId: balises.zoneId }).from(balises).where(eq(balises.partieId, partieId)),
     db
-      .select({ creeLe: journal.creeLe, acteurType: journal.acteurType, acteurId: journal.acteurId, action: journal.action, resultat: journal.resultat, details: journal.details })
+      // Le détail des positions (la moitié du journal) n'est pas lu : les statistiques n'en ont pas besoin (RG-10.12).
+      .select({
+        creeLe: journal.creeLe,
+        acteurType: journal.acteurType,
+        acteurId: journal.acteurId,
+        action: journal.action,
+        resultat: journal.resultat,
+        details: sql<Record<string, unknown> | null>`case when ${journal.action} = 'position' then null else ${journal.details} end`,
+      })
       .from(journal)
       .where(eq(journal.partieId, partieId))
       .orderBy(asc(journal.id)),

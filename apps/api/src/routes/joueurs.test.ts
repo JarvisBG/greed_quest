@@ -136,6 +136,18 @@ describe('RG-5.1 amendé (2026-10-20) : code de secours, partie reprise sur un a
     expect((await reprendre('Personne', 'AAAAAA')).json()).toMatchObject({ code: 'code_invalide', message: 'Pseudo ou code de secours incorrect' });
   });
 
+  it('RG-5.1 : le GM lit le code d’un joueur qui l’a oublié (consultation au journal, sans le code) ; pas un PNJ', async () => {
+    const { body, id } = await t.inscrire('Kite');
+    const gm = t.app.gq.tokens.issue({ role: 'gm', sub: 'gm1', partieId: t.partieId });
+    const pnj = t.app.gq.tokens.issue({ role: 'pnj', sub: 'pnj1', partieId: t.partieId });
+    const url = `/parties/${t.partieId}/joueurs/${id}/code-secours`;
+    expect((await t.app.inject({ url, headers: t.bearer(pnj) })).statusCode).toBe(403);
+    expect((await t.app.inject({ url, headers: t.bearer(gm) })).json()).toMatchObject({ ok: true, pseudo: 'Kite', code: body.codeSecours });
+    const [ligne] = (await t.db.select().from(journal).where(eq(journal.action, 'code_secours'))).filter((l) => l.resultat === 'consulte');
+    expect(ligne).toMatchObject({ acteurType: 'gm', details: { joueurId: id } });
+    expect(JSON.stringify(ligne?.details)).not.toContain(body.codeSecours);
+  });
+
   it('RG-5.1 / RG-3.1 : le GM donne un nouveau code (motif au journal, sans le code) ; l’ancien ne marche plus', async () => {
     const { body, id } = await t.inscrire('Cheadle');
     const gm = t.app.gq.tokens.issue({ role: 'gm', sub: 'gm1', partieId: t.partieId });

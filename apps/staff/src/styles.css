@@ -229,6 +229,9 @@
 .msg.ok, .ok { color: var(--success); }
 .msg.ko, .erreur, .ko { color: var(--danger); }
 .info { color: var(--ink-dim); font-size: .85rem; }
+/* RG-5.1 amendé : code de secours lu par le GM */
+.code-secours-gm { color: var(--ink); font-size: .95rem; }
+.code-secours-gm b { font-family: var(--font-mono); font-size: 1.4rem; letter-spacing: .18em; color: var(--ink); }
 .vide { color: var(--ink-faint); font-size: .82rem; }
 .actions-liste { display: grid; gap: 8px; }
 .actions-liste .modal-btn { text-align: left; display: flex; align-items: center; gap: 10px; }

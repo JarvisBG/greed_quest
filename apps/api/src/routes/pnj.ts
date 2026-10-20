@@ -163,6 +163,15 @@ export async function pnjRoutes(app: FastifyInstance) {
     });
   });
 
+  // RG-5.1 amendé : le joueur ne se souvient plus de son code ; le GM le lit dans sa console.
+  // Chaque consultation est écrite au journal (sans le code), pour garder la trace de qui l'a vu.
+  app.get<{ Params: { partieId: string; joueurId: string } }>('/parties/:partieId/joueurs/:joueurId/code-secours', async (req) =>
+    onPlayer(req as unknown as FastifyRequest<P>, ['gm'], req.params.joueurId, async (c, j) => {
+      await c.log({ action: 'code_secours', resultat: 'consulte', details: { joueurId: j.id } });
+      return { ok: true as const, pseudo: j.pseudo, code: j.codeSecours };
+    }),
+  );
+
   // --- Checkpoints PNJ ---
 
   app.post<P>('/parties/:partieId/checkpoints', async (req, reply) => {

@@ -31,6 +31,8 @@ export function Joueur({ eq, cible, setCible }: { eq: Equipe; cible: Cible | nul
   const [filtre, setFiltre] = useState('');
   const [mode, setMode] = useState<Mode>('fiche');
   const [rescan, setRescan] = useState(false);
+  /** RG-5.1 amendé : code de secours lu par le GM (joueur qui l'a oublié). */
+  const [code, setCode] = useState<{ joueurId: string; code: string | null } | null>(null);
   const base = `/parties/${eq.session!.partieId}`;
 
   useEffect(() => setMode(cible?.baliseId ? 'annuler' : 'fiche'), [cible?.joueurId, cible?.baliseId]);
@@ -132,6 +134,29 @@ export function Joueur({ eq, cible, setCible }: { eq: Equipe; cible: Cible | nul
               <button type="button" className="secondaire" onClick={() => setMode('jenny')}>Corriger les jenny</button>
               <button type="button" className="secondaire" onClick={() => setMode('livre')}>Corriger le Book (ajouter / retirer une carte)</button>
               <button type="button" className="secondaire" onClick={() => setMode('carteGm')}>Donner une carte de Maître du jeu</button>
+              <button
+                type="button"
+                className="secondaire"
+                onClick={() =>
+                  void api.get<{ code: string | null }>(`${base}/joueurs/${j.id}/code-secours`).then(
+                    (r) => setCode({ joueurId: j.id, code: r.code }),
+                    () => setCode({ joueurId: j.id, code: null }),
+                  )
+                }
+              >
+                Voir son code de secours
+              </button>
+              {code?.joueurId === j.id && (
+                <p className="info code-secours-gm">
+                  {code.code ? (
+                    <>
+                      Code de secours de {j.pseudo} : <b>{code.code}</b>. Vérifie que c’est bien lui avant de le lui dire (consultation notée au journal).
+                    </>
+                  ) : (
+                    'Code introuvable : donne-lui un nouveau code.'
+                  )}
+                </p>
+              )}
               <button type="button" className="secondaire" onClick={() => setMode('codeSecours')}>Nouveau code de secours (code perdu)</button>
               <button type="button" className="secondaire danger" onClick={() => setMode('disqualifier')}>Disqualifier</button>
             </>

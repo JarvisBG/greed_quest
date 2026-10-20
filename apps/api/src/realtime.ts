@@ -8,8 +8,10 @@
 //   P:gm           GM seulement (positions exactes, RG-10.12)
 //   P:tracker      écran géant, public (fil, classement, balises par zone)
 import type { FastifyInstance } from 'fastify';
+import { eq } from 'drizzle-orm';
 import { Server } from 'socket.io';
 import type { Audience, Emission } from './core/bus.js';
+import { joueurs } from './db/schema.js';
 
 export function roomOf(partieId: string, a: Audience): string {
   return a.type === 'joueur' ? `${partieId}:joueur:${a.id}` : `${partieId}:${a.type}`;
@@ -27,10 +29,15 @@ export function roomsFor(session: { role: 'joueur' | 'pnj' | 'gm'; sub: string; 
 export function attachRealtime(app: FastifyInstance, corsOrigin: string | boolean | string[]): Server {
   const io = new Server(app.server, { cors: { origin: corsOrigin } });
 
-  io.use((socket, next) => {
+  io.use(async (socket, next) => {
     const auth = socket.handshake.auth as { token?: string; tracker?: string };
     const session = auth.token ? app.gq.tokens.verify(auth.token) : null;
     if (auth.token && !session) return next(new Error('Jeton invalide'));
+    // RG-5.1 amendé : l'ancien téléphone d'un joueur passé sur un autre ne reçoit plus rien.
+    if (session?.role === 'joueur') {
+      const [j] = await app.gq.db.select({ version: joueurs.sessionVersion }).from(joueurs).where(eq(joueurs.id, session.sub));
+      if (j && j.version !== (session.v ?? 0)) return next(new Error('Session remplacée'));
+    }
     const rooms = roomsFor(session, auth.tracker);
     if (rooms.length === 0) return next(new Error('Connexion requise'));
     socket.data.rooms = rooms;

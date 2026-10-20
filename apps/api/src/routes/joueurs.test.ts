@@ -91,3 +91,64 @@ describe('RG-5 inscription', () => {
     expect(moi.recharges).toEqual({ pouvoir: null, transformation: 20 * 60_000, reserve: 40 * 60_000, specialisation: 40 * 60_000, zetsu: 10 * 60_000 });
   });
 });
+
+describe('RG-5.1 amendé (2026-10-20) : code de secours, partie reprise sur un autre téléphone', () => {
+  const nouveauTel = 'nouveau-telephone-de-morel-xxx';
+  const reprendre = (pseudo: string, code: string, appareilId = nouveauTel) =>
+    t.app.inject({ method: 'POST', url: `/parties/${t.partieId}/reconnexion-code`, payload: { pseudo, code, appareilId } });
+
+  it('RG-5.1 : l’inscription donne un code de secours de 6 caractères (sans O, 0, I, 1), rappelé par /moi', async () => {
+    const { body, token } = await t.inscrire('Morel');
+    expect(body.codeSecours).toMatch(/^[A-HJ-NP-Z2-9]{6}$/);
+    const moi = (await t.app.inject({ url: `/parties/${t.partieId}/moi`, headers: t.bearer(token) })).json();
+    expect(moi.codeSecours).toBe(body.codeSecours);
+  });
+
+  it('RG-5.1 : pseudo + code (minuscules acceptées) → même joueur sur le nouveau téléphone ; l’ancien est déconnecté ; l’équipe est alertée', async () => {
+    const recues: string[] = [];
+    const off = t.app.gq.bus.on((e) => recues.push(`${e.a.type}:${e.evenement}`));
+    const [j] = await t.db.select().from(joueurs).where(eq(joueurs.pseudo, 'Morel'));
+    const ancien = t.app.gq.tokens.issue({ role: 'joueur', sub: j!.id, partieId: t.partieId, v: 0 });
+    const res = await reprendre('Morel', j!.codeSecours!.toLowerCase());
+    off();
+    expect(res.json()).toMatchObject({ ok: true, joueurId: j!.id });
+    const nouveau = res.json().token as string;
+    expect((await t.app.inject({ url: `/parties/${t.partieId}/moi`, headers: t.bearer(nouveau) })).json().joueur.pseudo).toBe('Morel');
+    const refuse = await t.app.inject({ url: `/parties/${t.partieId}/moi`, headers: t.bearer(ancien) });
+    expect(refuse.statusCode).toBe(401);
+    expect(refuse.json()).toMatchObject({ code: 'session_remplacee', message: 'Ta partie a été ouverte sur un autre téléphone' });
+    expect(recues).toEqual(expect.arrayContaining(['staff:alerte', 'joueur:session_remplacee']));
+    // Le nouveau téléphone se reconnecte aussi tout seul (même appareil).
+    const parAppareil = await t.app.inject({ method: 'POST', url: `/parties/${t.partieId}/reconnexion`, payload: { appareilId: nouveauTel } });
+    expect((await t.app.inject({ url: `/parties/${t.partieId}/moi`, headers: t.bearer(parAppareil.json().token) })).statusCode).toBe(200);
+  });
+
+  it('RG-5.1 : 5 codes faux → 10 min de blocage, même avec le bon code ensuite', async () => {
+    const { body } = await t.inscrire('Pariston');
+    for (let i = 0; i < 4; i++) expect((await reprendre('Pariston', 'AAAAAA', 'tel-de-pariston-xxxxxxx')).json().code).toBe('code_invalide');
+    expect((await reprendre('Pariston', 'AAAAAA', 'tel-de-pariston-xxxxxxx')).json().message).toContain('Trop d’essais');
+    expect((await reprendre('Pariston', body.codeSecours, 'tel-de-pariston-xxxxxxx')).json().code).toBe('code_bloque');
+    t.clock.t += 10 * 60_000 + 1;
+    expect((await reprendre('Pariston', body.codeSecours, 'tel-de-pariston-xxxxxxx')).json().ok).toBe(true);
+  });
+
+  it('RG-5.1 : pseudo inconnu = même message qu’un code faux (on ne devine pas les pseudos)', async () => {
+    expect((await reprendre('Personne', 'AAAAAA')).json()).toMatchObject({ code: 'code_invalide', message: 'Pseudo ou code de secours incorrect' });
+  });
+
+  it('RG-5.1 / RG-3.1 : le GM donne un nouveau code (motif au journal, sans le code) ; l’ancien ne marche plus', async () => {
+    const { body, id } = await t.inscrire('Cheadle');
+    const gm = t.app.gq.tokens.issue({ role: 'gm', sub: 'gm1', partieId: t.partieId });
+    const pnj = t.app.gq.tokens.issue({ role: 'pnj', sub: 'pnj1', partieId: t.partieId });
+    const url = `/parties/${t.partieId}/joueurs/code-secours`;
+    expect((await t.app.inject({ method: 'POST', url, headers: t.bearer(pnj), payload: { joueurId: id, motif: 'Code perdu' } })).statusCode).toBe(403);
+    const r = (await t.app.inject({ method: 'POST', url, headers: t.bearer(gm), payload: { joueurId: id, motif: 'Code perdu' } })).json();
+    expect(r).toMatchObject({ ok: true, pseudo: 'Cheadle' });
+    expect(r.code).not.toBe(body.codeSecours);
+    const lignes = await t.db.select().from(journal).where(eq(journal.action, 'code_secours'));
+    expect(lignes.at(-1)).toMatchObject({ motif: 'Code perdu' });
+    expect(JSON.stringify(lignes.at(-1)?.details)).not.toContain(r.code);
+    expect((await reprendre('Cheadle', body.codeSecours, 'tel-de-cheadle-xxxxxxxxx')).json().code).toBe('code_invalide');
+    expect((await reprendre('Cheadle', r.code, 'tel-de-cheadle-xxxxxxxxx')).json().ok).toBe(true);
+  });
+});

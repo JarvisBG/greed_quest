@@ -105,6 +105,13 @@ export const joueurs = pgTable(
     appareilId: text('appareil_id').notNull(),
     /** Secret de la licence QR tournante (RG-5.2). */
     licenceSecret: text('licence_secret').notNull(),
+    /** RG-5.1 amendé (2026-10-20) : code de secours pour retrouver sa partie sur un autre téléphone. */
+    codeSecours: text('code_secours'),
+    /** Incrémentée à chaque changement de téléphone : les jetons d'avant sont refusés (ancien téléphone déconnecté). */
+    sessionVersion: integer('session_version').notNull().default(0),
+    /** Essais ratés du code de secours, et blocage (heure réelle, ms) après 5 essais. */
+    echecsCode: integer('echecs_code').notNull().default(0),
+    codeBloqueJusqua: bigint('code_bloque_jusqua', { mode: 'number' }),
     nen: text('nen').$type<NenType>(),
     /** RG-5.3 : bonnes réponses à l'Examen, null tant qu'il n'est pas passé. */
     examenScore: integer('examen_score'),

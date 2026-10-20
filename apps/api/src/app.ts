@@ -65,6 +65,8 @@ declare module 'fastify' {
   }
 }
 
+export const SESSION_REMPLACEE = () => new Refus('session_remplacee', 'Ta partie a été ouverte sur un autre téléphone', 401);
+
 /** Intentions permises avant la Fiche Hunter (RG-5.3). */
 const SANS_FICHE = new Set(['fiche', 'nen', 'nen/secret', 'position', 'abandon'].map((r) => `/parties/:partieId/${r}`));
 
@@ -97,10 +99,13 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
 
   // RG-5.3 (amendement 2026-10-18) : sans Fiche Hunter remplie, un joueur ne fait rien d'autre que la remplir, passer
   // le test de Nen, envoyer sa position ou abandonner. Un seul point de contrôle pour toutes les intentions.
+  // RG-5.1 amendé (2026-10-20) : un jeton d'avant le dernier changement de téléphone est refusé (ancien téléphone déconnecté).
   app.addHook('preHandler', async (req) => {
     const s = req.session;
-    if (s?.role !== 'joueur' || req.method === 'GET' || SANS_FICHE.has(req.routeOptions.url ?? '')) return;
-    const [j] = await deps.db.select({ profil: joueurs.profil }).from(joueurs).where(eq(joueurs.id, s.sub));
+    if (s?.role !== 'joueur') return;
+    const [j] = await deps.db.select({ profil: joueurs.profil, version: joueurs.sessionVersion }).from(joueurs).where(eq(joueurs.id, s.sub));
+    if (j && j.version !== (s.v ?? 0)) throw SESSION_REMPLACEE();
+    if (req.method === 'GET' || SANS_FICHE.has(req.routeOptions.url ?? '')) return;
     if (j && !j.profil) throw new Refus('fiche_requise', 'Remplis d’abord ta fiche Hunter', 403);
   });
 

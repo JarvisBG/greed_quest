@@ -40,6 +40,14 @@ export const Inscription = z.object({
 export type Inscription = z.infer<typeof Inscription>;
 
 export const Reconnexion = z.object({ appareilId: z.string().min(16).max(100) });
+/** RG-5.1 amendé (2026-10-20) : retrouver sa partie sur un autre téléphone avec son pseudo et son code de secours. */
+export const ReconnexionCode = z.object({
+  pseudo: z.string().trim().min(1).max(20),
+  code: z.string().trim().min(1).max(12),
+  appareilId: z.string().min(16).max(100),
+});
+/** RG-5.1 amendé : nouveau code de secours donné par le GM (motif obligatoire, RG-3.1). */
+export const NouveauCodeSecours = z.object({ joueurId: z.string().min(1).max(100), motif: z.string().trim().min(3).max(200) });
 
 export const ReponsesQuiz = z.object({ reponses: z.array(z.number().int().min(0)).max(10) });
 /** RG-5.4 : réponse du Spécialiste à la question secrète de Wing. */

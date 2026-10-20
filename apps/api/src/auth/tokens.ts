@@ -8,6 +8,8 @@ export interface Session {
   /** Id du joueur ou du membre de l'équipe. */
   sub: string;
   partieId: string;
+  /** Joueur : version de session (RG-5.1 amendé), absente des jetons d'avant = 0. */
+  v?: number;
 }
 
 const b64 = (s: string | Buffer) => Buffer.from(s).toString('base64url');

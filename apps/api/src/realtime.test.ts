@@ -43,6 +43,20 @@ describe('Diffusion temps réel (matrice REGLES.md)', () => {
     expect((await client({ token: 'abc.def' })).erreur).toBe('Jeton invalide');
   });
 
+  it('RG-5.1 amendé : partie reprise sur un autre téléphone → l’ancien est prévenu, puis ne peut plus se connecter au direct', async () => {
+    const zoldyck = await t.inscrire('Zoldyck');
+    const ancien = await client({ token: zoldyck.token });
+    const r = await t.app.inject({
+      method: 'POST',
+      url: `/parties/${t.partieId}/reconnexion-code`,
+      payload: { pseudo: 'Zoldyck', code: zoldyck.body.codeSecours, appareilId: 'nouveau-tel-de-zoldyck-xxxx' },
+    });
+    await pause();
+    expect(ancien.evenements()).toContain('session_remplacee');
+    expect((await client({ token: zoldyck.token })).erreur).toBe('Session remplacée');
+    expect((await client({ token: r.json().token })).erreur).toBeNull();
+  });
+
   it('tirage : détail au joueur seulement, journal à l’équipe, progression à l’écran ; position exacte au GM seulement (RG-10.12)', async () => {
     const gon = await t.inscrire('Gon');
     const kirua = await t.inscrire('Kirua');

@@ -11,6 +11,7 @@ import {
   DisqualificationIntent,
   ExpertiseIntent,
   GelSanctionIntent,
+  NouveauCodeSecours,
 } from '@gq/shared';
 import { and, eq } from 'drizzle-orm';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
@@ -20,10 +21,10 @@ import { verifyLicence } from '../core/licence.js';
 import { paramsOf } from '../core/params.js';
 import type { ActionCtx } from '../core/runner.js';
 import { catalogForDraw, limitesOf, loadBook, loadCatalogue, loadJoueur, saveBooks, updateJoueur, vueCarte, type JoueurRow } from '../core/state.js';
-import { checkpoints, zones } from '../db/schema.js';
+import { checkpoints, joueurs, zones } from '../db/schema.js';
 import { introuvable } from '../errors.js';
 import { refus, send } from '../http.js';
-import { newId } from '../ids.js';
+import { newCodePartie, newId } from '../ids.js';
 import { parse } from '../validation.js';
 
 type P = { Params: { partieId: string } };
@@ -147,6 +148,18 @@ export async function pnjRoutes(app: FastifyInstance) {
       await c.log({ action: 'correction_jenny', resultat: 'ok', motif: input.motif, details: { joueurId: j.id, delta: input.delta, jenny } });
       c.emit({ type: 'joueur', id: j.id }, 'correction', { motif: input.motif, jenny, delta: input.delta });
       return { ok: true as const, jenny };
+    });
+  });
+
+  // RG-5.1 amendé (2026-10-20) : le joueur a perdu son code de secours, le GM lui en donne un nouveau (l'ancien ne marche plus).
+  // Le code n'est rendu qu'au GM, jamais écrit au journal.
+  app.post<P>('/parties/:partieId/joueurs/code-secours', async (req) => {
+    const input = parse(NouveauCodeSecours, req.body);
+    return onPlayer(req, ['gm'], input.joueurId, async (c, j) => {
+      const code = newCodePartie();
+      await c.tx.update(joueurs).set({ codeSecours: code, echecsCode: 0, codeBloqueJusqua: null }).where(eq(joueurs.id, j.id));
+      await c.log({ action: 'code_secours', resultat: 'nouveau', motif: input.motif, details: { joueurId: j.id } });
+      return { ok: true as const, pseudo: j.pseudo, code };
     });
   });
 

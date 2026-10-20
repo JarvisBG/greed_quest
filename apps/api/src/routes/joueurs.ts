@@ -19,7 +19,7 @@ import {
   scoreExamen,
   validQuizAnswers,
 } from '@gq/engine';
-import { FicheHunter, Inscription, LicenceScan, Reconnexion, ReponseSecrete, ReponsesQuiz, telephoneCamerounais } from '@gq/shared';
+import { FicheHunter, Inscription, LicenceScan, Reconnexion, ReconnexionCode, ReponseSecrete, ReponsesQuiz, codePartie, telephoneCamerounais } from '@gq/shared';
 import { and, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { STAFF, requireRole } from '../auth/guard.js';
@@ -30,7 +30,7 @@ import { lifecycleOf } from '../core/partie.js';
 import { joueurs, livres, parties, sorts } from '../db/schema.js';
 import { introuvable } from '../errors.js';
 import { refus, send } from '../http.js';
-import { newId, newSecret } from '../ids.js';
+import { newCodePartie, newId, newSecret } from '../ids.js';
 import { parse } from '../validation.js';
 
 type P = { Params: { partieId: string } };
@@ -39,6 +39,10 @@ const sansReponse = <T extends { bonne?: number }>(q: T) => {
   const { bonne: _b, ...reste } = q;
   return reste;
 };
+
+/** RG-5.1 amendé : 5 essais ratés du code de secours, puis 10 min de blocage pour ce pseudo. */
+export const ESSAIS_CODE = 5;
+export const BLOCAGE_CODE_MS = 10 * 60_000;
 
 export async function joueursRoutes(app: FastifyInstance) {
   const { runner, tokens } = app.gq;
@@ -74,12 +78,14 @@ export async function joueursRoutes(app: FastifyInstance) {
       const enRetard = c.partie.etat !== 'inscriptions';
       const rattrapage = enRetard ? catchUpBonus(c.now, p.rattrapageJParMin) : 0;
       const id = newId();
+      const codeSecours = newCodePartie(); // RG-5.1 amendé : même alphabet que les codes de partie (ni O, 0, I, 1)
       await c.tx.insert(joueurs).values({
         id,
         partieId,
         pseudo: body.pseudo,
         appareilId: body.appareilId,
         licenceSecret: newSecret(),
+        codeSecours,
         jenny: p.kitJenny + rattrapage,
         position: { ...body.position, a: c.now },
         derniereActionA: c.now,
@@ -98,7 +104,8 @@ export async function joueursRoutes(app: FastifyInstance) {
       return {
         ok: true as const,
         joueurId: id,
-        token: tokens.issue({ role: 'joueur', sub: id, partieId }),
+        token: tokens.issue({ role: 'joueur', sub: id, partieId, v: 0 }),
+        codeSecours,
         kit: { jenny: p.kitJenny, rattrapage, sort },
       };
     });
@@ -109,11 +116,52 @@ export async function joueursRoutes(app: FastifyInstance) {
   app.post<P>('/parties/:partieId/reconnexion', async (req, reply) => {
     const { appareilId } = parse(Reconnexion, req.body);
     const [j] = await app.gq.db
-      .select({ id: joueurs.id })
+      .select({ id: joueurs.id, v: joueurs.sessionVersion })
       .from(joueurs)
       .where(and(eq(joueurs.partieId, req.params.partieId), eq(joueurs.appareilId, appareilId)));
     if (!j) return send(reply, refus('inconnu', 'Aucun joueur inscrit avec ce téléphone'));
-    return { ok: true, joueurId: j.id, token: tokens.issue({ role: 'joueur', sub: j.id, partieId: req.params.partieId }) };
+    return { ok: true, joueurId: j.id, token: tokens.issue({ role: 'joueur', sub: j.id, partieId: req.params.partieId, v: j.v }) };
+  });
+
+  // RG-5.1 amendé (2026-10-20) : partie reprise sur un autre téléphone (batterie à plat, écran cassé, autre navigateur)
+  // avec le pseudo et le code de secours. Le nouveau téléphone remplace l'ancien, qui est déconnecté ; l'équipe est prévenue.
+  app.post<P>('/parties/:partieId/reconnexion-code', async (req, reply) => {
+    const { partieId } = req.params;
+    const body = parse(ReconnexionCode, req.body);
+    const r = await runner.run(partieId, { type: 'systeme', id: null }, async (c) => {
+      const [j] = await c.tx.select().from(joueurs).where(and(eq(joueurs.partieId, partieId), eq(joueurs.pseudo, body.pseudo)));
+      const deny = async (code: string, message: string) => {
+        await c.log({ action: 'reconnexion', resultat: 'refus', details: { pseudo: body.pseudo, code, ...(j ? { joueurId: j.id } : {}) } });
+        return refus(code, message);
+      };
+      if (!j) return deny('code_invalide', 'Pseudo ou code de secours incorrect');
+      const maintenant = app.gq.now();
+      if ((j.codeBloqueJusqua ?? 0) > maintenant) {
+        return deny('code_bloque', `Trop d’essais : réessaie dans ${Math.ceil(((j.codeBloqueJusqua ?? 0) - maintenant) / 60_000)} min, ou va voir le Game Master`);
+      }
+      if (!j.codeSecours || codePartie(body.code) !== j.codeSecours) {
+        const echecs = j.echecsCode + 1;
+        const bloque = echecs >= ESSAIS_CODE;
+        await c.tx
+          .update(joueurs)
+          .set(bloque ? { echecsCode: 0, codeBloqueJusqua: maintenant + BLOCAGE_CODE_MS } : { echecsCode: echecs })
+          .where(eq(joueurs.id, j.id));
+        return deny('code_invalide', bloque ? 'Trop d’essais : réessaie dans 10 min, ou va voir le Game Master' : 'Pseudo ou code de secours incorrect');
+      }
+      const [autre] = await c.tx
+        .select({ id: joueurs.id })
+        .from(joueurs)
+        .where(and(eq(joueurs.partieId, partieId), eq(joueurs.appareilId, body.appareilId)));
+      if (autre && autre.id !== j.id) return deny('appareil_deja_inscrit', 'Ce téléphone joue déjà avec un autre pseudo dans cette partie');
+      const v = j.sessionVersion + 1;
+      await c.tx.update(joueurs).set({ appareilId: body.appareilId, sessionVersion: v, echecsCode: 0, codeBloqueJusqua: null }).where(eq(joueurs.id, j.id));
+      await c.log({ action: 'reconnexion', resultat: 'ok', details: { joueurId: j.id, pseudo: j.pseudo } });
+      await alerte(c, 'changement_telephone', { joueurId: j.id, pseudo: j.pseudo });
+      // L'ancien téléphone, s'il est encore ouvert, l'apprend tout de suite (sinon à sa prochaine demande).
+      c.emit({ type: 'joueur', id: j.id }, 'session_remplacee', {});
+      return { ok: true as const, joueurId: j.id, token: tokens.issue({ role: 'joueur', sub: j.id, partieId, v }) };
+    });
+    return send(reply, r);
   });
 
   // RG-5.3 / RG-5.4 : questionnaires (sans les bonnes réponses).
@@ -212,6 +260,8 @@ export async function joueursRoutes(app: FastifyInstance) {
     return {
       ok: true,
       joueur: { id: j.id, pseudo: j.pseudo, jenny: j.jenny, nen: j.nen, pouvoirSpe: j.pouvoirSpe, statut: j.statut, examenFait: j.examenScore !== null, ficheFaite: j.profil !== null },
+      // RG-5.1 amendé : code de secours, rappelé sur la licence.
+      codeSecours: j.codeSecours,
       // Spécialisation : Zetsu en cours, Fortune armée (amendement 2026-10-10).
       specialisation: { zetsu: Math.max(0, (j.zetsuJusqua ?? 0) - now), fortuneArmee: j.fortuneArmee },
       // Amendements 2026-10-10 : villes déjà visitées (Retour), visite à distance en cours (ms restantes), Accompagnement subi.

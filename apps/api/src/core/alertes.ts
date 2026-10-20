@@ -7,7 +7,8 @@ export type AlerteType =
   | 'photo_partagee'
   | 'echanges_desequilibres'
   | 'rythme_scan'
-  | 'sans_position';
+  | 'sans_position'
+  | 'changement_telephone';
 
 export async function alerte(c: ActionCtx, type: AlerteType, details: Record<string, unknown>): Promise<void> {
   await c.log({ action: 'alerte', resultat: type, details });

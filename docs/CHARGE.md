@@ -18,18 +18,23 @@ un PNJ à l'Arène. C'est plutôt plus actif qu'une vraie partie.
 
 ## Résultats (partie de 120 min)
 
+Mesures du 2026-10-20, après les deux séries d'allègements (écran géant ouvert, sauf mention) :
+
 | Joueurs | Lu dans Supabase | Parties / mois (5 Go, marge 30 %) | Place en base | Requêtes base | Calcul serveur (PC) |
 |---|---|---|---|---|---|
-| 10 | 52 Mo | ≈ 70 | 5 Mo | 10 /s | 0,4 % d'un cœur |
-| 30 | 162 Mo | ≈ 23 | 11 Mo | 25 /s | 1,1 % |
-| 80 | 531 Mo | ≈ 7 | 27 Mo | 63 /s | 2,3 % |
+| 10 | 47 Mo | ≈ 80 | 5 Mo | 11 /s | 0,4 % d'un cœur |
+| 30 | 145 Mo | ≈ 26 | 11 Mo | 27 /s | 1,0 % |
+| 80 | 456 Mo | ≈ 8 | 27 Mo | 69 /s | 2,2 % |
+| 80, sans écran géant | 404 Mo | ≈ 9 | 27 Mo | 69 /s | 2,3 % |
+
+Avant la seconde série (écran géant, classement, sorts) : 52 / 162 / 531 Mo.
 
 **Avant l'optimisation du 2026-10-20** : 80 joueurs lisaient déjà 767 Mo dans les **30 premières minutes**
 (et ça grossissait avec la partie) : une seule partie de 2 h à 80 joueurs aurait vidé le quota du mois.
 Gain mesuré à 80 joueurs sur 30 min : 767 → 150 Mo ; à 30 joueurs sur 20 min : 95 → 25 Mo.
 
 ### Lecture
-- **Supabase, trafic** : le point à surveiller. ≈ 7 grosses parties (80 joueurs) ou ≈ 23 parties de 30 par mois.
+- **Supabase, trafic** : le point à surveiller. ≈ 8 grosses parties (80 joueurs, 9 sans écran géant) ou ≈ 26 parties de 30 par mois.
   Regarder chaque mois *Supabase → Usage → Egress*.
 - **Supabase, place** : 500 Mo ≈ 18 parties de 80 joueurs (le journal des positions en fait les trois quarts).
   Au-delà, il faudra supprimer les vieilles parties de test ou alléger leur journal (pas encore d'outil dans la console).
@@ -54,6 +59,9 @@ Lectures de la base allégées :
   les joueurs partis qui détiennent une SS ou une carte du Maître du jeu ; réserve de Matérialisation : seuls ces joueurs.
 - Tirage : la base compte elle-même les exemplaires en circulation (une ligne par carte au lieu d'une par exemplaire).
 - Paramètres : deux comptages en une requête ; Livre : pseudos seuls ; index `journal_action` (migration 0019).
+- Seconde série (2026-10-20, même soir) : écran géant calculé seulement s'il est connecté (le temps réel sait qui
+  écoute : `bus.ecoute`) ; classement lu sur les cartes seules (6 colonnes, résultat identique, testé) ; liste
+  « à portée » des sorts et suivi d'Accompagnement sur les colonnes utiles. 80 joueurs : 531 → 456 Mo (404 sans écran).
 
 Fronts :
 - App joueur : une surenchère ou un coup de raid ne fait plus recharger le Livre de tous les joueurs ; seuls ceux

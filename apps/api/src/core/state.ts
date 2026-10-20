@@ -69,6 +69,32 @@ export async function loadBooks(db: DbOrTx, joueurIds: readonly string[]): Promi
   return books;
 }
 
+/**
+ * Livres réduits à ce que lit le classement (RG-13.5) : les cartes seulement, avec carte, heure, contrefaçon, marque
+ * et « cachée ». Sorts, objets et pertes n'y changent rien. Recalculé toutes les 30 s pour l'écran géant : offre gratuite.
+ */
+export async function loadCartesClassement(db: DbOrTx, joueurIds: readonly string[]): Promise<Map<string, Book>> {
+  const books = new Map<string, { items: BookItem[]; pertes: Perte[] }>(joueurIds.map((id) => [id, { items: [], pertes: [] }]));
+  if (joueurIds.length === 0) return books;
+  const rows = await db
+    .select({ id: exemplaires.id, joueurId: exemplaires.joueurId, carteId: exemplaires.carteId, obtenuA: exemplaires.obtenuA, faux: exemplaires.faux, marque: exemplaires.marque, cachee: exemplaires.cachee })
+    .from(exemplaires)
+    .where(inArray(exemplaires.joueurId, [...joueurIds]));
+  for (const r of rows) {
+    books.get(r.joueurId)?.items.push({
+      kind: 'carte',
+      id: r.id,
+      cardId: r.carteId,
+      origine: { type: 'balise', baliseId: '' }, // non lue par le classement
+      obtenuA: r.obtenuA,
+      ...(r.faux ? { faux: r.faux } : {}),
+      ...(r.marque ? { marque: r.marque } : {}),
+      ...(r.cachee ? { cachee: true as const } : {}),
+    });
+  }
+  return books;
+}
+
 export async function loadBook(db: DbOrTx, joueurId: string): Promise<Book> {
   return (await loadBooks(db, [joueurId])).get(joueurId)!;
 }

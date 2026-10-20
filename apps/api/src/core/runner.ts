@@ -27,6 +27,8 @@ export interface ActionCtx {
   log(e: LogEntry): Promise<JournalRow>;
   /** Diffusé seulement si la transaction est validée. */
   emit(a: Audience, evenement: string, data: unknown): void;
+  /** Quelqu'un est-il connecté pour recevoir cette audience (écran géant ouvert…) ? */
+  ecoute(a: Audience): boolean;
 }
 
 export class PartieIntrouvable extends Refus {
@@ -86,6 +88,7 @@ export class Runner {
             return row;
           },
           emit: (a, evenement, data) => emissions.push({ partieId, a, evenement, data }),
+          ecoute: (a) => this.bus.ecoute(partieId, a),
         };
         const r = await fn(ctx);
         // Fil de l'écran gardé en base (rejoué à l'ouverture de l'écran, GET /ecran), dans la même transaction.

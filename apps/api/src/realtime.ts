@@ -48,6 +48,7 @@ export function attachRealtime(app: FastifyInstance, corsOrigin: string | boolea
     for (const r of socket.data.rooms as string[]) void socket.join(r);
   });
 
+  app.gq.bus.ecoute = (partieId, a) => (io.sockets.adapter.rooms.get(roomOf(partieId, a))?.size ?? 0) > 0;
   const off = app.gq.bus.on((e: Emission) => {
     io.to(roomOf(e.partieId, e.a)).emit(e.evenement, e.data);
   });

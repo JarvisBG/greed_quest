@@ -23,6 +23,8 @@ export async function testApp(o: DemoOptions & { seed?: number } = {}) {
   const t = await testDb({ centre: CENTRE, ...o });
   const clock = { t: 1_000_000 };
   const app = await buildApp({ db: t.db, now: () => clock.t, rng: seededRng(o.seed ?? 42), adminCode: 'orga' });
+  // Les tests écoutent le bus directement (sans téléphone ni écran connecté) : tout est réputé écouté.
+  app.gq.bus.ecoute = () => true;
   const bearer = (token: string) => ({ authorization: `Bearer ${token}` });
   let n = 0;
   return {

@@ -1,7 +1,8 @@
 // Banc de charge : une partie entière jouée par des joueurs simulés, contre la vraie API (PGlite en mémoire).
 // Mesure, par type d'action : requêtes envoyées à la base, octets relus (≈ trafic sortant de Supabase),
 // temps de calcul du serveur hors base (≈ CPU de Render), messages temps réel, mémoire.
-// `pnpm --filter @gq/api charge [joueurs=30] [minutes=120] [--avant]` ; --avant simule les fronts d'avant l'optimisation.
+// `pnpm --filter @gq/api charge [joueurs=30] [minutes=120] [--avant] [--sans-ecran]` ; --avant simule les fronts d'avant
+// l'optimisation ; --sans-ecran, une partie sans écran géant ouvert.
 import { PGlite } from '@electric-sql/pglite';
 import { pick, seededRng } from '@gq/engine';
 import { and, eq, sql } from 'drizzle-orm';
@@ -17,6 +18,8 @@ const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
 const NB = Number(args[0] ?? 30);
 const MINUTES = Number(args[1] ?? 120);
 const AVANT = process.argv.includes('--avant');
+/** Partie sans écran géant ouvert (classement et carte de chaleur non calculés). */
+const SANS_ECRAN = process.argv.includes('--sans-ecran');
 const TICK_MS = 5_000;
 
 // --- Compteurs, par étiquette (l'action en cours) ---
@@ -88,6 +91,7 @@ const partieId = ids.partieId;
 const clock = { t: 1_000_000 };
 const app = await buildApp({ db, now: () => clock.t, rng: seededRng(7), adminCode: 'orga', realtime: false });
 const rng = seededRng(99);
+if (SANS_ECRAN) app.gq.bus.ecoute = (_p, a) => a.type !== 'tracker';
 
 // Temps réel : messages et octets envoyés aux téléphones, consoles et écran (≈ trafic sortant de Render).
 const PROFIL = { age: '18-24', genre: 'garcon', occupation: 'etudiant', ville: 'douala', quartier: 'Akwa', reseaux: ['whatsapp'], source: 'ami' };
@@ -193,7 +197,7 @@ const dureeS = (performance.now() - t0) / 1000;
 const Mo = (o: number) => (o / 1024 / 1024).toFixed(1);
 const lignes = [...stats.entries()].filter(([k]) => k !== 'preparation').sort((a, b) => b[1].octets - a[1].octets);
 let tot = { n: 0, requetes: 0, octets: 0, calculMs: 0 };
-console.log(`\nPartie simulée : ${NB} joueurs, ${MINUTES} min de jeu (${fin?.etat}), ${dureeS.toFixed(0)} s de calcul${AVANT ? ', fronts AVANT optimisation' : ''}\n`);
+console.log(`\nPartie simulée : ${NB} joueurs, ${MINUTES} min de jeu (${fin?.etat}), ${dureeS.toFixed(0)} s de calcul${AVANT ? ', fronts AVANT optimisation' : ''}${SANS_ECRAN ? ', sans écran géant' : ', écran géant ouvert'}\n`);
 console.log('Action'.padEnd(30), 'Nombre'.padStart(8), 'Req. base'.padStart(10), 'Lu (Mo)'.padStart(9), 'Req/act'.padStart(8), 'Ko/act'.padStart(8), 'Calcul ms/act'.padStart(14));
 for (const [k, s] of lignes) {
   const calcul = s.totalMs - s.baseMs;

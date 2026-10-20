@@ -42,6 +42,17 @@ describe('tâches planifiées', () => {
     expect(recues.some((e) => e.a === 'tracker' && e.evenement === 'classement')).toBe(true);
   });
 
+  it('RG-13.7 : classement et carte de chaleur de l’écran géant calculés seulement si un écran est ouvert (offre gratuite)', async () => {
+    const ecran = () => recues.filter((r) => r.a === 'tracker' && (r.evenement === 'classement' || r.evenement === 'heatmap')).length;
+    const avant = ecran();
+    t.app.gq.bus.ecoute = (_p, a) => a.type !== 'tracker'; // aucun écran géant connecté
+    await tickA(1);
+    expect(ecran()).toBe(avant);
+    t.app.gq.bus.ecoute = () => true; // un écran s'ouvre
+    await tickA(1.6);
+    expect(ecran()).toBe(avant + 2);
+  });
+
   it('RG-9.3 : la vague de boutique est ouverte avec son stock', async () => {
     expect((await partie()).vagueBoutique).toMatchObject({ index: 0, stock: 2 });
   });

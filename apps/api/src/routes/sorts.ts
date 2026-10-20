@@ -22,7 +22,7 @@ import {
 } from '@gq/engine';
 import type { NenType } from '@gq/shared';
 import { SortIntent, TransformationIntent } from '@gq/shared';
-import { and, desc, eq, gt, isNotNull, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, isNotNull, ne, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { requireRole } from '../auth/guard.js';
 import { ENGAGEE, activeSession, engagedItems } from '../core/echanges.js';
@@ -39,13 +39,13 @@ import {
   loadBooks,
   loadCatalogue,
   loadJoueur,
-  loadJoueurs,
+
   saveBooks,
   updateJoueur,
   vueCarte,
   type JoueurRow,
 } from '../core/state.js';
-import { journal, zones } from '../db/schema.js';
+import { joueurs, journal, zones } from '../db/schema.js';
 import { introuvable } from '../errors.js';
 import { refus, send } from '../http.js';
 import { newId } from '../ids.js';
@@ -129,7 +129,12 @@ export async function sortsRoutes(app: FastifyInstance) {
       if (!moi) throw introuvable('Joueur');
       const p = await paramsOf(c.tx, c.partie);
       // Zetsu (Spécialisation) : un joueur invisible n'apparaît dans aucune liste.
-      const autres = (await loadJoueurs(c.tx, partieId, [moi.id])).filter((j) => !EXCLUS.has(j.statut) && !estInvisible(j, c.now));
+      // Colonnes utiles seulement (pas la fiche entière de chaque joueur) : offre gratuite de la base.
+      const lus = await c.tx
+        .select({ id: joueurs.id, pseudo: joueurs.pseudo, statut: joueurs.statut, position: joueurs.position, zetsuJusqua: joueurs.zetsuJusqua })
+        .from(joueurs)
+        .where(and(eq(joueurs.partieId, partieId), ne(joueurs.id, moi.id)));
+      const autres = lus.filter((j) => !EXCLUS.has(j.statut) && !estInvisible(j, c.now));
       const proches = playersInRange(moi, autres, c.now, rangeOf(p));
       // `tous` : cibles du Radar (RG-10, « liste joueurs ») et de l'Émission (hors portée, RG-10.1) ; pseudos seulement.
       const tous = autres.map((j) => ({ id: j.id, pseudo: j.pseudo })).sort((a, b) => a.pseudo.localeCompare(b.pseudo, 'fr'));
@@ -145,7 +150,10 @@ export async function sortsRoutes(app: FastifyInstance) {
     const { partieId } = req.params;
     const s = requireRole(req, partieId, 'joueur');
     return runner.run(partieId, { type: 'joueur', id: s.sub }, async (c) => {
-      const cible = (await loadJoueurs(c.tx, partieId)).find((x) => x.accompagnePar === s.sub && x.accompagneJusqua !== null && x.accompagneJusqua > c.now);
+      const [cible] = await c.tx
+        .select()
+        .from(joueurs)
+        .where(and(eq(joueurs.partieId, partieId), eq(joueurs.accompagnePar, s.sub), gt(joueurs.accompagneJusqua, c.now)));
       return { ok: true as const, accompagnement: cible ? { ...positionAccompagnee(cible), resteMs: cible.accompagneJusqua! - c.now } : null };
     });
   });

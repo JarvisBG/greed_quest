@@ -70,7 +70,8 @@ export async function tickPartie(c: ActionCtx): Promise<void> {
   await expireTrades(c);
   await shopWave(c);
   if (taches.ecranA === undefined || c.now - taches.ecranA >= SCREEN_REFRESH_MS) {
-    await screen(c, taches.ecranA ?? c.now);
+    // Écran géant fermé : rien à calculer (il relit tout à son ouverture, GET /ecran).
+    if (c.ecoute({ type: 'tracker' })) await screen(c, taches.ecranA ?? c.now);
     taches.ecranA = c.now;
   }
   await agenda(c, taches);

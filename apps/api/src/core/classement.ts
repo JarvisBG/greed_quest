@@ -2,15 +2,18 @@
 import { rank, type RankingEntry } from '@gq/engine';
 import type { DbOrTx } from '../db/client.js';
 import type { PartieRow } from './partie.js';
-import { loadBooks, loadCatalogue, loadJoueurs } from './state.js';
+import { eq } from 'drizzle-orm';
+import { joueurs as tJoueurs } from '../db/schema.js';
+import { loadCartesClassement, loadCatalogue } from './state.js';
 
 export interface LigneClassement extends RankingEntry {
   pseudo: string;
 }
 
 export async function computeRanking(db: DbOrTx, partie: PartieRow, mode: 'live' | 'final'): Promise<LigneClassement[]> {
-  const joueurs = await loadJoueurs(db, partie.id);
-  const books = await loadBooks(db, joueurs.map((j) => j.id));
+  // Lu toutes les 30 s pour l'écran géant : seulement ce que le classement utilise (offre gratuite de la base).
+  const joueurs = await db.select({ id: tJoueurs.id, pseudo: tJoueurs.pseudo, statut: tJoueurs.statut, jenny: tJoueurs.jenny }).from(tJoueurs).where(eq(tJoueurs.partieId, partie.id));
+  const books = await loadCartesClassement(db, joueurs.map((j) => j.id));
   const cat = await loadCatalogue(db, partie.id);
   const pseudo = new Map(joueurs.map((j) => [j.id, j.pseudo]));
   const entries = rank(

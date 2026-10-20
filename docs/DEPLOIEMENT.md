@@ -15,6 +15,7 @@ Pourquoi pas Supabase seul : les règles du jeu tournent dans un serveur Node (`
 (tâches planifiées, Socket.IO). Supabase garde les données, Render fait tourner le serveur.
 
 ## Limites des offres gratuites
+Mesures, nombre de parties possibles par mois et consignes du jour J : `docs/CHARGE.md`.
 - **Render s'endort** après 15 min sans visite ; le premier qui ouvre l'app attend ~1 min. La console et l'écran
   géant le gardent éveillé tant qu'ils sont ouverts (appel à `/sante` toutes les 10 min). Ouvrir la console
   quelques minutes avant la partie. 750 h gratuites par mois : un seul service gratuit allumé en continu.

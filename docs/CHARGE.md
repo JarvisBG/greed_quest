@@ -61,6 +61,17 @@ Fronts :
   au hasard (pas toutes dans la même seconde).
 - Console : l'Arène ne se recharge plus à chaque ligne du journal (scans, positions…), seulement aux lignes de l'Arène.
 
+## Côté téléphone (mesuré le 2026-10-20)
+Edge piloté (CDP), écran 390 × 844, processeur ralenti 6× (téléphone d'entrée de gamme), partie en cours avec 29 bots.
+- **Premier lancement** : 405 Ko à télécharger (code 272 Ko compressé, styles 50 Ko, polices) ; ≈ 5-7 s en 3G avant
+  le premier affichage ; l'exécution du code ne prend que 0,16 s (0,28 s à 6×). Les lancements suivants partent du cache.
+  Ensuite, l'app met en cache les illustrations des cartes (≈ 3,2 Mo) en arrière-plan : à savoir pour les forfaits data.
+- **Accueil en jeu** : l'onde « Tu es ici » de la petite carte tournait sans fin dans le SVG de l'île (filtres de
+  turbulence) et le faisait redessiner 60 fois par seconde : 487 ms de travail par seconde et 31 saccades en 30 s.
+  Elle fait maintenant 3 pulsations à chaque nouvelle position puis s'arrête : 153 ms/s, 2 saccades.
+- Book, Sorts, Échanges : 118 à 143 ms/s, aucune saccade. Masadora 341 ms/s et Antokiba 239 ms/s (décors animés,
+  aucune saccade) : laissés tels quels.
+
 ## Consignes pour le jour de la partie
 1. **Ne rien pousser sur `refonte-joueur` pendant une partie** : Render redéploie à chaque push et redémarre le
    serveur (≈ 1 min de coupure, les téléphones se reconnectent seuls, les scans hors ligne sont rejoués).

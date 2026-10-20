@@ -165,10 +165,13 @@ export function Divination({
             )}
           </div>
         )}
-        {apres('hexagone') && <HexagoneNen type={nen} />}
-        <div className={`pouvoir${spe ? ' secret' : ''}`}>
-          <h2>{spe ? `Ton pouvoir secret : ${spe.nom}` : `Pouvoir de ${n.nom}`}</h2>
-          <p>{spe ? `${spe.effet}. Les autres joueurs ne savent pas lequel tu as.` : n.passif}</p>
+        {/* L'hexagone prend la place laissée par le pouvoir : il rétrécit au lieu d'empiéter sur un texte long. */}
+        <div className="bas">
+          {apres('hexagone') && <HexagoneNen type={nen} />}
+          <div className={`pouvoir-revele${spe ? ' secret' : ''}`}>
+            <h2>{spe ? `Ton pouvoir secret : ${spe.nom}` : `Pouvoir de ${n.nom}`}</h2>
+            <p>{spe ? `${spe.effet}. Les autres joueurs ne savent pas lequel tu as.` : n.passif}</p>
+          </div>
         </div>
         {etape === 'attente' && (
           <button

@@ -265,7 +265,7 @@ p { margin: 0; }
 .divination .choix button:hover:not(:disabled), .divination .choix button:focus-visible { background: #f6f6f2; color: var(--nuit); }
 .divination .choix button:hover:not(:disabled)::before, .divination .choix button:focus-visible::before { opacity: 1; }
 .divination .erreur-scene { background: #f6f6f2; color: var(--alerte); font: 700 4cqw/1.35 var(--f-texte); padding: 2cqw 3cqw; }
-.divination .fin .pouvoir.secret h2 { animation: secret 0.9s var(--sortie) 0.4s both; }
+.divination .fin .pouvoir-revele.secret h2 { animation: secret 0.9s var(--sortie) 0.4s both; }
 @keyframes tampon-doux { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 @keyframes secret { from { opacity: 0; scale: 1.4; filter: blur(6px); text-shadow: 0 0 0 var(--type); } 60% { text-shadow: 0 0 6cqw var(--type); } to { opacity: 1; scale: 1; filter: blur(0); text-shadow: 0 0 2cqw color-mix(in srgb, var(--type) 60%, transparent); } }
 .divination .consigne { position: absolute; left: 6cqw; right: 6cqw; top: calc(9cqh + env(safe-area-inset-top, 0px)); text-align: center; font: 600 4.4cqw/1.35 var(--f-texte); color: var(--lampe); text-wrap: balance; }
@@ -305,18 +305,20 @@ p { margin: 0; }
 .divination .hexa .wing { opacity: 0; translate: 0 4cqw; }
 .divination .wing .qui { justify-self: start; background: #f6f6f2; color: var(--nuit); font: 400 3.8cqw/1 var(--f-jeu); padding: 1cqw 2cqw; }
 .divination .wing p { margin: 0; font: 400 4.6cqw/1.45 var(--f-jeu); min-height: 2.9em; }
-.divination .pouvoir { position: absolute; left: 5cqw; right: 5cqw; bottom: calc(17cqh + env(safe-area-inset-bottom, 0px)); display: grid; gap: 1.6cqw; opacity: 0; translate: 0 3cqw; transition: opacity 0.5s 0.2s, translate 0.6s var(--sortie) 0.2s; }
-.divination .pouvoir h2 { margin: 0; font: 400 5.2cqw/1.1 var(--f-titre); color: var(--type); }
-.divination .pouvoir p { margin: 0; font: 600 4.3cqw/1.4 var(--f-texte); color: #fbf7ef; text-wrap: pretty; }
+/* Colonne entre le carton et le bouton : l'hexagone prend ce que le texte du pouvoir lui laisse (jamais de chevauchement). */
+.divination .bas { position: absolute; left: 5cqw; right: 5cqw; top: calc(16cqh + env(safe-area-inset-top, 0px)); bottom: calc(5cqh + max(52px, 13cqw) + 4cqw + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; justify-content: flex-end; gap: 3cqw; pointer-events: none; }
+.divination .pouvoir-revele { flex: none; display: grid; gap: 1.6cqw; opacity: 0; translate: 0 3cqw; transition: opacity 0.5s 0.2s, translate 0.6s var(--sortie) 0.2s; }
+.divination .pouvoir-revele h2 { margin: 0; font: 400 5.2cqw/1.1 var(--f-titre); color: var(--type); }
+.divination .pouvoir-revele p { margin: 0; font: 600 4.3cqw/1.4 var(--f-texte); color: #fbf7ef; text-wrap: pretty; }
 .divination .continuer {
   position: absolute; left: 5cqw; right: 5cqw; bottom: calc(5cqh + env(safe-area-inset-bottom, 0px));
   min-height: max(52px, 13cqw); border: 0; background: var(--type); color: #0c0907;
   font: 400 5.6cqw/1 var(--f-titre); opacity: 0; pointer-events: none; transition: opacity 0.5s 0.5s;
 }
-.divination .fin .pouvoir { opacity: 1; translate: 0 0; }
+.divination .fin .pouvoir-revele { opacity: 1; translate: 0 0; }
 .divination .fin .continuer { opacity: 1; pointer-events: auto; }
 
-.hexa-nen { position: absolute; left: 3cqw; top: 18cqh; width: 94cqw; height: auto; overflow: visible; pointer-events: none; }
+.hexa-nen { flex: 1 1 0; min-height: 0; width: 100%; max-height: 90cqw; margin-bottom: 4cqw; overflow: visible; pointer-events: none; }
 .hexa-nen .fond { fill: url(#hexa-fond); }
 .hexa-nen .centre { font: 400 92px/1 var(--f-titre); fill: #fbf7ef; fill-opacity: 0.07; }
 .hexa-nen .rayon { stroke: #fbf7ef; stroke-opacity: 0.16; stroke-width: 1.2; stroke-dasharray: 3 5; }

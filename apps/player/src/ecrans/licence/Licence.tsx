@@ -11,6 +11,7 @@ import { api } from '../../lib/client';
 import { NENS } from '../../lib/format';
 import { calculerLicence, decalage, PERIODE_MS } from '../../lib/licence';
 import { IconeRetour } from '../Icones';
+import { CodeSecours } from '../CodeSecours';
 import { QrCode } from '../QrCode';
 import { FiltrePinceau, Rature } from '../fin/Dessins';
 import { FiltreEncre } from '../masadora/Paquet';
@@ -25,6 +26,7 @@ export function Licence({
   pseudo,
   nen,
   secret,
+  codeSecours = null,
   onRetour,
   sortie = null,
   onQuitter,
@@ -34,6 +36,8 @@ export function Licence({
   pseudo: string;
   nen: NenType | null;
   secret: string;
+  /** RG-5.1 amendé : code de secours, rappelé sous la licence. */
+  codeSecours?: string | null;
   onRetour: () => void;
   /** Page ⑱ : abandon (licence rayée) ou partie terminée (plus de « Quitter la partie »). */
   sortie?: 'abandon' | 'terminee' | null;
@@ -280,6 +284,7 @@ export function Licence({
           <p className="doux">Le code change toutes les 30 secondes et marche sans réseau. Si le scan échoue, monte la luminosité.</p>
         </section>
       )}
+      {sortie !== 'abandon' && codeSecours && <CodeSecours code={codeSecours} />}
       {sortie === 'abandon' && <p className="doux fp-licence-note">Tu as quitté la partie : ta licence ne sert plus.</p>}
       {sortie === 'abandon' && (
         <>

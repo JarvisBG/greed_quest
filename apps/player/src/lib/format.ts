@@ -60,6 +60,7 @@ const EVENEMENTS: Record<EvenementJoueur, string> = {
   carte_gm_recue: 'Carte de Maître du jeu',
   carte_gm_obtenue: 'Carte de Maître du jeu obtenue',
   carte_gm_rendue: 'Carte rendue au Maître du jeu',
+  session_remplacee: 'Partie ouverte sur un autre téléphone',
 };
 
 export function libelleEvenement(nom: EvenementJoueur): string {

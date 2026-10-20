@@ -41,6 +41,8 @@ export interface Moi {
   statut: string;
   /** RG-5.3 : Fiche Hunter remplie (obligatoire avant de jouer). */
   ficheFaite: boolean;
+  /** RG-5.1 amendé (2026-10-20) : code de secours, pour reprendre sa partie sur un autre téléphone. */
+  codeSecours: string | null;
   /**
    * Délais restants à la réception (`recuA`), en ms : sort offensif (RG-10.3), Transformation, gel ;
    * `pouvoir` = recharge du pouvoir de Nen (0 = disponible, null = aucun), `reserve` = tirage de Matérialisation
@@ -148,6 +150,8 @@ export function useJeu() {
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [phase, setPhase] = useState<Phase>(partieId ? 'chargement' : 'sans_partie');
   const [erreur, setErreur] = useState<string | null>(null);
+  /** RG-5.1 amendé : ce téléphone a été remplacé par un autre (code de secours utilisé ailleurs). */
+  const [remplacee, setRemplacee] = useState(false);
   const [gpsErreur, setGpsErreur] = useState<string | null>(null);
   const [enFile, setEnFile] = useState(() => (partieId ? file.aRejouer(partieId, Date.now()).valides.length : 0));
   const compteur = useRef(0);
@@ -219,7 +223,7 @@ export function useJeu() {
           throw e;
         }
       }
-      type Recu = Pick<Moi, 'delais' | 'specialisation' | 'recharges' | 'villesVisitees' | 'retour' | 'accompagne' | 'etatsGm'>;
+      type Recu = Pick<Moi, 'delais' | 'specialisation' | 'recharges' | 'villesVisitees' | 'retour' | 'accompagne' | 'etatsGm' | 'codeSecours'>;
       const m = await api.get<{ joueur: Omit<Moi, keyof Recu | 'recuA'>; licenceSecret: string } & Recu>(`/parties/${partieId}/moi`);
       setMoi({
         ...m.joueur,
@@ -230,12 +234,15 @@ export function useJeu() {
         retour: m.retour ?? null,
         accompagne: m.accompagne ?? 0,
         etatsGm: m.etatsGm ?? { fige: 0, scelle: 0, intouchable: 0 },
+        codeSecours: m.codeSecours ?? null,
         recuA: Date.now(),
       });
       setLicenceSecret(m.licenceSecret);
       setPhase('en_jeu');
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
+        // RG-5.1 amendé : la partie a été reprise sur un autre téléphone ; l'écran d'entrée le dit.
+        if (e.code === 'session_remplacee') setRemplacee(true);
         session.clear();
         setSess(null);
         return;
@@ -314,6 +321,13 @@ export function useJeu() {
         }
       },
       evenement: (nom, data) => {
+        // RG-5.1 amendé : la partie vient d'être reprise sur un autre téléphone ; celui-ci revient à l'entrée.
+        if (nom === 'session_remplacee') {
+          session.clear();
+          setSess(null);
+          setRemplacee(true);
+          return;
+        }
         // Page ⑯ : un coup sur le boss (fréquent) ne recharge rien ; la barre suit en direct.
         if (nom === 'raid') {
           raidRecevoir.current(nom, data);
@@ -632,6 +646,7 @@ export function useJeu() {
 
   /** Après l'inscription : garde le jeton ; le rafraîchissement charge le profil. */
   const ouvrirSession = useCallback((s: Session) => {
+    setRemplacee(false);
     session.set(s);
     setSess(s);
   }, []);
@@ -710,6 +725,7 @@ export function useJeu() {
     notifs,
     phase,
     erreur,
+    remplacee,
     gpsErreur,
     enFile,
     rafraichir,

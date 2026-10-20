@@ -132,6 +132,7 @@ export function Joueur({ eq, cible, setCible }: { eq: Equipe; cible: Cible | nul
               <button type="button" className="secondaire" onClick={() => setMode('jenny')}>Corriger les jenny</button>
               <button type="button" className="secondaire" onClick={() => setMode('livre')}>Corriger le Book (ajouter / retirer une carte)</button>
               <button type="button" className="secondaire" onClick={() => setMode('carteGm')}>Donner une carte de Maître du jeu</button>
+              <button type="button" className="secondaire" onClick={() => setMode('codeSecours')}>Nouveau code de secours (code perdu)</button>
               <button type="button" className="secondaire danger" onClick={() => setMode('disqualifier')}>Disqualifier</button>
             </>
           )}
@@ -180,7 +181,7 @@ export function Joueur({ eq, cible, setCible }: { eq: Equipe; cible: Cible | nul
           </div>
         ))}
 
-      {(mode === 'jenny' || mode === 'livre' || mode === 'carteGm') && <Corrections eq={eq} joueur={j} mode={mode} onFini={fiche} />}
+      {(mode === 'jenny' || mode === 'livre' || mode === 'carteGm' || mode === 'codeSecours') && <Corrections eq={eq} joueur={j} mode={mode} onFini={fiche} />}
 
       {mode === 'disqualifier' && (
         <Action

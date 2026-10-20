@@ -266,6 +266,8 @@ export function App() {
         {jeu.phase === 'non_inscrit' && partie && (
           <Inscription
             partie={partie}
+            remplacee={jeu.remplacee}
+            onReprise={jeu.ouvrirSession}
             onAutrePartie={jeu.quitterPartie}
             onInscrit={(s, k) => {
               setKit(k);
@@ -333,6 +335,7 @@ export function App() {
                 pseudo={moi.pseudo}
                 nen={moi.nen}
                 secret={jeu.licenceSecret}
+                codeSecours={moi.codeSecours}
                 sortie={spectateur ? 'abandon' : termine ? 'terminee' : null}
                 onQuitter={() => setQuitter(true)}
                 onRetour={() => {

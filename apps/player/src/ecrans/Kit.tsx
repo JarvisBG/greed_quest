@@ -2,6 +2,7 @@
 // Premier gain du joueur : la carte arrive de dos et se retourne, comme un tirage.
 import { Carte, Concentration, DosCarte } from '@gq/ui';
 import { numeroSort, SORTS } from '../lib/format';
+import { CodeSecours } from './CodeSecours';
 import type { Kit as KitRecu } from './Inscription';
 
 export function Kit({ kit, onSuite }: { kit: KitRecu; onSuite: () => void }) {
@@ -27,6 +28,7 @@ export function Kit({ kit, onSuite }: { kit: KitRecu; onSuite: () => void }) {
         </b>
         {kit.rattrapage > 0 && <p className="doux">dont {kit.rattrapage} J de rattrapage</p>}
       </section>
+      {kit.codeSecours && <CodeSecours code={kit.codeSecours} premiere />}
       <button className="gi-btn-encre" onClick={onSuite}>
         Continuer
       </button>

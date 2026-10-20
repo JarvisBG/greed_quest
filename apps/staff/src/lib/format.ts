@@ -117,6 +117,8 @@ export function libelleAlerte(a: Alerte): string {
       return `${qui} : rythme de scan anormal (${String(a.tirages ?? '?')} tirages en ${String(a.fenetreMin ?? '?')} min)`;
     case 'sans_position':
       return `${qui} : plus de position depuis ${String(a.depuisMin ?? '?')} min`;
+    case 'changement_telephone':
+      return `${qui} : partie reprise sur un autre téléphone avec son code de secours`;
     default:
       return `${qui} : ${a.type}`;
   }
@@ -129,6 +131,8 @@ export function joueursAlerte(a: Alerte): string[] {
 
 const ACTIONS: Record<string, string> = {
   inscription: 'Inscription',
+  reconnexion: 'Partie reprise sur un autre téléphone',
+  code_secours: 'Nouveau code de secours',
   examen: 'Examen',
   statut: 'Changement de statut',
   scan: 'Scan',

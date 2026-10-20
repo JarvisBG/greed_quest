@@ -6,7 +6,7 @@ import { chercherCartes, numeroCarte, type JoueurVue } from '../../lib/format';
 import type { Equipe } from '../../lib/useEquipe';
 import { Action } from '../Action';
 
-export type ModeCorrection = 'jenny' | 'livre' | 'carteGm';
+export type ModeCorrection = 'jenny' | 'livre' | 'carteGm' | 'codeSecours';
 
 interface CaseLivre {
   etat: string;
@@ -27,6 +27,7 @@ export function Corrections({ eq, joueur, mode, onFini }: { eq: Equipe; joueur: 
   const base = `/parties/${eq.session!.partieId}`;
   if (mode === 'jenny') return <Jenny base={base} joueur={joueur} onFini={onFini} />;
   if (mode === 'carteGm') return <DonGm base={base} joueur={joueur} onFini={onFini} />;
+  if (mode === 'codeSecours') return <CodeSecours base={base} joueur={joueur} onFini={onFini} />;
   return <Book eq={eq} base={base} joueur={joueur} onFini={onFini} />;
 }
 
@@ -48,6 +49,24 @@ function Jenny({ base, joueur, onFini }: { base: string; joueur: JoueurVue; onFi
         Montant (négatif pour retirer)
         <input type="number" value={delta} onChange={(e) => setDelta(Math.trunc(Number(e.target.value) || 0))} />
       </label>
+    </Action>
+  );
+}
+
+/** RG-5.1 amendé (2026-10-20) : le joueur a perdu son code de secours ; l'ancien ne marchera plus. */
+function CodeSecours({ base, joueur, onFini }: { base: string; joueur: JoueurVue; onFini: () => void }) {
+  return (
+    <Action
+      titre={`Nouveau code de secours pour ${joueur.pseudo}`}
+      bouton={`Donner un nouveau code à ${joueur.pseudo}`}
+      avecMotif
+      onFini={onFini}
+      envoyer={async (motif) => {
+        const r = await api.post<{ code: string }>(`${base}/joueurs/code-secours`, { joueurId: joueur.id, motif });
+        return `Nouveau code de ${joueur.pseudo} : ${r.code}. Donne-le-lui en main propre, après avoir vérifié que c’est bien lui.`;
+      }}
+    >
+      <p className="info">Pour un joueur qui a perdu son code et veut reprendre sa partie sur un autre téléphone. L’ancien code ne marchera plus ; le code n’est pas écrit au journal.</p>
     </Action>
   );
 }

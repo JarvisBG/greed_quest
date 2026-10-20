@@ -129,6 +129,15 @@ p { margin: 0; }
 .kit-jenny { grid-template-columns: 1fr auto; align-items: baseline; padding-block: 14px; }
 .kit-jenny span { font: 800 17px var(--f-texte); }
 .kit-jenny b { font: 800 40px/1 var(--f-chiffre); font-variant-numeric: tabular-nums; }
+/* RG-5.1 amendé : code de secours (kit, licence) et reprise de partie sur un autre téléphone */
+.code-secours { display: grid; justify-items: center; gap: 8px; text-align: center; }
+.code-secours-titre { font: 800 17px var(--f-texte); }
+.code-secours-code { font: 800 clamp(34px, 11vw, 46px)/1 var(--f-chiffre); letter-spacing: 0.18em; padding: 10px 6px 10px 16px; border: 3px solid var(--encre); background: var(--case); user-select: all; }
+.code-secours p { margin: 0; max-width: 34ch; }
+.code-secours-champ { font-family: var(--f-chiffre); font-size: 24px; letter-spacing: 0.24em; text-transform: uppercase; }
+.code-secours-champ::placeholder { font: 400 17px var(--f-texte); letter-spacing: 0; text-transform: none; }
+.avis-remplace { border-color: var(--alerte); }
+.avis-remplace .texte-grand { font-weight: 800; color: var(--alerte); }
 .kit-jenny b small { font: 600 18px var(--f-texte); margin-left: 4px; }
 .kit-jenny .doux { grid-column: 1 / -1; }
 

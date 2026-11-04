@@ -26,7 +26,9 @@ export function connecterEcran(
   partieId: string,
   h: { enLigne: (on: boolean) => void; reconnecte: () => void; evenement: (nom: EvenementEcranNom, data: unknown) => void },
 ): () => void {
-  const socket: Socket = io(BASE || undefined, { auth: { tracker: partieId }, transports: ['websocket', 'polling'] });
+  // WebSocket d'abord ; si le réseau mobile le bloque, repli sur le mode « polling » (sans tryAllTransports,
+  // Socket.IO réessaie le WebSocket sans fin et le téléphone reste hors ligne).
+  const socket: Socket = io(BASE || undefined, { auth: { tracker: partieId }, transports: ['websocket', 'polling'], tryAllTransports: true });
   let deja = false;
   socket.on('connect', () => {
     h.enLigne(true);

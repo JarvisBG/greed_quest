@@ -27,7 +27,9 @@ export function connectRealtime(
   token: string,
   handlers: { etat: (e: EtatConnexion) => void; evenement: (nom: EvenementJoueur, data: unknown) => void },
 ): Temps {
-  const socket = io(baseUrl || undefined, { auth: { token }, transports: ['websocket', 'polling'] });
+  // WebSocket d'abord ; si le réseau mobile le bloque, repli sur le mode « polling » (sans tryAllTransports,
+  // Socket.IO réessaie le WebSocket sans fin et le téléphone reste hors ligne).
+  const socket = io(baseUrl || undefined, { auth: { token }, transports: ['websocket', 'polling'], tryAllTransports: true });
   handlers.etat('connexion');
   socket.on('connect', () => handlers.etat('en_ligne'));
   socket.on('disconnect', () => handlers.etat('hors_ligne'));

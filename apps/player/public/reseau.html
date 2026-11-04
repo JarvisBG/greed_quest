@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test réseau · Greed Island</title>
+<style>
+  :root { --fond: #f6f1e7; --encre: #1d1a16; --doux: #6b6257; --ok: #1f7a3a; --ko: #b3261e; --att: #9a6b00; --trait: #d9cfbf; }
+  @media (prefers-color-scheme: dark) { :root { --fond: #15130f; --encre: #f1ebe0; --doux: #a59b8d; --trait: #3a342c; --ok: #5cc47a; --ko: #ff7b72; --att: #e0b34a; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fond); color: var(--encre); font: 16px/1.45 system-ui, sans-serif; }
+  main { max-width: 32rem; margin: 0 auto; padding: 24px 16px 40px; }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  p { color: var(--doux); margin: 0 0 16px; }
+  ol { list-style: none; padding: 0; margin: 0 0 20px; border-top: 1px solid var(--trait); }
+  li { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--trait); }
+  .etat { width: 1.6rem; flex: none; font-weight: 700; text-align: center; }
+  .ok { color: var(--ok); } .ko { color: var(--ko); } .att { color: var(--att); }
+  small { display: block; color: var(--doux); }
+  #bilan { font-weight: 600; font-size: 1.05rem; }
+  button { font: inherit; padding: 10px 18px; border-radius: 8px; border: 1px solid var(--encre); background: var(--encre); color: var(--fond); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Test réseau</h1>
+  <p>Vérifie que ce téléphone peut jouer à Greed Island avec sa connexion actuelle (Orange, MTN, Camtel, Wi-Fi…). Le premier test peut prendre jusqu'à 1 minute si le serveur dort.</p>
+  <ol id="liste"></ol>
+  <p id="bilan"></p>
+  <button id="relancer" hidden>Refaire le test</button>
+</main>
+<script>
+// Page de diagnostic (docs/DEPLOIEMENT.md, « Réseaux camerounais ») : relais Cloudflare en HTTP, en temps réel
+// (WebSocket) et en mode de secours (polling), puis l'accès direct à Render, coupé par Orange le 2026-11-04.
+const RELAIS = new URLSearchParams(location.search).get('api') || 'https://greed-island-api.jarvismboummeu28.workers.dev';
+const RENDER = 'https://greed-island-api.onrender.com';
+const enTemps = (ms, promesse) => Promise.race([promesse, new Promise((_, ko) => setTimeout(() => ko(new Error('pas de réponse')), ms))]);
+
+const tests = [
+  { nom: 'Serveur du jeu', detail: 'par le relais Cloudflare', essentiel: true,
+    faire: () => enTemps(75000, fetch(RELAIS + '/sante', { cache: 'no-store' }).then((r) => r.json()).then((j) => { if (!j.ok) throw new Error('réponse inattendue'); })) },
+  { nom: 'Temps réel', detail: 'WebSocket (sorts, échanges, évènements)', essentiel: false,
+    faire: () => enTemps(20000, new Promise((ok, ko) => {
+      const ws = new WebSocket(RELAIS.replace(/^http/, 'ws') + '/socket.io/?EIO=4&transport=websocket');
+      ws.onmessage = (m) => { ws.close(); String(m.data).startsWith('0') ? ok() : ko(new Error('réponse inattendue')); };
+      ws.onerror = () => ko(new Error('bloqué par le réseau'));
+    })) },
+  { nom: 'Temps réel, mode de secours', detail: 'utilisé si le WebSocket est bloqué', essentiel: true,
+    faire: () => enTemps(20000, fetch(RELAIS + '/socket.io/?EIO=4&transport=polling&t=' + Date.now(), { cache: 'no-store' }).then((r) => r.text()).then((t) => { if (!t.startsWith('0')) throw new Error('réponse inattendue'); })) },
+  { nom: 'Accès direct à Render', detail: 'pour information : plus utilisé par le jeu', essentiel: false, info: true,
+    faire: () => enTemps(20000, fetch(RENDER + '/sante', { cache: 'no-store' }).then((r) => { if (!r.ok) throw new Error('code ' + r.status); })) },
+];
+
+async function lancer() {
+  const liste = document.getElementById('liste');
+  const bilan = document.getElementById('bilan');
+  document.getElementById('relancer').hidden = true;
+  liste.innerHTML = '';
+  bilan.textContent = 'Test en cours…';
+  bilan.className = 'att';
+  const resultats = [];
+  for (const t of tests) {
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="etat att">…</span><div>${t.nom}<small>${t.detail}</small></div>`;
+    liste.append(li);
+    const debut = performance.now();
+    let ok = true, raison = '';
+    try { await t.faire(); } catch (e) { ok = false; raison = e.message || 'échec'; }
+    const s = ((performance.now() - debut) / 1000).toFixed(1);
+    const etat = li.querySelector('.etat');
+    etat.textContent = ok ? '✓' : t.info ? '–' : '✗';
+    etat.className = 'etat ' + (ok ? 'ok' : t.info ? 'att' : 'ko');
+    li.querySelector('small').textContent = `${t.detail} · ${ok ? s + ' s' : raison}`;
+    resultats.push({ t, ok });
+  }
+  const bloquant = resultats.some((r) => r.t.essentiel && !r.ok);
+  const wsKo = resultats.some((r) => r.t === tests[1] && !r.ok);
+  bilan.textContent = bloquant ? '✗ Ce téléphone ne peut pas jouer avec cette connexion. Fais une capture et envoie-la à l’équipe.'
+    : wsKo ? '✓ Le jeu marche (en mode de secours, un peu plus lent).' : '✓ Tout est bon : ce téléphone peut jouer.';
+  bilan.className = bloquant ? 'ko' : 'ok';
+  document.getElementById('relancer').hidden = false;
+}
+document.getElementById('relancer').onclick = lancer;
+lancer();
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  // Relais Cloudflare devant le serveur du jeu (Render) : Orange Cameroun coupe les adresses de Render,
+  // mais laisse passer Cloudflare. Les téléphones ne parlent qu'à ce relais. Voir docs/DEPLOIEMENT.md.
+  "name": "greed-island-api",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-29",
+  "vars": { "CIBLE": "https://greed-island-api.onrender.com" },
+  // Pas de journal des requêtes chez Cloudflare (inutile, et rien ne sort du jeu).
+  "observability": { "enabled": false }
+}

@@ -9,6 +9,7 @@ import { Bus } from './core/bus.js';
 import { Runner, cryptoRng } from './core/runner.js';
 import type { Db } from './db/client.js';
 import { joueurs } from './db/schema.js';
+import { Essais } from './auth/essais.js';
 import { Refus, SESSION_REMPLACEE } from './errors.js';
 import { attachRealtime } from './realtime.js';
 import { adminRoutes } from './routes/admin.js';
@@ -52,6 +53,8 @@ export interface Services {
   runner: Runner;
   tokens: Tokens;
   adminCode: string;
+  /** Essais de codes (connexion de l'équipe, code organisateur), bloqués après trop d'échecs. */
+  essais: Essais;
   now: () => number;
   rng: Rng;
 }
@@ -82,6 +85,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     runner: new Runner(deps.db, bus, now, rng),
     tokens,
     adminCode: deps.adminCode ?? 'admin-dev',
+    essais: new Essais(now),
     now,
     rng,
   });

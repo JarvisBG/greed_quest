@@ -1,5 +1,5 @@
 // Jetons de session signés (HMAC-SHA256) : `payload.signature`, en base64url.
-import { createHmac, scryptSync, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, scryptSync, randomBytes, timingSafeEqual } from 'node:crypto';
 
 export type Role = 'joueur' | 'pnj' | 'gm';
 
@@ -58,4 +58,11 @@ export function checkCode(code: string, hash: string): boolean {
   const calc = scryptSync(code, Buffer.from(salt, 'base64url'), 32);
   const attendu = Buffer.from(h, 'base64url');
   return calc.length === attendu.length && timingSafeEqual(calc, attendu);
+}
+
+/** Deux codes égaux, comparés à temps constant (empreintes de même longueur). */
+export function memeCode(a: string, b: string): boolean {
+  const ha = createHash('sha256').update(a).digest();
+  const hb = createHash('sha256').update(b).digest();
+  return timingSafeEqual(ha, hb);
 }

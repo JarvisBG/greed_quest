@@ -3,6 +3,7 @@ import { StaffCreate, StaffLogin } from '@gq/shared';
 import { and, desc, eq, gt } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { STAFF, requireRole } from '../auth/guard.js';
+import { ipDe } from '../auth/essais.js';
 import { checkCode, hashCode } from '../auth/tokens.js';
 import { joueurs, journal, livres, staff } from '../db/schema.js';
 import { Refus } from '../errors.js';
@@ -14,9 +15,17 @@ type P = { Params: { partieId: string } };
 export async function staffRoutes(app: FastifyInstance) {
   app.post<P>('/parties/:partieId/staff/connexion', async (req) => {
     const { code } = parse(StaffLogin, req.body);
+    // Essais limités par IP et par partie (auth/essais.ts) : un code de l'équipe ne se devine pas à la chaîne.
+    const cle = `staff:${req.params.partieId}`;
+    const ip = ipDe(req);
+    app.gq.essais.verifier(cle, ip);
     const membres = await app.gq.db.select().from(staff).where(eq(staff.partieId, req.params.partieId));
     const m = membres.find((s) => checkCode(code, s.codeHash));
-    if (!m) throw new Refus('code_invalide', 'Code invalide', 401);
+    if (!m) {
+      app.gq.essais.echec(cle, ip);
+      throw new Refus('code_invalide', 'Code invalide', 401);
+    }
+    app.gq.essais.reussite(cle, ip);
     return { ok: true, id: m.id, role: m.role, nom: m.nom, token: app.gq.tokens.issue({ role: m.role, sub: m.id, partieId: m.partieId }) };
   });
 

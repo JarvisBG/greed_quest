@@ -12,13 +12,25 @@ import { writeLog } from '../core/journal.js';
 import { createPartie, seedDemoContent } from '../db/seed.js';
 import { cartes, joueurs, parties, staff } from '../db/schema.js';
 import { Refus } from '../errors.js';
+import { ipDe } from '../auth/essais.js';
+import { memeCode } from '../auth/tokens.js';
 import { newId } from '../ids.js';
 import { parse } from '../validation.js';
 
 type P = { Params: { partieId: string } };
 
 export async function adminRoutes(app: FastifyInstance) {
-  const orga = (req: FastifyRequest) => req.headers['x-code-admin'] === app.gq.adminCode;
+  // Code organisateur : comparé à temps constant, essais limités (auth/essais.ts). Sans en-tête, rien n'est compté.
+  const orga = (req: FastifyRequest) => {
+    const recu = req.headers['x-code-admin'];
+    if (typeof recu !== 'string' || !recu) return false;
+    const ip = ipDe(req);
+    app.gq.essais.verifier('orga', ip);
+    const ok = memeCode(recu, app.gq.adminCode);
+    if (ok) app.gq.essais.reussite('orga', ip);
+    else app.gq.essais.echec('orga', ip);
+    return ok;
+  };
   const exigerOrga = (req: FastifyRequest) => {
     if (!orga(req)) throw new Refus('interdit', 'Code organisateur invalide', 403);
   };
@@ -72,7 +84,7 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.post('/admin/parties', async (req) => {
-    if (req.headers['x-code-admin'] !== app.gq.adminCode) throw new Refus('interdit', 'Code organisateur invalide', 403);
+    exigerOrga(req);
     const body = parse(PartieCreate, req.body);
     return app.gq.db.transaction(async (tx) => {
       const partieId = await createPartie(tx, { nom: body.nom, prereglage: body.prereglage });

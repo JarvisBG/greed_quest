@@ -68,6 +68,16 @@ describe('RG-3 rôles et authentification', () => {
     expect(ko.json().message).toBe('Code invalide');
   });
 
+  it('sécurité S1 : après 8 mauvais codes depuis la même adresse, même le bon code est refusé un moment', async () => {
+    const essai = (code: string, ip: string) =>
+      app.inject({ method: 'POST', url: `/parties/${partieId}/staff/connexion`, headers: { 'x-gq-ip': ip }, payload: { code } });
+    for (let i = 0; i < 8; i++) expect((await essai(`faux-${i}`, '41.202.1.1')).statusCode).toBe(401);
+    const bloque = await essai('secret-gm', '41.202.1.1');
+    expect(bloque.statusCode).toBe(429);
+    expect(bloque.json().message).toMatch(/Trop d’essais de code : réessaie dans \d+ min/);
+    expect((await essai('secret-gm', '41.202.9.9')).json()).toMatchObject({ ok: true, role: 'gm' });
+  });
+
   it('RG-3.2 : un GM ajoute un PNJ ; le PNJ ne peut pas ajouter de membre', async () => {
     const add = await app.inject({
       method: 'POST',

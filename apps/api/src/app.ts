@@ -78,7 +78,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   const now = deps.now ?? Date.now;
   const rng = deps.rng ?? cryptoRng;
   const bus = new Bus();
-  const tokens = new Tokens(deps.secret ?? 'dev-secret-a-changer');
+  const tokens = new Tokens(deps.secret ?? 'dev-secret-a-changer', now);
   app.decorate('gq', {
     db: deps.db,
     bus,

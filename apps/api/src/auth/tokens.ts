@@ -10,19 +10,27 @@ export interface Session {
   partieId: string;
   /** Joueur : version de session (RG-5.1 amendé), absente des jetons d'avant = 0. */
   v?: number;
+  /** Expiration (horloge réelle, ms) : sécurité S2, un téléphone perdu ou volé ne garde pas la partie ouverte. */
+  exp?: number;
 }
+
+/** Sécurité S2 : durée d'une session. Joueur : l'app en reprend une seule par son téléphone (/reconnexion). */
+export const DUREE_SESSION_MS: Record<Role, number> = { joueur: 7 * 24 * 3600_000, pnj: 3 * 24 * 3600_000, gm: 3 * 24 * 3600_000 };
 
 const b64 = (s: string | Buffer) => Buffer.from(s).toString('base64url');
 
 export class Tokens {
-  constructor(private secret: string) {}
+  constructor(
+    private secret: string,
+    private now: () => number = Date.now,
+  ) {}
 
   private sign(data: string): string {
     return createHmac('sha256', this.secret).update(data).digest('base64url');
   }
 
   issue(s: Session): string {
-    const payload = b64(JSON.stringify(s));
+    const payload = b64(JSON.stringify({ ...s, exp: s.exp ?? this.now() + DUREE_SESSION_MS[s.role] }));
     return `${payload}.${this.sign(payload)}`;
   }
 
@@ -34,6 +42,8 @@ export class Tokens {
     if (attendu.length !== recu.length || !timingSafeEqual(attendu, recu)) return null;
     try {
       const s = JSON.parse(Buffer.from(payload, 'base64url').toString()) as Session;
+      // Jeton sans expiration (d'avant le 2026-11-04) ou expiré : refusé, l'app se reconnecte.
+      if (typeof s.exp !== 'number' || s.exp <= this.now()) return null;
       return s.role && s.sub && s.partieId ? s : null;
     } catch {
       return null;

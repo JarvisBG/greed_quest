@@ -68,3 +68,22 @@ Périmètre exact et direction artistique : `docs/PROMPT_INTERFACES.md` (§ 4.1)
 ## Phase 6 — Terrain
 - [ ] 6.1 Déploiement (hébergement api + PostgreSQL) — gratuit : Supabase + Render + Cloudflare, préparé le 2026-10-18 (`docs/DEPLOIEMENT.md`)
 - [ ] 6.2 Impression des balises, partie test, calibrage portée GPS et paramètres
+
+## Phase 6 bis — Réseaux camerounais et sécurité (demande de Sivraj du 2026-11-04)
+Constat du 2026-11-04 : depuis Orange Cameroun (AS36912), les adresses de Render (216.24.57.x) sont coupées
+(connexion réinitialisée pendant le chiffrement), alors que Cloudflare passe. MTN passe. Camtel : à vérifier.
+- [ ] R1 Relais Cloudflare `apps/relais` (Worker `greed-island-api.<compte>.workers.dev`) : tout le trafic
+      (HTTP + temps réel WebSocket) passe par Cloudflare, puis vers Render. Fronts reconstruits avec cette adresse.
+      Les QR imprimés (adresse de l'app joueur) ne changent pas.
+- [ ] R2 Temps réel : si le WebSocket est bloqué par le réseau, basculer sur le mode de secours (`tryAllTransports`).
+- [ ] R3 Moins de requêtes (limite gratuite Cloudflare : 100 000 / jour) : positions GPS et rafraîchissements
+      périodiques passés par le temps réel (un WebSocket ouvert = 1 requête), puis compter les requêtes HTTP
+      d'une partie de 80 joueurs avec le banc de charge (`docs/CHARGE.md`).
+- [ ] R4 Vérifier Orange, MTN et Camtel : test depuis le PC (Orange) + sondes installées chez les opérateurs
+      camerounais (Globalping) si disponibles ; sinon fiche de test à faire sur un téléphone de chaque opérateur.
+- [ ] S1 Limiter les essais : connexion PNJ / GM et code organisateur (blocage après plusieurs échecs, comparaison
+      à temps constant). Attention : beaucoup de joueurs partagent la même adresse IP chez l'opérateur.
+- [ ] S2 Sessions qui expirent (date d'expiration dans le jeton, fin de partie).
+- [ ] S3 `CORS_ORIGINS` : seules les 4 apps Greed Island peuvent appeler le serveur.
+- [ ] S4 Limite globale contre les envois en rafale (par session, et par IP large pour les routes sans session).
+- [ ] F  Tests, `docs/DEPLOIEMENT.md` / `docs/PROGRESS.md` à jour, mise en ligne, nouveau test depuis Orange.

@@ -1,7 +1,7 @@
-import { inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { io as connect, type Socket } from 'socket.io-client';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { balises } from './db/schema.js';
+import { balises, joueurs } from './db/schema.js';
 import { CENTRE, testApp } from './test/helpers.js';
 
 let t: Awaited<ReturnType<typeof testApp>>;
@@ -19,7 +19,7 @@ async function client(auth: Record<string, string>) {
     s.on('connect', () => res(null));
     s.on('connect_error', (e) => res(e.message));
   });
-  return { recu, erreur, evenements: () => recu.map((r) => r.evenement) };
+  return { socket: s, recu, erreur, evenements: () => recu.map((r) => r.evenement) };
 }
 const pause = () => new Promise((r) => setTimeout(r, 150));
 
@@ -35,6 +35,36 @@ afterAll(async () => {
   for (const s of sockets) s.close();
   await t.app.close();
   await t.close();
+});
+
+describe('Position par le temps réel (RG-10.9, moins de requêtes HTTP derrière le relais)', () => {
+  it('RG-10.9 : la position envoyée par la connexion ouverte est enregistrée ; une position invalide est refusée en clair', async () => {
+    const leorio = await t.inscrire('Leorio');
+    const c = await client({ token: leorio.token });
+    const ailleurs = { lat: CENTRE.lat + 0.001, lng: CENTRE.lng, precisionM: 6 };
+    expect(await c.socket.timeout(2000).emitWithAck('position', ailleurs)).toEqual({ ok: true });
+    const [j] = await t.db.select({ position: joueurs.position }).from(joueurs).where(eq(joueurs.id, leorio.body.joueurId));
+    expect(j?.position).toMatchObject({ lat: ailleurs.lat, lng: ailleurs.lng });
+    expect(await c.socket.timeout(2000).emitWithAck('position', { lat: 'x' })).toMatchObject({ ok: false, code: 'requete_invalide' });
+  });
+
+  it('RG-5.1 amendé : la position d’un ancien téléphone est refusée et sa connexion coupée', async () => {
+    const pokkuru = await t.inscrire('Pokkuru');
+    const ancien = await client({ token: pokkuru.token });
+    await t.app.inject({
+      method: 'POST',
+      url: `/parties/${t.partieId}/reconnexion-code`,
+      payload: { pseudo: 'Pokkuru', code: pokkuru.body.codeSecours, appareilId: 'nouveau-tel-de-pokkuru-xxxx' },
+    });
+    expect(await ancien.socket.timeout(2000).emitWithAck('position', ici)).toMatchObject({ ok: false, code: 'session_remplacee' });
+    await pause();
+    expect(ancien.socket.connected).toBe(false);
+  });
+
+  it('le personnel et l’écran géant ne peuvent pas envoyer de position', async () => {
+    const cEcran = await client({ tracker: t.partieId });
+    await expect(cEcran.socket.timeout(500).emitWithAck('position', ici)).rejects.toThrow();
+  });
 });
 
 describe('Diffusion temps réel (matrice REGLES.md)', () => {

@@ -13,3 +13,4 @@ export class Refus extends Error {
 export const nonAuthentifie = () => new Refus('non_authentifie', 'Connexion requise', 401);
 export const interdit = () => new Refus('interdit', 'Action réservée à un autre rôle', 403);
 export const introuvable = (quoi: string) => new Refus('introuvable', `${quoi} introuvable`, 404);
+export const SESSION_REMPLACEE = () => new Refus('session_remplacee', 'Ta partie a été ouverte sur un autre téléphone', 401);

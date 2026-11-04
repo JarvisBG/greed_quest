@@ -9,7 +9,7 @@ import { Bus } from './core/bus.js';
 import { Runner, cryptoRng } from './core/runner.js';
 import type { Db } from './db/client.js';
 import { joueurs } from './db/schema.js';
-import { Refus } from './errors.js';
+import { Refus, SESSION_REMPLACEE } from './errors.js';
 import { attachRealtime } from './realtime.js';
 import { adminRoutes } from './routes/admin.js';
 import { areneRoutes } from './routes/arene.js';
@@ -65,7 +65,7 @@ declare module 'fastify' {
   }
 }
 
-export const SESSION_REMPLACEE = () => new Refus('session_remplacee', 'Ta partie a été ouverte sur un autre téléphone', 401);
+export { SESSION_REMPLACEE };
 
 /** Intentions permises avant la Fiche Hunter (RG-5.3). */
 const SANS_FICHE = new Set(['fiche', 'nen', 'nen/secret', 'position', 'abandon'].map((r) => `/parties/:partieId/${r}`));

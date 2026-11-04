@@ -1,5 +1,6 @@
 // Temps réel (P5) : Socket.IO relaie les émissions du bus vers des rooms, selon la matrice
-// « Diffusion temps réel » de REGLES.md. Lecture seule : les intentions passent par HTTP.
+// « Diffusion temps réel » de REGLES.md. Les intentions passent par HTTP, sauf la position du joueur (RG-10.9),
+// envoyée par la connexion déjà ouverte : une requête HTTP de moins toutes les 15 s par joueur (limite du relais).
 //
 // Rooms d'une partie P :
 //   P:joueur:<id>  un joueur (son détail : tirage, sort reçu, échange…)
@@ -10,8 +11,11 @@
 import type { FastifyInstance } from 'fastify';
 import { eq } from 'drizzle-orm';
 import { Server } from 'socket.io';
+import type { Session } from './auth/tokens.js';
 import type { Audience, Emission } from './core/bus.js';
 import { joueurs } from './db/schema.js';
+import { Refus } from './errors.js';
+import { enregistrerPosition } from './routes/scan.js';
 
 export function roomOf(partieId: string, a: Audience): string {
   return a.type === 'joueur' ? `${partieId}:joueur:${a.id}` : `${partieId}:${a.type}`;
@@ -41,11 +45,28 @@ export function attachRealtime(app: FastifyInstance, corsOrigin: string | boolea
     const rooms = roomsFor(session, auth.tracker);
     if (rooms.length === 0) return next(new Error('Connexion requise'));
     socket.data.rooms = rooms;
+    socket.data.session = session;
     next();
   });
 
   io.on('connection', (socket) => {
     for (const r of socket.data.rooms as string[]) void socket.join(r);
+    const session = socket.data.session as Session | null;
+    if (session?.role !== 'joueur') return;
+    // RG-10.9 : même traitement que POST /parties/:id/position ; réponse par accusé de réception.
+    socket.on('position', async (body: unknown, ack?: (r: unknown) => void) => {
+      try {
+        ack?.(await enregistrerPosition(app, session, body));
+      } catch (e) {
+        if (e instanceof Refus) {
+          ack?.({ ok: false, code: e.code, message: e.message });
+          if (e.code === 'session_remplacee') socket.disconnect(true);
+        } else {
+          app.log.error(e);
+          ack?.({ ok: false, code: 'erreur', message: 'Erreur du serveur' });
+        }
+      }
+    });
   });
 
   app.gq.bus.ecoute = (partieId, a) => (io.sockets.adapter.rooms.get(roomOf(partieId, a))?.size ?? 0) > 0;

@@ -115,7 +115,11 @@ const RECHARGE_TOUS = new Set(['partie', 'evenement', 'evenement_fin', 'boutique
 
 const gm = app.gq.tokens.issue({ role: 'gm', sub: 'gm1', partieId });
 const pnj = app.gq.tokens.issue({ role: 'pnj', sub: 'pnj1', partieId });
+/** Requêtes HTTP des téléphones et de la console : ce que compte le relais Cloudflare (100 000 / jour gratuits). */
+const http = { total: 0, positions: 0 };
 async function appel(method: 'GET' | 'POST', url: string, token: string, payload?: Record<string, unknown>) {
+  if (url === '/position') http.positions++;
+  else http.total++;
   const res = await app.inject({ method, url: `/parties/${partieId}${url}`, headers: { authorization: `Bearer ${token}` }, ...(payload ? { payload } : {}) });
   if (res.statusCode >= 500) throw new Error(`${url} : ${res.body}`);
   return res.json();
@@ -207,6 +211,7 @@ for (const [k, s] of lignes) {
 const minutesJeu = MINUTES;
 console.log(`\nTotal : ${tot.n} actions, ${tot.requetes} requêtes (${(tot.requetes / (minutesJeu * 60)).toFixed(1)}/s), ${Mo(tot.octets)} Mo lus dans la base`);
 console.log(`Calcul du serveur hors base : ${(tot.calculMs / 1000).toFixed(0)} s pour ${minutesJeu} min de jeu (${((tot.calculMs / (minutesJeu * 60_000)) * 100).toFixed(1)} % d'un cœur, mesuré sur ce PC)`);
+console.log(`Requêtes HTTP (relais Cloudflare) : ${http.total} hors positions + ${http.positions} positions (passées par le temps réel depuis le 2026-11-04, 0 requête)`);
 console.log(`Temps réel : ${temps.messages} messages, ${Mo(temps.octets)} Mo envoyés`);
 console.log(`Mémoire max du processus : tas ${Mo(memMax.heap)} Mo, total ${Mo(memMax.rss)} Mo (PGlite compris)`);
 const tailles = (await db.execute(sql`select relname as t, pg_total_relation_size(relid) as o from pg_catalog.pg_statio_user_tables order by 2 desc`)) as unknown as { rows: { t: string; o: number }[] };

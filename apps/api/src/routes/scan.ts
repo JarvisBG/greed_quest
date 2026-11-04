@@ -29,6 +29,7 @@ import { CARTES_GM, RANK_POINTS, ScanIntent, PositionInput } from '@gq/shared';
 import { and, eq, gte, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { requireRole } from '../auth/guard.js';
+import type { Session } from '../auth/tokens.js';
 import { alerte } from '../core/alertes.js';
 import { balisesParZone } from '../core/ecran.js';
 import { paramsOf } from '../core/params.js';
@@ -51,7 +52,7 @@ import {
   updateJoueur,
 } from '../core/state.js';
 import { journal } from '../db/schema.js';
-import { introuvable } from '../errors.js';
+import { introuvable, SESSION_REMPLACEE } from '../errors.js';
 import { refus, send } from '../http.js';
 import { newId } from '../ids.js';
 import { parse } from '../validation.js';
@@ -90,23 +91,12 @@ export async function emitBeaconChanges(c: ActionCtx, changes: readonly BeaconCh
 export async function scanRoutes(app: FastifyInstance) {
   const { runner } = app.gq;
 
-  // RG-10.9 : position envoyée toutes les 15 s si déplacement > 10 m (décidé côté app).
+  // RG-10.9 : position envoyée toutes les 15 s si déplacement > 10 m (décidé côté app). Le téléphone l'envoie
+  // d'abord par le temps réel (realtime.ts, sans requête HTTP) ; cette route reste pour le repli.
   app.post<P>('/parties/:partieId/position', async (req) => {
     const { partieId } = req.params;
     const s = requireRole(req, partieId, 'joueur');
-    const input = parse(PositionInput, req.body);
-    return runner.run(partieId, { type: 'joueur', id: s.sub }, async (c) => {
-      const j = await loadJoueur(c.tx, s.sub);
-      if (!j) throw introuvable('Joueur');
-      const pos = await recordPosition(c, j, input);
-      // Zetsu : la position est notée mais ne s'affiche pas sur la carte de chaleur (core/ecran.ts).
-      await c.log({ action: 'position', resultat: 'ok', details: { ...pos, ...(estInvisible(j, c.now) ? { zetsu: true } : {}) } });
-      // Amendement 2026-10-10 : Accompagnement, la position exacte part au seul lanceur pendant 3 min (dérogation à RG-10.12).
-      if (j.accompagnePar && j.accompagneJusqua !== null && j.accompagneJusqua > c.now) {
-        c.emit({ type: 'joueur', id: j.accompagnePar }, 'accompagnement', positionAccompagnee({ ...j, position: pos }));
-      }
-      return { ok: true as const };
-    });
+    return enregistrerPosition(app, s, req.body);
   });
 
   // RG-7 : scan d'une balise. Le client envoie seulement « j'ai scanné tel QR, ici, à telle heure » (P1).
@@ -315,4 +305,22 @@ async function checkScanRate(c: ActionCtx, joueurId: string, pseudo: string): Pr
   if (!isAbnormalScanRate(tirages, c.now)) return;
   if (recents.some((r) => r.action === 'alerte' && r.resultat === 'rythme_scan')) return;
   await alerte(c, 'rythme_scan', { joueurId, pseudo, tirages: tirages.length, fenetreMin: SCAN_RATE_WINDOW_MS / 60_000 });
+}
+
+/** RG-10.9 : une position reçue d'un joueur (route HTTP ou temps réel). Jeton d'un ancien téléphone refusé (RG-5.1 amendé). */
+export async function enregistrerPosition(app: FastifyInstance, s: Session, body: unknown) {
+  const input = parse(PositionInput, body);
+  return app.gq.runner.run(s.partieId, { type: 'joueur', id: s.sub }, async (c) => {
+    const j = await loadJoueur(c.tx, s.sub);
+    if (!j) throw introuvable('Joueur');
+    if (j.sessionVersion !== (s.v ?? 0)) throw SESSION_REMPLACEE();
+    const pos = await recordPosition(c, j, input);
+    // Zetsu : la position est notée mais ne s'affiche pas sur la carte de chaleur (core/ecran.ts).
+    await c.log({ action: 'position', resultat: 'ok', details: { ...pos, ...(estInvisible(j, c.now) ? { zetsu: true } : {}) } });
+    // Amendement 2026-10-10 : Accompagnement, la position exacte part au seul lanceur pendant 3 min (dérogation à RG-10.12).
+    if (j.accompagnePar && j.accompagneJusqua !== null && j.accompagneJusqua > c.now) {
+      c.emit({ type: 'joueur', id: j.accompagnePar }, 'accompagnement', positionAccompagnee({ ...j, position: pos }));
+    }
+    return { ok: true as const };
+  });
 }

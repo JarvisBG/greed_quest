@@ -6,7 +6,8 @@ import { ApiError } from './api';
 import { api, API_URL, file, session } from './client';
 import { libelleEvenement, resumeIssue } from './format';
 import { positionActuelle } from './geo';
-import { connectRealtime, type EtatConnexion } from './realtime';
+import { connectRealtime, envoyerPosition, type EtatConnexion } from './realtime';
+import type { Socket } from 'socket.io-client';
 import { rejouerFile, scanner, type IssueScan } from './scan';
 import { messageFin, termine, type EvenementEchange, type VueEchange } from './echanges';
 import { fusionnerLot, jeMene, texteAdjuge, texteClotureAutre, texteSurencheri, type Adjuge, type Cloture, type Lot } from './encheres';
@@ -156,6 +157,8 @@ export function useJeu() {
   const [enFile, setEnFile] = useState(() => (partieId ? file.aRejouer(partieId, Date.now()).valides.length : 0));
   const compteur = useRef(0);
   const suivi = useRef<Suivi | null>(null);
+  /** Connexion temps réel, aussi utilisée pour envoyer la position (RG-10.9). */
+  const socketRef = useRef<Socket | null>(null);
   const rejeuEnCours = useRef(false);
 
   const notifier = useCallback((texte: string) => {
@@ -479,9 +482,11 @@ export function useJeu() {
         if (nom === 'tirage' && typeof j === 'number') majJenny(j);
       },
     });
+    socketRef.current = t.socket;
     const enLigne = () => void rejouer();
     addEventListener('online', enLigne);
     return () => {
+      socketRef.current = null;
       t.close();
       removeEventListener('online', enLigne);
     };
@@ -555,7 +560,7 @@ export function useJeu() {
     if (!sess) return;
     const s = creerSuivi({
       geo: globalThis.navigator?.geolocation,
-      envoyer: (p) => api.post(`/parties/${sess.partieId}/position`, p),
+      envoyer: (p) => envoyerPosition(socketRef.current, p, () => api.post(`/parties/${sess.partieId}/position`, p)),
       onErreur: setGpsErreur,
       // La carte de l'île lit `positionCarte()` au rendu : une nouvelle position la redessine.
       onPosition: () => setPositionVue((n) => n + 1),
@@ -575,7 +580,7 @@ export function useJeu() {
   const positionAction = useCallback(async (envoyer = false): Promise<PositionInput> => {
     const p = suivi.current?.fraiche() ?? (await positionActuelle());
     if (envoyer && sess) {
-      await api.post(`/parties/${sess.partieId}/position`, p);
+      await envoyerPosition(socketRef.current, p, () => api.post(`/parties/${sess.partieId}/position`, p));
       suivi.current?.marquerEnvoyee(p);
     }
     return p;

@@ -9,6 +9,7 @@ import { Bus } from './core/bus.js';
 import { Runner, cryptoRng } from './core/runner.js';
 import type { Db } from './db/client.js';
 import { joueurs } from './db/schema.js';
+import { limiterDebit } from './auth/debit.js';
 import { Essais } from './auth/essais.js';
 import { Refus, SESSION_REMPLACEE } from './errors.js';
 import { attachRealtime } from './realtime.js';
@@ -43,6 +44,8 @@ export interface AppDeps {
   logger?: boolean;
   /** Origines autorisées (fronts) ; true = toutes (dev). */
   corsOrigin?: string | boolean | string[];
+  /** Sécurité S4 : limite des envois en rafale (coupée par le banc de charge, qui joue 80 joueurs depuis une IP). */
+  debit?: boolean;
   /** Socket.IO sur le serveur HTTP (désactivable pour les tests sans réseau). */
   realtime?: boolean;
 }
@@ -100,6 +103,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     const h = req.headers.authorization;
     req.session = h?.startsWith('Bearer ') ? tokens.verify(h.slice(7)) : null;
   });
+  if (deps.debit !== false) limiterDebit(app, now);
 
   // RG-5.3 (amendement 2026-10-18) : sans Fiche Hunter remplie, un joueur ne fait rien d'autre que la remplir, passer
   // le test de Nen, envoyer sa position ou abandonner. Un seul point de contrôle pour toutes les intentions.

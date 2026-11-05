@@ -19,10 +19,11 @@ export const CENTRE = { lat: 48.8566, lng: 2.3522 };
 export const PROFIL_TEST = { age: '18-24', genre: 'garcon', occupation: 'etudiant', ville: 'douala', quartier: 'Akwa', reseaux: ['whatsapp'], source: 'ami' };
 
 /** API complète sur une base de test, horloge réelle pilotable (`clock.t`), aléa seedé. */
-export async function testApp(o: DemoOptions & { seed?: number } = {}) {
+export async function testApp(o: DemoOptions & { seed?: number; debit?: boolean } = {}) {
   const t = await testDb({ centre: CENTRE, ...o });
   const clock = { t: 1_000_000 };
-  const app = await buildApp({ db: t.db, now: () => clock.t, rng: seededRng(o.seed ?? 42), adminCode: 'orga' });
+  const app = await buildApp({ db: t.db, now: () => clock.t, rng: seededRng(o.seed ?? 42), adminCode: 'orga', debit: o.debit ?? false });
+  // (S4) la limite de débit est coupée par défaut : l'horloge des tests avance peu ; testée dans securite.test.ts.
   // Les tests écoutent le bus directement (sans téléphone ni écran connecté) : tout est réputé écouté.
   app.gq.bus.ecoute = () => true;
   const bearer = (token: string) => ({ authorization: `Bearer ${token}` });

@@ -89,7 +89,7 @@ await seedPresets(db);
 const ids = await seedDemoGame(db, { centre: CENTRE, nbBalises: Math.max(10, Math.round(NB * 0.75)) });
 const partieId = ids.partieId;
 const clock = { t: 1_000_000 };
-const app = await buildApp({ db, now: () => clock.t, rng: seededRng(7), adminCode: 'orga', realtime: false });
+const app = await buildApp({ db, now: () => clock.t, rng: seededRng(7), adminCode: 'orga', realtime: false, debit: false });
 const rng = seededRng(99);
 if (SANS_ECRAN) app.gq.bus.ecoute = (_p, a) => a.type !== 'tracker';
 

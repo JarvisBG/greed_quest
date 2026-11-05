@@ -45,6 +45,10 @@ describe('Position par le temps réel (RG-10.9, moins de requêtes HTTP derrièr
     expect(await c.socket.timeout(2000).emitWithAck('position', ailleurs)).toEqual({ ok: true });
     const [j] = await t.db.select({ position: joueurs.position }).from(joueurs).where(eq(joueurs.id, leorio.body.joueurId));
     expect(j?.position).toMatchObject({ lat: ailleurs.lat, lng: ailleurs.lng });
+    t.clock.t += 1_000;
+    expect(await c.socket.timeout(2000).emitWithAck('position', ailleurs)).toMatchObject({ ok: true });
+    expect(await c.socket.timeout(2000).emitWithAck('position', ailleurs)).toMatchObject({ ok: false, code: 'trop_de_requetes' });
+    t.clock.t += 1_000;
     expect(await c.socket.timeout(2000).emitWithAck('position', { lat: 'x' })).toMatchObject({ ok: false, code: 'requete_invalide' });
   });
 

@@ -54,7 +54,12 @@ export function attachRealtime(app: FastifyInstance, corsOrigin: string | boolea
     const session = socket.data.session as Session | null;
     if (session?.role !== 'joueur') return;
     // RG-10.9 : même traitement que POST /parties/:id/position ; réponse par accusé de réception.
+    let derniere = -Infinity;
     socket.on('position', async (body: unknown, ack?: (r: unknown) => void) => {
+      // Sécurité S4 : au plus une position par seconde et par connexion (le téléphone en envoie une toutes les 15 s).
+      const t = app.gq.now();
+      if (t - derniere < 1_000) return ack?.({ ok: false, code: 'trop_de_requetes', message: 'Trop de demandes d’un coup : patiente quelques secondes' });
+      derniere = t;
       try {
         ack?.(await enregistrerPosition(app, session, body));
       } catch (e) {

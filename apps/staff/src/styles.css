@@ -289,6 +289,13 @@ button.large { width: 100%; display: grid; gap: 2px; }
 .etiquette__repere { font-family: var(--font-mono); font-size: .6rem; color: #555; border-top: 1px dashed #999; padding-top: 6px; width: 100%; }
 .etiquette__dl { border: 1px solid #ccc; background: #f4f4f5; color: #111; border-radius: 8px; padding: 6px 10px; font-size: .72rem; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
 .etiquette__dl:hover { background: #e4e4e7; }
+/* Zone (ville) : bandeau et cadre de sa couleur, une feuille par zone (demande de Sivraj, 2026-11-05). */
+.planche-groupe { margin-top: 18px; }
+.planche-groupe__titre { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: .9rem; }
+.planche-groupe__pastille { width: 14px; height: 14px; border-radius: 50%; background: var(--zone); display: inline-block; }
+.etiquette--zone { border: 3px solid var(--zone); padding-top: 0; overflow: hidden; }
+.etiquette__zone { background: var(--zone); color: #fff; font-weight: 700; font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; width: calc(100% + 24px); margin: 0 -12px; padding: 6px 8px; }
+.planche-groupe, .etiquette--zone, .etiquette__zone, .planche-groupe__pastille { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 @media print {
   @page { margin: 10mm; }
   body, .app-shell, .main { background: #fff !important; }
@@ -296,6 +303,11 @@ button.large { width: 100%; display: grid; gap: 2px; }
   .main { padding: 0 !important; margin: 0 !important; }
   .planche { grid-template-columns: repeat(3, 1fr); gap: 6mm; }
   .etiquette { border: 1px solid #ccc; border-radius: 0; }
+  .etiquette--zone { border: 2mm solid var(--zone); }
+  .etiquette__zone { font-size: 11pt; }
+  .planche-groupe { margin: 0; break-before: page; }
+  .planche-groupe:first-of-type { break-before: auto; }
+  .planche-groupe__titre { color: #000; font-size: 11pt; margin-bottom: 4mm; }
   /* Affiche : un QR par page A4, en grand. */
   .planche--affiche { display: block; }
   .planche--affiche .etiquette { border: 0; height: 270mm; align-content: center; break-after: page; gap: 10mm; }
@@ -303,6 +315,7 @@ button.large { width: 100%; display: grid; gap: 2px; }
   .planche--affiche .etiquette svg { max-width: 150mm; }
   .planche--affiche .etiquette__titre { font-size: 22pt; }
   .planche--affiche .etiquette__repere { font-size: 14pt; max-width: 150mm; }
+  .planche--affiche .etiquette__zone { font-size: 26pt; padding: 4mm; }
 }
 /* Carte du GM */
 .carte-gm { width: 100%; height: auto; max-height: 75dvh; background: rgba(var(--surf),.02); border: 1px solid rgba(var(--surf),.07); border-radius: 14px; display: block; }

@@ -8,6 +8,7 @@ Tout est gratuit, rien à acheter. Trois services :
 |---|---|---|
 | Base de données | **Supabase** (comme Otaku Quest) | — |
 | Serveur du jeu (API, temps réel, tâches) | **Render**, offre gratuite, Francfort | https://greed-island-api.onrender.com |
+| Relais devant le serveur (`apps/relais`) | **Cloudflare** | https://greed-island-api.jarvismboummeu28.workers.dev |
 | Page d'accueil (vitrine, accès aux 3 apps) | **Cloudflare** | https://greed-island.jarvismboummeu28.workers.dev (`?ouverture` rejoue l'ouverture) |
 | App joueur, console, écran géant | **Cloudflare** (comme Otaku Quest) | https://greed-island-joueur.jarvismboummeu28.workers.dev, https://greed-island-console.jarvismboummeu28.workers.dev, https://greed-island-ecran.jarvismboummeu28.workers.dev |
 
@@ -20,6 +21,8 @@ Mesures, nombre de parties possibles par mois et consignes du jour J : `docs/CHA
   géant le gardent éveillé tant qu'ils sont ouverts (appel à `/sante` toutes les 10 min). Ouvrir la console
   quelques minutes avant la partie. 750 h gratuites par mois : un seul service gratuit allumé en continu.
 - **Supabase se met en pause** après 7 jours sans activité : la relancer depuis supabase.com (bouton « Restore »).
+  Signe : les déploiements Render échouent tous (même un commit de doc seul), le relais ne répond rien.
+  Après « Restore » : Render → greed-island-api → **Manual Deploy → Deploy latest commit**.
 - **Un seul serveur** : ne jamais lancer deux copies de l'API (tâches et temps réel en mémoire).
 
 ## 1. Supabase (base de données)
@@ -38,15 +41,18 @@ Mesures, nombre de parties possibles par mois et consignes du jour J : `docs/CHA
    (sécurité S3 : les 4 apps Cloudflare de Greed Island, et elles seules, peuvent appeler le serveur).
 4. **Apply**. Attendre « Live », puis ouvrir `https://<adresse>/sante` → `{"ok":true}`.
 
-## 3. Cloudflare (les 3 apps)
+## 3. Cloudflare (relais + les 3 apps)
+Orange Cameroun coupe les adresses de Render ; Cloudflare passe. Les téléphones ne parlent donc qu'au **relais**
+(`apps/relais`, cible écrite dans `apps/relais/wrangler.jsonc`), qui transmet tout à Render (HTTP et temps réel).
 Depuis ce PC (wrangler y est déjà connecté au compte Cloudflare d'Otaku Quest) :
 
 ```
-node scripts/fronts-en-ligne.mjs https://<adresse Render>
+pnpm --filter @gq/relais deploy
+node scripts/fronts-en-ligne.mjs https://greed-island-api.jarvismboummeu28.workers.dev
 ```
 
-Construit les 3 apps avec l'adresse de l'API et les envoie (`apps/*/wrangler.jsonc`). Une seule :
-`node scripts/fronts-en-ligne.mjs https://<adresse Render> player`.
+Construit les 3 apps avec l'adresse du **relais** (jamais celle de Render) et les envoie (`apps/*/wrangler.jsonc`). Une seule :
+`node scripts/fronts-en-ligne.mjs https://greed-island-api.jarvismboummeu28.workers.dev player`.
 Si wrangler demande de se connecter : `pnpm exec wrangler login`.
 
 ## 4. Finir
@@ -60,4 +66,5 @@ Pour la vraie partie, si loJIC veut plus solide (pas de sommeil, sauvegardes), p
 
 ## Mettre à jour
 - Serveur : chaque push sur `refonte-joueur` est remis en ligne par Render.
-- Apps : relancer `node scripts/fronts-en-ligne.mjs https://<adresse Render>`.
+- Apps : relancer `node scripts/fronts-en-ligne.mjs https://greed-island-api.jarvismboummeu28.workers.dev` (le relais).
+- Vérifier un téléphone : page « Test réseau » de l'app joueur (`/reseau.html`).

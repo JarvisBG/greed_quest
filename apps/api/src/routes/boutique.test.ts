@@ -12,7 +12,6 @@ const ici = { ...CENTRE, precisionM: 5 };
 
 beforeAll(async () => {
   t = await testApp();
-  // J = 2 : 1 paquet par vague (RG-9.3, ceil(J/2)).
   await t.setEtat('en_cours', { inscriptionsOuvertes: true, demarreeA: t.clock.t, j: { value: 2, lastDecreaseAt: null } });
   gon = await t.inscrire('Gon');
   await t.db.update(joueurs).set({ jenny: 200 }).where(eq(joueurs.id, gon.id));
@@ -37,9 +36,10 @@ describe('RG-9 boutique de Masadora', () => {
     expect(await t.db.select().from(sorts).where(and(eq(sorts.joueurId, gon.id), eq(sorts.utilise, false)))).toHaveLength(4);
   });
 
-  it('RG-9.3 : stock de la vague épuisé, puis nouvelle vague 20 min plus tard', async () => {
-    expect((await post('achat', { qr: qrMasadora })).json()).toMatchObject({ ok: false, code: 'stock_epuise' });
-    t.clock.t += 20 * 60_000;
+  it('RG-9.3 amendé : sans stock commun, 2 paquets par joueur, puis nouvelle vague 5 min plus tard', async () => {
+    expect((await post('achat', { qr: qrMasadora })).json()).toMatchObject({ ok: true });
+    expect((await post('achat', { qr: qrMasadora })).json()).toMatchObject({ ok: false, code: 'limite_joueur' });
+    t.clock.t += 5 * 60_000;
     expect((await post('achat', { qr: qrMasadora })).json()).toMatchObject({ ok: true });
   });
 
@@ -47,7 +47,7 @@ describe('RG-9 boutique de Masadora', () => {
     const r = (await t.app.inject({ url: `/parties/${t.partieId}/boutique`, headers: t.bearer(gon.token) })).json();
     expect(r).toMatchObject({ prixBase: 50, krachResteMs: null, reventeContrefacon: 1, reventeObjets: { pepite: 30, ticket: null } });
     expect(r.vagueResteMs).toBeGreaterThan(0);
-    expect(r.vagueResteMs).toBeLessThanOrEqual(20 * 60_000);
+    expect(r.vagueResteMs).toBeLessThanOrEqual(5 * 60_000);
   });
 
   it('RG-9.4 : revente d’une carte D à 5 J, l’exemplaire sort du jeu', async () => {

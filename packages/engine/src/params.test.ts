@@ -22,7 +22,6 @@ describe('RG-14 formules auto', () => {
       limiteA: 6,
       limiteB: 10,
       limiteCD: 15,
-      paquetsParVague: 15,
       pvBoss: 150,
       kBoucle: 3,
       porteeSortsM: 30,

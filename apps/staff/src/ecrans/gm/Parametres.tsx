@@ -43,7 +43,6 @@ const DEFS: Record<ParamKey, Def> = {
   rechargeManipulationMin: { nom: 'Recharge Manipulation', unite: 'min', aide: 'Délai avant de réutiliser le pouvoir de Manipulation.' },
   reserveMaterialisationMin: { nom: 'Réserve Matérialisation', unite: 'min', aide: 'Intervalle du tirage bonus de réserve de la Matérialisation.' },
   rechargeSpeMin: { nom: 'Recharge Spécialisation', unite: 'min', aide: 'Délai avant de réutiliser un pouvoir de Spécialisation.' },
-  paquetsParVague: { nom: 'Paquets par vague', unite: 'paquets', aide: 'Paquets de sorts en vente à Masadora toutes les 20 min.' },
   pvBoss: { nom: 'PV du boss de raid', unite: 'PV', aide: 'Points de vie du boss au lancement d’un raid.' },
   agendaIntervalleMin: { nom: 'Agenda automatique', unite: 'min', aide: 'Une proposition d’évènement toutes les N minutes. 0 = désactivé.' },
   areneMiseJ: { nom: 'Mise de l’arène', unite: 'J', aide: 'Jenny à payer pour entrer dans l’arène de Soufrabi.' },
@@ -55,7 +54,7 @@ const GROUPES: { titre: string; icone: string; cles: ParamKey[] }[] = [
   { titre: 'Exemplaires en jeu', icone: 'fa-layer-group', cles: ['limiteSS', 'limiteS', 'limiteA', 'limiteB', 'limiteCD'] },
   { titre: 'Sorts et terrain', icone: 'fa-wand-magic-sparkles', cles: ['porteeSortsM', 'margeGpsMaxM', 'ciblableMin', 'coffreMin', 'zetsuMin', 'retourMin'] },
   { titre: 'Pouvoirs de Nen', icone: 'fa-fire', cles: ['rechargeRenforcementMin', 'rechargeEmissionMin', 'rechargeManipulationMin', 'reserveMaterialisationMin', 'rechargeSpeMin'] },
-  { titre: 'Lieux et évènements', icone: 'fa-bolt', cles: ['paquetsParVague', 'pvBoss', 'agendaIntervalleMin', 'areneMiseJ', 'areneDelaiMin'] },
+  { titre: 'Lieux et évènements', icone: 'fa-bolt', cles: ['pvBoss', 'agendaIntervalleMin', 'areneMiseJ', 'areneDelaiMin'] },
 ];
 const MODES: Record<ParamSetting['mode'], string> = { auto: 'Auto', verrouille: 'Valeur fixe', multiplicateur: 'Multiplicateur' };
 

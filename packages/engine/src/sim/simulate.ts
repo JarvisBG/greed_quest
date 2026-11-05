@@ -836,7 +836,7 @@ export function simulate(cfg: SimConfig): SimResult {
     if (cfg.achatsBoutique && cfg.sorts) {
       // Garde de quoi acheter des cartes aux autres joueurs.
       while (p.jenny >= DEFAULT_SHOP_CONFIG.prixPaquet + 40) {
-        wave = currentWave(wave, now, 0, params.paquetsParVague);
+        wave = currentWave(wave, now, 0);
         const r = buyPack(
           { now, gameState: 'en_cours', qrBoutiqueScanne: true, designees, wave, newId },
           { id: p.id, status: 'actif', position: { lat: 0, lng: 0, precisionM: 0, a: now }, jenny: p.jenny, book: p.book },

@@ -6,8 +6,7 @@ const etat: EtatBoutique = {
   prixPaquet: 50,
   prixBase: 50,
   krachResteMs: null,
-  paquetsRestants: 4,
-  vagueResteMs: 801_000,
+  vagueResteMs: 201_000,
   mesAchats: 1,
   maxParVague: 2,
   revente: { D: 5, C: 10, B: 20, A: 40, S: 80, SS: null },
@@ -45,11 +44,10 @@ describe('page ⑬ Masadora', () => {
 
   it('RG-9.2 / RG-9.3 : le bouton porte la raison du refus', () => {
     const b = (o: Partial<Omit<Parameters<typeof boutonAchat>[0], 'e'>> & { e?: Partial<EtatBoutique> } = {}) =>
-      boutonAchat({ present: true, envoi: false, jenny: 120, vagueMs: 801_000, ...o, e: { ...etat, ...o.e } });
+      boutonAchat({ present: true, envoi: false, jenny: 120, vagueMs: 201_000, ...o, e: { ...etat, ...o.e } });
     expect(b()).toEqual({ texte: 'Acheter un paquet · 50 J', actif: true, qr: false });
     expect(b({ present: false })).toMatchObject({ texte: 'Scanner le QR de la boutique', actif: true, qr: true });
-    expect(b({ e: { paquetsRestants: 0 } })).toMatchObject({ texte: 'Plus de paquets : vague suivante dans 13:21', actif: false });
-    expect(b({ e: { mesAchats: 2 } }).texte).toBe('Tes 2 paquets de la vague : suivante dans 13:21');
+    expect(b({ e: { mesAchats: 2 } }).texte).toBe('Tes 2 paquets de la vague : suivante dans 3:21');
     expect(b({ jenny: 30 }).texte).toBe('Il te manque 20 J');
     expect(b({ envoi: true })).toMatchObject({ texte: 'Envoi…', actif: false });
   });

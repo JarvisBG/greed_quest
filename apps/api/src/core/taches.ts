@@ -245,15 +245,15 @@ async function expireTrades(c: ActionCtx) {
   }
 }
 
-/** RG-9.3 : nouvelle vague de boutique, stock calculé à son ouverture (RG-14.3). */
+/** RG-9.3 (amendé 2026-11-05) : nouvelle vague de boutique toutes les 5 min, compteurs par joueur remis à zéro. */
 async function shopWave(c: ActionCtx) {
-  const p = await paramsOf(c.tx, c.partie);
-  const w = currentWave(c.partie.vagueBoutique, c.now, 0, p.paquetsParVague);
-  if (w === c.partie.vagueBoutique) return;
+  const w = currentWave(c.partie.vagueBoutique, c.now, 0);
+  if (w.index === c.partie.vagueBoutique?.index) return;
   await c.tx.update(parties).set({ vagueBoutique: w }).where(eq(parties.id, c.partie.id));
   c.partie.vagueBoutique = w;
-  await c.log({ action: 'vague_boutique', resultat: 'ok', details: { index: w.index, stock: w.stock } });
-  c.emit({ type: 'joueurs' }, 'boutique', { vague: w.index, paquets: w.stock });
+  await c.log({ action: 'vague_boutique', resultat: 'ok', details: { index: w.index } });
+  // Pas d'annonce aux joueurs : toutes les 5 min, ce serait du bruit et des rechargements pour rien ;
+  // la page Masadora a son propre décompte et se recharge seule à la fin de la vague.
 }
 
 /** Écran géant : classement live (RG-13.7) et heatmap anonyme décalée de 2 min (RG-10.12). */

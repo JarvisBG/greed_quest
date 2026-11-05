@@ -15,7 +15,6 @@ export interface EtatBoutique {
   /** Prix hors Krach (barré pendant un Krach). */
   prixBase: number;
   krachResteMs: number | null;
-  paquetsRestants: number;
   vagueResteMs: number;
   mesAchats: number;
   maxParVague: number;
@@ -48,7 +47,6 @@ export function boutonAchat(o: { present: boolean; envoi: boolean; e: EtatBoutiq
   const { e } = o;
   if (o.envoi) return { texte: 'Envoi…', actif: false, qr: false };
   if (!o.present) return { texte: 'Scanner le QR de la boutique', actif: true, qr: true };
-  if (e.paquetsRestants <= 0) return { texte: `Plus de paquets : vague suivante dans ${minSec(o.vagueMs)}`, actif: false, qr: false };
   if (e.mesAchats >= e.maxParVague) return { texte: `Tes ${e.maxParVague} paquets de la vague : suivante dans ${minSec(o.vagueMs)}`, actif: false, qr: false };
   if (o.jenny < e.prixPaquet) return { texte: `Il te manque ${e.prixPaquet - o.jenny} J`, actif: false, qr: false };
   return { texte: `Acheter un paquet · ${e.prixPaquet} J`, actif: true, qr: false };

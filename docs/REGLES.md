@@ -145,6 +145,7 @@ Types : **Standard** rangs D–A, stock normal, rotation auto · **Rare** C–S 
 - 9.1 Sources : kit, tirages, checkpoints, revente, événements.
 - 9.2 Paquets de 3 sorts aléatoires ; scan du QR boutique sur place.
 - 9.3 Stock de paquets par vague de 20 min (selon J) ; max 2 paquets/joueur/vague.
+> **Amendement 2026-11-05 (Sivraj)** : vagues de **5 min**, **sans stock commun** (paramètre `paquetsParVague` supprimé) ; seul reste le max de 2 paquets par joueur et par vague. Attente au plus 5 min, et les achats des autres ne bloquent personne. Pas d'annonce aux joueurs à chaque vague.
 - 9.4 Revente de toute carte sauf SS ; l'exemplaire sort du jeu et libère la limite.
 - 9.5 Roulette activable par le GM (coût jenny/tour).
 Prix défaut (réglables) : paquet 50 J · revente D/C/B 5/10/20 J · A/S 40/80 J · SS interdite.

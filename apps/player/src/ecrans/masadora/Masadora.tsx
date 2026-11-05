@@ -1,6 +1,6 @@
 // Page ⑬ : Masadora, la ville des cartes de sort (prototype validé le 2026-10-12 : docs/prototype/masadora.html).
 // RG-9 : le QR du lieu est scanné sur place (RG-9.2) puis gardé le temps de la visite ; paquet de 3 sorts (stock par
-// vague de 20 min, max par joueur, RG-9.3) ; revente de toute carte sauf SS (RG-9.4), des objets (amendement
+// vague de 5 min, max par joueur, sans stock commun : RG-9.3 amendé le 2026-11-05) ; revente de toute carte sauf SS (RG-9.4), des objets (amendement
 // 2026-10-10) ; Masadora révèle les contrefaçons (RG-8.9). Krach : −50 % (RG-12). Avec le sort Retour, visite à
 // distance sans QR. Prix et refus : serveur (P1) ; la requête part au toucher, un refus ne dépense rien.
 import type { ObjetType, PositionInput, SpellType } from '@gq/shared';
@@ -312,10 +312,6 @@ export function Masadora({
               </p>
             )}
             <dl>
-              <div>
-                <dt>Reste cette vague</dt>
-                <dd className={e.paquetsRestants ? undefined : 'vide'}>{e.paquetsRestants ? `${e.paquetsRestants} paquet${e.paquetsRestants > 1 ? 's' : ''}` : 'épuisé'}</dd>
-              </div>
               <div>
                 <dt>Vague suivante</dt>
                 <dd>{minSec(vagueMs)}</dd>

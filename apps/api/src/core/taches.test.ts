@@ -53,8 +53,8 @@ describe('tâches planifiées', () => {
     expect(ecran()).toBe(avant + 2);
   });
 
-  it('RG-9.3 : la vague de boutique est ouverte avec son stock', async () => {
-    expect((await partie()).vagueBoutique).toMatchObject({ index: 0, stock: 2 });
+  it('RG-9.3 : la vague de boutique est ouverte, sans stock commun (amendement 2026-11-05)', async () => {
+    expect((await partie()).vagueBoutique).toEqual({ index: 0, achats: {} });
   });
 
   it('RG-6.3 : une balise épuisée redevient dormante après 15 min de recharge', async () => {

@@ -6,7 +6,9 @@ import { isValidPosition, type Position } from './geo.js';
 import { DEFAULT_OBJETS_CONFIG, type ObjetsConfig } from './objets.js';
 import { weightedPick, type Rng } from './rng.js';
 
-export const WAVE_DURATION_MS = 20 * 60_000; // RG-9.3
+// RG-9.3 amendé (Sivraj, 2026-11-05) : vagues de 5 min (20 dans le document), sans stock commun ;
+// seul le maximum de paquets par joueur et par vague reste.
+export const WAVE_DURATION_MS = 5 * 60_000; // RG-9.3
 export const SPELLS_PER_PACK = 3; // RG-9.2
 
 /** RG-9 : tous les prix sont réglables par le GM. */
@@ -33,18 +35,14 @@ export const DEFAULT_SHOP_CONFIG: ShopConfig = {
 
 export interface ShopWave {
   index: number;
-  stock: number;
   achats: Readonly<Record<string, number>>;
 }
 
-/**
- * Vague courante, numérotée depuis le début de la partie (horloge de jeu).
- * Une nouvelle vague reçoit le stock calculé à son ouverture (paquetsParVague, RG-14.3).
- */
-export function currentWave(wave: ShopWave | null, now: number, debutPartie: number, paquetsParVague: number): ShopWave {
+/** Vague courante, numérotée depuis le début de la partie (horloge de jeu) ; compteurs par joueur remis à zéro. */
+export function currentWave(wave: ShopWave | null, now: number, debutPartie: number): ShopWave {
   const index = Math.floor((now - debutPartie) / WAVE_DURATION_MS);
-  if (wave && wave.index === index) return wave;
-  return { index, stock: paquetsParVague, achats: {} };
+  if (wave && wave.index === index) return { index, achats: wave.achats };
+  return { index, achats: {} };
 }
 
 // --- Achat (RG-9.2) ---
@@ -71,7 +69,6 @@ export type ShopRefusalCode =
   | 'joueur_bloque'
   | 'gps_invalide'
   | 'pas_sur_place'
-  | 'stock_epuise'
   | 'limite_joueur'
   | 'jenny_insuffisants'
   | 'livre_plein'
@@ -111,7 +108,6 @@ export function buyPack(
   const config = c.config ?? DEFAULT_SHOP_CONFIG;
   const bloque = checkShopper(c, player);
   if (bloque) return bloque;
-  if (c.wave.stock <= 0) return refuse('stock_epuise', 'Plus de paquets pour cette vague : reviens plus tard');
   const deja = c.wave.achats[player.id] ?? 0;
   if (deja >= config.maxPaquetsParJoueurParVague) {
     return refuse('limite_joueur', `Maximum ${config.maxPaquetsParJoueurParVague} paquets par vague`);
@@ -133,7 +129,7 @@ export function buyPack(
   return {
     ok: true,
     player: { ...player, jenny: player.jenny - prix, book },
-    wave: { ...c.wave, stock: c.wave.stock - 1, achats: { ...c.wave.achats, [player.id]: deja + 1 } },
+    wave: { index: c.wave.index, achats: { ...c.wave.achats, [player.id]: deja + 1 } },
     prix,
     sorts,
   };

@@ -16,7 +16,6 @@ import { and, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { requireRole } from '../auth/guard.js';
 import { ENGAGEE, engagedItems } from '../core/echanges.js';
-import { paramsOf } from '../core/params.js';
 import type { PartieRow } from '../core/partie.js';
 import { recordPosition } from '../core/position.js';
 import type { ActionCtx } from '../core/runner.js';
@@ -56,9 +55,8 @@ export async function presence(c: ActionCtx, j: JoueurRow, qr: string | undefine
 
 const shopper = (j: JoueurRow, book: ShopPlayer['book']): ShopPlayer => ({ id: j.id, status: j.statut, position: j.position, jenny: j.jenny, book });
 
-async function wave(c: ActionCtx) {
-  const p = await paramsOf(c.tx, c.partie);
-  return currentWave(c.partie.vagueBoutique, c.now, 0, p.paquetsParVague); // RG-9.3, vagues comptées depuis le démarrage
+function wave(c: ActionCtx) {
+  return currentWave(c.partie.vagueBoutique, c.now, 0); // RG-9.3 (amendé : 5 min, sans stock commun), vagues comptées depuis le démarrage
 }
 
 export async function boutiqueRoutes(app: FastifyInstance) {
@@ -68,7 +66,7 @@ export async function boutiqueRoutes(app: FastifyInstance) {
     const { partieId } = req.params;
     const s = requireRole(req, partieId, 'joueur');
     return runner.run(partieId, { type: 'joueur', id: s.sub }, async (c) => {
-      const w = await wave(c);
+      const w = wave(c);
       const config = shopConfigOf(c.partie);
       const events = await loadActiveEvents(c.tx, partieId);
       const mult = shopPriceMultiplier(events, c.now);
@@ -79,7 +77,6 @@ export async function boutiqueRoutes(app: FastifyInstance) {
         prixPaquet: Math.ceil(config.prixPaquet * mult),
         prixBase: config.prixPaquet,
         krachResteMs: krach ? krach.fin - c.now : null,
-        paquetsRestants: w.stock,
         vagueResteMs: WAVE_DURATION_MS - (c.now % WAVE_DURATION_MS), // RG-9.3, vagues comptées depuis le démarrage
         mesAchats: w.achats[s.sub] ?? 0,
         maxParVague: config.maxPaquetsParJoueurParVague,

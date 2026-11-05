@@ -25,7 +25,7 @@ const sorts = (n: number) => Array.from({ length: n }, (_, i): BookItem => ({ ki
 
 const player = (over: Partial<ShopPlayer> = {}): ShopPlayer => ({ id: 'P', status: 'actif', position: pos, jenny: 200, book: emptyBook(), ...over });
 const ctx = (over: Partial<ShopContext> = {}): ShopContext => ({ now: NOW, gameState: 'en_cours', qrBoutiqueScanne: true, designees, ...over });
-const wave = (over: Partial<ShopWave> = {}): ShopWave => ({ index: 0, stock: 5, achats: {}, ...over });
+const wave = (over: Partial<ShopWave> = {}): ShopWave => ({ index: 0, achats: {}, ...over });
 
 let n = 0;
 const buy = (p = player(), w = wave(), over: Partial<ShopContext> & { multiplicateurPrix?: number } = {}) =>
@@ -33,18 +33,24 @@ const buy = (p = player(), w = wave(), over: Partial<ShopContext> & { multiplica
 
 const code = (r: { ok: boolean; code?: string }) => (r.ok ? 'ok' : r.code);
 
-describe('RG-9.3 vagues de 20 min', () => {
-  it('nouvelle vague : stock recalculé, compteurs remis à zéro', () => {
-    const w = currentWave(null, 0, 0, 8);
-    expect(w).toEqual({ index: 0, stock: 8, achats: {} });
-    const used = { ...w, stock: 3, achats: { P: 2 } };
-    expect(currentWave(used, WAVE_DURATION_MS - 1, 0, 20)).toBe(used);
-    expect(currentWave(used, WAVE_DURATION_MS, 0, 20)).toEqual({ index: 1, stock: 20, achats: {} });
+describe('RG-9.3 vagues de 5 min (amendement 2026-11-05)', () => {
+  it('vagues de 5 min, compteurs par joueur remis à zéro à chaque vague', () => {
+    expect(WAVE_DURATION_MS).toBe(5 * 60_000);
+    const w = currentWave(null, 0, 0);
+    expect(w).toEqual({ index: 0, achats: {} });
+    const used = { ...w, achats: { P: 2 } };
+    expect(currentWave(used, WAVE_DURATION_MS - 1, 0)).toEqual(used);
+    expect(currentWave(used, WAVE_DURATION_MS, 0)).toEqual({ index: 1, achats: {} });
+  });
+
+  it('ancienne vague enregistrée avec un stock commun : le stock est oublié', () => {
+    const ancienne = { index: 0, stock: 0, achats: { P: 1 } } as ShopWave;
+    expect(currentWave(ancienne, 10, 0)).toEqual({ index: 0, achats: { P: 1 } });
   });
 });
 
 describe('RG-9.2 achat d’un paquet', () => {
-  it('3 sorts, 50 J, stock et compteur de la vague mis à jour', () => {
+  it('3 sorts, 50 J, compteur du joueur dans la vague mis à jour', () => {
     const r = buy();
     expect(r.ok).toBe(true);
     if (!r.ok) return;
@@ -52,7 +58,7 @@ describe('RG-9.2 achat d’un paquet', () => {
     expect(r.player.jenny).toBe(150);
     expect(r.sorts).toHaveLength(3);
     expect(r.player.book.items).toHaveLength(3);
-    expect(r.wave).toMatchObject({ stock: 4, achats: { P: 1 } });
+    expect(r.wave).toEqual({ index: 0, achats: { P: 1 } });
   });
 
   it('Krach de Masadora : moitié prix', () => {
@@ -66,8 +72,8 @@ describe('RG-9.2 achat d’un paquet', () => {
     expect(code(buy(player({ status: 'gele' })))).toBe('joueur_bloque');
   });
 
-  it('refus : stock de la vague épuisé, 2 paquets max par joueur', () => {
-    expect(code(buy(player(), wave({ stock: 0 })))).toBe('stock_epuise');
+  it('pas de stock commun : les achats des autres ne bloquent personne ; 2 paquets max par joueur', () => {
+    expect(code(buy(player(), wave({ achats: { A: 2, B: 2, C: 2, D: 2, E: 2, F: 2 } })))).toBe('ok');
     expect(buy(player(), wave({ achats: { P: 2 } }))).toMatchObject({ code: 'limite_joueur', message: 'Maximum 2 paquets par vague' });
   });
 

@@ -72,7 +72,7 @@ Périmètre exact et direction artistique : `docs/PROMPT_INTERFACES.md` (§ 4.1)
 ## Phase 6 bis — Réseaux camerounais et sécurité (demande de Sivraj du 2026-11-04)
 Constat du 2026-11-04 : depuis Orange Cameroun (AS36912), les adresses de Render (216.24.57.x) sont coupées
 (connexion réinitialisée pendant le chiffrement), alors que Cloudflare passe. MTN passe. Camtel : à vérifier.
-- [ ] R1 Relais Cloudflare `apps/relais` (Worker `greed-island-api.<compte>.workers.dev`) : tout le trafic
+- [x] R1 Relais Cloudflare `apps/relais` (Worker `greed-island-api.<compte>.workers.dev`) : tout le trafic
       (HTTP + temps réel WebSocket) passe par Cloudflare, puis vers Render. Fronts reconstruits avec cette adresse.
       Les QR imprimés (adresse de l'app joueur) ne changent pas.
 - [x] R2 Temps réel : si le WebSocket est bloqué par le réseau, basculer sur le mode de secours (`tryAllTransports`).

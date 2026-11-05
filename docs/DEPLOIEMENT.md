@@ -34,7 +34,8 @@ Mesures, nombre de parties possibles par mois et consignes du jour J : `docs/CHA
 1. render.com → se connecter **avec GitHub**, autoriser l'accès au dépôt `greed_quest`.
 2. **New → Blueprint** → choisir `greed_quest` : Render lit `render.yaml` (branche `refonte-joueur`).
 3. Remplir : `DATABASE_URL` = la chaîne Supabase ; `GQ_ADMIN_CODE` = un code d'organisateur (pour créer une
-   partie) ; `CORS_ORIGINS` = laisser vide pour l'instant. `GQ_SECRET` est tiré au hasard par Render.
+   partie). `GQ_SECRET` est tiré au hasard par Render. `CORS_ORIGINS` est déjà écrit dans `render.yaml`
+   (sécurité S3 : les 4 apps Cloudflare de Greed Island, et elles seules, peuvent appeler le serveur).
 4. **Apply**. Attendre « Live », puis ouvrir `https://<adresse>/sante` → `{"ok":true}`.
 
 ## 3. Cloudflare (les 3 apps)
@@ -49,7 +50,7 @@ Construit les 3 apps avec l'adresse de l'API et les envoie (`apps/*/wrangler.jso
 Si wrangler demande de se connecter : `pnpm exec wrangler login`.
 
 ## 4. Finir
-1. Render → service → **Environment** : `CORS_ORIGINS` = les 3 adresses Cloudflare, séparées par des virgules.
+1. Si une adresse Cloudflare change : la corriger dans `CORS_ORIGINS` (`render.yaml`), sinon l'app est refusée.
 2. Console → lien « Organisateur » → créer la partie avec `GQ_ADMIN_CODE`.
 3. Console → Planche QR : « adresse de l'app joueur » = l'adresse Cloudflare du joueur (QR-liens).
 4. Écran géant : `https://greed-island-ecran.<compte>.workers.dev/?partie=<id>`.

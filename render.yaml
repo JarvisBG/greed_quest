@@ -26,6 +26,6 @@ services:
       # Code de l'organisateur pour créer une partie (choisi par Sivraj).
       - key: GQ_ADMIN_CODE
         sync: false
-      # Adresses des 3 apps Cloudflare, séparées par des virgules.
+      # Sécurité S3 : seules les 4 apps Cloudflare de Greed Island peuvent appeler le serveur (séparées par des virgules).
       - key: CORS_ORIGINS
-        sync: false
+        value: "https://greed-island.jarvismboummeu28.workers.dev,https://greed-island-joueur.jarvismboummeu28.workers.dev,https://greed-island-console.jarvismboummeu28.workers.dev,https://greed-island-ecran.jarvismboummeu28.workers.dev"

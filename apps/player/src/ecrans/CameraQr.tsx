@@ -1,5 +1,7 @@
 // Lecture d'un QR à la caméra arrière, avec saisie du code en secours (caméra refusée, QR abîmé).
 // `lire` transforme le texte lu en valeur utile, ou null si ce n'est pas le bon type de QR.
+// Même viseur que la page Scan (cadre d'encre, coins blancs) : les surimpressions de qr-scanner sont coupées,
+// elles se décalaient hors du cadre (Masadora, Antokiba).
 import QrScanner from 'qr-scanner';
 import { useEffect, useRef, useState } from 'react';
 
@@ -17,6 +19,7 @@ export function CameraQr<T>({
   saisie: string;
 }) {
   const [avis, setAvis] = useState<string | null>(null);
+  const [refusee, setRefusee] = useState(false);
   const [code, setCode] = useState('');
   const video = useRef<HTMLVideoElement>(null);
   const rappel = useRef({ lire, onLu, invalide });
@@ -34,23 +37,34 @@ export function CameraQr<T>({
         fini = true;
         rappel.current.onLu(v);
       },
-      { preferredCamera: 'environment', highlightScanRegion: true, highlightCodeOutline: true, maxScansPerSecond: 5 },
+      { preferredCamera: 'environment', highlightScanRegion: false, highlightCodeOutline: false, maxScansPerSecond: 5 },
     );
     scanner.start().then(
-      () => setAvis(null),
-      () => setAvis('Caméra indisponible : autorise-la dans les réglages du navigateur, ou saisis le code'),
+      () => setRefusee(false),
+      () => setRefusee(true),
     );
     return () => scanner.destroy();
   }, []);
 
   return (
     <>
-      <div className="viseur">
-        <video ref={video} muted playsInline />
+      <div className="scan-viseur">
+        <video ref={video} muted playsInline aria-label="Image de la caméra" />
+        {refusee && <p className="scan-camera">Caméra indisponible : autorise-la dans les réglages du navigateur, ou saisis le code.</p>}
+        <div className="scan-cible" aria-hidden="true">
+          <i className="coin hg" />
+          <i className="coin hd" />
+          <i className="coin bg" />
+          <i className="coin bd" />
+        </div>
       </div>
-      {avis && <p className="info">{avis}</p>}
+      {avis && (
+        <p className="info" role="status">
+          {avis}
+        </p>
+      )}
       <form
-        className="saisie"
+        className="scan-saisie"
         onSubmit={(e) => {
           e.preventDefault();
           const v = lire(code);
@@ -58,8 +72,8 @@ export function CameraQr<T>({
           else setAvis(invalide);
         }}
       >
-        <input value={code} onChange={(e) => setCode(e.target.value)} placeholder={saisie} autoCapitalize="off" autoCorrect="off" />
-        <button type="submit" className="secondaire" disabled={!code.trim()}>
+        <input className="gi-champ" value={code} onChange={(e) => setCode(e.target.value)} placeholder={saisie} aria-label={saisie} autoCapitalize="off" autoCorrect="off" autoComplete="off" />
+        <button type="submit" className="gi-btn-trait" disabled={!code.trim()}>
           Valider
         </button>
       </form>

@@ -59,7 +59,7 @@ describe('RG-7 scan de balise', () => {
 
   it('RG-6 : balise dormante', async () => {
     const res = await scan(gon.token, t.baliseIds[10]!);
-    expect(res.json()).toMatchObject({ code: 'balise_dormante', message: 'Cette balise dort' });
+    expect(res.json()).toMatchObject({ code: 'balise_dormante', message: 'Balise éteinte pour le moment : elle se rallumera plus tard. Cherche-en une autre, la carte de l’île montre les zones où il y en a d’allumées' });
   });
 
   it('QR inconnu', async () => {

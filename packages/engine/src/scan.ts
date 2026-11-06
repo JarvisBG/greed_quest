@@ -103,7 +103,7 @@ export function checkScan(c: ScanContext): ScanCheck {
   // 3. Balise active, zone ouverte (RG-6).
   switch (c.beacon.state) {
     case 'dormante':
-      return refuse('balise_dormante', 'Cette balise dort');
+      return refuse('balise_dormante', 'Balise éteinte pour le moment : elle se rallumera plus tard. Cherche-en une autre, la carte de l’île montre les zones où il y en a d’allumées');
     case 'epuisee':
       return refuse('balise_epuisee', 'Plus rien ici, cherche ailleurs');
     case 'coupee':

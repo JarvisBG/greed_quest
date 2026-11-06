@@ -79,7 +79,7 @@ describe('RG-6 balises pilotées par le GM', () => {
     expect((await req('POST', `/balises/${b!.id}/etat`, gm, { action: 'couper' })).json()).toMatchObject({ ok: true, etat: 'coupee' });
     const gon = (await t.app.inject({ method: 'POST', url: `/parties/${t.partieId}/reconnexion`, payload: { appareilId: 'appareil-Gon-1-xxxxxxxx' } })).json();
     const scan = await t.app.inject({ method: 'POST', url: `/parties/${t.partieId}/scan`, headers: t.bearer(gon.token), payload: { baliseId: b!.id, position: ici } });
-    expect(scan.json()).toMatchObject({ code: 'balise_coupee', message: 'Scan refusé' });
+    expect(scan.json()).toMatchObject({ code: 'balise_coupee', message: 'Balise hors jeu : le Game Master l’a retirée de la partie. Cherche-en une autre' });
   });
 
   it('RG-6.4 : rotation forcée', async () => {

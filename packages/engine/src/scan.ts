@@ -107,7 +107,7 @@ export function checkScan(c: ScanContext): ScanCheck {
     case 'epuisee':
       return refuse('balise_epuisee', 'Plus rien ici, cherche ailleurs');
     case 'coupee':
-      return refuse('balise_coupee', 'Scan refusé');
+      return refuse('balise_coupee', 'Balise hors jeu : le Game Master l’a retirée de la partie. Cherche-en une autre');
   }
   if (c.zonesFermees.has(c.beacon.zoneId)) return refuse('zone_fermee', 'Zone maudite : cette zone est fermée');
 

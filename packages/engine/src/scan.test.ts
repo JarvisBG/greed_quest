@@ -61,7 +61,7 @@ describe('RG-7 vérifications de scan', () => {
   it('3. balise : états RG-6 et zone fermée', () => {
     expect(checkScan(ctx({ beacon: { state: 'dormante' } }))).toMatchObject({ message: 'Balise éteinte pour le moment : elle se rallumera plus tard. Cherche-en une autre, la carte de l’île montre les zones où il y en a d’allumées' });
     expect(checkScan(ctx({ beacon: { state: 'epuisee' } }))).toMatchObject({ message: 'Plus rien ici, cherche ailleurs' });
-    expect(checkScan(ctx({ beacon: { state: 'coupee' } }))).toMatchObject({ message: 'Scan refusé' });
+    expect(checkScan(ctx({ beacon: { state: 'coupee' } }))).toMatchObject({ message: 'Balise hors jeu : le Game Master l’a retirée de la partie. Cherche-en une autre' });
     expect(code({ zonesFermees: new Set(['z1']) })).toBe('zone_fermee');
   });
 
